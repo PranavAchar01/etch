@@ -1,17 +1,12 @@
 # Etch
 
-Next.js landing page for Etch.
+The static web app deployed at https://etch-app-theta.vercel.app.
 
-## Setup
+Say what circuit board you want and Etch designs it with real KiCad parts, then routes and checks it.
 
-```bash
-git clone https://github.com/PranavAchar01/etch.git
-cd etch
-./setup.sh
-```
+- `index.html`: page markup and styles
+- `app.js`: voice and chat client
+- `viewer3d.js`: 3D board viewer (`so101.glb`)
+- `config.json`: URL of the backend API the page talks to
 
-The script installs Node 24 (via nvm or fnm if you have one) and pnpm 11.20.0, which is pinned in `package.json`. It installs the exact dependencies from `pnpm-lock.yaml`, then starts the dev server on http://localhost:3000.
-
-Use `./setup.sh --build` to run a production build instead.
-
-Main page: `src/app/page.tsx`.
+Deploy: `vercel deploy --prod` from this folder (Vercel project `etch-app`).
