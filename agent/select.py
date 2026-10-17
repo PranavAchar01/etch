@@ -138,10 +138,10 @@ def _decisions(ask: str, families: list[str]) -> tuple[set[str], dict[str, Any]]
         ],
     }
     req = urllib.request.Request(
-        config.BASE_URL.rstrip("/") + "/decisions",
+        config.OPENAI_URL + "/decisions",
         data=json.dumps(body).encode(),
         headers={
-            "Authorization": f"Bearer {config.api_key()}",
+            "Authorization": f"Bearer {config.key_for('openai-api-key')}",
             "Content-Type": "application/json",
         },
     )

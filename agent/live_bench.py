@@ -14,10 +14,10 @@ import time
 from pathlib import Path
 from typing import Any
 
-from . import llm
+from . import config, llm
 from .events import Stream
 
-MODEL = "gpt-5-mini"
+MODEL = config.MODEL
 
 # name -> (unit, what it measures)
 CHECKS: dict[str, tuple[str, str]] = {
