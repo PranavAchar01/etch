@@ -393,6 +393,8 @@ PICK_RULES = """Rules (code checks every one):
 - supply_ma_avg only as a loose sanity bound that counts every load: an LED 2-15 mA, a buzzer 10-30 mA, a fan or
   motor 50-200 mA. A load that follows a blink is on about half the time, so its avg_ma is about half its on current.
 - Scenarios only when the ask is about light, battery voltage or a button. A plain blinker or fan has NO scenarios.
+  Every scenario must set ldr, voltage or switch; a scenario with only a name changes nothing in the simulation.
+  A sensor none of those drive (soil moisture, gas, ...) goes in missing; never stand it in with plain resistors.
 - why: one plain sentence per part, at most 10 words.
 - Never substitute a different kind of part for one the ask names (no LDR as a tilt sensor). If the ask needs a part
   that is NOT in the KEPT list (tilt switch, reed switch, ...), list it in missing with a common through-hole part
@@ -574,11 +576,21 @@ def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
             for k in ("check", "min", "max", "text")
             if k in b and b[k] is not None
         }
-        # with scenarios every simulated metric is named per scenario; an unprefixed one must hold in each
+        # with scenarios every simulated metric is named per scenario; an unprefixed one must hold in each,
+        # unless its text names one scenario ("buzzer on when dry") or a scenario already has its own row for
+        # that metric (sweep 10-17: "on when dry" was copied into wet next to "off when wet", which can never pass)
         if scen and not any(row["check"].startswith(n + ".") for n in scen):
+            named = [n for n in scen if re.search(rf"\b{re.escape(n)}\b", row.get("text", ""), re.I)]
+            own = {
+                n
+                for n in scen
+                for o in design.get("benchmarks", [])
+                if o.get("check") == f"{n}.{row['check']}"
+            }
+            targets = named if len(named) == 1 else [n for n in scen if n not in own]
             bench += [
                 {**row, "check": f"{n}.{row['check']}", "text": f"{row['text']} ({n})"}
-                for n in scen
+                for n in targets
             ]
         else:
             bench.append(row)
@@ -907,6 +919,7 @@ def assemble(
                 if lost
                 else _feedback(v, _metric_names(out))
                 + "".join(f"\n- analog check: {f}" for f in an_findings)
+                + _scenario_note(design)
                 + "\nYour nets were:\n"
                 + _wiring(design, kept)
             )
@@ -1324,6 +1337,22 @@ def _analog(
         # its own event, not "lead:say": the say line is read aloud, and these are engineering notes
         stream.emit("assembly", "analog", notes=notes, findings=res.findings)
     return res.findings
+
+
+STIMULI = ("ldr", "voltage", "switch", "set", "gpio", "sound", "inputs")
+
+
+def _scenario_note(design: dict[str, Any]) -> str:
+    """Scenarios that set no stimulus simulate identically, so an on/off pair across them can never pass."""
+    sc = [s for s in design.get("scenarios") or [] if s.get("name")]
+    if len(sc) < 2 or any(s.get(k) is not None for s in sc for k in STIMULI):
+        return ""
+    names = ", ".join(s["name"] for s in sc)
+    return (
+        f"\n- scenarios {names} change nothing in the simulation (no ldr, voltage or switch), so every scenario "
+        "gives the same numbers. Use a sensor part that one of those stimuli drives; if the ask needs a sensor "
+        "that is not in the KEPT list, list it in missing instead of standing it in with plain resistors."
+    )
 
 
 def _feedback(v: dict[str, Any], metrics: list[str]) -> str:
