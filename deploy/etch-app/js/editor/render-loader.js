@@ -30,14 +30,17 @@ export function createRenderLoader(stage, { label = "Rendering your board" } = {
       eyes.setState("working"); eyes.setActivity?.("render");
       root.classList.add("on");
     },
-    // after the frame that draws the new model, so the board is on screen before the loader fades
+    // after the frame that draws the new model, so the board is on screen before the loader fades; the timer covers
+    // a background tab, where frames are paused
     hide() {
       const g = gen;
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        if (g !== gen) return;
+      const go = () => {
+        if (g !== gen || !root.classList.contains("on")) return;
         root.classList.remove("on");
         loader.stop(); eyes?.setActivity?.(null); eyes?.setState("idle");
-      }));
+      };
+      requestAnimationFrame(() => requestAnimationFrame(go));
+      setTimeout(go, 300);
     },
     fail(text = "Couldn't render this board.") {
       const g = ++gen;
