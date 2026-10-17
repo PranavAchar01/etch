@@ -140,6 +140,8 @@ def alternatives(e: dict[str, Any], cat: dict[str, dict]) -> list[dict[str, Any]
     for o in cat.values():
         if o["key"] != e["key"] and o["lib_id"] == e["lib_id"] and sorted(o["pins"]) == sorted(e["pins"]) \
                 and o["footprint"] != e["footprint"] and o.get("model") and Path(o["model"]).is_file():
+            if any(x["footprint"] == o["footprint"] for x in out):
+                continue
             lib = o["footprint"].split(":")[0]
             out.append({"footprint": o["footprint"], "fp_root": str(footprint_root(lib)), "model": o["model"],
                         "key": o["key"]})
@@ -533,6 +535,16 @@ def validate(plan: dict[str, Any], facts: dict[str, Any], cat: dict[str, dict],
                     continue
                 assign[p] = net
     for r, a in add.items():
+        if not a["near"]:  # place it next to the part it joins (its signal, not GND or a rail)
+            near = [m.split(".")[0] for n in a["pads"].values() if n in members and not POWER_RE.search(n)
+                    and len(members[n]) <= 8 for m in members[n] if m not in gone]
+            a["near"] = min(near, key=lambda x: (not re.match(r"^(J|P|CON|EXT|UEXT|H)\w*\d", x), _ref_key(x)),
+                            default="")
+        fam = (a["entry"]["family"] + " " + a["entry"]["lib_id"]).lower()
+        if "led" in fam and "ws2812" not in fam and "rgb" not in a["entry"]["lib_id"].lower():
+            if all(n in members or n in nets for n in a["pads"].values()) and len(a["pads"]) == 2:
+                errs.append(f"{r} is an LED wired straight between existing nets; put a series resistor (330 to 1k) "
+                            "between it and the supply or GPIO, on a new net")
         missing = [p for p in a["entry"]["pins"] if p not in a["pads"]]
         if missing and len(a["entry"]["pins"]) <= 4:
             errs.append(f"{r} pad{'s' if len(missing) > 1 else ''} {', '.join(missing)} not connected to anything")
@@ -987,7 +999,7 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
     t_plan = time.time() - t1
     stream.emit("picker", "pick", seconds=round(t_plan, 2), recipe=plan.get("_recipe") or "in-place edit", model=model,
                 parts=[{"ref": a["ref"], "piece": a["key"], "value": a["value"], "group": "added", "why": a["why"]}
-                       for a in resolved["add"]], scenarios=[], benchmarks=[], say=plan.get("say"))
+                       for a in sorted(resolved["add"], key=lambda a: not a["near"])],  # anchored parts first, partners next to them scenarios=[], benchmarks=[], say=plan.get("say"))
     if plan.get("refuse"):
         return finish(stream, request, out, t0, False, str(plan["refuse"])[:300], timings={"plan_s": round(t_plan, 2)})
     stream.emit("assembly", "iteration", iteration=1, phase="place-route-check")
@@ -1006,7 +1018,7 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
                  "fp_root": str(footprint_root(a["entry"]["footprint"].split(":")[0])),
                  "model": a["entry"]["model"] if a["entry"].get("model") and Path(a["entry"]["model"]).is_file() else None,
                  "near": a["near"] or None, "pads": a["pads"], "alternatives": alternatives(a["entry"], cat)}
-                for a in resolved["add"]],
+                for a in sorted(resolved["add"], key=lambda a: not a["near"])],  # anchored parts first, partners next to them
         "assign": resolved["assign"], "remove": resolved["remove"], "values": resolved["values"],
         "new_nets": sorted(resolved["new_nets"]), "route": bool(resolved["add"] or resolved["assign"]),
         "refill": bool(resolved["add"] or resolved["assign"] or resolved["remove"]),
