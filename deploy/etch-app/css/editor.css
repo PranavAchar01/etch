@@ -149,7 +149,8 @@ body.ed.rp-closed .ag-dock { left: 50%; }
 .ghost.show { opacity: 1; }
 .ghost.back { transition: transform .34s var(--bounce), opacity .34s .1s; opacity: 0; }
 .ghost .g-img { position: absolute; width: 78px; height: 64px; left: -39px; top: -32px; background: center / contain no-repeat; border-radius: 12px; transition: transform .25s var(--bounce); opacity: .85; filter: drop-shadow(0 6px 10px rgba(16, 24, 32, .2)); }
-.ghost .g-img.blank { background: #fff; border: 1.5px dashed #9cc9e8; }
+.ghost .g-img.blank { background: linear-gradient(100deg, #e6eaee 30%, #f3f5f7 50%, #e6eaee 70%) 0 0 / 250% 100%; animation: g-sk 1.2s linear infinite; }
+@keyframes g-sk { to { background-position: -250% 0; } }
 .ghost.on-board .g-img { transform: scale(.82); opacity: .95; }
 .ghost.on-board::before { content: ""; position: absolute; width: 18px; height: 18px; left: -9px; top: -9px; border-radius: 50%; border: 2px solid var(--accent); background: rgba(26, 163, 255, .15); }
 .ghost.drop .g-img { transform: scale(.4); opacity: 0; transition: transform .35s var(--ease), opacity .35s; }

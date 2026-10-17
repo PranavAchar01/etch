@@ -771,6 +771,14 @@ def import_design(board: Board) -> dict[str, Any]:
     }
 
 
+def edited_in_place(run_dir: Path | None) -> bool:
+    """A live run that agent/import_edit.py made from an imported board (its next change is in place too)."""
+    try:
+        return bool(run_dir and json.loads((run_dir / "imported.json").read_text()).get("inplace"))
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
 def seed_run(board: Board, design: dict[str, Any]) -> Path:
     """A new engine/out/live-<ms>/ holding the imported design, used as the base of a modify run. It has no
     run.jsonl or live_result.json, so it never shows up as a card in the builds library."""

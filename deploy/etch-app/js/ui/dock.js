@@ -21,6 +21,27 @@ const STATES = new Set(["idle", "userTalking", "heard", "thinking", "working", "
 const DEFAULT_STATUS = "Ask Etch · hold Space to talk";
 const plain = (s) => String(s || "").replace(/`([^`]+)`/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\s+/g, " ").trim();
 
+// what a step is, as an eyes activity and a pill line of at most three words
+const ACTS = [
+  [/wait|queue|in line/i, "wait", "Waiting in line"],
+  [/screen|search|scan|looking for|find/i, "scan", "Screening parts"],
+  [/repair|fix/i, "repair", "Fixing the design"],
+  [/\b(erc|drc)\b/i, "inspect", (t) => `Checking ${/drc/i.test(t) ? "DRC" : "ERC"}`],
+  [/check|gate|verif|test|parity|benchmark|inspect/i, "inspect", "Checking the design"],
+  [/rout|plac|track|layout/i, "route", (t) => (/rout/i.test(t) ? "Routing traces" : "Placing parts")],
+  [/render|3d/i, "render", "Rendering in 3D"],
+  [/export|writ|gerber|fab file|zip|sav|copy/i, "export", (t) => (/copy/i.test(t) ? "Copying the board" : "Writing files")],
+  [/pick|choos|select|gather|using \d|adding/i, "pick", "Picking parts"],
+  [/read|open|load|parts\.json|look/i, "read", "Reading the board"],
+  [/send|start/i, "think", "Starting up"],
+];
+function activityOf(d) {
+  const t = String(d.title || "");
+  if (d.kind === "reasoning") return ["think", "Thinking"];
+  for (const [re, a, w] of ACTS) if (re.test(t)) return [a, typeof w === "function" ? w(t) : w];
+  return ["think", "Working"];
+}
+
 export function createDock(hostEl, opts = {}) {
   const host = hostEl || document.body;
   let W = 0, MAXH = 0;
@@ -37,12 +58,13 @@ export function createDock(hostEl, opts = {}) {
   const phLine = el("div", "ag-ph-line");
   const phLoader = pixelLoader({ size: "sm" });
   const header = el("div", "ag-ph", phLine, phLoader.el);
+  const headWrap = el("div", "ag-phw", header);
   const turnsEl = el("div", "ag-turns");
   const empty = el("div", "ag-empty", el("div", "ag-empty-t", "What should we look at?"), el("div", "ag-empty-d", "Ask about any part, or ask for a change. Click the mic or hold Space to talk."));
   const scroll = el("div", "ag-scroll", empty, turnsEl);
   const newPill = el("button", "ag-newpill lq-btn");
   newPill.type = "button"; newPill.hidden = true;
-  const inner = el("div", "ag-panel-in", header, scroll, newPill);
+  const inner = el("div", "ag-panel-in", headWrap, scroll, newPill);
   const panel = el("div", "ag-panel", inner);
   panel.setAttribute("role", "region");
   panel.setAttribute("aria-label", "Etch agent");
@@ -63,9 +85,14 @@ export function createDock(hostEl, opts = {}) {
   const form = el("form", "ag-compose", input, send);
   const mic = el("button", "ag-mic lq-btn", icon("mic"));
   mic.type = "button"; mic.setAttribute("aria-label", "Talk to Etch (or hold Space)");
+  const badge = el("span", "ag-badge");
+  badge.hidden = true;
   const pill = el("div", "ag-pill", eyesWrap, status, mic, form);
+  const closeBtn = el("button", "ag-x lq-btn", icon("close"));
+  closeBtn.type = "button"; closeBtn.setAttribute("aria-label", "Close (work goes on)"); closeBtn.title = "Close · work goes on in the background";
+  inner.append(closeBtn); squish(closeBtn);
   // the pill comes first in tab order: mic, then (once open) the composer and the panel
-  root.append(goo, pill, panel, bubbles);
+  root.append(goo, pill, panel, bubbles, badge); // the badge sits outside the pill's clip
   host.append(root);
   squish(send); squish(mic);
 
@@ -92,6 +119,7 @@ export function createDock(hostEl, opts = {}) {
     const p = clamp(pw.value, 120, W), side = (W - p) / 2;
     pillBlob.style.clipPath = pill.style.clipPath = `inset(0px ${side.toFixed(1)}px round ${PILL_H / 2}px)`;
     eyesWrap.style.transform = `translateX(${(side + PAD).toFixed(1)}px)`;
+    badge.style.translate = `${(side + PAD + 26).toFixed(1)}px 0`;
     status.style.transform = `translateX(${(side + PAD + EYES_W + 8).toFixed(1)}px)`;
     status.style.opacity = (1 - smooth(0.02, 0.4, oc)).toFixed(3);
     form.style.opacity = smooth(0.5, 1, oc).toFixed(3);
@@ -100,7 +128,8 @@ export function createDock(hostEl, opts = {}) {
 
   function layout() {
     W = Math.round(Math.min(460, innerWidth - 24));
-    MAXH = Math.round(clamp(innerHeight - 170, 180, 540));
+    // phones: a bottom sheet of at most ~45% of the screen, so the workplane stays in view during a build
+    MAXH = Math.round(innerWidth <= 768 ? clamp(innerHeight * 0.45 - PILL_H - GAP, 160, 540) : clamp(innerHeight - 170, 180, 540));
     root.style.width = W + "px";
     root.style.height = MAXH + GAP + PILL_H + "px";
     panelBlob.style.height = panel.style.height = MAXH + "px";
@@ -109,20 +138,33 @@ export function createDock(hostEl, opts = {}) {
     pw.jump(open ? W : collapsedW);
     draw();
   }
+  // the collapsed pill grows (springily) to fit its status line, up to the dock's width; longer lines end in "…" and
+  // keep the whole text in a tooltip. The text never runs under the mic.
   function sizeCollapsed() {
-    const sw = Math.min(status.offsetWidth || 160, W - (PAD * 2 + EYES_W + 8 + MIC + 12));
+    const room = W - (PAD * 2 + EYES_W + 8 + MIC + 12);
+    if (status.style.maxWidth !== room + "px") status.style.maxWidth = room + "px";
+    const sw = Math.min(status.offsetWidth || 160, room);
     collapsedW = Math.round(clamp(PAD + EYES_W + 8 + sw + 12 + MIC + PAD, 170, W));
     if (!open) pw.set(collapsedW);
   }
 
   // ---------- open / close ----------
   let asked = false;
-  let open = false, hover = false, focusIn = false, forced = null, pending = 0, suppress = false, closeT = 0;
+  let open = false, hover = false, focusIn = false, forced = null, pending = 0, suppress = false, closeT = 0, dismissed = false;
   const typing = () => document.activeElement === input || input.value.trim() !== "";
+  // Dismissed (the x, Escape, a click outside): only the pointer coming back or a click reopens it; running work and
+  // waiting cards carry on in the background (the pill shows "1 waiting").
   function want() {
     if (forced === true) return true;
     if (forced === false) return false;
+    if (dismissed) return hover;
     return hover || focusIn || pending > 0 || typing();
+  }
+  function dismiss() {
+    forced = null; hover = false; focusIn = false; dismissed = true; suppress = inside;
+    clearTimeout(closeT);
+    if (root.contains(document.activeElement)) document.activeElement.blur();
+    update();
   }
   function update() {
     const w = want();
@@ -133,16 +175,23 @@ export function createDock(hostEl, opts = {}) {
     form.inert = !open;
     // one spring both ways, so closing feels exactly as quick as opening
     o.config(OPEN_SPRING).set(open ? 1 : 0);
+    if (!open) sizeCollapsed();
     pw.set(open ? W : collapsedW);
     if (open) { dropBubble(0); stick(true); }
     else wobblePill(0.6);
+    paintBadge();
+  }
+  function paintBadge() {
+    const show = pending > 0 && !open;
+    badge.hidden = !show;
+    if (show) badge.textContent = `${pending} waiting`;
   }
   let inside = false;
   root.addEventListener("pointerover", () => {
     inside = true;
     if (suppress) return;
     clearTimeout(closeT);
-    if (!hover) { hover = true; update(); }
+    if (!hover) { hover = true; dismissed = false; update(); }
   });
   root.addEventListener("pointerout", (e) => {
     if (e.relatedTarget && root.contains(e.relatedTarget)) return;
@@ -151,32 +200,40 @@ export function createDock(hostEl, opts = {}) {
     // a short grace only absorbs pointer jitter across the edge (or the gap between panel and pill)
     closeT = setTimeout(() => { hover = false; update(); }, LEAVE_GRACE);
   });
-  root.addEventListener("focusin", () => { focusIn = true; if (forced === false) forced = null; update(); });
+  root.addEventListener("focusin", (e) => { focusIn = true; if (e.target === input) dismissed = false; if (forced === false) forced = null; update(); });
   root.addEventListener("focusout", (e) => {
     if (e.relatedTarget && root.contains(e.relatedTarget)) return;
     setTimeout(() => { if (!root.contains(document.activeElement)) { focusIn = false; update(); } }, 0);
   });
   input.addEventListener("input", update);
-  root.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape" || !open || pending > 0) return;
+  // Escape puts the dock away from anywhere, unless something else outside it has focus (a menu, a dialog)
+  const onEsc = (e) => {
+    if (e.key !== "Escape" || !open || e.defaultPrevented) return;
+    const a = document.activeElement;
+    if (a && a !== document.body && !root.contains(a)) return;
     e.preventDefault();
-    forced = null; hover = false; focusIn = false; suppress = inside; input.value = "";
-    if (root.contains(document.activeElement)) document.activeElement.blur();
-    update();
-  });
+    dismiss();
+  };
+  document.addEventListener("keydown", onEsc);
+  closeBtn.addEventListener("click", (e) => { e.stopPropagation(); dismiss(); });
+  // a click anywhere outside the dock (the board, say) puts it away
+  const outside = (e) => { if (open && !root.contains(e.target)) dismiss(); };
+  document.addEventListener("pointerdown", outside, true);
   // touch: a tap on the pill opens / closes it
   pill.addEventListener("pointerdown", (e) => {
     if (e.pointerType !== "touch" || e.target.closest(".ag-mic, .ag-compose")) return;
-    forced = open ? null : true; hover = false; update();
+    if (open) { dismiss(); return; }
+    forced = true; hover = false; dismissed = false; update();
   });
-  bubbles.addEventListener("click", () => { forced = null; hover = true; update(); });
+  pill.addEventListener("click", (e) => { if (!open && !e.target.closest(".ag-mic")) { dismissed = false; suppress = false; hover = true; update(); } });
+  bubbles.addEventListener("click", () => { forced = null; hover = true; dismissed = false; update(); });
 
   function wobblePill(s = 1) { pk.impulse({ x: 0.9 * s, y: -1.4 * s }); }
 
   // ---------- size tracking ----------
   const ro = new ResizeObserver(() => {
     hs.set(inner.offsetHeight || 140);
-    if (!open) sizeCollapsed();
+    sizeCollapsed();
   });
   ro.observe(inner); ro.observe(status);
   // The timeline follows new items only while the reader is at the bottom (within 40 px). Scrolled up, they stay put
@@ -238,7 +295,7 @@ export function createDock(hostEl, opts = {}) {
   }
 
   // ---------- state ----------
-  let base = "idle", overlay = null, overlayT = 0, statusBase = "", statusTemp = "";
+  let base = "idle", overlay = null, overlayT = 0, statusBase = "", statusTemp = "", actWords = "";
   function paintState() {
     const s = overlay || base;
     eyes.setState(s);
@@ -250,9 +307,10 @@ export function createDock(hostEl, opts = {}) {
     if (s && ms) overlayT = setTimeout(() => { overlay = null; paintState(); }, ms);
   }
   function paintStatus() {
-    const t = statusTemp || statusBase || DEFAULT_STATUS;
+    const t = statusTemp || actWords || statusBase || DEFAULT_STATUS;
     if (statusText.textContent === t) return;
     statusText.textContent = t;
+    statusText.title = t;
     statusText.classList.remove("ag-in"); void statusText.offsetWidth; statusText.classList.add("ag-in");
   }
   // The headline is the current activity ("Looking at J1"); the step itself is the live row at the bottom of the
@@ -268,11 +326,23 @@ export function createDock(hostEl, opts = {}) {
   function pickLive() {
     let r = null;
     if (turn) for (const tl of turn.tls) for (const x of tl.rows.values()) if (x.data.status === "running" && !x.dupOf && x.el.isConnected) r = x;
-    if (r === liveR) return;
-    if (liveR) liveR.live(false);
-    liveR = r;
-    if (r) r.live(true);
-    paintLine();
+    if (r !== liveR) {
+      if (liveR) liveR.live(false);
+      liveR = r;
+      if (r) r.live(true);
+      paintLine();
+    }
+    paintActivity();
+  }
+  // ---------- the mascot acts out what Etch is doing ----------
+  function paintActivity() {
+    let a = null, words = "";
+    if (liveR) [a, words] = activityOf(liveR.data);
+    else if (loading && /wait|line|queue/i.test(loaderLabel)) [a, words] = ["wait", "Waiting in line"];
+    else if (base === "thinking") [a, words] = ["think", "Thinking"];
+    else if (base === "working") [a, words] = ["think", "Working"];
+    eyes.setActivity(a);
+    if (words !== actWords) { actWords = words; paintStatus(); }
   }
 
   // ---------- eyes follow parts ----------
@@ -426,11 +496,15 @@ export function createDock(hostEl, opts = {}) {
       base = s;
       // the agent settling down folds the finished timeline into its one-line summary
       if (/^(idle|success|confused|error|offline)$/.test(s)) setTimeout(() => { if (base === s) fold(turn); }, 300);
+      if (s === "success") { eyes.emote("delight"); wobblePill(1); }
+      paintActivity();
       // the agent moving on clears the dock's own short-lived voice looks
       if (overlay === "heard" && s !== "idle") setOverlay(null);
       paintState();
     },
     setStatus(text) { statusBase = plain(text); paintStatus(); paintLine(); },
+    // one-shot reactions for the editor: "surprise" | "delight" | "wince" | "hop" | "nod" | "shake" | "pleased"
+    emote(kind) { eyes.emote(kind); if (kind === "hop" || kind === "delight") wobblePill(0.8); },
     setLevel(v) { eyes.setLevel(v); },
 
     step(d) {
@@ -450,7 +524,12 @@ export function createDock(hostEl, opts = {}) {
       const st = s.data.status;
       if (st === "running") showBubble(s.data.title, { id: d.id, kind });
       else if (bub && bub.id === d.id) { showBubble(s.data.title, { id: d.id, kind, done: st === "done" }); dropBubble(st === "failed" ? 1400 : 650); }
-      if (st === "failed" && was !== "failed") eyes.react("shake");
+      if (st === "failed" && was !== "failed") {
+        // a failed check: a wince, then a determined look
+        eyes.emote("wince");
+        setTimeout(() => { if (base === "working") eyes.emote("nod"); }, 900);
+      } else if (st === "done" && was !== "done" && /\bpassed\b/i.test(s.data.title || "")) eyes.react("nod");
+      else if (st === "done" && was === "running" && s.data.kind === "task") eyes.react("nod");
       // a finished step keeps its check for a beat before the loader moves on
       if (was === "running" && st !== "running") setTimeout(pickLive, 250); else pickLive();
       retarget(); stick();
@@ -503,6 +582,7 @@ export function createDock(hostEl, opts = {}) {
       x.a.end(t.hadTl ? { ...info, seconds: null, thoughts: null } : info);
       for (const tl of t.tls) if (!tl.finished && !tl.running) tl.done(info.seconds);
       const first = speakable(x.a.text, 1);
+      eyes.emote("pleased");
       if (!open && first) { showBubble(first.length > 110 ? first.slice(0, 108) + "…" : first, { kind: "answer", id: "answer:" + id, done: true }); dropBubble(4200); }
       setTimeout(() => { if (answerRef && answers.get(id)) { answerRef = null; retarget(); } }, 2600);
       stick();
@@ -514,9 +594,9 @@ export function createDock(hostEl, opts = {}) {
       const c = approvalCard({ question, options, multi });
       place(cur(), c.el);
       cards.set(key, c);
-      pending++; if (forced === false) forced = null; update();
+      pending++; if (forced === false) forced = null; update(); paintBadge();
       eyes.react("surprise");
-      c.promise.finally(() => { if (cards.get(key) === c) cards.delete(key); pending = Math.max(0, pending - 1); update(); });
+      c.promise.finally(() => { if (cards.get(key) === c) cards.delete(key); pending = Math.max(0, pending - 1); update(); paintBadge(); });
       return c.promise;
     },
     recommend({ id, title, detail, confidence, actions } = {}) {
@@ -525,9 +605,9 @@ export function createDock(hostEl, opts = {}) {
       const c = recommendCard({ title, detail, confidence, actions });
       place(cur(), c.el);
       cards.set(key, c);
-      pending++; if (forced === false) forced = null; update();
+      pending++; if (forced === false) forced = null; update(); paintBadge();
       eyes.react("blink");
-      c.promise.finally(() => { if (cards.get(key) === c) cards.delete(key); pending = Math.max(0, pending - 1); update(); });
+      c.promise.finally(() => { if (cards.get(key) === c) cards.delete(key); pending = Math.max(0, pending - 1); update(); paintBadge(); });
       return c.promise;
     },
 
@@ -562,7 +642,7 @@ export function createDock(hostEl, opts = {}) {
       turn = null;
     },
     expand(v) {
-      if (v) { forced = true; suppress = false; }
+      if (v) { forced = true; suppress = false; dismissed = false; }
       else { forced = null; hover = false; suppress = inside; if (root.contains(document.activeElement)) document.activeElement.blur(); focusIn = false; }
       update();
     },
@@ -573,6 +653,7 @@ export function createDock(hostEl, opts = {}) {
       for (const c of cards.values()) c.cancel();
       voice.stop(); offRM(); ro.disconnect();
       document.removeEventListener("keydown", kd); document.removeEventListener("keyup", ku);
+      document.removeEventListener("pointerdown", outside, true); document.removeEventListener("keydown", onEsc);
       removeEventListener("resize", onResize);
       eyes.destroy(); root.remove();
     },

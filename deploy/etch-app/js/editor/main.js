@@ -27,6 +27,9 @@ const api = { ...etch, authed: etch.backend || etch.authed, get status() { retur
 const ID = Q.get("id") || "";
 const NEW = !ID && Q.get("new") === "1";
 const MOBILE = matchMedia("(max-width: 768px)");
+const APP_ROOT = new URL("../../", import.meta.url).href;
+// on phones a running build stays in the dock's pill (its step bubbles), so the workplane stays in view
+const expandDock = () => { if (!MOBILE.matches) dock?.expand(true); };
 const board = { id: ID, kind: NEW ? "new" : isLive(ID) ? "live" : "gh", live: isLive(ID), meta: {}, parts: {}, files: null };
 // ?new=1&mock=1: the scripted design build ends on this library board, so the whole flow can be shown without the engine
 const DEMO = "gh:OLIMEX/ESP32-POE/HARDWARE/ESP32-PoE-hardware-revision-M2";
@@ -309,7 +312,8 @@ viewer.on("hover", (ref) => {
 let apiBase = "";
 const ghostDrop = createDrop({
   stage: $("stage"), ghost: $("ghost"), viewer, snap,
-  imgUrl: (p) => (p.img && apiBase ? `${apiBase}/etch/piece/${p.img}.png` : ""),
+  // the part's static render (parts-catalog.json `thumb`, under the app root); the ghost shows a grey skeleton without one
+  imgUrl: (p) => (p.thumb ? new URL(p.thumb, APP_ROOT).href : ""),
   onDrop(part, l) {
     if (blockedDrop()) return;
     emote("delight");
@@ -451,7 +455,7 @@ function startDesign(text) {
   if (hero?.open) hero.collapse();
   document.body.classList.remove("nb-on");
   viewer.lookFrom([0, 1, 0.18], { fitBox: true }); // the camera eases in onto the workplane, still from above
-  dock.expand(true);
+  expandDock();
   dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: text, status: "done" });
   $("crTitle").textContent = "New board";
   bridge.design(text).then((r) => { if (!r || !r.ok) board.building = false; }).catch(() => { board.building = false; });
@@ -507,7 +511,7 @@ async function askChange() {
 async function remix(b) {
   document.body.classList.remove("nb-on");
   Object.assign(board, { id: b.id, kind: "gh", live: false, local: false, building: false, meta: {}, parts: {} });
-  dock.expand(true);
+  expandDock();
   const steps = bridge.onLoad([
     { id: "board", title: `Opening ${b.title || "the board"}` },
     { id: "parts", title: "Reading parts.json" },

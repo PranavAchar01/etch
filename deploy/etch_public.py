@@ -18,7 +18,8 @@ studio/flux_server.py it does NOT serve the pcb-loop folder: only the endpoints 
   POST /etch/ask    {board, ref?, question, thread?}  ask about a board or part -> {answer, mentions, thoughts}
   GET  /etch/comments?board=ID           comment threads pinned to parts (deploy/explore.py, EXPLORE_API.md)
   POST /etch/comments {board, ref, anchor, text}, /etch/comments/reply {id, text}, /etch/comments/delete {id}
-  POST /etch/change {board, ref?, text}  change a board: live-* -> modify run; gh: -> copied into a live-* run
+  POST /etch/change {board, ref?, text}  change a board: live-* -> modify run; gh: -> copied into a live-* run, or
+                                         edited in place (agent/import_edit.py) when Etch cannot rebuild it
 
 The API is open (no access code since 2026-10-17). Per-IP rate limits and a global daily cap protect the API keys the engine spends.
 """
@@ -1243,10 +1244,21 @@ class H(BaseHTTPRequestHandler):
             raise explore.ExploreError("Tell me what to change.")
         if ref:
             text = f"{ref}: {text}"[:MAX_TEXT]
+        inplace = ["uv", "run", "--quiet", "--project", "engine", "--with", "openai", "python", "-m",
+                   "agent.import_edit", text, "--events"]
         if board.kind == "live":
             base = board.run_dir
+            if explore.edited_in_place(base):  # an imported board Etch edited in place: edit that copy again
+                return self.start_build(ip, inplace + ["--base", str(base)], "modify", text)
         else:
-            design = explore.import_design(board)  # 403 / 409 / 422 with the reason
+            try:
+                design = explore.import_design(board)  # 403 when the licence does not allow copying
+            except explore.ExploreError as e:
+                if e.status not in (409, 422):
+                    raise
+                # parts outside Etch's library, or sources not on this machine: change the author's own KiCad
+                # project in place (agent/import_edit.py fetches the sources first when they are missing)
+                return self.start_build(ip, inplace + ["--board", board.id], "modify", text)
             if (busy := self.start_build(ip, [], "modify", text, room=True)) is not None:
                 return busy
             base = explore.seed_run(board, design)
