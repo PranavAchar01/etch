@@ -71,12 +71,28 @@ class Router:
         self.power_nets = set(rules.get("power_nets", []))
         self.power_track = float(rules.get("power_track", self.track))
         self._dil = 0
+        # high-voltage nets (rules.hv_nets, IPC-2221 spacing in rules.hv_clearance). Clearance is pairwise, so
+        # three ownership grids: "own" (HV copper claims hv_clr, the rest clr) is what other nets search, "own_hv"
+        # (everything claims hv_clr) is what an HV net searches, and "own_lo" (everything at clr) is used inside
+        # the pin zone of a part that has an HV pin next to other pins (pin_zones): there the part's pitch, not
+        # the board, sets the gap, and the tracks leaving those pins cannot do better
+        self.hv_clr = max(self.clr, float(rules.get("hv_clearance", self.clr)))
+        self.hv_names = set(rules.get("hv_nets", [])) if self.hv_clr > self.clr else set()
         self.margin = self.g * 0.75
         self.pads = pads  # dicts: ref, num, net, x, y, rect, layers
         self.nets = sorted({p["net"] for p in pads if p["net"]})
         self.net_id = {n: i for i, n in enumerate(self.nets)}
+        self.hv_ids = {self.net_id[n] for n in self.hv_names if n in self.net_id}
         size = self.nx * self.ny
         self.own = [[FREE] * size for _ in LAYERS]
+        self.own_hv = [[FREE] * size for _ in LAYERS] if self.hv_ids else None
+        self.own_lo = [[FREE] * size for _ in LAYERS] if self.hv_ids else None
+        self.pin_zone = set()
+        for box in pin_zones(pads, self.hv_names).values():
+            for ix, iy in self._cells_near(*box, 0):
+                x, y = self.cell_xy(ix, iy)
+                if box[0] <= x <= box[2] and box[1] <= y <= box[3]:
+                    self.pin_zone.add(self.idx(ix, iy))
         self.padown = [[FREE] * size for _ in LAYERS]
         self.tracks = []  # dicts: net, layer, width, pts
         self.vias = []  # dicts: net, x, y, d, drill
@@ -108,12 +124,30 @@ class Router:
             for ix in range(ix0, ix1 + 1):
                 yield ix, iy
 
-    def _claim(self, layer, i, net):
-        cur = self.own[layer][i]
+    def _clr(self, net, other=None):
+        return self.hv_clr if net in self.hv_ids or other in self.hv_ids else self.clr
+
+    def _grids(self):
+        return [g for g in (self.own, self.own_hv, self.own_lo) if g is not None]
+
+    def _claim(self, layer, i, net, grid=None):
+        g = self.own if grid is None else grid
+        cur = g[layer][i]
         if cur == FREE:
-            self.own[layer][i] = net
+            g[layer][i] = net
         elif cur != net:
-            self.own[layer][i] = BLOCKED
+            g[layer][i] = BLOCKED
+
+    def _claim_at(self, layers, i, net, d, extra):
+        """Claim cell i (copper edge d mm away) for net in every grid whose clearance reaches it."""
+        for L in layers:
+            if d < self._clr(net) + extra:
+                self._claim(L, i, net)
+            if self.own_hv is not None:
+                if d < self.hv_clr + extra:
+                    self._claim(L, i, net, self.own_hv)
+                if d < self.clr + extra:
+                    self._claim(L, i, net, self.own_lo)
 
     def _block_edges(self):
         reach = self.edge + self.track / 2 + self.margin
@@ -121,8 +155,9 @@ class Router:
             for ix in range(self.nx):
                 x, y = self.cell_xy(ix, iy)
                 if x < reach or y < reach or x > self.w - reach or y > self.h - reach:
-                    for L in range(2):
-                        self.own[L][self.idx(ix, iy)] = BLOCKED
+                    for g in self._grids():
+                        for L in range(2):
+                            g[L][self.idx(ix, iy)] = BLOCKED
 
     def _add_keepout(self, k):
         """A footprint rule area (e.g. a module's antenna): no tracks and/or vias inside it on its layers."""
@@ -141,15 +176,17 @@ class Router:
                 continue
             i = self.idx(ix, iy)
             if k.get("tracks", True):
-                for L in layers:
-                    self.own[L][i] = BLOCKED
+                for g in self._grids():
+                    for L in layers:
+                        g[L][i] = BLOCKED
             if k.get("vias", True):
                 self.no_via.add(i)
 
     def _add_pad(self, p):
         net = self.net_id.get(p["net"], BLOCKED)
         r = p["rect"]
-        reach = self.clr + self.track / 2 + self.margin
+        extra = self.track / 2 + self.margin
+        reach = max(self._clr(net), self.hv_clr if self.hv_ids else 0) + extra
         inner = self.track / 2
         layers = [LAYERS.index(L) for L in p["layers"] if L in LAYERS]
         self.items.append((net, set(layers), "rect", r))
@@ -157,9 +194,8 @@ class Router:
             x, y = self.cell_xy(ix, iy)
             d = _rect_dist(x, y, r)
             i = self.idx(ix, iy)
+            self._claim_at(layers, i, net, d, extra)
             for L in layers:
-                if d < reach:
-                    self._claim(L, i, net)
                 inside = (r[0] + inner <= x <= r[2] - inner) and (r[1] + inner <= y <= r[3] - inner)
                 if inside and net >= 0:
                     self.padown[L][i] = net
@@ -169,21 +205,20 @@ class Router:
                 self.padown[L][self.idx(cx, cy)] = net
 
     def _mark_segment(self, net, L, x1, y1, x2, y2, half):
-        reach = self.clr + self.track / 2 + half + self.margin
+        extra = self.track / 2 + half + self.margin
+        reach = max(self._clr(net), self.hv_clr if self.hv_ids else 0) + extra
         self.items.append((net, {L}, "seg", (x1, y1, x2, y2, half)))
         for ix, iy in self._cells_near(min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2), reach):
             x, y = self.cell_xy(ix, iy)
-            if _seg_dist(x, y, x1, y1, x2, y2) < reach:
-                self._claim(L, self.idx(ix, iy), net)
+            self._claim_at((L,), self.idx(ix, iy), net, _seg_dist(x, y, x1, y1, x2, y2), extra)
 
     def _mark_via(self, net, x, y, d):
-        reach = self.clr + self.track / 2 + d / 2 + self.margin
+        extra = self.track / 2 + self.margin
+        reach = max(self._clr(net), self.hv_clr if self.hv_ids else 0) + extra + d / 2
         self.items.append((net, {0, 1}, "via", (x, y, d / 2)))
         for ix, iy in self._cells_near(x, y, x, y, reach):
             cx, cy = self.cell_xy(ix, iy)
-            if math.hypot(cx - x, cy - y) < reach:
-                for L in range(2):
-                    self._claim(L, self.idx(ix, iy), net)
+            self._claim_at((0, 1), self.idx(ix, iy), net, math.hypot(cx - x, cy - y) - d / 2, extra)
         self._via_cache.clear()
 
     def passable(self, net, L, i):
@@ -219,17 +254,17 @@ class Router:
             for n, _layers, kind, geom in self.items:
                 if kind == "rect":
                     # no via in or next to any pad, own net included (keeps pads solderable)
-                    if _rect_dist(x, y, geom) < self.clr + rv:
+                    if _rect_dist(x, y, geom) < self._clr(n, net) + rv:
                         ok = False
                         break
                 elif kind == "seg":
-                    if n != net and _seg_dist(x, y, *geom[:4]) < self.clr + rv + geom[4]:
+                    if n != net and _seg_dist(x, y, *geom[:4]) < self._clr(n, net) + rv + geom[4]:
                         ok = False
                         break
                 else:
                     gap = math.hypot(x - geom[0], y - geom[1])
                     # hole to hole spacing applies to every via, same net or not
-                    if gap < rv + geom[2] + (self.clr if n != net else 0.3):
+                    if gap < rv + geom[2] + (self._clr(n, net) if n != net else 0.3):
                         ok = False
                         break
         self._via_cache[key] = ok
@@ -336,7 +371,12 @@ class Router:
         nx, ny, r = self.nx, self.ny, self._dil
         out = []
         for L in range(2):
-            m = [o == FREE or o == net or p == net for o, p in zip(self.own[L], self.padown[L])]
+            grid = self.own_hv if net in self.hv_ids else self.own
+            m = [o == FREE or o == net or p == net for o, p in zip(grid[L], self.padown[L])]
+            if self.pin_zone:
+                lo, pd = self.own_lo[L], self.padown[L]
+                for i in self.pin_zone:
+                    m[i] = lo[i] == FREE or lo[i] == net or pd[i] == net
             if r:
                 # square erosion, separable: a cell stays open only if every in-bounds cell within r is open
                 h = [False] * len(m)
@@ -516,6 +556,26 @@ class Router:
             }
             groups = [merged] + [g for k, g in enumerate(groups) if k not in (0, end_gi)]
         return out_t, out_v, []
+
+
+def pin_zones(pads, hv_names, pad_margin=0.25):
+    """{ref: (x0, y0, x1, y1)}: the pad area (plus pad_margin, inside the courtyard) of every part that has an HV
+    pin and a pin of any other net, e.g. the MC34063's SOIC-8 with its 170 V switch pin 1.27 mm from pin 2. The
+    router relaxes the HV gap there and layout.py writes the matching DRC exception for that courtyard."""
+    by_ref = {}
+    for p in pads:
+        by_ref.setdefault(p["ref"], []).append(p)
+    out = {}
+    for ref, ps in by_ref.items():
+        nets = {p["net"] for p in ps if p["net"]}
+        if nets & set(hv_names) and len(nets) > 1:  # two HV nets (an anode resistor) need the gap too
+            out[ref] = (
+                min(p["rect"][0] for p in ps) - pad_margin,
+                min(p["rect"][1] for p in ps) - pad_margin,
+                max(p["rect"][2] for p in ps) + pad_margin,
+                max(p["rect"][3] for p in ps) + pad_margin,
+            )
+    return out
 
 
 def _erode_line(line, r):

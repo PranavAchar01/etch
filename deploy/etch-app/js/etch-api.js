@@ -80,6 +80,13 @@ export async function deleteComment(p) {
 function keepToken(j) {
   try { const t = JSON.parse(localStorage.getItem("etch-tokens") || "{}"); t[j.job] = j.token; localStorage.setItem("etch-tokens", JSON.stringify(t)); } catch (e) { /* not remembered */ }
 }
+// POST /etch/cancel {job, token}: stop a build this browser started (the token was kept by keepToken)
+export async function cancel(job) {
+  let token = "";
+  try { token = JSON.parse(localStorage.getItem("etch-tokens") || "{}")[job] || ""; } catch (e) { /* no token kept */ }
+  const r = await backend("/etch/cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ job, token }) });
+  return parse(r);
+}
 // POST /etch/change: any board. For gh: boards Etch copies the board into a new live-* run and changes that; its
 // 403/409/422/429 errors are written for people and shown as is. Followed with /etch/job.
 export async function change(p) {

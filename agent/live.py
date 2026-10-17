@@ -36,14 +36,17 @@ from typing import Any
 
 import yaml
 from etchlib.kicad import cli
-from etchlib.parts import load_index, read_index
+from etchlib.slots import heavy_slot, update_json
+from etchlib.parts import load_index, read_index, register
 
 from . import (
     analog,
+    blocks,
     board_store,
     config,
     firmware,
     kicad_catalog,
+    kicad_library,
     llm,
     piece_render,
     prefilter,
@@ -54,9 +57,28 @@ from . import (
 from . import engine_api as eng
 from .events import Stream
 
-PICKER_MODEL = config.MODEL  # ETCH_MODEL; one attempt per provider, OpenAI fallback in llm.chat
+PICKER_MODEL = (
+    config.MODEL
+)  # ETCH_MODEL; one attempt per provider, OpenAI fallback in llm.chat
 PICKER_EFFORT = "minimal"
 PICKER_TIMEOUT = 40
+# output caps (prod "9 pad macro pad", 10-17: an unfit KEPT list sent Nemotron Super on a long answer and both
+# keys timed out): a design JSON is ~1-2.5k tokens; a capped answer ends instead of running into the timeout
+PICKER_MAX_TOKENS = 3000
+RETRY_MAX_TOKENS = 2000
+RETRY_TIMEOUT = 25
+SLOW_SAY = "The design model took too long on this one. Try again, it usually answers on the second go."
+MISSING_SAY = (
+    "Looks like we don't have all of the components for this board yet. Explore the library to see what we have, "
+    "or try again in a few minutes."
+)
+
+
+class PickTimeout(RuntimeError):
+    """The picker could not answer on the main model nor on the quick retry: most often the KEPT list does not fit
+    the ask (parts missing from the library), so the run ends with the missing-parts message."""
+
+
 BATCH = 24
 MAX_ITERS = 3  # picker path only; worst case stays under a minute
 
@@ -89,6 +111,32 @@ CLASSIFY_FN = {
 
 
 BASIC_STOCK = ("resistor", "capacitor", "electrolytic capacitor")
+
+
+def _cat() -> dict[str, dict[str, Any]]:
+    """Every piece any stage may use, by key: the full parts library (all KiCad libraries, the ingested extra
+    libraries and fetched cache parts, agent/kicad_library.py), with the curated catalog's entries on top. No stage
+    screens against a short library list."""
+    full = dict(kicad_library.load()["by_key"])
+    full.update({p["key"]: p for p in kicad_catalog.load()["pieces"]})
+    return full
+
+
+def _lib_piece(text: str) -> dict[str, Any] | None:
+    """A part named in words ("9 mechanical switches (through-hole)", "1N4148", "Conn_01x02") as one usable library
+    piece, or None (then sourcing runs; nothing is guessed)."""
+    t = re.sub(r"^\s*\d+\s*x?\s+", "", str(text or "")).strip()
+    t = re.sub(r"\(([^)]*)\)", r" \1", t).strip()
+    if not t:
+        return None
+    if (hit := kicad_library.resolve(t)) is not None:
+        return hit
+    # a description ("mechanical switches", "rotary encoder"): the first part of the function it names
+    low = t.lower()
+    for rx, qs in kicad_library.FUNCTIONS:
+        if re.search(rx, low):
+            return kicad_library.resolve(qs[0])
+    return None
 
 
 def classify(stream: Stream, ask: str, context: str = "") -> dict[str, Any]:
@@ -142,6 +190,23 @@ def classify(stream: Stream, ask: str, context: str = "") -> dict[str, Any]:
         detail=sel.detail,
     )
     kept = [p for p in cat["pieces"] if p["key"] in keep]
+    # the table rules rank, never restrict: the parts for every function the ask implies come from the whole
+    # library (all KiCad libraries, extra libraries, fetched cache parts), whatever the rules matched
+    lib = [
+        p
+        for p in kicad_library.shortlist(f"{ask}\n{context}".strip())
+        if p["key"] not in keep
+    ]
+    kept += lib
+    lst = kicad_library.load()["stats"]
+    stream.emit(
+        "classifier",
+        "library",
+        pieces=lst.get("pieces"),
+        symbols=lst.get("symbols_read"),
+        footprints=lst.get("footprints"),
+        added=[{"k": p["key"], "n": p["name"], "f": p["family"]} for p in lib],
+    )
     rejected = [
         {
             **p,
@@ -185,7 +250,11 @@ class PieceShow:
 
     def _one(self, p: dict[str, Any]) -> None:
         try:
-            png, secs, hit = piece_render.render(p["footprint"])
+            if piece_render._png(p["footprint"]).exists():  # cached: no kicad-cli, no slot
+                png, secs, hit = piece_render.render(p["footprint"])
+            else:
+                with heavy_slot():
+                    png, secs, hit = piece_render.render(p["footprint"])
         except (subprocess.SubprocessError, OSError) as e:
             self.stream.emit("pieces", "error", k=p["key"], error=str(e)[:200])
             return
@@ -373,6 +442,8 @@ PICK_RULES = """Rules (code checks every one):
   Each anode gets its OWN series resistor from its GPIO net (3.3 V drive): red 150, green 68, blue 33.
   Value "RGB". Wire all three colours to GPIO pins even if the ask uses two, so the board can show any colour.
 - Net names are UPPER_SNAKE (VCC, GND, Q1_B, BUZ_N). The SAME name on every pin of a net; every net touches 2+ pins.
+- A net above 50 V (a boost converter's output, a nixie anode) is named with an HV prefix (HV_OUT, HV_ANODE):
+  it gets high-voltage clearance on the board.
 - pins maps the piece's pin NUMBERS (as listed, "1", "2", ...) to net names. Use pin names from the list to wire correctly:
   BJT C/B/E, LED A (anode, toward +) and K, diode A and K, electrolytic pin 1 is +.
 - Every LED gets a series resistor. LED value is its colour: RED, GREEN, YELLOW, BLUE or WHITE.
@@ -385,14 +456,22 @@ PICK_RULES = """Rules (code checks every one):
 - group: function blocks left to right, e.g. power, sensor, driver, output. Group "power" holds only the power input.
 - Benchmarks: only these checks exist. Gate counts: drc_violations, erc_errors, unconnected, parity (always max 0;
   added for you). Simulation (ngspice, 6 s transient, every scenario): for EVERY LED and every load (buzzer, load
-  connector) <REF>.avg_ma, <REF>.peak_ma, <REF>.blink_hz, <REF>.duty; also supply_ma_avg. With scenarios, prefix
+  connector) <REF>.avg_ma, <REF>.peak_ma, <REF>.blink_hz, <REF>.duty. With scenarios, prefix
   the scenario name: dark.BZ1.avg_ma, light.BZ1.avg_ma, v3_0.D1.avg_ma. Give honest slack (+-50 % on rates).
   duty is a FRACTION 0..1 (use min 0.2, max 0.8), never a percent. Currents are mA, rates Hz.
   Benchmarks state what the ASK needs, with wide limits; never predict exact values. ON = avg_ma at least 2;
   OFF = avg_ma at most 0.5; blinking = blink_hz 0.5 to 4 and duty 0.2 to 0.8; safe LED = peak_ma at most 25.
   At most 6 benchmarks.
-- supply_ma_avg only as a loose sanity bound that counts every load: an LED 2-15 mA, a buzzer 10-30 mA, a fan or
-  motor 50-200 mA. A load that follows a blink is on about half the time, so its avg_ma is about half its on current.
+- A module or load connector wired straight across the supply (OLED, sensor board, display: its load pins on VCC/3V3
+  and GND, no transistor or GPIO switching it) is simulated as a FIXED resistance: it draws the same current in every
+  scenario. Never write per-scenario benchmarks that expect it to change (no "display idle when dry, busy when
+  wet"); at most one loose avg_ma band for it, or none.
+- In an idle scenario (or with no scenarios at all, which simulates as "idle") nothing plays or drives a speaker,
+  buzzer or motor: never give such a load, or the supply "including" it, a minimum current there; a max is fine.
+- To change a current, change a part's VALUE. Never add copies of a part in parallel (no R1b, R1c beside R1).
+- Never write supply_ma_avg or supply_ma_peak: code sets the supply band from the parts' datasheet currents.
+  Load currents: an LED 2-15 mA, a buzzer 10-30 mA, a fan or motor 50-200 mA. A load that follows a blink is on
+  about half the time, so its avg_ma is about half its on current.
 - Scenarios only when the ask is about light, battery voltage or a button. A plain blinker or fan has NO scenarios.
   Every scenario must set ldr, voltage or switch; a scenario with only a name changes nothing in the simulation.
   A sensor none of those drive (soil moisture, gas, ...) goes in missing; never stand it in with plain resistors.
@@ -434,6 +513,60 @@ def _piece_line(p: dict[str, Any]) -> str:
     return f"{p['key']} | {p['family']} | pins {pins} | sim: {p['spice_note']}"
 
 
+def _by_model(ans: dict[str, Any]) -> dict[str, Any]:
+    """Tags the picker's benchmark rows as model-written, so to_spec can drop the ones code writes itself."""
+    for b in ans.get("benchmarks") or []:
+        if isinstance(b, dict):
+            b["by"] = "model"
+    return ans
+
+
+def _pick_call(stream: Stream, model: str, msgs: list) -> dict[str, Any]:
+    """One picker answer: the main model with an output cap; on a timeout or model failure, one retry on the quick
+    sub-model with a tight cap; when that fails too, the missing-parts event and PickTimeout."""
+    try:
+        ans, _ = llm.call_json(
+            stream,
+            "picker",
+            model,
+            msgs,
+            PICK_FN,
+            effort=PICKER_EFFORT,
+            timeout=PICKER_TIMEOUT,
+            max_tokens=PICKER_MAX_TOKENS,
+        )
+        return _by_model(ans)
+    except (llm.ModelError, ValueError) as e:
+        first = str(e)[:200]
+    stream.emit(
+        "picker",
+        "retry",
+        model=config.SUB_MODEL,
+        reason=first,
+        max_tokens=RETRY_MAX_TOKENS,
+    )
+    try:
+        ans, _ = llm.call_json(
+            stream,
+            "picker",
+            config.SUB_MODEL,
+            msgs,
+            PICK_FN,
+            effort=PICKER_EFFORT,
+            timeout=RETRY_TIMEOUT,
+            max_tokens=RETRY_MAX_TOKENS,
+        )
+        return _by_model(ans)
+    except (llm.ModelError, ValueError) as e:
+        reason = f"{first} / retry: {str(e)[:200]}"
+        # a timeout or an unparsed answer is a model failure, not a missing part (live-1792272020427: the GPS
+        # tracker had every part kept and still told the user the library lacked them)
+        say = MISSING_SAY if "missing" in reason.lower() else SLOW_SAY
+        stream.emit("picker", "missing_parts", reason=reason, text=say)
+        stream.emit("lead", "say", text=say)
+        raise PickTimeout(say) from e
+
+
 def pick(
     stream: Stream,
     ask: str,
@@ -456,15 +589,7 @@ def pick(
             + "\n".join(_piece_line(p) for p in kept),
         },
     ]
-    ans, _ = llm.call_json(
-        stream,
-        "picker",
-        model,
-        msgs,
-        PICK_FN,
-        effort=PICKER_EFFORT,
-        timeout=PICKER_TIMEOUT,
-    )
+    ans = _pick_call(stream, model, msgs)
     msgs.append({"role": "assistant", "content": json.dumps(ans)})
     stream.emit(
         "picker",
@@ -504,8 +629,16 @@ def auto_layout(parts: list[dict[str, Any]], groups: list[str]) -> list[dict[str
     for g in order:
         ps = by_group[g]
         if g == "power":
+            # one part per row, as the prompt asks ("power holds only the power input"); a picker that puts a
+            # whole boost converter in power gets rows of three, not a 60 mm column (live-1792273685866: nine
+            # power parts made a 122 x 64 mm board and 107 s of routing)
+            per = 1 if len(ps) <= 3 else 3
             blocks.append(
-                {"name": "power", "valign": "center", "rows": [[p["ref"]] for p in ps]}
+                {
+                    "name": "power",
+                    "valign": "center",
+                    "rows": [[p["ref"] for p in ps[k : k + per]] for k in range(0, len(ps), per)],
+                }
             )
             continue
         tiers = [[], [], []]
@@ -538,7 +671,15 @@ def _rot(key: str, group: str) -> int:
     return 0
 
 
-def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
+def to_spec(
+    design: dict[str, Any], code: str, hv: tuple[float, list[str]] | None = None
+) -> dict[str, Any]:
+    """hv: (volts, nets) of a high-voltage board; those nets get IPC-2221B clearance in routing and DRC."""
+    idx = load_index()
+    if missing := {p["piece"] for p in design["parts"] if p["piece"] not in idx}:
+        # pieces from the full library (not the curated catalog): make them known to the engine's index
+        cat = _cat()
+        register([cat[k] for k in missing if k in cat])
     parts = []
     for p in design["parts"]:
         e = {
@@ -575,6 +716,12 @@ def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
     for b in design.get("benchmarks", []):
         if b["check"] in gate_names:
             continue
+        # code writes the supply-current row from the parts' datasheet currents (sim.supply_budget); a model's
+        # own supply band was guesswork and failed boards that were fine (live-1792274265002: Pico W, min 50)
+        if b.get("by") == "model" and re.search(
+            r"(?:^|\.)supply_ma_(?:avg|peak)$", b["check"]
+        ):
+            continue
         row = {
             k: b[k]
             for k in ("check", "min", "max", "text")
@@ -584,7 +731,11 @@ def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
         # unless its text names one scenario ("buzzer on when dry") or a scenario already has its own row for
         # that metric (sweep 10-17: "on when dry" was copied into wet next to "off when wet", which can never pass)
         if scen and not any(row["check"].startswith(n + ".") for n in scen):
-            named = [n for n in scen if re.search(rf"\b{re.escape(n)}\b", row.get("text", ""), re.I)]
+            named = [
+                n
+                for n in scen
+                if re.search(rf"\b{re.escape(n)}\b", row.get("text", ""), re.I)
+            ]
             own = {
                 n
                 for n in scen
@@ -626,14 +777,24 @@ def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
             "edge_clearance": 0.5,
             "power_nets": power_nets,
             "power_track": 0.6,
+            **(
+                {"hv_nets": hv[1], "hv_clearance": hv_clearance(hv[0]), "hv_volts": hv[0]}
+                if hv and hv[1]
+                else {}
+            ),
             # a recipe with fine-pitch parts (ESP32 boards: 0.5 mm USB-C pads) narrows track and clearance
-            **{k: float(v) for k, v in (design.get("rules") or {}).items() if k in ("track", "clearance")},
+            **{
+                k: float(v)
+                for k, v in (design.get("rules") or {}).items()
+                if k in ("track", "clearance")
+            },
         },
         "layout": {
             "margin": 2.5,
             "gap": 2.5,
             "hole": {"r": 3.5, "inset": 3.5},
-            "blocks": auto_layout(design["parts"], seen),
+            # a recipe may lay out its own blocks (a key matrix wants a grid, not rows of four by family)
+            "blocks": design.get("layout_blocks") or auto_layout(design["parts"], seen),
         },
         "finish": {
             "mask": "#08502AE6",
@@ -703,6 +864,9 @@ def assemble(
     tried: set[str] = set()  # made-up piece names already sent to sourcing once
     v: dict[str, Any] | None = None
     last_fail = None
+    stuck_prev: dict[
+        str, Any
+    ] = {}  # failing benchmark -> (value, design values) on the previous built try
     for it in range(1, max_iters + 1):
         ti = time.time()
         stream.emit("assembly", "iteration", iteration=it, phase="place-route-check")
@@ -721,26 +885,59 @@ def assemble(
                 == 1
             ):
                 part["piece"] = hits[0]
-        if unknown := [p for p in design.get("parts", []) if p.get("piece") not in keys]:
+        if unknown := [
+            p for p in design.get("parts", []) if p.get("piece") not in keys
+        ]:
             _resolve_unknown(stream, unknown, kept, keys, tried)
         _normalize_pins(design, kept)
+        if powered := _fix_power_pins(design, kept):  # before _auto_mcu: a lonely Vin is not a GPIO
+            stream.emit("assembly", "repair", iteration=it, kind="power pins", joined=powered)
+        if joined := _merge_lonely(
+            design, kept
+        ):  # before _auto_mcu: a split name is not a reason to add a Pico
+            stream.emit("assembly", "repair", iteration=it, kind="nets", joined=joined)
+        if leds := _fix_leds(design, kept):  # before _auto_mcu: a lone cathode is not a signal
+            keys.update(str(p["piece"]) for p in design.get("parts", []) if p.get("piece"))
+            stream.emit("lead", "say", text="LEDs: " + "; ".join(leds) + ".")
+        if radio := _radio_fix(design, kept, ask):
+            keys.update(
+                str(p["piece"]) for p in design.get("parts", []) if p.get("piece")
+            )
+            stream.emit("lead", "say", text="Radio: " + "; ".join(radio) + ".")
         if added := _auto_mcu(design, kept, ask):
             keys.add(added["piece"])
             stream.emit("lead", "say", text=added["say"])
         _wire_named_gpio(design, kept)
+        if firmware.mcu_part(design, kept):
+            _wire_hinted(design, kept)
         firmware.tie_grounds(design, kept)
         _wire_mcu_supply(design, kept)
+        if drives := _wire_drives(design, kept):
+            stream.emit("lead", "say", text="Wired " + "; ".join(drives) + ".")
         _drop_lonely_gpio(design, kept)
-        stand_ins = _led_stand_ins(design, kept, keys)  # before _fix_refs renames D1 on a capacitor to C1
+        if dropped := _drop_dangling_passives(design, kept):
+            stream.emit("lead", "say", text=f"Dropped {', '.join(dropped)}: one end went nowhere.")
+        _prune_commands(design)
+        stand_ins = _led_stand_ins(
+            design, kept, keys
+        )  # before _fix_refs renames D1 on a capacitor to C1
         _fix_refs(design)
-        firmware.default_commands(design, kept)  # GPIO-driven LEDs with no program: 1..N, a = all, o = off
+        if folded := _fold_parallel(design):
+            stream.emit(
+                "assembly", "repair", iteration=it, kind="parallel", joined=folded
+            )
+        firmware.default_commands(
+            design, kept
+        )  # GPIO-driven LEDs with no program: 1..N, a = all, o = off
         an_findings = _analog(stream, design, kept, keys, ask)
         bad = [
             p["piece"] for p in design.get("parts", []) if p.get("piece") not in keys
         ]
         err = None
         spec_path = out / "spec.yaml"
-        (out / f"design-try{it}.json").write_text(json.dumps(design, indent=1))  # what each try really was
+        (out / f"design-try{it}.json").write_text(
+            json.dumps(design, indent=1)
+        )  # what each try really was
         lonely = _lonely_nets(design)
         mism = _ref_mismatch(design)
         if bad:
@@ -755,7 +952,7 @@ def assemble(
             err = f"ref and piece do not match (a capacitor must use a capacitor piece, and so on): {mism}"
         elif lonely:
             where = [
-                f"{n} (only on {p.get('ref')} pin {k})"
+                f"{n} (only on {p.get('ref')} pin {k}{_lonely_hint(design, n)})"
                 for n in lonely
                 for p in design.get("parts", [])
                 for k, v in (p.get("pins") or {}).items()
@@ -765,6 +962,8 @@ def assemble(
                 "these nets touch only one pin, so they connect nothing. Give the pin at the OTHER end the SAME "
                 f"net name (for a sensor output, the MCU input pin it feeds): {where}"
             )
+        elif silent := _no_sound_source(design, kept, ask):
+            err = silent
         elif lint := _wiring_lint(design, kept):
             err = (
                 "wiring mistakes: "
@@ -799,7 +998,7 @@ def assemble(
                     ok=True,
                     value=f"{len(fw_rep['tests'])} key tests pass",
                 )
-            spec = to_spec(design, code)
+            spec = to_spec(design, code, _hv_nets(design, kept, ask))
             spec_path.write_text(yaml.safe_dump(spec, sort_keys=False, width=110))
             err = eng.validate(spec_path)
         stream.emit(
@@ -844,6 +1043,10 @@ def assemble(
                         iteration=it,
                         base=None,
                         note="kept layout failed a check: full build",
+                        failed=_failed_checks(
+                            v
+                        ),  # which check sank the kept layout (report rank 1)
+                        seconds=v.get("seconds"),
                     )
                     v = eng.run_build(spec_path, out)
             except Exception as e:
@@ -881,16 +1084,23 @@ def assemble(
                 stream.emit(
                     "assembly", "gate", iteration=it, gate=name, ok=ok, value=val
                 )
-            for b in v["benchmarks"]:
+            static = _static_benchmarks(design, v, out, kept)
+            stuck_prev, moved = _stuck_benchmarks(design, v, stuck_prev)
+            static += moved
+            if static:
                 stream.emit(
                     "assembly",
-                    "gate",
+                    "repair",
                     iteration=it,
-                    gate=b["text"],
-                    check=b["check"],
-                    ok=b["pass"],
-                    value=b["value"],
+                    kind="uncheckable",
+                    checks=static,
+                    note="these benchmarks measure a fixed load the simulation cannot change; not checked",
                 )
+            for b in v["benchmarks"]:
+                ev = {"check": b["check"], "ok": b["pass"], "value": b["value"]}
+                if b.get("status"):
+                    ev["status"] = b["status"]
+                stream.emit("assembly", "gate", iteration=it, gate=b["text"], **ev)
             lost = must(design, out) if (v["pass"] and must) else None
             if must and v["pass"]:
                 stream.emit(
@@ -945,15 +1155,10 @@ def assemble(
             break
         msgs.append({"role": "user", "content": fb})
         tr = time.time()
-        design, _ = llm.call_json(
-            stream,
-            "picker",
-            PICKER_MODEL,
-            msgs,
-            PICK_FN,
-            effort=PICKER_EFFORT,
-            timeout=PICKER_TIMEOUT,
-        )
+        try:
+            design = _pick_call(stream, PICKER_MODEL, msgs)
+        except PickTimeout:
+            break  # the last built try's verdict stands
         msgs.append({"role": "assistant", "content": json.dumps(design)})
         stream.emit(
             "picker",
@@ -975,12 +1180,280 @@ def assemble(
     }
 
 
+_RAIL_RX = re.compile(
+    r"(?:GND\w*|AGND|DGND|VSS|VCC\w*|VDD\w*|VBUS|VIN|VSYS|P?3V3|\+?3\.?3V|\+?5V\d*|V5|\+?12V)",
+    re.I,
+)
+
+
+def _static_benchmarks(
+    design: dict[str, Any], v: dict[str, Any], out: Path, kept: list[dict[str, Any]]
+) -> list[str]:
+    """Failing benchmarks the simulation can never satisfy, marked in v (pass None, status "uncheckable") with
+    v["pass"] recomputed. One case, kept narrow on purpose: a "load" part (fixed resistance in sim.py) whose load
+    pins both sit on supply or ground rails draws the same current in every scenario, so per-scenario benchmarks
+    on it that pass in one scenario and fail in another with the identical value contradict each other. A
+    switched load (transistor, GPIO) or one that fails everywhere (fixable through load_ohms) is left alone.
+    Field run live-1792266957411 burned 3 tries on "OLED little activity when dry" vs "OLED ~20 mA when wet"."""
+    rows = v.get("benchmarks") or []
+    if v.get("pass") or not any(b.get("pass") is False for b in rows):
+        return []
+    try:
+        sim = json.loads((out / "sim.json").read_text())
+    except (OSError, ValueError):
+        return []
+    scen = [s.get("name") for s in sim.get("scenarios") or [] if s.get("name")]
+    marked = _idle_benchmarks(design, rows, sim, scen)
+    if len(scen) < 2:
+        return _remark(v, rows, marked)
+    by_key = {p["key"]: p for p in kept}
+    set_refs = {
+        str(r) for s in design.get("scenarios") or [] for r in (s.get("set") or {})
+    }  # a scenario that re-values the part makes it scenario-dependent
+    static: set[str] = set()
+    for part in design.get("parts", []):
+        spice = (by_key.get(part.get("piece")) or {}).get("spice") or {}
+        if spice.get("role") != "load" or part["ref"] in set_refs:
+            continue
+        nets = [part.get("pins", {}).get(str(n)) for n in spice.get("pins", [])]
+        if nets and all(n and _RAIL_RX.fullmatch(n) for n in nets):
+            static.add(part["ref"])
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for b in rows:
+        m = re.fullmatch(
+            r"([A-Za-z0-9_]+)\.([A-Z]+\d+)\.(\w+)", str(b.get("check", ""))
+        )
+        if m and m.group(1) in scen and m.group(2) in static:
+            groups.setdefault(f"{m.group(2)}.{m.group(3)}", []).append(b)
+    for metric, bs in groups.items():
+        vals = [sim.get(f"{s}.{metric}") for s in scen]
+        if any(not isinstance(x, (int, float)) for x in vals):
+            continue
+        if max(vals) - min(vals) > 0.01 * max(1e-6, abs(max(vals))):
+            continue  # it does change between scenarios: a real measurement
+        if not any(b["pass"] is True for b in bs):
+            continue  # fails everywhere: the load value can fix it
+        for b in bs:
+            if b["pass"] is False:
+                b["pass"] = None
+                b["status"] = "uncheckable"
+                b["text"] += (
+                    " (not checkable in simulation: fixed load, same in every scenario)"
+                )
+                marked.append(b["check"])
+    return _remark(v, rows, marked)
+
+
+def _remark(
+    v: dict[str, Any], rows: list[dict[str, Any]], marked: list[str]
+) -> list[str]:
+    if marked:
+        v["failed"] = [
+            f"{b['text']} (got {b['value']})" for b in rows if b["pass"] is False
+        ]
+        v["uncheckable"] = marked
+        v["pass"] = (
+            not v["failed"] and not v.get("unrouted") and not v.get("models_missing")
+        )
+    return marked
+
+
+def _part_values(design: dict[str, Any]) -> tuple:
+    return tuple(
+        sorted(
+            (str(p.get("ref")), str(p.get("piece")), str(p.get("value")))
+            for p in design.get("parts", [])
+        )
+    )
+
+
+def _stuck_benchmarks(
+    design: dict[str, Any], v: dict[str, Any], prev: dict[str, Any]
+) -> tuple[dict[str, Any], list[str]]:
+    """Third uncheckable case (prod job QsB-ok6GZtu7rQqc, 10-17): a current benchmark that fails with the same
+    value on two built tries although the repair changed the parts or values in between is one the modelled loads
+    cannot move; repairing it again only loops. Marked not checkable (v recomputed); returns the failing values
+    to compare against on the next try, and the marked checks."""
+    rows = v.get("benchmarks") or []
+    vals = _part_values(design)
+    marked = []
+    for b in rows:
+        if b.get("pass") is not False or not isinstance(b.get("value"), (int, float)):
+            continue
+        if not re.search(
+            r"(?:^|\.)(supply_ma_avg|supply_ma_peak|avg_ma|peak_ma)$",
+            str(b.get("check", "")),
+        ):
+            continue
+        was = prev.get(b["check"])
+        if (
+            was
+            and was[1] != vals
+            and abs(was[0] - b["value"]) <= 0.01 * max(1e-6, abs(was[0]))
+        ):
+            b["pass"] = None
+            b["status"] = "uncheckable"
+            b["text"] += " (not checkable in simulation: no repair moves this reading)"
+            marked.append(b["check"])
+    now = {
+        b["check"]: (b["value"], vals)
+        for b in rows
+        if b.get("pass") is False and isinstance(b.get("value"), (int, float))
+    }
+    if marked:
+        _remark(v, rows, marked + list(v.get("uncheckable") or []))
+    return now, marked
+
+
+_SOUND_ASK = re.compile(
+    r"\b(synth\w*|musical instrument|instrument|drum machine|sampler|theremin|sequencer|groovebox|keytar|"
+    r"music (?:maker|box|board|machine)|make music|plays? (?:music|notes|tones|songs?|melod\w*)|tone generator|"
+    r"noise ?maker|sound ?(?:effects?|board|maker))\b",
+    re.I,
+)
+_SOUND_SOURCE = re.compile(
+    r"555|NE555|LM555|TLC555|ICM7555|oscillat|XTAL|crystal|VCO|codec|DAC|PCM51|MAX98357|VS10[0-9]3|LM386|PAM8|TDA\d|"
+    r"TPA\d|PT8211|ATTINY|ATMEGA|STM32|ESP32|RP2040|Pico|Arduino|74HC14|CD40\d\d|4093|40106|op.?amp|LM358|TL07|"
+    r"Buzzer",
+    re.I,
+)
+
+
+def _no_sound_source(
+    design: dict[str, Any], kept: list[dict[str, Any]], ask: str
+) -> str | None:
+    """Functional sanity gate (prod job QsB-ok6GZtu7rQqc, "a music synthesizer ... intro producer", 10-17): a synth
+    or instrument ask whose parts hold nothing that makes a signal (no MCU, oscillator, 555, codec/DAC or amp) is
+    a passive network that cannot make sound. It goes back to the picker instead of being built."""
+    if not _SOUND_ASK.search(ask) or firmware.mcu_part(design, kept):
+        return None
+    by_key = {p["key"]: p for p in kept}
+    for part in design.get("parts", []):
+        piece = str(part.get("piece", ""))
+        info = by_key.get(piece) or {}
+        text = " ".join(
+            str(x)
+            for x in (
+                piece,
+                part.get("value"),
+                info.get("family"),
+                info.get("description"),
+            )
+            if x
+        )
+        if _SOUND_SOURCE.search(text):
+            return None
+    return (
+        "the ask is for an instrument that makes sound, but no part generates a signal: there is no microcontroller, "
+        "oscillator (555), codec/DAC or amplifier, so the board is a passive network that stays silent. Add the "
+        f"Raspberry Pi Pico ({PICO_KEY}) to make the tones (PWM on a GPIO through a resistor and capacitor to the "
+        "audio jack or a buzzer), plus the controls the ask needs (buttons or keys on GPIO, knobs on ADC pins)"
+    )
+
+
+_IDLE = re.compile(r"idle|quiet|off|standby|rest|silent|sleep|default", re.I)
+
+
+def _idle_benchmarks(
+    design: dict[str, Any],
+    rows: list[dict[str, Any]],
+    sim: dict[str, Any],
+    scen: list[str],
+) -> list[str]:
+    """Second uncheckable case (prod job QbyBcUKTtsmLEaJr, "a music synthesizer similar to an asr10", 10-17): in an
+    idle scenario (named idle/quiet/off/..., or the simulator's own single "idle" when the design set none) nothing
+    drives the speaker, so its modelled load reads 0 mA, and a band with a minimum on that load, or on the supply
+    "including the speaker", asks the idle board to draw active current it never can. Marked only when every
+    modelled load reads ~0 in that scenario and the failing row wants MORE than it got; an over-limit reading or
+    a load that does draw current stays a real failure."""
+    loads = [str(r) for r in (sim.get("loads") or {})]
+    leds = (
+        [str(r) for r in (sim.get("leds") or {})]
+        if isinstance(sim.get("leds"), dict)
+        else []
+    )
+    if not loads:
+        return []
+    # verdict rows carry no band: the minimum comes from the design's own benchmark (prefixed by scenario or not)
+    bands: dict[str, Any] = {}
+    for d in design.get("benchmarks") or []:
+        if isinstance(d, dict):
+            c = str(d.get("check", ""))
+            bands[c] = d.get("min")
+            bands.setdefault(
+                re.sub(r"^[A-Za-z0-9_]+\.(?=supply_|[A-Z]+\d+\.)", "", c), d.get("min")
+            )
+    marked = []
+    for b in rows:
+        if b.get("pass") is not False:
+            continue
+        m = re.fullmatch(
+            r"(?:([A-Za-z0-9_]+)\.)?(supply_ma_avg|supply_ma_peak|([A-Z]+\d+)\.(avg_ma|peak_ma))",
+            str(b.get("check", "")),
+        )
+        if not m:
+            continue
+        sc = m.group(1) or (scen[0] if len(scen) == 1 else None)
+        if (
+            not sc
+            or sc not in scen
+            or not (_IDLE.search(sc) or not design.get("scenarios"))
+        ):
+            continue
+        if m.group(3) and m.group(3) not in loads:
+            continue
+        if any(
+            abs(float(sim.get(f"{sc}.{r}.avg_ma") or 0)) > 0.05 for r in loads + leds
+        ):
+            continue  # a load does draw current here: a real measurement
+        val = b.get("value")
+        lo = b.get("min", bands.get(f"{sc}.{m.group(2)}", bands.get(m.group(2))))
+        if not isinstance(val, (int, float)) or lo is None or val >= float(lo):
+            continue  # not a "wants more than the idle board draws" failure
+        b["pass"] = None
+        b["status"] = "uncheckable"
+        b["text"] += (
+            " (not checkable in simulation: nothing drives the load while idle)"
+        )
+        marked.append(b["check"])
+    return marked
+
+
+def _failed_checks(v: dict[str, Any]) -> list[str]:
+    """The checks a build verdict failed, by name ("crashed" when the kept layout could not even build)."""
+    if "erc_errors" not in v:
+        return ["crashed"]
+    out = [
+        name
+        for name, bad in (
+            ("ERC", v.get("erc_errors")),
+            ("DRC", v.get("drc_violations")),
+            ("unconnected", v.get("unconnected")),
+            ("parity", v.get("parity")),
+            ("routed", v.get("unrouted")),
+            ("3D models", v.get("models_missing")),
+            ("ngspice", not v.get("sim_ok")),
+        )
+        if bad
+    ]
+    out += [
+        f"benchmark {b.get('check')}"
+        for b in v.get("benchmarks", [])
+        if b.get("pass") is False
+    ]
+    return out
+
+
 def _normalize_pins(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
     """Pins given by NAME ("C", "Pin_1", "K") become the piece's pin NUMBER when the name is unique on it."""
     by_key = {p["key"]: p for p in kept}
     for part in design.get("parts", []):
+        if not isinstance(part.get("pins"), dict):
+            # a part the model wrote with no pin map (nzcIIiKo49iFA5-o) has no nets yet; code downstream (firmware
+            # channels, lonely nets) reads part["pins"], and the gates then name its open pins
+            part["pins"] = {}
         piece = by_key.get(part.get("piece"))
-        if not piece or not isinstance(part.get("pins"), dict):
+        if not piece:
             continue
         names: dict[str, list[str]] = {}
         for num, nm in piece["pins"].items():
@@ -999,6 +1472,152 @@ def _normalize_pins(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
             else:
                 fixed[k] = net  # left as is: the spec gate names it
         part["pins"] = fixed
+
+
+# IPC-2221B table 6-1, column B2 (external conductors, uncoated, sea level to 3050 m): minimum spacing in mm
+_IPC2221_B2 = ((15, 0.1), (30, 0.1), (50, 0.6), (100, 0.6), (150, 0.6), (170, 1.25), (250, 1.25), (300, 1.25), (500, 2.5))
+_HV_WORDS = re.compile(r"high[\s-]?voltage|\bhv\b|nixie|\bvfd\b|geiger|mains", re.I)
+_VOLTS = re.compile(r"(\d+(?:\.\d+)?)\s*v(?:olts?|ac|dc)?\b", re.I)
+_HV_NET = re.compile(r"(?:^|_)(?:HV|VHV|HIGH_?V\w*)(?:_|\d|$)|(?:^|_)ANODE", re.I)
+_NET_VOLTS = re.compile(r"(?:^|_|\+)(\d{2,4})V(?:_|$)", re.I)
+_INDUCTANCE = re.compile(r"\s*\d+(?:\.\d+)?\s*[unmµ]?H\s*", re.I)
+
+
+def hv_clearance(volts: float) -> float:
+    """Minimum conductor spacing (mm) for a voltage, IPC-2221B B2; above 500 V, 0.005 mm per volt more."""
+    for v, mm in _IPC2221_B2:
+        if volts <= v:
+            return mm
+    return round(2.5 + 0.005 * (volts - 500), 2)
+
+
+def _hv_nets(
+    design: dict[str, Any], kept: list[dict[str, Any]], ask: str
+) -> tuple[float, list[str]]:
+    """(volts, nets) of a high-voltage board, (0, []) otherwise. Volts: the largest voltage in the ask when it is
+    50 V or more, else 170 V when the ask says high voltage / nixie / VFD. Nets: those named HV... / ...ANODE /
+    a number of 50 V or more ("170V"), and in a high-voltage ask both ends of a diode that meets an inductor (a
+    boost converter's switch node and output; live-1792273685866 named them SW_C and DCOUT)."""
+    nets = {str(n) for p in design.get("parts", []) for n in (p.get("pins") or {}).values()}
+    named = {n for n in nets if (m := _NET_VOLTS.search(n)) and float(m.group(1)) >= 50}
+    asked = [float(v) for v in _VOLTS.findall(ask or "")]
+    volts = max([v for v in asked if v >= 50] + [float(_NET_VOLTS.search(n).group(1)) for n in named], default=0.0)
+    if not volts and _HV_WORDS.search(ask or ""):
+        volts = 170.0
+    if not volts:
+        return 0.0, []
+    hv = named | {n for n in nets if _HV_NET.search(n)}
+    by_key = _cat() | {p["key"]: p for p in kept}
+    fam = {p.get("ref"): str((by_key.get(p.get("piece")) or {}).get("family", "")).lower() for p in design.get("parts", [])}
+    coil_nets = {
+        str(n)
+        for p in design.get("parts", [])
+        if "inductor" in fam[p.get("ref")] or _INDUCTANCE.fullmatch(str(p.get("value") or ""))
+        for n in (p.get("pins") or {}).values()
+    }
+    for p in design.get("parts", []):
+        ends = {str(n) for n in (p.get("pins") or {}).values()}
+        if "diode" in fam[p.get("ref")] and "led" not in fam[p.get("ref")] and ends & coil_nets:
+            hv |= ends
+    low = {n for n in nets if n.upper() in _GND_ALIASES + _SUPPLY_5V + _SUPPLY_3V3}
+    supply = _board_supply(design, by_key)
+    return volts, sorted(hv - low - {supply})
+
+
+_NC_NETS = re.compile(
+    r"(?:N/?C|NO_?CONNECT|NOT_?CONNECTED|DNC|UNUSED|FLOAT(?:ING)?)\d*", re.I
+)
+_GND_PIN_NAMES = ("GND", "VSS", "DGND", "PGND", "0V", "GROUND")
+_SUPPLY_PIN = re.compile(r"V(?:IN|I|CC\d?|DD|S|\+|SUP|SUPPLY|BAT)|\+?V\+?", re.I)
+
+
+def _fix_power_pins(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """Wire the power pins of every chip the way its datasheet means, before anything treats them as signals
+    (live-1792273685866, a nixie driver: ERC failed 3 on every try):
+    - a pin on a net named NC / N/C / DNC is left unconnected (the picker writes "NC" as a net, which then joins
+      every unused input of a 4001 to a connector pin and fails ERC "input pin not driven");
+    - a chip's ground pin (GND, VSS, ...) on a ground-alias net (VSS, 0V, DGND) joins GND: the 4001's VSS sat on
+      its own "VSS" net, pulled to GND through a 10k, and ERC said "power pin not driven";
+    - a chip's supply-input pin (Vin, VCC, VDD, V+) alone on its net is fed from the board's supply: the
+      MC34063's Vin sat alone on "VIN", which the auto-added Pico then drove from a GPIO.
+    A two-pin part left with both pins on one net is dropped (the 10k "pull-down" from VSS to GND)."""
+    by_key = _cat() | {p["key"]: p for p in kept}
+    parts = design.get("parts", [])
+    did: list[str] = []
+    for part in parts:
+        pins = part.get("pins")
+        if isinstance(pins, dict):
+            for num in [
+                n for n, net in pins.items() if _NC_NETS.fullmatch(str(net).strip())
+            ]:
+                del pins[num]
+    mcu = firmware.mcu_part(design, kept)
+    mcu_part = mcu[0] if mcu else None
+    # ground-alias nets that a chip's ground pin sits on become GND
+    rename: dict[str, str] = {}
+    for part in parts:
+        if part is mcu_part:
+            continue  # the module's own AGND / GND pins: firmware.tie_grounds
+        names = (by_key.get(part.get("piece")) or {}).get("pins") or {}
+        for num, net in (part.get("pins") or {}).items():
+            pname = str(names.get(str(num), "")).upper()
+            if (
+                pname in _GND_PIN_NAMES
+                and str(net).upper() != "GND"
+                and str(net).upper() in _GND_ALIASES
+            ):
+                rename[str(net)] = "GND"
+    # supply-input pins alone on their net take the board's supply
+    count: dict[str, int] = {}
+    for part in parts:
+        for net in (part.get("pins") or {}).values():
+            count[str(net)] = count.get(str(net), 0) + 1
+    supply = _board_supply(design, by_key)
+    if supply:
+        for part in parts:
+            if part is mcu_part:
+                continue
+            names = (by_key.get(part.get("piece")) or {}).get("pins") or {}
+            for num, net in (part.get("pins") or {}).items():
+                pname = str(names.get(str(num), ""))
+                if (
+                    _SUPPLY_PIN.fullmatch(pname)
+                    and count.get(str(net)) == 1
+                    and str(net) != supply
+                ):
+                    rename[str(net)] = supply
+    for part in parts:
+        pins = part.get("pins") or {}
+        for num, net in list(pins.items()):
+            if str(net) in rename:
+                pins[num] = rename[str(net)]
+    did += [f"{a} -> {b}" for a, b in sorted(rename.items())]
+    keep = []
+    for part in parts:
+        nets = list((part.get("pins") or {}).values())
+        if len(nets) == 2 and nets[0] == nets[1] and str(nets[0]) in rename.values():
+            did.append(f"dropped {part.get('ref')} (both pins on {nets[0]})")
+            continue
+        keep.append(part)
+    design["parts"] = keep
+    return did
+
+
+def _board_supply(
+    design: dict[str, Any], by_key: dict[str, dict[str, Any]]
+) -> str | None:
+    """The board's main supply net: pin 1 of its power-in connector or battery, else the first 5 V / 3.3 V net."""
+    for part in design.get("parts", []):
+        if (by_key.get(part.get("piece")) or {}).get("family") in _POWER_IN:
+            net = (part.get("pins") or {}).get("1")
+            if net and str(net).upper() not in _GND_ALIASES:
+                return str(net)
+    nets = {
+        str(n) for p in design.get("parts", []) for n in (p.get("pins") or {}).values()
+    }
+    return next(
+        (n for n in sorted(nets) if n.upper() in _SUPPLY_5V + _SUPPLY_3V3), None
+    )
 
 
 # piece family from its library category (the index mixes "LED"/"led", "BJT transistor"/"transistor", ...)
@@ -1046,7 +1665,7 @@ def _fix_refs(design: dict[str, Any]) -> None:
         used.add(new)
         p["ref"] = new
         pat = re.compile(rf"\b{re.escape(old)}\b")
-        for k in ("scenarios", "benchmarks", "say"):
+        for k in ("scenarios", "benchmarks", "say", "layout_blocks"):
             if k in design:
                 design[k] = json.loads(pat.sub(new, json.dumps(design[k])))
 
@@ -1080,6 +1699,55 @@ def _wiring(design: dict[str, Any], kept: list[dict[str, Any]]) -> str:
     return "\n".join(f"  {n}: {', '.join(v)}" for n, v in sorted(nets.items()))
 
 
+def _fmt_ohms(x: float) -> str:
+    for div, suf in ((1e6, "M"), (1e3, "k"), (1.0, "")):
+        if x >= div:
+            return f"{x / div:.3g}{suf}"
+    return f"{x:.3g}"
+
+
+def _fold_parallel(design: dict[str, Any]) -> list[str]:
+    """A repair that "fixes" a current check by stacking copies of a resistor (R1, R1b, R1c in parallel across the
+    same two nets; prod job QbyBcUKTtsmLEaJr 10-17) becomes ONE resistor with the combined value: the board the
+    picker meant, without the parallel pattern the wiring lint rejects. Only copies named after the first part
+    (R1 + R1b / R1_2 / R1-2) on the same piece and the same net pair are folded. Returns notes."""
+    from .recipes import sim_ohms  # noqa: PLC0415
+
+    parts = design.get("parts", [])
+    notes: list[str] = []
+    by_ref = {str(p.get("ref")): p for p in parts}
+    drop: set[str] = set()
+    for p in parts:
+        ref = str(p.get("ref", ""))
+        if ref in drop or not re.fullmatch(r"R\d+", ref):
+            continue
+        pair = sorted(map(str, (p.get("pins") or {}).values()))
+        copies = [
+            q
+            for r, q in by_ref.items()
+            if r != ref
+            and re.fullmatch(rf"{ref}[_-]?[a-z0-9]+", r, re.I)
+            and not re.fullmatch(r"R\d+", r)
+            and q.get("piece") == p.get("piece")
+            and sorted(map(str, (q.get("pins") or {}).values())) == pair
+        ]
+        if not copies or len(pair) != 2:
+            continue
+        try:
+            g = sum(1.0 / sim_ohms(x.get("value")) for x in [p, *copies])
+        except (TypeError, ValueError, ZeroDivisionError):
+            continue
+        old = p.get("value")
+        p["value"] = _fmt_ohms(1.0 / g)
+        drop.update(str(q["ref"]) for q in copies)
+        notes.append(
+            f"{ref} {old} + {', '.join(str(q['ref']) for q in copies)} in parallel -> {ref} {p['value']}"
+        )
+    if drop:
+        design["parts"] = [p for p in parts if str(p.get("ref")) not in drop]
+    return notes
+
+
 def _wiring_lint(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
     """Structural mistakes no simulation is needed to see: shorted parts, parts in parallel that must be in series,
     transistors with collector, base or emitter tied together."""
@@ -1103,8 +1771,15 @@ def _wiring_lint(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str
             for x, y in (("C", "E"), ("B", "E"), ("C", "B")):
                 if nm.get(x) and nm.get(x) == nm.get(y):
                     issues.append(f"{ref} has {x} and {y} on the same net {nm[x]}")
+    fam = {
+        str(p.get("ref")): str((by_key.get(p.get("piece")) or {}).get("family") or "")
+        for p in design.get("parts", [])
+    }
     for (a, b), refs in two.items():
-        if len(refs) > 1 and any(r.startswith("D") for r in refs):
+        # an LED, not any D: a flyback diode across a fan or coil is exactly right (fan board, 10-17)
+        if len(refs) > 1 and any(
+            r.startswith("D") and fam.get(r) != "diode" for r in refs
+        ):
             issues.append(
                 f"{' and '.join(refs)} sit side by side across {a} and {b}: an LED's resistor goes in SERIES (its own net between them), never across it"
             )
@@ -1138,15 +1813,21 @@ def _wire_named_gpio(design: dict[str, Any], kept: list[dict[str, Any]]) -> None
         if str(n).upper() not in ("GND",) + _SUPPLY_5V + _SUPPLY_3V3
     }
     # a net the firmware drives belongs on the MCU even when it already joins two other pins (R and Q base)
-    for net in _lonely_nets(design) + sorted((driven & on_parts) - set(_lonely_nets(design))):
+    for net in _lonely_nets(design) + sorted(
+        (driven & on_parts) - set(_lonely_nets(design))
+    ):
         if net in pins.values():
             continue
         m = re.fullmatch(r"(?:GPIO|GP|IO|D)_?(\d+)", net.upper())
         if not m and net not in driven:
             continue
         want = f"GPIO{int(m.group(1))}" if m else None
-        free = [n for n in names if n not in pins and names[n].upper().startswith("GPIO")]
-        hit = [n for n in free if want and re.fullmatch(want + r"(_.*)?", names[n].upper())]
+        free = [
+            n for n in names if n not in pins and names[n].upper().startswith("GPIO")
+        ]
+        hit = [
+            n for n in free if want and re.fullmatch(want + r"(_.*)?", names[n].upper())
+        ]
         if hit or free:
             pins[(hit or free)[0]] = net
 
@@ -1162,11 +1843,282 @@ def _drop_lonely_gpio(design: dict[str, Any], kept: list[dict[str, Any]]) -> Non
     part, piece = mp
     lonely = set(_lonely_nets(design))
     pins = part.get("pins") or {}
+    # Any pin of the module whose net ends there is an unused pin, whatever its name: the picker often labels
+    # RUN, 3V3_EN, ADC_VREF or AGND with their own names (live-1792272486984, a GPS tracker failed twice on
+    # "3V3_EN only on U1 pin 37"). A module pin left open is how the module ships.
     for num in [n for n, net in pins.items() if str(net) in lonely]:
-        name = str(piece.get("pins", {}).get(str(num), ""))
-        supply = str(pins[num]).upper() in _SUPPLY_5V + _SUPPLY_3V3
-        if name.startswith("GPIO") or (supply and name.upper() in _MCU_POWER_PINS):
-            del pins[num]
+        del pins[num]
+    # A no-connect or reset label on another part's lone pin (OLED header pin 4 "RUN", a module's "NC" or "RST",
+    # live-1792269010803) is a pin the board leaves open too; its pull-up lives on the module.
+    for q in design.get("parts", []):
+        qp = q.get("pins") or {}
+        for num in [
+            n
+            for n, net in qp.items()
+            if str(net) in lonely and re.fullmatch(_OPEN_LABEL, _norm_net(str(net)))
+        ]:
+            del qp[num]
+
+
+_OPEN_LABEL = r"N_?C\d*|RST|RESET|RUN|3V3_EN|ADC_VREF|AGND"
+
+
+R_KEY = "kicad:Device:R@R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical"
+
+
+def _net_count(design: dict[str, Any]) -> dict[str, int]:
+    count: dict[str, int] = {}
+    for p in design.get("parts", []):
+        for net in (p.get("pins") or {}).values():
+            count[str(net)] = count.get(str(net), 0) + 1
+    return count
+
+
+def _pin_named(piece: dict[str, Any], name: str) -> str | None:
+    return next(
+        (
+            str(n)
+            for n, nm in (piece.get("pins") or {}).items()
+            if str(nm).upper() == name
+        ),
+        None,
+    )
+
+
+def _fix_leds(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """Single LEDs the picker left half wired, repaired in code instead of another model try (10-17 tracker runs:
+    live-1792273274109 "LED1_K only on D1 pin 1" twice, live-1792273514460 a lone LED on nets A and K,
+    live-1792273474850 "R1 has both pins on net LED_NET"). Per LED: a series resistor with both ends on the anode's
+    net is split (MCU side keeps the net, the anode gets its own); a dangling cathode goes to ground; a dangling
+    anode joins a resistor end that dangles, or gets a new 220 ohm resistor whose far end the MCU drives; an anode
+    on the drive net beside a resistor whose other end dangles moves to that end. Runs before _auto_mcu, so a lone
+    cathode is never mistaken for a signal. Returns notes for the say line."""
+    by_key = _cat() | {p["key"]: p for p in kept}
+    parts = design.get("parts", [])
+    count = _net_count(design)
+    gnd = max(
+        (n for n in count if _norm_net(n) in _GND_ALIASES),
+        key=lambda n: count[n],
+        default="GND",
+    )
+    notes: list[str] = []
+
+    def fam(p: dict[str, Any]) -> str:
+        return str((by_key.get(p.get("piece")) or {}).get("family") or "").lower()
+
+    def fresh(base: str) -> str:
+        names = set(_net_count(design))
+        n, i = base, 2
+        while n in names:
+            n, i = f"{base}{i}", i + 1
+        return n
+
+    res = [p for p in parts if fam(p) == "resistor" and len(p.get("pins") or {}) == 2]
+    for led in [p for p in parts if fam(p) == "led"]:
+        piece = by_key[led["piece"]]
+        a, k = _pin_named(piece, "A"), _pin_named(piece, "K")
+        if not a or not k:
+            continue
+        ref, pins = str(led.get("ref")), led.setdefault("pins", {})
+        if (
+            a in pins
+            and _norm_net(str(pins[a])) in _GND_ALIASES
+            and _norm_net(str(pins.get(k, ""))) not in _GND_ALIASES
+        ):
+            # drawn backwards, anode on ground (live-1792274265002: "LED1_A" on pin 1, which is K)
+            pins[a], pins[k] = pins.get(k), pins[a]
+            if pins[a] is None:
+                del pins[a]
+            notes.append(f"{ref} turned around, its anode was on {pins[k]}")
+        an = str(pins[a]) if a in pins else None
+        for r in res:
+            rp = r["pins"]
+            if an and {str(v) for v in rp.values()} == {an}:
+                new = fresh(f"{ref}_A")
+                rp[sorted(rp)[-1]] = new
+                pins[a] = new
+                notes.append(
+                    f"{r.get('ref')} was shorted on {an}, so {ref}'s anode now sits on {new} behind it"
+                )
+        count = _net_count(design)
+        if k not in pins or count.get(str(pins[k]), 0) == 1:
+            pins[k] = gnd
+            notes.append(f"{ref} cathode to {gnd}")
+        an = str(pins[a]) if a in pins else None
+        count = _net_count(design)
+        dangling = [  # (resistor, its dangling net) whose other end is wired
+            (r, str(v))
+            for r in res
+            for v in r["pins"].values()
+            if count.get(str(v)) == 1
+            and str(v) != an
+            and sum(count.get(str(w), 0) > 1 for w in r["pins"].values()) == 1
+        ]
+        if an is None or count.get(an) == 1:
+            if dangling:
+                pins[a] = dangling[0][1]
+                notes.append(f"{ref} anode joined {dangling[0][0].get('ref')}")
+            elif (
+                not any(an and an in map(str, r["pins"].values()) for r in res)
+                and R_KEY in by_key
+            ):
+                an = an or fresh(f"{ref}_A")
+                pins[a] = an
+                used = {str(p.get("ref")) for p in parts}
+                n = 1
+                while f"R{n}" in used:
+                    n += 1
+                drive = fresh(f"{ref}_DRV")
+                parts.append(
+                    {
+                        "ref": f"R{n}",
+                        "piece": R_KEY,
+                        "value": "220",
+                        "pins": {"1": drive, "2": an},
+                        "group": led.get("group", "io"),
+                        "why": f"Limits the current through {ref}: Etch added it because the LED had none.",
+                    }
+                )
+                if by_key[R_KEY] not in kept:
+                    kept.append(by_key[R_KEY])
+                res.append(parts[-1])
+                notes.append(f"added R{n}, 220 ohm, in series with {ref}")
+        else:
+            for r, net in dangling:
+                if an in map(str, r["pins"].values()):
+                    pins[a] = net
+                    notes.append(f"{ref} anode moved behind {r.get('ref')}")
+                    break
+    return notes
+
+
+def _wire_drives(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """Outputs and buttons the microcontroller should run but does not reach get a free GPIO pin each (10-17
+    tracker runs: an LED's resistor hung on VBUS, so "the microcontroller U1 has no GPIO pin wired to anything").
+    An LED's drive end (its resistor's far end, or the anode when it has none), a buzzer's + and a button's live
+    side move to a GPIO when that net dangles, or when it sits on a supply rail and no GPIO is wired yet (a button
+    from a rail to ground is moved always: pressing it would short the rail). The new net takes a name the
+    firmware already drives but nothing carries, so the picker's own program works. Returns notes."""
+    mp = firmware.mcu_part(design, kept)
+    if not mp:
+        return []
+    mcu, piece = mp
+    by_key = _cat() | {p["key"]: p for p in kept}
+    mpins = mcu.setdefault("pins", {})
+    names = {str(k): str(v) for k, v in (piece.get("pins") or {}).items()}
+    reserved = {str(n) for n in (piece.get("spice") or {}).get("reserved") or []}
+    no_gpio = not firmware._gpio_by_net(mcu, piece)
+    driven = list(
+        dict.fromkeys(
+            str(n)
+            for c in (design.get("firmware") or {}).get("commands") or []
+            if isinstance(c, dict)
+            for n in c.get("high") or []
+        )
+    )
+    parts = design.get("parts", [])
+    notes: list[str] = []
+
+    def fam(p: dict[str, Any]) -> str:
+        return str((by_key.get(p.get("piece")) or {}).get("family") or "").lower()
+
+    def rail(net: str) -> bool:
+        return bool(_RAIL_RX.fullmatch(net)) and _norm_net(net) not in _GND_ALIASES
+
+    def ground(net: str) -> bool:
+        return _norm_net(net) in _GND_ALIASES
+
+    count = _net_count(design)
+    gnd = max((n for n in count if ground(n)), key=lambda n: count[n], default="GND")
+    want: list[tuple[dict[str, Any], str, bool]] = []  # (part, pin, move even off a rail when GPIO is wired)
+    res = [p for p in parts if fam(p) == "resistor" and len(p.get("pins") or {}) == 2]
+    for p in parts:
+        f, pins = fam(p), {str(k): str(v) for k, v in (p.get("pins") or {}).items()}
+        pc = by_key.get(p.get("piece")) or {}
+        if f == "led" and (a := _pin_named(pc, "A")) in pins:
+            an = pins[a]
+            r = next(
+                (r for r in res if an in map(str, r["pins"].values()) and len(set(map(str, r["pins"].values()))) == 2),
+                None,
+            )
+            want += [(r, k, False) for k, v in r["pins"].items() if str(v) != an] if r else [(p, a, False)]
+        elif f == "buzzer" and (plus := _pin_named(pc, "+")) in pins:
+            minus = _pin_named(pc, "-")
+            if minus in pins and count.get(pins[minus]) == 1:
+                # "-" left on a net of its own (piano live-1792275159885 try 3, "BZ1_- only on BZ1 pin 2")
+                p["pins"][minus] = pins[minus] = gnd
+                notes.append(f"{p.get('ref')} - to {gnd}")
+            want.append((p, plus, False))
+        elif f in ("push button", "switch") and len(pins) == 2:
+            if len(set(pins.values())) == 1 and not ground(next(iter(pins.values()))):
+                # both legs on one net (live-1792267239993, "SW1 BTN/BTN" beside its pull-up): the second leg
+                # goes to ground, so a press pulls the input low
+                k2 = sorted(p["pins"], key=str)[-1]
+                p["pins"][k2] = gnd
+                pins[str(k2)] = gnd
+                notes.append(f"{p.get('ref')} pin {k2} to {gnd}, both legs were on one net")
+            grounded = any(ground(v) for v in pins.values())
+            want += [(p, k, True) for k, v in pins.items() if not ground(v) and grounded]
+    for p, k, always in want:
+        count = _net_count(design)
+        net = str(p["pins"][k])
+        if net in map(str, mpins.values()) and not rail(net):
+            continue  # already reaches the microcontroller
+        # a button's live side must reach the MCU even when a pull-up already shares its net
+        if not (count.get(net) == 1 or (always and not rail(net)) or (rail(net) and (no_gpio or always))):
+            continue
+        free = [n for n in names if n not in mpins and n not in reserved and names[n].upper().startswith("GPIO")]
+        free.sort(key=lambda n: "ADC" in names[n].upper())  # keep ADC pins for analog parts
+        if not free:
+            break
+        spare = [n for n in driven if n not in count]
+        if not rail(net) and (count.get(net) != 1 or net in driven or not spare):
+            new = net  # a name of its own, or a net other parts share (a pull-up): keep it
+        elif spare:
+            new = spare[0]  # a net the firmware drives that nothing carries yet
+        else:
+            new = next((names[n] for n in free if names[n] not in count), f"{p.get('ref')}_IO")
+        m = re.fullmatch(r"(?:GPIO|GP)_?(\d+)", new.upper())
+        pin = next(
+            (n for n in free if m and re.fullmatch(f"GPIO{int(m.group(1))}(_.*)?", names[n].upper())),
+            free[0],
+        )
+        p["pins"][k] = new
+        mpins[pin] = new
+        notes.append(f"{p.get('ref')} to {mcu.get('ref')} {names[pin]}" + (f" instead of {net}" if rail(net) else ""))
+    return notes
+
+
+def _drop_dangling_passives(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """A resistor or capacitor with one end on a supply rail or ground and the other on nothing connects nothing:
+    a regulator's ADJ divider left behind when the regulator was dropped (live-1792274265002, "ADJ only on R2
+    pin 2"). Runs after every wiring repair, so a dangling end that should reach the MCU already does."""
+    by_key = _cat() | {p["key"]: p for p in kept}
+    count = _net_count(design)
+    out, keep = [], []
+    for p in design.get("parts", []):
+        nets = [str(n) for n in (p.get("pins") or {}).values()]
+        fam = str((by_key.get(p.get("piece")) or {}).get("family") or "").lower()
+        if (
+            fam in ("resistor", "capacitor")
+            and len(nets) == 2
+            and sorted(count.get(n, 0) == 1 for n in nets) == [False, True]
+            and any(_RAIL_RX.fullmatch(n) for n in nets if count.get(n, 0) > 1)
+        ):
+            out.append(str(p.get("ref")))
+            continue
+        keep.append(p)
+    design["parts"] = keep
+    return out
+
+
+def _prune_commands(design: dict[str, Any]) -> None:
+    """Firmware commands that drive a net no pin carries (GPIO1 when the board's one LED sits on GPIO0) can never
+    pass the firmware test; they drive nothing, so those names are dropped from the command."""
+    on = set(_net_count(design))
+    for c in (design.get("firmware") or {}).get("commands") or []:
+        if isinstance(c, dict) and isinstance(c.get("high"), list):
+            c["high"] = [n for n in c["high"] if str(n) in on]
 
 
 def _wire_mcu_supply(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
@@ -1184,7 +2136,12 @@ def _wire_mcu_supply(design: dict[str, Any], kept: list[dict[str, Any]]) -> None
     for net in _lonely_nets(design):
         up = net.upper()
         owner = next(
-            (q for q in design.get("parts", []) if net in (q.get("pins") or {}).values()), None
+            (
+                q
+                for q in design.get("parts", [])
+                if net in (q.get("pins") or {}).values()
+            ),
+            None,
         )
         if owner is None or owner is part:
             continue
@@ -1194,13 +2151,18 @@ def _wire_mcu_supply(design: dict[str, Any], kept: list[dict[str, Any]]) -> None
             pin = names.get("VSYS" if power_in else "VBUS")
         elif up in _SUPPLY_3V3:
             pin = names.get("3V3")
+        elif re.search(r"BAT|VIN", up) and (by_key.get(owner.get("piece")) or {}).get(
+            "family", ""
+        ) in _POWER_IN:
+            # a cell's + on its own net (VBAT, BAT+): the Pico runs from it through VSYS (10-17, live-1792273371898
+            # failed "VBAT only on BT1 pin 1")
+            pin = names.get("VSYS")
         else:
             continue
         if pin and pin not in pins:
             pins[pin] = net
 
 
-_MCU_POWER_PINS = ("VBUS", "VSYS", "3V3", "5V", "VIN", "+5V", "+3V3")
 PICO_KEY = "kicad:MCU_Module:RaspberryPi_Pico@RaspberryPi_Pico_Common_THT"
 PICO_W_KEY = "kicad:MCU_Module:RaspberryPi_Pico_W@RaspberryPi_Pico_Common_THT"
 _PICO_ADC = ("31", "32", "34")  # GPIO26/27/28
@@ -1243,6 +2205,46 @@ _ANALOG_FAMILIES = (
 _POWER_IN = ("2-pin connector", "battery holder", "USB-C power input", "DC barrel jack")
 
 
+_WIRELESS = r"\b(bluetooth|ble|wi-?fi|wireless|phone|internet|online|esp32|air ?tags?|tracker|beacon|finder|iot|smart ?watch)\b"
+
+
+def _radio_fix(
+    design: dict[str, Any], kept: list[dict[str, Any]], ask: str
+) -> list[str]:
+    """A wireless ask needs a radio, not a loose antenna. The Pico W's radio and antenna are on the module, so a
+    plain Pico becomes a Pico W (same footprint, same pins) and an antenna whose every pin ends on one pin is
+    dropped (live-1792271675178, "device tracker similar to an airtag": Pico + ANT1 failed "ANT touches only
+    one pin" three times with the same design). Returns what changed, for the say line."""
+    did: list[str] = []
+    wireless = bool(re.search(_WIRELESS, ask.lower()))
+    lonely = set(_lonely_nets(design))
+    keep = []
+    for part in design.get("parts", []):
+        key = str(part.get("piece", ""))
+        nets = [str(n) for n in (part.get("pins") or {}).values()]
+        if re.search(r"antenna|:ANT", key, re.I) and all(n in lonely for n in nets):
+            did.append(
+                f"dropped {part.get('ref')}, the antenna on the module does that job"
+            )
+            continue
+        keep.append(part)
+    design["parts"] = keep
+    if wireless:
+        cat = _cat()
+        for part in keep:
+            if part.get("piece") == PICO_KEY and PICO_W_KEY in cat:
+                part["piece"] = PICO_W_KEY
+                if cat[PICO_W_KEY] not in kept:
+                    kept.append(cat[PICO_W_KEY])
+                did.append(
+                    f"{part.get('ref')} is a Pico W so the board has Bluetooth and Wi-Fi"
+                )
+    return did
+
+
+_POWER_CHIP = r"regulator|converter|power management|power supervisor"
+
+
 def _auto_mcu(
     design: dict[str, Any], kept: list[dict[str, Any]], ask: str
 ) -> dict[str, Any] | None:
@@ -1251,21 +2253,25 @@ def _auto_mcu(
     I2C0, the rest on free GPIO, power from the Pico's own USB rails when nothing else powers the board."""
     if firmware.mcu_part(design, kept):
         return None
+    hv = set(_hv_nets(design, kept, ask)[1])  # a 170 V anode on a GPIO pin would kill the Pico
+    by_key0 = _cat() | {p["key"]: p for p in kept}
+    # a regulator's own lonely pin (MC34063 Ipk, timing cap, feedback) is a missing part, not a GPIO: it goes
+    # back to the picker (nzcIIiKo49iFA5-o wired Ipk, TC, SwC, SwE, Vfb and Vin of a boost chip to a Pico)
+    power_only = {
+        str(net)
+        for part in design.get("parts", [])
+        if re.search(_POWER_CHIP, (by_key0.get(part.get("piece")) or {}).get("family", ""), re.I)
+        for net in (part.get("pins") or {}).values()
+    }
     lonely = [
         n
         for n in _lonely_nets(design)
-        if n.upper() not in ("GND",) + _SUPPLY_5V + _SUPPLY_3V3
+        if n.upper() not in ("GND",) + _SUPPLY_5V + _SUPPLY_3V3 and n not in hv and n not in power_only
     ]
     if not lonely:
         return None
-    cat = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
-    key = (
-        PICO_W_KEY
-        if re.search(
-            r"\b(bluetooth|wi-?fi|wireless|phone|internet|online|esp32)\b", ask.lower()
-        )
-        else PICO_KEY
-    )
+    cat = _cat()
+    key = PICO_W_KEY if re.search(_WIRELESS, ask.lower()) else PICO_KEY
     if key not in cat:
         return None
     by_key = {p["key"]: p for p in kept} | cat
@@ -1344,7 +2350,9 @@ def _led_stand_ins(
         if re.match(r"(D|LED)\d", ref) or _LED_VALUE.search(str(p.get("value") or "")):
             out.append(ref)
     if out and LED_KEY not in keys:
-        led = next((q for q in kicad_catalog.load()["pieces"] if q["key"] == LED_KEY), None)
+        led = next(
+            (q for q in kicad_catalog.load()["pieces"] if q["key"] == LED_KEY), None
+        )
         if led:
             kept.append(led)
             keys.add(LED_KEY)
@@ -1359,18 +2367,278 @@ def _lonely_nets(design: dict[str, Any]) -> list[str]:
     return sorted(n for n, c in count.items() if c == 1)
 
 
+_GND_ALIASES = ("GND", "AGND", "DGND", "VSS", "0V", "GROUND", "GND_PWR")
+_COLOURS = {
+    "R": "RED",
+    "G": "GREEN",
+    "B": "BLUE",
+    "RED": "RED",
+    "GREEN": "GREEN",
+    "BLUE": "BLUE",
+}
+_GENERIC_TOKENS = {
+    "GPIO",
+    "GP",
+    "PICO",
+    "MCU",
+    "PIN",
+    "NET",
+    "SIG",
+    "IN",
+    "OUT",
+    "LED",
+    "CTRL",
+    "DRV",
+}
+_MCU_HINT = re.compile(
+    r"(^|_)(GPIO\w*|GP\d+|PICO\w*|MCU\w*|ADC\w*|ALERT|INT|IRQ|PWM\w*|SIG|SENSE|SENSOR\w*|DATA|CTRL|EN|BTN\w*|"
+    r"BUTTON\w*|SDA|SCL|TXD?\d*|RXD?\d*|UART\w*|DET|CD|MIC\w*|AUDIO\w*|FAN\w*|TEMP\w*)(_|$)"
+)
+# a module's TX feeds the MCU's RX: UART0 (GP1 RX pin 2, GP0 TX pin 1), then UART1 on GP9/GP8
+_PICO_UART = {"TX": ("2", "12"), "RX": ("1", "11")}
+
+
+def _norm_net(n: str) -> str:
+    return re.sub(r"[\s\-_.]+", "_", n.strip().upper())
+
+
+def _merge_lonely(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """Repair dangling nets the picker split by name instead of failing the iteration on them (picker QA 10-17:
+    "Q2_B" on the transistor and "Q2_B_DRIVE" on its resistor, "R1_R" on a resistor and "GPIO_RED" on the MCU,
+    "Vcc" on one pin and "VCC" everywhere else, "+5V" alone beside a "VCC" rail). Rules, in order:
+      1. same name up to case and separators: join the other spelling;
+      2. one name extends the other at a separator (Q2_B / Q2_B_DRIVE): join the shorter;
+      3. colour pairs (R1_R + GPIO_RED): two dangling nets that name the same colour and nothing else, on
+         different parts, join under the MCU-side name;
+      4. supply and ground aliases: a dangling 5 V, 3.3 V or ground alias joins the rail of that kind in use.
+    Never joins two pins of the same part (that would short it). Returns "OLD -> NEW" notes. Runs before
+    _auto_mcu; _wire_hinted then puts MCU-named leftovers on the module."""
+    parts = design.get("parts", [])
+    notes: list[str] = []
+
+    def nets_now() -> dict[str, list[dict[str, Any]]]:
+        on: dict[str, list[dict[str, Any]]] = {}
+        for p in parts:
+            for v in (p.get("pins") or {}).values():
+                on.setdefault(str(v), []).append(p)
+        return on
+
+    def rename(old: str, new: str) -> None:
+        for p in parts:
+            pins = p.get("pins") or {}
+            for k, v in list(pins.items()):
+                if str(v) == old:
+                    pins[k] = new
+        for k in ("scenarios", "benchmarks", "firmware"):
+            if k in design:
+                design[k] = json.loads(
+                    re.sub(
+                        rf'"{re.escape(old)}"', json.dumps(new), json.dumps(design[k])
+                    )
+                )
+        notes.append(f"{old} -> {new}")
+
+    def safe(old: str, new: str, on: dict[str, list[dict[str, Any]]]) -> bool:
+        return old != new and not any(p in on.get(new, []) for p in on.get(old, []))
+
+    supply = {"5V": _SUPPLY_5V, "3V3": _SUPPLY_3V3, "GND": _GND_ALIASES}
+    mp = firmware.mcu_part(design, kept)
+    mcu = mp[0] if mp else None
+    for _ in range(
+        3
+    ):  # a join can leave another dangling name matching; settle in a few passes
+        changed = False
+        on = nets_now()
+        lonely = [n for n, ps in on.items() if len(ps) == 1]
+        for n in lonely:
+            on = nets_now()
+            if len(on.get(n, [])) != 1:
+                continue
+            up = _norm_net(n)
+            kind = next(
+                (k for k, al in supply.items() if up in al or up.lstrip("+") in al),
+                None,
+            )
+            others = [m for m in on if m != n]
+            target = None
+            if kind:  # rule 4 (also covers rule 1 for rails)
+                rails = [
+                    m
+                    for m in others
+                    if _norm_net(m) in supply[kind]
+                    or _norm_net(m).lstrip("+") in supply[kind]
+                ]
+
+                def rank(m: str) -> int:
+                    u = _norm_net(m)
+                    al = supply[kind]
+                    return (
+                        al.index(u)
+                        if u in al
+                        else al.index(u.lstrip("+"))
+                        if u.lstrip("+") in al
+                        else 99
+                    )
+
+                rails.sort(key=lambda m: (-len(on[m]), rank(m)))
+                target = rails[0] if rails else None
+                if target and len(on[target]) == 1 and rank(n) < rank(target):
+                    n, target = (
+                        target,
+                        n,
+                    )  # two dangling rail names: keep the plain one (GND over VSS)
+            if not target:  # rule 1
+                target = next((m for m in others if _norm_net(m) == up), None)
+            if not target:  # rule 2: Q2_B_DRIVE -> Q2_B, or Q2_B -> Q2_B_BASE when only the long one exists
+                ext = [
+                    m for m in others if up.startswith(_norm_net(m) + "_")
+                ]  # the longer name joins
+                ext.sort(key=lambda m: (len(on[m]) < 2, len(m)))
+                target = ext[0] if ext else None
+            if not target:  # rule 3
+                toks = set(up.split("_")) - _GENERIC_TOKENS
+                col = {_COLOURS[t] for t in toks if t in _COLOURS}
+                rest = {
+                    t
+                    for t in toks
+                    if t not in _COLOURS and not re.fullmatch(r"[RDQUC]\d+", t)
+                }
+                if len(col) == 1 and not rest:
+                    mates = [
+                        m
+                        for m in others
+                        if len(on[m]) == 1
+                        and {
+                            _COLOURS[t]
+                            for t in set(_norm_net(m).split("_"))
+                            if t in _COLOURS
+                        }
+                        == col
+                    ]
+                    if len(mates) == 1:
+                        target = mates[0]
+                        if mcu is not None and on[n][0] is mcu:
+                            n, target = target, n  # keep the MCU-side name
+            if target and safe(n, target, on):
+                rename(n, target)
+                changed = True
+        if not changed:
+            break
+    return notes
+
+
+# SD card in SPI mode on the Pico: (MISO, CS, SCK, MOSI) pin numbers for SPI0 GP16-19, SPI1 GP8-11, SPI1 GP12-15
+_PICO_SPI = (("21", "22", "24", "25"), ("11", "12", "14", "15"), ("16", "17", "19", "20"))
+_SD_ROLE = (
+    r"DAT0|D0|DO|MISO|SDO",
+    r"DAT3(_CD)?|CD_DAT3|CS|SS|NSS",
+    r"CLK|SCK|SCLK",
+    r"CMD|DI|MOSI|SDI",
+)
+
+
+def _wire_sd(design: dict[str, Any], pins: dict[str, Any]) -> None:
+    """A card slot the picker named in SDIO terms (CLK, CMD, DAT0-3) but wired to nothing (10-17 sweep, mp4 player
+    live-1792274693843 failed three tries on it): run the card in SPI mode on the first free Pico SPI bus. DAT1 and
+    DAT2 are unused in SPI mode and left open."""
+    lonely = set(_lonely_nets(design))
+    for q in design.get("parts", []):
+        qp = q.get("pins") or {}
+        nets = [str(n) for n in qp.values() if str(n) in lonely]
+        role = [
+            next((n for n in nets if re.fullmatch(r, _norm_net(n))), None)
+            for r in _SD_ROLE
+        ]
+        if not all(role[1:3]) or not any(re.fullmatch(r"DAT\d", _norm_net(n)) for n in nets):
+            continue
+        bus = next((b for b in _PICO_SPI if not set(b) & set(pins)), None)
+        if not bus:
+            return
+        for num, net in zip(bus, role):
+            if net:
+                pins[num] = net
+        for num in [n for n, net in qp.items() if re.fullmatch(r"DAT[12]", _norm_net(str(net)))]:
+            del qp[num]
+
+
+def _wire_hinted(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
+    """A dangling signal net whose name says it belongs to the microcontroller (MIC_OUT, FAN_PWM, SENSOR_TEMP,
+    GPIO_ADC, I2C_SDA, BTN) goes on a free module pin: SDA/SCL on the Pico's I2C0 pins, analog-sounding nets on a
+    free ADC pin, the rest on the next free GPIO."""
+    part, piece = firmware.mcu_part(design, kept)
+    names = {str(k): str(v) for k, v in (piece.get("pins") or {}).items()}
+    pins = part.setdefault("pins", {})
+    if piece.get("key") in (PICO_KEY, PICO_W_KEY):
+        _wire_sd(design, pins)
+    on_mcu = set(map(str, pins.values()))
+    for net in _lonely_nets(design):
+        up = _norm_net(net)
+        if (
+            net in on_mcu
+            or up in _SUPPLY_5V + _SUPPLY_3V3 + _GND_ALIASES
+            or not _MCU_HINT.search(up)
+        ):
+            continue
+        free = [
+            n for n in names if n not in pins and names[n].upper().startswith("GPIO")
+        ]
+        want: list[str] = []
+        if re.search(r"(^|_)SDA($|_)", up) and piece.get("key") in (
+            PICO_KEY,
+            PICO_W_KEY,
+        ):
+            want = [_PICO_I2C["SDA"]]
+        elif re.search(r"(^|_)SCL($|_)", up) and piece.get("key") in (
+            PICO_KEY,
+            PICO_W_KEY,
+        ):
+            want = [_PICO_I2C["SCL"]]
+        elif (uart := re.search(r"(?:^|_)(TX|RX)D?\d*(?:$|_)", up)) and piece.get(
+            "key"
+        ) in (PICO_KEY, PICO_W_KEY):
+            want = list(_PICO_UART[uart.group(1)])
+        elif re.search(r"ADC|ANALOG|MIC|AUDIO|TEMP|SENSE|SENSOR|POT|LDR", up):
+            want = [
+                n for n in _PICO_ADC if piece.get("key") in (PICO_KEY, PICO_W_KEY)
+            ] + [n for n in names if "ADC" in names[n].upper()]
+        pick = next((n for n in want + free if n not in pins), None)
+        if pick:
+            pins[pick] = net
+            on_mcu.add(net)
+
+
+def _lonely_hint(design: dict[str, Any], net: str) -> str:
+    """The nets a dangling name most likely meant, for the repair prompt."""
+    import difflib  # noqa: PLC0415
+
+    names = sorted(
+        {
+            str(v)
+            for p in design.get("parts", [])
+            for v in (p.get("pins") or {}).values()
+        }
+        - {net}
+    )
+    close = difflib.get_close_matches(net, names, n=2, cutoff=0.5)
+    return f"; did you mean {' or '.join(close)}?" if close else ""
+
+
 def rep_board(out: Path) -> tuple[float, float]:
     b = json.loads((out / "layout.json").read_text())["board"]
     return b["w"], b["h"]
 
 
 def _analog(
-    stream: Stream, design: dict[str, Any], kept: list[dict[str, Any]], keys: set[str], ask: str
+    stream: Stream,
+    design: dict[str, Any],
+    kept: list[dict[str, Any]],
+    keys: set[str],
+    ask: str,
 ) -> list[str]:
     """Deterministic transistor-switch check (agent/analog.py) before every build: sizes base resistors, swaps a
     driver that cannot carry the load, and makes load benchmarks agree with the load model. Returns what it could
     not fix, for the repair prompt."""
-    cat = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
+    cat = _cat()
     res = analog.solve(design, kept, cat, ask)
     for pc in res.added:
         if pc["key"] not in keys:
@@ -1433,6 +2701,11 @@ def _feedback(v: dict[str, Any], metrics: list[str]) -> str:
 
 
 def export(stream: Stream, out: Path) -> dict[str, Any]:
+    with heavy_slot():  # BOM, Gerbers, drill, STEP/GLB: kicad-cli work, one heavy slot
+        return _export(stream, out)
+
+
+def _export(stream: Stream, out: Path) -> dict[str, Any]:
     t0 = time.time()
     pcb = next(out.glob("*.kicad_pcb"))
     name = pcb.stem
@@ -1466,6 +2739,9 @@ def export(stream: Stream, out: Path) -> dict[str, Any]:
         for f in (out / "firmware" / "main.py", out / "firmware" / "test.json")
         if f.exists()
     ]
+    files += sorted(
+        f for f in (out / "firmware").glob("*.py") if f.name != "main.py"
+    )  # host scripts (fan_host.py)
     zp = out / f"{name}-fab.zip"
     with zipfile.ZipFile(zp, "w", zipfile.ZIP_DEFLATED) as z:
         for f in files:
@@ -1533,8 +2809,117 @@ def _catalog_hit(text: str) -> dict[str, Any] | None:
     low = text.lower()
     for pat, pn in _GENERIC:
         if re.search(pat, low):
-            return next((c for c in cat if f":{pn}@" in c["key"]), None)
-    return None
+            if hit := next((c for c in cat if f":{pn}@" in c["key"]), None):
+                return hit
+    # then the whole library (every KiCad library, extra libraries, fetched cache parts) before any web fetch
+    return _lib_piece(text)
+
+
+def _sym_foot(pc: str) -> tuple[str, str]:
+    """ "kicad:Device:LED@LED_D5.0mm_GREEN" -> ("LED", "LED_D5.0mm_GREEN"); "SW_Push" -> ("SW_Push", "")."""
+    head, _, foot = pc.partition("@")
+    return head.split(":")[-1], foot
+
+
+# a generic symbol word the picker made up -> the symbol it means, by family (picker QA 10-17: "Device:D@D_SmallSignal_
+# SMD_Diodes,D:DIOD1N4148" eight times, "LED@LED_THT5MM", "SW_Push@SW_PushButton_6mm_SMD", "Buzzer_Passive_Square_12mm")
+_TWIN_FAMILY = (
+    (r"^(LED|LED_SMALL|LED_DIFFUSED|LED_THT\w*|LED_\d\w*)$", ("LED",)),
+    (r"^(D|D_SMALL|DIODE|D_SMALLSIGNAL|1N4148\w*)$", ("1N4148", "D", "1N4001")),
+    (r"^(SW_PUSH\w*|BUTTON\w*|PUSHBUTTON\w*|SW_TACTILE\w*)$", ("SW_Push",)),
+    (r"^BUZZER\w*$", ("Buzzer",)),
+    (r"^(R|R_SMALL|R_US|RESISTOR)$", ("R",)),
+    (r"^(C|C_SMALL|CAPACITOR)$", ("C",)),
+    (
+        r"^(RV|RV_\S*|R_POT\S*|POT\S*|POTENTIOMETER\S*|R_POTENTIOMETER\S*|TRIMPOT\S*)$",
+        ("R_Potentiometer_Trim",),
+    ),
+)
+_HEADER = re.compile(r"(?:CONN|PINHEADER|PINSOCKET)_0?(\d+)X0?(\d+)", re.I)
+
+
+def _twin_rank(c: dict[str, Any], foot: str) -> tuple:
+    """Closest footprint first; then the stock LED, vertical and shorter (plainer) footprints."""
+    f = _sym_foot(c["key"])[1]
+    common = len(os.path.commonprefix([f.lower(), foot.lower()]))
+    return (-common, c["key"] != LED_KEY, "Horizontal" in f, len(f), c["key"])
+
+
+def _twin_piece(
+    pc: str, pins: dict | None, kept: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """The real piece a made-up key means when it names the same symbol, family or header shape as one we have: a
+    colour or a made-up footprint after a real symbol ("LED@LED_D5.0mm_GREEN"), a footprint-only name
+    ("R_Axial_..._VertICAL"), a generic word ("D", "SW_Push", "Buzzer"), a header by pin count ("Conn_02x03_Oval" ->
+    a 1x06 header), or a USB-C receptacle by its pin names. KEPT pieces first, then the KiCad catalog (through-hole,
+    with a SPICE model). The twin must carry every pin the part uses (by number or by name), so the wiring stays."""
+    sym, foot = _sym_foot(pc)
+    foot = re.sub(
+        r"_(RED|GREEN|BLUE|YELLOW|WHITE|AMBER|ORANGE|WARM\w*)$", "", foot, flags=re.I
+    )  # a colour is a value
+    used = {str(k) for k in (pins or {})}
+
+    def fits(c: dict[str, Any]) -> bool:
+        have = {str(k) for k in c.get("pins") or {}} | {
+            str(v).lower() for v in (c.get("pins") or {}).values()
+        }
+        return all(u in have or u.lower() in have for u in used)
+
+    cat = [c for c in kicad_catalog.load()["pieces"] if c.get("spice")]
+    pools = (kept, cat)
+    up = sym.upper()
+    for pool in pools:  # same symbol, closest footprint
+        same = [c for c in pool if _sym_foot(c["key"])[0].upper() == up and fits(c)]
+        if same:
+            same.sort(key=lambda c: _twin_rank(c, foot))
+            return same[0]
+    for pool in pools:  # the name is a footprint we have
+        for c in pool:
+            if _sym_foot(c["key"])[1].lower() in (sym.lower(), foot.lower()) and fits(
+                c
+            ):
+                return c
+    for pat, syms in _TWIN_FAMILY:
+        if re.match(pat, up):
+            for want in syms:
+                for pool in pools:
+                    hits = [
+                        c for c in pool if _sym_foot(c["key"])[0] == want and fits(c)
+                    ]
+                    if hits:
+                        return min(hits, key=lambda c: _twin_rank(c, foot))
+    if m := _HEADER.search(f"{sym}@{foot}"):
+        n = int(m.group(1)) * int(m.group(2))
+        heads = []
+        for pool in pools:
+            for c in pool:
+                cm = re.match(r"Conn_01x0?(\d+)$", _sym_foot(c["key"])[0])
+                if cm and int(cm.group(1)) >= n and fits(c):
+                    heads.append(
+                        (
+                            int(cm.group(1)),
+                            pool is cat,
+                            "PinHeader" not in c["key"],
+                            "Vertical" not in c["key"],
+                            c["key"],
+                            c,
+                        )
+                    )
+        if heads:
+            return min(heads, key=lambda h: h[:5])[5]
+    if "USB_C" in up:
+        return next(
+            (
+                c
+                for pool in pools
+                for c in pool
+                if "USB_C" in _sym_foot(c["key"])[0] and fits(c)
+            ),
+            None,
+        )
+    # last: the whole library's piece for this name (every KiCad library, extra libraries, fetched cache parts)
+    lp = _lib_piece(f"{sym} {foot}".replace("_", " ").strip())
+    return lp if lp is not None and fits(lp) else None
 
 
 def _resolve_unknown(
@@ -1553,6 +2938,15 @@ def _resolve_unknown(
         pc = str(part.get("piece", ""))
         name = pc.split(":")[-1].split("@")[0]
         foot = pc.split("@")[-1] if "@" in pc else ""
+        if twin := _twin_piece(pc, part.get("pins"), kept):
+            part["piece"] = twin["key"]
+            if twin["key"] not in keys:
+                kept.append(twin)
+                keys.add(twin["key"])
+            stream.emit(
+                "assembly", "repair", kind="pieces", joined=[f"{pc} -> {twin['key']}"]
+            )
+            continue
         hit = _catalog_hit(f"{name} {foot}".replace("_", " "))
         if hit:
             part["piece"] = hit["key"]
@@ -1621,7 +3015,7 @@ def source_missing(
         part = res.get("part") or {}
         pins = part.get("pins") or []
         if res.get("status") in ("found", "ok") and part.get("source") == "kicad-lib":
-            cat = {c["key"]: c for c in kicad_catalog.load()["pieces"]}
+            cat = _cat()
             if part["key"] in cat and cat[part["key"]].get("spice"):
                 got.append(cat[part["key"]])
                 stream.emit(
@@ -1662,12 +3056,15 @@ def source_missing(
             "role": role,
         }
         idx_path = Path(__file__).resolve().parents[1] / "engine/parts/agent_index.json"
-        idx = read_index(idx_path)
-        for p in idx["parts"]:
-            if p["key"] == part["key"] and not p.get("spice"):
-                p["spice"] = spice
-                p["spice_note"] = f"{m.get('what')} modelled as a {note}"
-        idx_path.write_text(json.dumps(idx, indent=1))
+        def add_spice(idx: Any) -> Any:
+            for p in idx["parts"]:
+                if p["key"] == part["key"] and not p.get("spice"):
+                    p["spice"] = spice
+                    p["spice_note"] = f"{m.get('what')} modelled as a {note}"
+            return idx
+
+        # parallel runs source parts too: a locked read-modify-write, never a lost update
+        update_json(idx_path, add_spice, lambda: {"parts": []}, read=read_index)
         piece = {
             "key": part["key"],
             "family": str(m.get("what")),
@@ -1732,14 +3129,14 @@ def _layout_seed(spec: dict[str, Any]) -> Path | None:
 def _layout_remember(spec: dict[str, Any], out: Path) -> None:
     if _layout_seed(spec) is not None:
         return  # the first passing layout stays the seed, so archiving later runs never loses it
-    try:
-        idx = json.loads(LAYOUT_CACHE.read_text())
-    except (OSError, ValueError):
-        idx = {}
-    idx[_layout_key(spec)] = out.name
-    tmp = LAYOUT_CACHE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(idx, indent=0))
-    tmp.replace(LAYOUT_CACHE)
+    key = _layout_key(spec)
+
+    def put(idx: Any) -> dict[str, Any]:
+        idx = idx if isinstance(idx, dict) else {}
+        idx[key] = out.name
+        return idx
+
+    update_json(LAYOUT_CACHE, put, dict, indent=0)  # parallel runs: locked, atomic
 
 
 def _apply_mask(design: dict[str, Any], out: Path) -> None:
@@ -1788,11 +3185,11 @@ def render(stream: Stream, out: Path, quality: str = "basic") -> dict[str, Any]:
     pcb = next(out.glob("*.kicad_pcb"))
     stream.emit("render", "start", quality=quality)
     # live frames are 2/3 of the video size (the page scales them up): about 2x faster on a loaded Mac.
-    # No heavy lock: an interactive render for someone watching the page is not a batch job, and waiting on
-    # another job's lock stalled live builds for up to 10 minutes. kicad_frames already runs every render
-    # under nice -n 10, so a long batch job (a video render) keeps most of the machine.
-    t_lock = time.time()
-    meta = kf.frames(pcb, out / "frames", w=920, h=680, jobs=6)
+    # Not the batch heavy lock (waiting on another job's lock stalled live builds for up to 10 minutes): one of
+    # the live runs' heavy slots, so parallel builds take turns rendering. kicad_frames runs under nice -n 10.
+    with heavy_slot():
+        t_lock = time.time()
+        meta = kf.frames(pcb, out / "frames", w=920, h=680, jobs=6)
     res = {
         "frames": eng.url(out / "frames" / "frames.json"),
         "count": len(meta["frames"]),
@@ -1879,7 +3276,7 @@ def _stored(
     """Answer from a stored, verified board: copy it in and replay its parts, checks and frames."""
     board_store.copy_into(row, out)
     d = json.loads((out / "design.json").read_text())
-    cat = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
+    cat = _cat()
     stream.emit(
         "classifier",
         "done",
@@ -2023,6 +3420,15 @@ def _has_words(ask: str) -> bool:
         "servo",
         "bluetooth",
         "wifi",
+        "airtag",
+        "airtags",
+        "tracker",
+        "beacon",
+        "gps",
+        "ble",
+        "iot",
+        "smartwatch",
+        "wearable",
     }
     return any(
         t.lower() in _WORDS or t.lower() in extra or t.lower().rstrip("s") in _WORDS
@@ -2030,11 +3436,15 @@ def _has_words(ask: str) -> bool:
     )
 
 
-def _refuse(stream: Stream, ask: str, out: Path, t0: float, err: str, msg: str) -> dict[str, Any]:
+def _refuse(
+    stream: Stream, ask: str, out: Path, t0: float, err: str, msg: str
+) -> dict[str, Any]:
     """An honest stop with no model call: one say, then done (ok False)."""
     stream.emit("lead", "say", text=msg)
     tm = {"total_s": round(time.time() - t0, 2)}
-    stream.emit("lead", "done", ok=False, iterations=0, timings=tm, classifier={}, error=err)
+    stream.emit(
+        "lead", "done", ok=False, iterations=0, timings=tm, classifier={}, error=err
+    )
     res = {
         "ask": ask,
         "ok": False,
@@ -2047,7 +3457,9 @@ def _refuse(stream: Stream, ask: str, out: Path, t0: float, err: str, msg: str) 
         "render": None,
         "error": err,
     }
-    (out / "live_result.json").write_text(json.dumps(res, indent=1))  # the library hides these by their error
+    (out / "live_result.json").write_text(
+        json.dumps(res, indent=1)
+    )  # the library hides these by their error
     return res
 
 
@@ -2084,10 +3496,20 @@ def design(
             if mains
             else "I did not catch a board in that. Tell me what it should do, like a light that turns on when it gets dark."
         )
-        err = f"prefilter: {pf.kind}" if pf else "mains voltage" if mains else "no board in the ask"
+        err = (
+            f"prefilter: {pf.kind}"
+            if pf
+            else "mains voltage"
+            if mains
+            else "no board in the ask"
+        )
         return _refuse(stream, ask, out, t0, err, msg)
     # ETCH_NO_STORE=1 (QA sweeps): always build fresh instead of answering from a stored board
-    hit = board_store.lookup(ask) if not context and not os.environ.get("ETCH_NO_STORE") else None
+    hit = (
+        board_store.lookup(ask)
+        if not context and not os.environ.get("ETCH_NO_STORE")
+        else None
+    )
     if hit:
         stream.emit("lead", "say", text="I have built this one before. Here it is.")
         return _stored(stream, ask, out, hit, t0)
@@ -2096,15 +3518,22 @@ def design(
     )
     cl = classify(stream, ask, context)
     t_cls = time.time() - t0
-    cat = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
+    cat = _cat()
     show = PieceShow(stream)
     show.candidates(cl["kept"])
     t1 = time.time()
     rec = recipes.match(ask, cat) if not context else None
+    if rec is None and not context:
+        # the device library (engine/parts/devices.json): thousands of device words built from code-wired blocks
+        rec = blocks.match(ask, cat)
     # ETCH_CLASSIFIER=1: NVIDIA's prompt classifier picks the first picker model (repairs stay on the lead)
     rt = task_router.route(ask, bool(rec), config.MODEL, config.SUB_MODEL)
     if rt:
         stream.emit("lead", "router", **rt)
+    if rec is None and not context:
+        # the model picks blocks, code writes the nets, firmware and benchmarks (qa/crash-trends-1017.md);
+        # an ask that is not a block board (555, transistor-only, named chip) goes on to the netlist picker
+        rec = blocks.pick_blocks(stream, ask, (rt or {}).get("model") or PICKER_MODEL, cat)
     route = "picker"
     if rec:
         d, route, used = rec
@@ -2141,55 +3570,80 @@ def design(
         stream.emit(
             "lead", "say", text=f"{len(cl['kept'])} parts fit. Picking the circuit."
         )
-        d, msgs = pick(
-            stream, ask, cl["kept"], context, model=rt.get("model") if rt else None
-        )
-        if d.get("missing"):
-            got = source_missing(stream, d["missing"])
-            if not got:
-                names = ", ".join(str(m.get("what")) for m in d["missing"])
-                stream.emit(
-                    "lead",
-                    "say",
-                    text=f"I could not find a real, sourced {names}, so I stopped instead of using a wrong part.",
-                )
-                stream.emit(
-                    "lead",
-                    "done",
-                    ok=False,
-                    iterations=0,
-                    timings={"total_s": round(time.time() - t0, 2)},
-                    classifier={},
-                    error=f"missing part: {names}",
-                )
-                return {
-                    "ask": ask,
-                    "ok": False,
-                    "iterations": 0,
-                    "timings": {"total_s": round(time.time() - t0, 2)},
-                    "classifier": {},
-                    "verdict": None,
-                    "board": str(out),
-                    "export": None,
-                    "render": None,
-                    "error": f"missing part: {names}",
-                }
-            if lost := [str(m.get("what")) for m in d["missing"] if m.get("not_found")]:
-                stream.emit(
-                    "lead",
-                    "say",
-                    text=f"I could not find a real, sourced {', '.join(lost)}; the rest goes ahead and that part "
-                    "uses the closest one KiCad has.",
-                )
-            cl["kept"] = cl["kept"] + got
+        try:
             d, msgs = pick(
-                stream,
-                ask,
-                cl["kept"],
-                context
-                + "\nFetched for this ask (now in the KEPT list): "
-                + ", ".join(f"{g['key']} ({g['family']})" for g in got),
+                stream, ask, cl["kept"], context, model=rt.get("model") if rt else None
             )
+            if d.get("missing"):
+                got = source_missing(stream, d["missing"])
+                if not got:
+                    names = ", ".join(str(m.get("what")) for m in d["missing"])
+                    stream.emit(
+                        "lead",
+                        "say",
+                        text=f"I could not find a real, sourced {names}, so I stopped instead of using a wrong part.",
+                    )
+                    stream.emit(
+                        "lead",
+                        "done",
+                        ok=False,
+                        iterations=0,
+                        timings={"total_s": round(time.time() - t0, 2)},
+                        classifier={},
+                        error=f"missing part: {names}",
+                    )
+                    return {
+                        "ask": ask,
+                        "ok": False,
+                        "iterations": 0,
+                        "timings": {"total_s": round(time.time() - t0, 2)},
+                        "classifier": {},
+                        "verdict": None,
+                        "board": str(out),
+                        "export": None,
+                        "render": None,
+                        "error": f"missing part: {names}",
+                    }
+                if lost := [
+                    str(m.get("what")) for m in d["missing"] if m.get("not_found")
+                ]:
+                    stream.emit(
+                        "lead",
+                        "say",
+                        text=f"I could not find a real, sourced {', '.join(lost)}; the rest goes ahead and that part "
+                        "uses the closest one KiCad has.",
+                    )
+                cl["kept"] = cl["kept"] + got
+                d, msgs = pick(
+                    stream,
+                    ask,
+                    cl["kept"],
+                    context
+                    + "\nFetched for this ask (now in the KEPT list): "
+                    + ", ".join(f"{g['key']} ({g['family']})" for g in got),
+                )
+        except PickTimeout as e:
+            stream.emit(
+                "lead",
+                "done",
+                ok=False,
+                iterations=0,
+                timings={"total_s": round(time.time() - t0, 2)},
+                classifier={},
+                error=f"missing parts: {e}",
+            )
+            return {
+                "ask": ask,
+                "ok": False,
+                "iterations": 0,
+                "timings": {"total_s": round(time.time() - t0, 2)},
+                "classifier": {},
+                "verdict": None,
+                "board": str(out),
+                "export": None,
+                "render": None,
+                "error": f"missing parts: {e}",
+            }
     t_pick = time.time() - t1
     show.confirm(d, {**cat, **{p["key"]: p for p in cl["kept"]}})
     stream.emit("lead", "say", text=d.get("say") or "Placing, routing and checking.")
@@ -2203,7 +3657,8 @@ def design(
         code,
         ask,
         cl["kept"],
-        max_iters=1 if route != "picker" else MAX_ITERS,
+        # a device skeleton passed the offline gate; the picker may still repair it once the KiCad build speaks
+        max_iters=1 if route != "picker" and route != "blocks" and not route.startswith("device:") else MAX_ITERS,
     )
     t_asm = time.time() - t2
     ex = None
@@ -2285,7 +3740,7 @@ def modify(
     summary = "; ".join(
         f"{p['ref']} {p['piece']} {p.get('value', '')}" for p in base["parts"]
     )
-    by_key = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
+    by_key = _cat()
     # an edit Etch knows (recolour, add a buzzer or power LED, remove it, swap the power input, smaller parts):
     # the new design comes from code, so no classifier and no model call, straight to place + route + checks
     hit = recipes.edit(request, base, by_key)
@@ -2343,7 +3798,31 @@ def modify(
             say=d.get("say"),
         )
     else:
-        d, msgs = pick(stream, request, kept, extra)
+        try:
+            d, msgs = pick(stream, request, kept, extra)
+        except PickTimeout as e:
+            # the missing-parts events are already out; end the job cleanly, same shape as design()
+            res = {
+                "ask": request,
+                "base": str(base_out),
+                "route": "picker",
+                "ok": False,
+                "iterations": 0,
+                "timings": {"total_s": round(time.time() - t0, 2)},
+                "classifier": {},
+                "verdict": None,
+                "board": str(out),
+                "export": None,
+                "render": None,
+                "error": f"missing parts: {e}",
+            }
+            stream.emit(
+                "lead",
+                "done",
+                **{k: res[k] for k in ("ok", "iterations", "timings", "classifier")},
+                error=res["error"],
+            )
+            return res
     t_pick = time.time() - t1
     base_refs = {p["ref"] for p in base["parts"]}
     new_refs = [p["ref"] for p in d.get("parts", []) if p["ref"] not in base_refs]
@@ -2482,17 +3961,30 @@ def main(argv: list[str]) -> None:
         return
     out = eng.new_run_dir("live")
     st = Stream(out.name, log=out / "run.jsonl", echo=x.events)
-    if x.mode == "design":
-        r = design(x.text, out, st, code=x.code, do_render=not x.no_render)
-    else:
-        r = modify(
-            x.text,
-            Path(x.base).resolve(),
-            out,
-            st,
-            code=x.code,
-            do_render=not x.no_render,
-        )
+    from .watchdog import Watchdog
+
+    dog = Watchdog(st, out, x.text).start()  # stage and run caps with an honest message (prod zM-s8mWOeq3rjtE3)
+    try:
+        if x.mode == "design":
+            r = design(x.text, out, st, code=x.code, do_render=not x.no_render)
+        else:
+            r = modify(
+                x.text,
+                Path(x.base).resolve(),
+                out,
+                st,
+                code=x.code,
+                do_render=not x.no_render,
+            )
+    except Exception as e:
+        # every run ends with a done event, so the studio never waits on a job that already died (QA 10-17,
+        # nzcIIiKo49iFA5-o: a crash in default_commands left the nixie job with no done event); the traceback
+        # still goes to stderr and the exit code stays 1
+        st.emit("lead", "say", text="Something broke on my side while building this. Try again, or reword the ask.")
+        st.emit("lead", "done", ok=False, iterations=0, error=f"internal error: {type(e).__name__}: {e}"[:300])
+        raise
+    finally:
+        dog.stop()
     if not x.events:
         print(
             json.dumps(

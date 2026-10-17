@@ -146,7 +146,7 @@ class ExploreRoutes(unittest.TestCase):
             mock.patch.object(explore, "LIB_SRC", TMP / "src"),
             mock.patch.object(explore, "OUT", TMP / "out"),
             mock.patch.object(explore, "CATALOG", TMP / "catalog.json"),
-            mock.patch.object(etch_public, "worker", lambda job: None),
+            mock.patch.object(etch_public, "worker", lambda job: etch_public.release(job.lane)),  # the real worker always releases its place
         ]
         for p in cls.patches:
             p.start()

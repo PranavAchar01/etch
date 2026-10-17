@@ -3,9 +3,14 @@ only ETCH_BASE_URL / ETCH_MODEL / ETCH_SUB_MODEL / ETCH_API_KEY_SOURCE change.""
 
 from __future__ import annotations
 
+import hashlib
 import json
+import random
 import re
+import threading
 import time
+from collections import deque
+from pathlib import Path
 from typing import Any
 
 from . import config
@@ -136,35 +141,112 @@ def _status(e: Exception) -> int | None:
 RATE_FILE = config.OUT / ".primary-rate.json"
 RATE_WINDOW_S = 60.0
 RETRY_AFTER_MAX_S = 20.0
+# the longest one request waits for a slot in the shared rate window before it gives up with a ModelError (the
+# picker then says the model was slow) instead of sleeping without a word: every Etch process on this Mac shares
+# the window, so local QA sweeps could otherwise park a prod run indefinitely (crash-fidget 10-17)
+PACE_MAX_S = 75.0  # one full 60 s window, not two
 
 
-def _pace(base_url: str, now=time.time, sleep=time.sleep) -> float:
+def _rate_file(key: str = "") -> Path:
+    """The rolling window for one API key. Crusoe limits each key on its own (30/min), so a second Crusoe key used
+    as the fallback (ETCH_FALLBACK_KEY_SOURCE) keeps its own window instead of eating the primary's."""
+    try:
+        primary = config.api_key()
+    except RuntimeError:
+        primary = ""
+    if not key or key == primary:
+        return RATE_FILE
+    return RATE_FILE.with_name(f".rate-{hashlib.sha256(key.encode()).hexdigest()[:10]}.json")
+
+
+def _pace(base_url: str, now=time.time, sleep=time.sleep, key: str = "") -> float:
     """Block until the rolling window has a free slot, then record this request. Returns seconds waited."""
     if _is_openai(base_url) or config.RATE_PER_MIN <= 0:
         return 0.0
     import fcntl
 
-    RATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    rate_file = _rate_file(key)
+    rate_file.parent.mkdir(parents=True, exist_ok=True)
     waited = 0.0
-    with open(RATE_FILE.with_suffix(".lock"), "a") as lk:
+    try:  # Crusoe's own headers said the key is nearly out: every process waits for the reset
+        hold = float(_pause_file(rate_file).read_text()) - now()
+    except (OSError, ValueError):
+        hold = 0.0
+    if hold > 0:
+        hold = min(hold, RETRY_AFTER_MAX_S)
+        sleep(hold)
+        waited += hold
+    with open(rate_file.with_suffix(".lock"), "a") as lk:
         while True:
             fcntl.flock(lk, fcntl.LOCK_EX)
             try:
                 try:
-                    stamps = json.loads(RATE_FILE.read_text())
+                    stamps = json.loads(rate_file.read_text())
                 except (OSError, ValueError):
                     stamps = []
                 t = now()
                 stamps = [s for s in stamps if t - s < RATE_WINDOW_S]
                 if len(stamps) < config.RATE_PER_MIN:
                     stamps.append(t)
-                    RATE_FILE.write_text(json.dumps(stamps))
+                    rate_file.write_text(json.dumps(stamps))
                     return round(waited, 2)
                 wait = RATE_WINDOW_S - (t - min(stamps)) + 0.05
             finally:
                 fcntl.flock(lk, fcntl.LOCK_UN)
+            if waited + wait > PACE_MAX_S:
+                raise ModelError(
+                    f"no free model slot after {round(waited, 1)} s: {config.RATE_PER_MIN} requests a minute are "
+                    "in use by other runs"
+                )
             sleep(wait)
             waited += wait
+
+
+def _pause_file(rate_file: Path) -> Path:
+    return rate_file.with_name(rate_file.stem + ".pause")
+
+
+def _dur(v: Any) -> float | None:
+    """A rate-limit reset value: "1s", "6m0s", "250ms", "1.5" -> seconds."""
+    if v is None:
+        return None
+    v = str(v).strip()
+    try:
+        return float(v)
+    except ValueError:
+        pass
+    parts = re.findall(r"([\d.]+)(ms|h|m|s)", v)
+    if not parts:
+        return None
+    unit = {"ms": 0.001, "s": 1.0, "m": 60.0, "h": 3600.0}
+    return sum(float(n) * unit[u] for n, u in parts)
+
+
+LOW_REQUESTS = 2  # remaining requests in the window at or below which every process pauses for the reset
+LOW_TOKENS = 8000
+
+
+def _note_limits(base_url: str, key: str, headers: Any, now=time.time) -> float:
+    """Read x-ratelimit-remaining-* / x-ratelimit-reset-* from a successful primary response. When the key is nearly
+    out, write a shared pause (until the reset) that _pace honours in every Etch process. Returns the pause set."""
+    if _is_openai(base_url) or not headers:
+        return 0.0
+    pause = 0.0
+    for kind, low in (("requests", LOW_REQUESTS), ("tokens", LOW_TOKENS)):
+        try:
+            left = float(headers.get(f"x-ratelimit-remaining-{kind}"))
+        except (TypeError, ValueError):
+            continue
+        if left <= low:
+            pause = max(pause, _dur(headers.get(f"x-ratelimit-reset-{kind}")) or 2.0)
+    if pause > 0:
+        from etchlib.slots import atomic_write_text
+
+        pause = min(pause, RETRY_AFTER_MAX_S)
+        f = _pause_file(_rate_file(key))
+        f.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_text(f, str(now() + pause))
+    return pause
 
 
 def _retry_after(e: Exception) -> float:
@@ -174,6 +256,47 @@ def _retry_after(e: Exception) -> float:
         return min(float(h.get("retry-after", 2)), RETRY_AFTER_MAX_S)
     except (TypeError, ValueError):
         return 2.0
+
+
+# ---- 429 "max_requests_limit": Crusoe also caps requests in flight per key. Parallel runs each keep at most
+# config.LLM_CONCURRENCY primary requests open (a per-process limiter), and a 429 is retried in _create with full
+# jitter, so runs that hit the limit together spread out instead of retrying in lockstep.
+_inflight = threading.BoundedSemaphore(config.LLM_CONCURRENCY)
+BACKOFF_BASE_S = 0.5
+BACKOFF_CAP_S = 8.0
+
+
+def _backoff(e: Exception, attempt: int, rand=random.uniform) -> float:
+    """Full-jitter exponential backoff for the attempt-th 429 (1-based); a Retry-After header is the floor."""
+    h = getattr(getattr(e, "response", None), "headers", None) or {}
+    try:
+        floor = min(float(h["retry-after"]), RETRY_AFTER_MAX_S) if "retry-after" in h else 0.0
+    except (TypeError, ValueError):
+        floor = 0.0
+    return round(max(floor, rand(0.0, min(BACKOFF_CAP_S, BACKOFF_BASE_S * 2**attempt))), 2)
+
+
+def _send(c: Any, base_url: str, key: str, kw: dict[str, Any], sleep=time.sleep) -> Any:
+    """One primary request under the in-flight limiter and the shared rate window, retrying a 429 with jittered
+    backoff. OpenAI requests go straight through (no limiter, no Crusoe window)."""
+    if _is_openai(base_url):
+        return c.chat.completions.create(**kw)
+    raw_api = getattr(c.chat.completions, "with_raw_response", None)
+    for attempt in range(config.LLM_429_TRIES + 1):
+        _pace(base_url, key=key)
+        with _inflight:
+            try:
+                if raw_api is None:
+                    return c.chat.completions.create(**kw)
+                raw = raw_api.create(**kw)
+                _note_limits(base_url, key, raw.headers)
+                return raw.parse()
+            except Exception as e:  # a 503 is not retried here: chat() moves to another model at once
+                if _status(e) != 429 or attempt >= config.LLM_429_TRIES:
+                    raise
+                err = e
+        sleep(_backoff(err, attempt + 1))  # outside the limiter: a waiting run does not hold a place
+    raise AssertionError("unreachable")
 
 
 def _retryable(e: Exception) -> bool:
@@ -186,6 +309,7 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
     the server rejects with a 5xx/4xx (Crusoe's Lightning 500s on it) is retried once as "auto" (the
     caller still reads a structured answer from the tool call or the JSON in the text)."""
     kw = dict(kw, model=model)
+    cap = kw.pop("_cap", None)
     if _is_openai_reasoning(model, base_url) and effort:
         kw["reasoning_effort"] = effort
     if not _is_openai(base_url):
@@ -193,13 +317,14 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
         kw["extra_body"] = {
             "chat_template_kwargs": {"enable_thinking": config.THINKING}
         }
-        if config.MAX_TOKENS > 0:
+        if cap:
+            kw["max_tokens"] = cap
+        elif config.MAX_TOKENS > 0:
             kw.setdefault("max_tokens", config.MAX_TOKENS)
     guard(base_url)
     c = _client_for(base_url, key).with_options(timeout=timeout, max_retries=0)
     try:
-        _pace(base_url)
-        return c.chat.completions.create(**kw)
+        return _send(c, base_url, key, kw)
     except Exception as e:
         tc = kw.get("tool_choice")
         if (
@@ -214,11 +339,90 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
                     "content": f"Answer by calling the tool `{name}` exactly once with valid JSON arguments.",
                 }
             ]
-            _pace(base_url)
-            return c.chat.completions.create(
-                **dict(kw, tool_choice="auto", messages=msgs)
-            )
+            return _send(c, base_url, key, dict(kw, tool_choice="auto", messages=msgs))
         raise
+
+
+def _metered(base_url: str, key: str, model: str, kw, effort, timeout, agent: str):
+    resp = _create(base_url, key, model, kw, effort, timeout)
+    if _is_openai(base_url):
+        u = resp.usage
+        meter(model, agent, getattr(u, "prompt_tokens", 0) or 0, getattr(u, "completion_tokens", 0) or 0)
+    return resp
+
+
+# ---- Hedge timing and target (latency report P1, 2026-10-17)
+_durations: dict[str, deque] = {}
+_capacity_out: dict[str, float] = {}  # model -> when it last answered 503 capacity_unavailable
+
+
+def _record(model: str, secs: float) -> None:
+    _durations.setdefault(model, deque(maxlen=50)).append(secs)
+
+
+def hedge_after(model: str) -> float:
+    """Seconds before a primary call on this model is hedged: the rolling p95 of this process's last 50 calls on it
+    (clamped to 12-45 s) once there are enough of them, else config.HEDGE_S."""
+    d = sorted(_durations.get(model, ()))
+    if config.HEDGE_S <= 0 or len(d) < config.HEDGE_MIN_SAMPLES:
+        return config.HEDGE_S
+    return min(max(d[round(0.95 * (len(d) - 1))], 12.0), 45.0)
+
+
+def hedge_model(model: str) -> str:
+    """Where a hedge goes. Never the same model again (a second Super on the second Crusoe project doubles load on a
+    model that is short of capacity): Super hedges to Lightning, which has its own capacity pool."""
+    fb = config.fallback_model(model)
+    if fb == model and model == config.MODEL and config.SUB_MODEL != model:
+        return config.SUB_MODEL
+    return fb
+
+
+def _swap(model: str) -> str | None:
+    """The other primary model for a 503 capacity_unavailable: Super -> Lightning. None when there is none."""
+    return config.SUB_MODEL if model == config.MODEL and config.SUB_MODEL != model else None
+
+
+def _capacity_503(e: Exception) -> bool:
+    return _status(e) == 503
+
+
+def _hedged(stream: Stream, agent: str, model: str, kw, effort, ptimeout: float, timeout: float | None):
+    """One primary request. When it has not answered after config.HEDGE_S and a fallback is configured, the same
+    request also goes to the fallback model and the first answer wins: a stalled Crusoe call costs about 12 s
+    instead of the 30 s timeout plus a retry (report rank 2). Returns (response, fallback model or None). A
+    primary error inside the hedge window raises as before (the caller retries or falls back)."""
+    import concurrent.futures as cf
+
+    after = hedge_after(model)
+    if after <= 0 or not _fallback_ready() or _is_openai(config.BASE_URL) or ptimeout <= after:
+        return _create(config.BASE_URL, config.api_key(), model, kw, effort, ptimeout), None
+    pool = cf.ThreadPoolExecutor(max_workers=2, thread_name_prefix="llm-hedge")
+    try:
+        prim = pool.submit(_create, config.BASE_URL, config.api_key(), model, kw, effort, ptimeout)
+        if cf.wait([prim], timeout=after).done:
+            return prim.result(), None  # an answer, or the primary's own error for the caller's retry/fallback
+        fb_model = hedge_model(model)
+        stream.emit(agent, "llm_hedge", model=model, to=fb_model, after_s=after)
+        fb = pool.submit(
+            _metered, config.FALLBACK_BASE_URL, config.fallback_key(), fb_model, kw, effort, timeout or 45, agent
+        )
+        pending = {prim, fb}
+        err: Exception | None = None
+        while pending:
+            done, pending = cf.wait(pending, return_when=cf.FIRST_COMPLETED)
+            for f in done:
+                try:
+                    r = f.result()
+                except Exception as e:  # the other request may still answer
+                    stream.emit(agent, "llm_error", model=model if f is prim else fb_model, error=str(e)[:300])
+                    err = e
+                    continue
+                stream.emit(agent, "llm_hedge_won", winner="primary" if f is prim else "fallback")
+                return r, (None if f is prim else fb_model)
+        raise ModelError(f"{model} and the hedged {fb_model} both failed: {str(err)[:200]}") from err
+    finally:
+        pool.shutdown(wait=False)  # the losing request finishes in the background and is dropped
 
 
 def chat(
@@ -230,10 +434,14 @@ def chat(
     tool_choice: Any = None,
     effort: str | None = None,
     timeout: float | None = None,
+    max_tokens: int | None = None,
 ) -> Any:
-    """One completion; emits an `llm` event with model, provider, latency and token counts."""
+    """One completion; emits an `llm` event with model, provider, latency and token counts. max_tokens caps the
+    output off OpenAI (in place of ETCH_MAX_TOKENS) so a runaway answer ends instead of timing out."""
     global _fallback_since
     kw: dict[str, Any] = {"messages": messages}
+    if max_tokens:
+        kw["_cap"] = max_tokens
     if tools:
         kw["tools"] = tools
         if tool_choice is not None:
@@ -246,23 +454,43 @@ def chat(
         and time.time() - _fallback_since < FALLBACK_STICKY_S
     )
     resp = None
+    metered = False  # a hedged fallback call meters itself (the losing call is billed too)
+    out_at = _capacity_out.get(model)
+    if out_at is not None and time.time() - out_at < config.CAPACITY_SWITCH_S and _swap(model):
+        stream.emit(agent, "llm_switch", model=model, to=_swap(model), reason="capacity_unavailable (recent)")
+        model = used = _swap(model)
     if not (sticky and _fallback_ready()):
         ptimeout = timeout or 45
         if not _is_openai(base):
             ptimeout = min(ptimeout, config.PRIMARY_TIMEOUT)
         tries = 1 if _is_openai(base) else PRIMARY_TRIES
-        for attempt in range(1, tries + 1):
+        attempt = 0
+        while attempt < tries:
+            attempt += 1
             ta = time.time()
             try:
-                resp = _create(base, config.api_key(), model, kw, effort, ptimeout)
+                resp, hedged = _hedged(stream, agent, model, kw, effort, ptimeout, timeout)
+                if hedged:
+                    base, used, metered = config.FALLBACK_BASE_URL, hedged, True
+                else:
+                    _record(model, time.time() - ta)
                 break
+            except ModelError:
+                raise  # the hedge already tried the primary and the fallback
             except Exception as e:
                 secs = round(time.time() - ta, 1)
                 stream.emit(
                     agent, "llm_error", model=model, seconds=secs, error=str(e)[:300]
                 )
+                if _capacity_503(e) and _swap(model) and not _is_openai(base):
+                    # the shared deployment is scaling: retrying Super makes it worse, move to Lightning now
+                    _capacity_out[model] = time.time()
+                    stream.emit(agent, "llm_switch", model=model, to=_swap(model), reason="capacity_unavailable")
+                    model = used = _swap(model)
+                    tries = max(tries, attempt + 1)
+                    continue
                 if attempt < tries and _retryable(e):
-                    wait = _retry_after(e) if _status(e) == 429 else 0.0
+                    wait = _backoff(e, attempt) if _status(e) == 429 else 0.0
                     stream.emit(
                         agent,
                         "llm_retry",
@@ -292,7 +520,15 @@ def chat(
         base, used = config.FALLBACK_BASE_URL, config.fallback_model(model)
         t1 = time.time()
         try:
-            resp = _create(base, config.fallback_key(), used, kw, effort, timeout or 45)
+            try:
+                resp = _create(base, config.fallback_key(), used, kw, effort, timeout or 45)
+            except Exception as e:
+                if _status(e) != 429:  # a Crusoe fallback key has its own 30/min limit: wait it out once
+                    raise
+                wait = _retry_after(e)
+                stream.emit(agent, "llm_retry", model=used, attempt=2, wait_s=wait)
+                time.sleep(wait)
+                resp = _create(base, config.fallback_key(), used, kw, effort, timeout or 45)
         except Exception as e:
             secs = round(time.time() - t1, 1)
             stream.emit(
@@ -302,7 +538,7 @@ def chat(
                 f"{used} (fallback) failed after {secs} s ({type(e).__name__}): {str(e)[:200]}."
             ) from e
     u = resp.usage
-    if _is_openai(base):
+    if _is_openai(base) and not metered:
         meter(
             used,
             agent,
@@ -336,6 +572,7 @@ def call_json(
     fn: dict[str, Any],
     effort: str | None = None,
     timeout: float | None = None,
+    max_tokens: int | None = None,
 ) -> tuple[dict[str, Any], Any]:
     """Ask for one structured answer through a forced tool call; fall back to JSON in the text
     (some open-model servers ignore a named tool_choice)."""
@@ -349,6 +586,7 @@ def call_json(
         tool_choice={"type": "function", "function": {"name": fn["name"]}},
         effort=effort,
         timeout=timeout,
+        max_tokens=max_tokens,
     )
     if msg.tool_calls:
         return json.loads(msg.tool_calls[0].function.arguments or "{}"), msg

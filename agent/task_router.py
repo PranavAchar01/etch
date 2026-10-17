@@ -189,8 +189,16 @@ def route(ask: str, recipe: bool, lead: str, sub: str) -> dict[str, Any] | None:
     """None when the router is off or cannot load; the caller then keeps its default model."""
     if not enabled():
         return None
+    rw = None
     try:
-        res = _precomputed() or classify(ask)
+        res = _precomputed()
+        if (
+            res is None
+        ):  # CLI / QA run: rewrite here (the backend already did it and sent a `lead rewrite` event)
+            from agent import prompt_rewriter
+
+            rw = prompt_rewriter.rewrite(ask) if prompt_rewriter.enabled() else None
+            res = classify(rw["text"] if rw else ask)
     except (
         Exception
     ) as e:  # optional dependency or download failure: fall back to the default path
@@ -205,6 +213,16 @@ def route(ask: str, recipe: bool, lead: str, sub: str) -> dict[str, Any] | None:
         "complexity": res["prompt_complexity_score"],
         "seconds": res["seconds"],
         "load_seconds": res["load_seconds"],
+        **(
+            {
+                "rewrite": {
+                    k: rw[k]
+                    for k in ("ok", "kind", "device", "text", "seconds", "cached")
+                }
+            }
+            if rw
+            else {}
+        ),
     }
 
 
@@ -218,7 +236,10 @@ def serve(inp: Any = None, out: Any = None) -> None:
         st = _load()
         out.write(json.dumps({"ready": True, "load_seconds": st["load_s"]}) + "\n")
     except Exception as e:  # missing packages or weights: say so once, then answer every ask with the error
-        out.write(json.dumps({"ready": False, "error": f"{type(e).__name__}: {e}"[:300]}) + "\n")
+        out.write(
+            json.dumps({"ready": False, "error": f"{type(e).__name__}: {e}"[:300]})
+            + "\n"
+        )
     out.flush()
     for line in inp:
         try:

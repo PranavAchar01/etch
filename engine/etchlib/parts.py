@@ -51,24 +51,45 @@ def load_index() -> dict[str, dict[str, Any]]:
     if KICAD_CATALOG_PATH.exists():
         for p in read_index(KICAD_CATALOG_PATH).get("pieces", []):
             if p.get("model") and p.get("pads_ok"):
-                parts.setdefault(
-                    p["key"],
-                    {
-                        "key": p["key"],
-                        "name": p["name"],
-                        "aliases": [],
-                        "lib_id": p["lib_id"],
-                        "footprint": p["footprint"],
-                        "category": p["family"],
-                        "value": None,
-                        "spice": p["spice"],
-                        "why": None,
-                        "model": p["model"],
-                        "pins": sorted(p["pins"], key=lambda s: (len(s), s)),
-                        "source": "kicad-lib",
-                    },
-                )
+                parts.setdefault(p["key"], _piece_entry(p))
+    for k, e in _REGISTERED.items():
+        parts.setdefault(k, e)
     return parts
+
+
+def _piece_entry(p: dict[str, Any]) -> dict[str, Any]:
+    """A library piece (kicad_catalog / kicad_library format) as an index entry."""
+    return {
+        "key": p["key"],
+        "name": p["name"],
+        "aliases": [],
+        "lib_id": p["lib_id"],
+        "footprint": p["footprint"],
+        "category": p["family"],
+        "value": None,
+        "spice": p.get("spice"),
+        "why": None,
+        "model": p["model"],
+        "pins": sorted(p["pins"], key=lambda s: (len(s), s)),
+        "source": p.get("source") or "kicad-lib",
+        **({"provenance": p["provenance"]} if p.get("provenance") else {}),
+    }
+
+
+# pieces from the full parts library (agent/kicad_library.py: every KiCad library, the extra libraries, fetched
+# cache parts) that a design in this process uses; the 39k-piece library is not loaded into the index wholesale
+_REGISTERED: dict[str, dict[str, Any]] = {}
+
+
+def register(pieces: list[dict[str, Any]]) -> None:
+    """Make library pieces resolvable by load_index() (and so by the spec builder) in this process."""
+    idx = load_index()
+    for p in pieces:
+        if p["key"] in idx or not (p.get("model") and p.get("pads_ok")):
+            continue
+        e = _piece_entry(p)
+        _REGISTERED[p["key"]] = e
+        idx[p["key"]] = e
 
 
 def _tokens(s: str) -> set[str]:

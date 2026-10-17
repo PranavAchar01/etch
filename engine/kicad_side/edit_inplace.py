@@ -754,7 +754,8 @@ def route_new(board, cu, outline, items, jobs, rules, grid=None, budget_s=120.0)
                 if _rect_dist(x, y, g) < reach:
                     for L in (0, 1):
                         if outer[L] in it["layers"]:
-                            R.own[L][R.idx(ix, iy)] = BLOCKED
+                            for g_ in R._grids():
+                                g_[L][R.idx(ix, iy)] = BLOCKED
             R.add_item((BLOCKED, set(), "rect", g))
     R.add_existing(tracks, vias)
     # a new track may end anywhere inside existing copper of its own net, even where the clearance map is closed
@@ -787,8 +788,9 @@ def route_new(board, cu, outline, items, jobs, rules, grid=None, budget_s=120.0)
             x, y = R.cell_xy(ix, iy)
             if not outline.inside(x + ox, y + oy):
                 i = R.idx(ix, iy)
-                R.own[0][i] = BLOCKED
-                R.own[1][i] = BLOCKED
+                for g_ in R._grids():
+                    g_[0][i] = BLOCKED
+                    g_[1][i] = BLOCKED
                 R.no_via.add(i)
 
     results = []

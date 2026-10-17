@@ -149,11 +149,63 @@ def voice_led(ask: str) -> dict[str, Any] | None:
     }
 
 
+def pitch_rainbow(ask: str) -> dict[str, Any] | None:
+    """Singing or humming lights an RGB LED in the colour of the note: low red through high violet (Pranav's
+    prompt family, 10-17). Same mic + RGB board as voice_led; the firmware finds the pitch (firmware.py, pitch
+    mode) instead of just loud or quiet."""
+    a = ask.lower()
+    if not re.search(
+        r"\b(sing|sings|singing|sung|hum|humming|whistl\w*|voice|mic|microphone|note|notes|pitch\w*)\b",
+        a,
+    ):
+        return None
+    if not re.search(
+        r"\b(pitch\w*|notes?|rainbow|higher|lower|frequenc\w*|tones?|tuner)\b", a
+    ):
+        return None
+    if not re.search(r"\b(led|light|lights|lit|glow\w*|colou?rs?|rainbow|hue)\b", a):
+        return None
+    from . import firmware  # noqa: PLC0415
+
+    bands = firmware.pitch_bands({"R": "LED_R", "G": "LED_G", "B": "LED_B"})
+    parts = [
+        _pico({**RGB_GPIO, "31": "MIC_OUT", "36": "P3V3"}),
+        {
+            "ref": "MK1",
+            "piece": MIC,
+            "value": "MAX4466",
+            "pins": {"1": "P3V3", "2": "GND", "3": "MIC_OUT"},
+            "group": "sensor",
+            "why": "Electret mic and amplifier module (MAX4466 with gain trim) plugs in here; its output rests at "
+            "half the supply and carries your voice.",
+        },
+        *_rgb_block(),
+    ]
+    return {
+        "name": "pitch_rainbow",
+        "title": "PITCH RAINBOW",
+        "voltage": 5.0,
+        "parts": parts,
+        "firmware": {
+            "mode": "pitch",
+            "input_net": "MIC_OUT",
+            "bands": bands,
+            "quiet_high": [],
+        },
+        "benchmarks": [],
+        "say": "A Pico listens through a mic amplifier, works out the pitch you sing and lights the RGB LED in that "
+        "rainbow colour: red for low notes, then yellow, green, cyan, blue, and violet for the highest. "
+        "Silence turns it off.",
+    }
+
+
 def typed_rgb(ask: str) -> dict[str, Any] | None:
     a = ask.lower()
     # "an RGB LED controlled by a Pico": no keys named, so the laptop picks the colour with r / g / b (sweep 10-17,
     # the picker wired the resistors into the GPIO pins three times)
-    rgb_pico = bool(re.search(r"\brgb\b", a) and re.search(r"\b(pico|rp2040|microcontroller)\b", a))
+    rgb_pico = bool(
+        re.search(r"\brgb\b", a) and re.search(r"\b(pico|rp2040|microcontroller)\b", a)
+    )
     # typing on a computer, not pressing a button on the board
     if not rgb_pico and not re.search(
         r"\b(type|types|typing|typed|keyboard|laptop|computer|serial|usb)\b", a
@@ -167,7 +219,8 @@ def typed_rgb(ask: str) -> dict[str, Any] | None:
     pairs += [
         (k, c)
         for k, c in re.findall(
-            rf"[\"'“]?\b(\w)\b[\"'”]?\s+(?:for|=|is|makes it|turns it)\s+({COLOUR_RX})\b", a
+            rf"[\"'“]?\b(\w)\b[\"'”]?\s+(?:for|=|is|makes it|turns it)\s+({COLOUR_RX})\b",
+            a,
         )
         if k not in ("a", "i")
     ]
@@ -420,7 +473,9 @@ def dark_beeper(ask: str) -> dict[str, Any] | None:
 
 
 def dark_light(ask: str) -> dict[str, Any] | None:
-    """Night light: the dark_beeper sensor and switch, driving an LED through a 220 ohm resistor."""
+    """Night light: the dark_beeper sensor and switch, driving an LED through a 220 ohm resistor. With a button in
+    the ask (sweep 10-17: "a night light with one led and a button" lost its button), a push button feeds the LED
+    side, so the LED lights in the dark while it is pressed."""
     a = ask.lower()
     if not (
         re.search(r"\b(dark|night|nightlight|lights? (go|goes|turn\w*) off|dusk)\b", a)
@@ -429,6 +484,8 @@ def dark_light(ask: str) -> dict[str, Any] | None:
     ):
         return None
     colour = next((c for c in COLOURS if re.search(rf"\b{c}\b", a)), None)
+    button = bool(re.search(r"\b(button|push ?button|switch|press\w*)\b", a))
+    led_vcc = "VCC_SW" if button else "VCC"
     parts = [
         {
             "ref": "J1",
@@ -463,7 +520,7 @@ def dark_light(ask: str) -> dict[str, Any] | None:
             "ref": "R3",
             "piece": R,
             "value": "220",
-            "pins": {"1": "VCC", "2": "LED_A"},
+            "pins": {"1": led_vcc, "2": "LED_A"},
             "group": "output",
             "why": "Sets the LED current.",
         },
@@ -476,21 +533,34 @@ def dark_light(ask: str) -> dict[str, Any] | None:
             "why": "Lights in the dark.",
         },
     ]
+    if button:
+        parts.append(
+            {
+                "ref": "SW1",
+                "piece": SW,
+                "pins": {"1": "VCC", "2": "VCC_SW"},
+                "group": "input",
+                "why": "Push button: the LED side only gets power while it is pressed.",
+            }
+        )
+    scen = [{"name": "dark", "ldr": "dark"}, {"name": "light", "ldr": "light"}]
+    bench = [
+        {"check": "dark.D1.avg_ma", "min": 2, "text": "LED on in the dark"},
+        {"check": "light.D1.avg_ma", "max": 0.5, "text": "LED off in the light"},
+        {"check": "dark.D1.peak_ma", "max": 25, "text": "LED under 25 mA"},
+    ]
+    if button:
+        scen = [dict(x, switch="pressed") for x in scen] + [{"name": "released", "ldr": "dark", "switch": "released"}]
+        bench.append({"check": "released.D1.avg_ma", "max": 0.5, "text": "LED off with the button up"})
     return {
         "name": "night_light",
         "title": "NIGHT LIGHT",
         "voltage": 5.0,
         "parts": parts,
-        "scenarios": [
-            {"name": "dark", "ldr": "dark"},
-            {"name": "light", "ldr": "light"},
-        ],
-        "benchmarks": [
-            {"check": "dark.D1.avg_ma", "min": 2, "text": "LED on in the dark"},
-            {"check": "light.D1.avg_ma", "max": 0.5, "text": "LED off in the light"},
-            {"check": "dark.D1.peak_ma", "max": 25, "text": "LED under 25 mA"},
-        ],
-        "say": "A light sensor and one transistor turn the LED on when the room gets dark.",
+        "scenarios": scen,
+        "benchmarks": bench,
+        "say": "A light sensor and one transistor turn the LED on when the room gets dark"
+        + (", while you hold the button." if button else "."),
     }
 
 
@@ -843,6 +913,139 @@ def temp_display(ask: str) -> dict[str, Any] | None:
     }
 
 
+def soil_display(ask: str) -> dict[str, Any] | None:
+    """Soil moisture: a two-prong resistive probe on a header under a 10k pull-up into ADC0 (wet soil pulls the
+    reading down), optionally an SSD1306 OLED on I2C0 and a USB-C power-only input on VBUS (the
+    Pico's own Schottky then feeds VSYS).
+    Field run live-1792267825704: the picker put the OLED's VIN and GND on GPIO pins and left the probe unread."""
+    a = ask.lower()
+    if not re.search(r"\b(soil|moisture|plants?)\b", a):
+        return None
+    if re.search(r"\bwater(s|ing)?\b|\bpump\w*\b", a):
+        return None  # watering needs a pump driver this recipe does not build
+    if not _only(a, r"soil|moisture|display|oled|lcd|screen"):
+        return None
+    shows = bool(re.search(DISPLAY_RX, a))
+    usbc = bool(re.search(r"\busb[- ]?c\b", a))
+    parts = [
+        _pico(
+            {
+                "31": "SOIL_ADC",
+                "36": "P3V3",
+                **({"6": "SDA", "7": "SCL"} if shows else {}),
+                **({"40": "VCC"} if usbc else {}),
+            }
+        ),
+        {
+            "ref": "R1",
+            "piece": R,
+            "value": "10k",
+            "pins": {"1": "P3V3", "2": "SOIL_ADC"},
+            "group": "sensor",
+            "why": "Pull-up for the probe: dry soil (high resistance) reads near 3.3 V, wet soil pulls it down.",
+        },
+        {
+            "ref": "C1",
+            "piece": C_DISC,
+            "value": "100n",
+            "pins": {"1": "SOIL_ADC", "2": "GND"},
+            "group": "sensor",
+            "why": "Smooths the probe reading for the ADC.",
+        },
+        {
+            "ref": "J2",
+            "piece": HDR2,
+            "value": "soil probe",
+            "pins": {"1": "SOIL_ADC", "2": "GND"},
+            "group": "sensor",
+            "why": "The two-prong soil probe plugs in here; the soil between the prongs is the bottom of the divider.",
+        },
+    ]
+    if usbc:
+        parts += [
+            {
+                "ref": "J3",
+                "piece": USBC,
+                "pins": {
+                    "A9": "VCC",
+                    "B9": "VCC",
+                    "A12": "GND",
+                    "B12": "GND",
+                    "SH": "GND",
+                    "A5": "CC1",
+                    "B5": "CC2",
+                },
+                "group": "power",
+                "why": "5 V in over USB-C (power only).",
+            },
+            {
+                "ref": "R2",
+                "piece": R,
+                "value": "5.1k",
+                "pins": {"1": "CC1", "2": "GND"},
+                "group": "power",
+                "why": "CC1 pull-down: tells the charger to send 5 V.",
+            },
+            {
+                "ref": "R3",
+                "piece": R,
+                "value": "5.1k",
+                "pins": {"1": "CC2", "2": "GND"},
+                "group": "power",
+                "why": "CC2 pull-down, for either plug orientation.",
+            },
+        ]
+    if shows:
+        parts.append(_oled())
+    else:
+        parts += [
+            {
+                "ref": "R4",
+                "piece": R,
+                "value": "100",
+                "pins": {"1": "P3V3", "2": "PWR_A"},
+                "group": "output",
+                "why": "Sets the power LED current.",
+            },
+            {
+                "ref": "D2",
+                "piece": LED,
+                "value": "green",
+                "pins": {"2": "PWR_A", "1": "GND"},
+                "group": "output",
+                "why": "Shows the board is powered.",
+            },
+        ]
+    out = "J1" if shows else "D2"
+    return {
+        "name": "soil_moisture",
+        "title": "SOIL MOISTURE",
+        "voltage": 5.0,
+        "parts": parts,
+        "scenarios": [{"name": "room"}],
+        "benchmarks": [
+            {
+                "check": f"room.{out}.avg_ma",
+                "min": 2,
+                "max": 40,
+                "text": "OLED module powered" if shows else "Power LED on",
+            },
+            {
+                "check": "room.supply_ma_avg",
+                "max": 100,
+                "text": "Whole board under 100 mA",
+            },
+        ],
+        "say": "A Pico reads a resistive soil probe on ADC0"
+        + (
+            " and shows the moisture on an SSD1306 OLED over I2C"
+            if shows
+            else " and prints the moisture over USB"
+        )
+        + (", powered from a USB-C input." if usbc else "."),
+    }
+
+
 def heart_rate(ask: str) -> dict[str, Any] | None:
     """Fingertip pulse sensor: an LED shines through the finger onto a light sensor read on ADC0; optional OLED."""
     a = ask.lower()
@@ -1092,7 +1295,14 @@ def motor_car(ask: str) -> dict[str, Any] | None:
     if re.search(EXTRAS, re.sub(r"\bmotors?\b", "", a)):
         return None
     # GP10..GP13 set direction; GP8/GP9 drive the L293D enables with PWM for speed (QA round 4)
-    gp = {"14": "AIN1", "15": "AIN2", "16": "BIN1", "17": "BIN2", "11": "ENA", "12": "ENB"}
+    gp = {
+        "14": "AIN1",
+        "15": "AIN2",
+        "16": "BIN1",
+        "17": "BIN2",
+        "11": "ENA",
+        "12": "ENB",
+    }
     parts = [
         dict(
             _pico({**gp, "36": "P3V3", "40": "VBUS", "8": "GND", "13": "GND"}),
@@ -1171,7 +1381,8 @@ def motor_car(ask: str) -> dict[str, Any] | None:
     cmds = [
         {
             "input": k,
-            "high": ([nets[lm][0], "ENA"] if lm else []) + ([nets[rm][1], "ENB"] if rm else []),
+            "high": ([nets[lm][0], "ENA"] if lm else [])
+            + ([nets[rm][1], "ENB"] if rm else []),
             "does": does,
         }
         for k, (lm, rm, does) in CAR_MOVES.items()
@@ -1230,15 +1441,162 @@ def motor_car(ask: str) -> dict[str, Any] | None:
     }
 
 
-PICO_RECIPES = (temp_display, heart_rate, strip_knob, motor_car)
+FLYBACK = "kicad:Diode:1N4001@D_DO-41_SOD81_P10.16mm_Horizontal"
+SWITCH_NPN = "kicad:Transistor_BJT:PN2222A@TO-92_Inline"
+
+
+def _threshold_c(a: str) -> float:
+    """The temperature the ask names ("past 80 deg", "above 80 C", "176 F"), in C; 80 when none is named."""
+    for m in re.finditer(
+        r"(\d{2,3}(?:\.\d)?)\s*(°|º|deg\w*)?\s*(c\b|celsius|f\b|fahrenheit)?", a
+    ):
+        if (
+            m.group(2)
+            or m.group(3)
+            or re.search(
+                r"(past|above|over|exceeds?|hits?|reach\w*|than|beyond)\s*$",
+                a[: m.start()],
+            )
+        ):
+            v = float(m.group(1))
+            return round((v - 32) / 1.8, 1) if (m.group(3) or "").startswith("f") else v
+    return 80.0
+
+
+def usb_fan(ask: str) -> dict[str, Any] | None:
+    """A fan the computer switches over USB when it gets hot (Pranav's prompt family, 10-17): Pico on USB serial,
+    PN2222A low-side switch with a base resistor and pull-down, 1N4001 flyback diode across the fan, 5 V fan from
+    USB VBUS, bulk capacitor. A host script (fan_host.py) reads the CPU temperature with hysteresis and a
+    failsafe, and the firmware turns the fan on by itself when the computer goes quiet."""
+    a = ask.lower()
+    if not re.search(r"\b(fans?|cooling|cooler|blower)\b", a):
+        return None
+    if not re.search(
+        r"\b(temp\w*|hot|hotter|heat|deg\w*|celsius|fahrenheit|°|thermal|cpu)\b|\d+\s*°?\s*[cf]\b",
+        a,
+    ):
+        return None
+    if not re.search(
+        r"\b(computer|pc|laptop|usb|host|script|serial|desktop|mac|python)\b", a
+    ):
+        return None
+    if re.search(
+        r"\b(display|oled|lcd|screen|bluetooth|wi-?fi|relay|pump|motors)\b", a
+    ):
+        return None
+    on_at = _threshold_c(a)
+    off_at = round(on_at - 5, 1)
+    parts = [
+        _pico({"20": "FAN_ON", "40": "VBUS", "8": "GND"}),
+        {
+            "ref": "R1",
+            "piece": R,
+            "value": "1k",
+            "pins": {"1": "FAN_ON", "2": "Q1_B"},
+            "group": "output",
+            "why": "Base resistor: about 2.6 mA from the 3.3 V pin, plenty to saturate the switch at fan current.",
+        },
+        {
+            "ref": "R2",
+            "piece": R,
+            "value": "10k",
+            "pins": {"1": "Q1_B", "2": "GND"},
+            "group": "output",
+            "why": "Pull-down: the fan stays off while the Pico boots and its pin floats.",
+        },
+        {
+            "ref": "Q1",
+            "piece": SWITCH_NPN,
+            "value": "PN2222A",
+            "pins": {"1": "GND", "2": "Q1_B", "3": "FAN_N"},
+            "group": "output",
+            "why": "Low-side switch for the fan (600 mA part, the fan draws about 100 mA).",
+        },
+        {
+            "ref": "D1",
+            "piece": FLYBACK,
+            "value": "1N4001",
+            "pins": {"1": "VBUS", "2": "FAN_N"},
+            "group": "output",
+            "why": "Flyback diode across the fan motor: catches the voltage kick when the switch turns off.",
+        },
+        {
+            "ref": "M1",
+            "piece": HDR2,
+            "value": "5V fan",
+            "pins": {"1": "VBUS", "2": "FAN_N"},
+            "load_ohms": 50,
+            "group": "output",
+            "why": "Fan header: a small 5 V DC fan (about 100 mA), red lead on pin 1 (+5 V).",
+        },
+        {
+            "ref": "C1",
+            "piece": CP_BULK,
+            "value": "470u",
+            "pins": {"1": "VBUS", "2": "GND"},
+            "group": "power",
+            "why": "Bulk capacitor so the fan's start-up surge does not brown out the Pico.",
+        },
+    ]
+    cmds = [
+        {"input": "1", "high": ["FAN_ON"], "does": "fan on"},
+        {"input": "0", "high": [], "does": "fan off"},
+    ]
+    bench = [
+        {"check": "idle.M1.avg_ma", "min": -1, "max": 1, "text": "Fan off at power-up"},
+        {
+            "check": "cmd_1.M1.avg_ma",
+            "min": 60,
+            "max": 200,
+            "text": "Fan spins when the computer says hot",
+        },
+        {
+            "check": "cmd_0.M1.avg_ma",
+            "min": -1,
+            "max": 1,
+            "text": "Fan stops when the computer says cool",
+        },
+        {
+            "check": "failsafe.M1.avg_ma",
+            "min": 60,
+            "text": "Fan spins when the computer goes quiet (failsafe)",
+        },
+        {
+            "check": "cmd_1.supply_ma_peak",
+            "max": 500,
+            "text": "Under the 500 mA USB limit",
+        },
+    ]
+    return {
+        "name": "usb_fan",
+        "title": "USB FAN",
+        "voltage": 5.0,
+        "parts": parts,
+        "firmware": {
+            "commands": cmds,
+            "drives": "fan",
+            "failsafe": {"after_s": 15, "high": ["FAN_ON"]},
+            "host": {"file": "fan_host.py", "set": {"ON_AT": on_at, "OFF_AT": off_at}},
+        },
+        "benchmarks": bench,
+        "say": f"A Pico on USB switches a 5 V fan through a transistor with a flyback diode. fan_host.py on your "
+        f"computer reads the CPU temperature and turns the fan on at {on_at:g} C and off below {off_at:g} C. If "
+        "the computer goes quiet for 15 seconds, the board turns the fan on by itself.",
+    }
+
+
+PICO_RECIPES = (temp_display, soil_display, heart_rate, strip_knob, motor_car, usb_fan)
 
 RECIPES = (
     voice_arm,
+    usb_fan,
     motor_car,
     temp_display,
+    soil_display,
     heart_rate,
     strip_knob,
     plain_led,
+    pitch_rainbow,
     voice_led,
     typed_rgb,
     dark_beeper,
@@ -1283,12 +1641,24 @@ def match(
 ) -> tuple[dict[str, Any], str, list[dict[str, Any]]] | None:
     """(design, recipe name, the catalog pieces it uses) for the first recipe that fits the ask."""
     ask = _defill(ask) or ask
+    from . import device_recipes, esp32
+
+    # device recipes first: "keyboard" would otherwise reach typed_rgb, and "keypad" is in BEYOND
+    for fn in device_recipes.DEVICE_RECIPES:
+        d = fn(ask)
+        if d and all(p["piece"] in catalog for p in d["parts"]):
+            used = list({p["piece"]: catalog[p["piece"]] for p in d["parts"]}.values())
+            return d, fn.__name__, used
     beyond = _beyond_recipes(ask)
-    from . import esp32
 
     chip = esp32.chip_for(ask)
     for fn in (esp32.esp32_sensor, *RECIPES):
-        if beyond and fn is not voice_arm and fn not in PICO_RECIPES and fn is not esp32.esp32_sensor:
+        if (
+            beyond
+            and fn is not voice_arm
+            and fn not in PICO_RECIPES
+            and fn is not esp32.esp32_sensor
+        ):
             continue
         d = fn(ask)
         if d and chip and fn in (strip_knob, motor_car):
@@ -1323,28 +1693,48 @@ def recolour(request: str, base: dict[str, Any]) -> dict[str, Any] | None:
             rf"(?:a\s+|an\s+)?({COLOUR_RX})\s+(?:led|light|one)(?:\s+instead)?(?:\s+please)?",
             a,
         )
-    if not m or len(leds) != 1:
+    if not m or not leds:
         return None
+    if len(leds) > 1 and len({str(p.get("value")) for p in leds}) > 1:
+        return None  # LEDs of different colours: which one is meant is a design call
+    return _colour_leds(base, [p["ref"] for p in leds], m.group(1))
+
+
+def _colour_leds(base: dict[str, Any], refs: list[str], colour: str) -> dict[str, Any]:
+    """The design with the LEDs in refs set to colour (sweep 10-17: "use a blue led instead" on a board with two
+    identical LEDs means both; "add a second led and make it blue" means the new one)."""
     d = json.loads(json.dumps(base))
     for p in d["parts"]:
-        if p["ref"] == leds[0]["ref"]:
-            p["value"] = m.group(1)
-    d["say"] = f"Same board, {leds[0]['ref']} is now {m.group(1)}."
-    if m.group(1) in ("blue", "white"):
+        if p["ref"] in refs:
+            p["value"] = colour
+    d["say"] = f"Same board, {', '.join(refs)} {'is' if len(refs) == 1 else 'are'} now {colour}."
+    for ref in refs:
+        _blue_drive(d, next(p for p in d["parts"] if p["ref"] == ref), colour)
+    return d
+
+
+def _blue_drive(d: dict[str, Any], led: dict[str, Any], colour: str) -> None:
+    leds = [led]
+    if colour in ("blue", "white"):
         # QA round 6: a blue or white LED on a 3.3 V Pico pin through 100 ohm got under 1 mA (about 3 V of its 3.3 V
         # is the LED's own drop), so its series resistor drops to 47 ohm as on the motor car's headlights
         pico = {n for q in d["parts"] if q["piece"] == PICO for n in q["pins"].values()}
         anode = leds[0]["pins"].get("2")
         for q in d["parts"]:
             nets = list(q["pins"].values())
-            if q["piece"] == R and anode in nets and any(n in pico and n not in SUPPLY + ("GND",) for n in nets):
+            if (
+                q["piece"] == R
+                and anode in nets
+                and any(n in pico and n not in SUPPLY + ("GND",) for n in nets)
+            ):
                 try:
                     if sim_ohms(q.get("value", "")) > 47:
                         q["value"] = "47"
-                        d["say"] += f" {q['ref']} is now 47 ohm so it still lights from the 3.3 V pin."
+                        d["say"] += (
+                            f" {q['ref']} is now 47 ohm so it still lights from the 3.3 V pin."
+                        )
                 except ValueError:
                     pass
-    return d
 
 
 def sim_ohms(v: str) -> float:
@@ -1789,6 +2179,42 @@ def add_led(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
     return d
 
 
+def remove_switch(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
+    """'remove the button' (sweep 10-17): a two-pin push button in series between two nets is replaced by a wire
+    (its two nets merge), so what it switched is simply always on; its pressed/released scenarios and the
+    "released" checks go with it. A button read by a microcontroller is a design call and goes to the picker."""
+    if not re.fullmatch(
+        PLEASE
+        + r"(?:remove|drop|delete|take out|take off|get rid of|lose)\s+(?:the\s+|that\s+)?(?:push\s*)?(?:button|switch)",
+        a,
+    ):
+        return None
+    sws = [p for p in base["parts"] if p["piece"] == SW]
+    if len(sws) != 1 or any(p["piece"] in (PICO, PICO_W) for p in base["parts"]):
+        return None
+    sw = sws[0]
+    keep, gone = sw["pins"].get("1"), sw["pins"].get("2")
+    if not keep or not gone or keep == gone:
+        return None
+    if gone in SUPPLY + ("GND",):
+        keep, gone = gone, keep
+    d = _copy(base)
+    d["parts"] = [p for p in d["parts"] if p["ref"] != sw["ref"]]
+    for p in d["parts"]:
+        p["pins"] = {k: (keep if v == gone else v) for k, v in p["pins"].items()}
+    scen = [x for x in d.get("scenarios") or [] if x.get("switch") != "released"]
+    d["scenarios"] = [{k: v for k, v in x.items() if k != "switch"} for x in scen]
+    names = {x.get("name") for x in d["scenarios"]}
+    d["benchmarks"] = [
+        b
+        for b in d.get("benchmarks", [])
+        if f".{sw['ref']}." not in f".{b['check']}" and (b["check"].split(".")[0] in names or "." not in b["check"])
+    ]
+    d["_dropped"] = [sw["ref"]]
+    d["say"] = f"Removed {sw['ref']}: what it switched is now always on."
+    return d
+
+
 def remove_part(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
     """Remove a part by its reference (D2, R3, BZ1) or as 'the second/extra/last LED', with the resistor that
     only served it. The microcontroller and the power input stay: without them nothing else works."""
@@ -1888,6 +2314,21 @@ def coin_cell(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
     ]
     d["voltage"] = 3.0
     d["say"] = f"{j['ref']} is now a CR2032 coin cell holder, so the board runs at 3 V."
+    # sweep 10-17: at 3 V an LED's ~2 V drop leaves a third of the 5 V headroom, so a 220 ohm LED resistor gave
+    # 1.7 mA, under the 2 mA "on" check; the series resistors of LEDs fed from the supply drop to 68 ohm
+    anodes = {p["pins"].get("2") for p in d["parts"] if _is_led(p)}
+    eased = []
+    for q in d["parts"]:
+        nets = set(q["pins"].values())
+        if q["piece"] == R and nets & anodes and nets & {"VCC", "VCC_SW"}:
+            try:
+                if sim_ohms(q.get("value", "")) > 68:
+                    q["value"] = "68"
+                    eased.append(q["ref"])
+            except ValueError:
+                pass
+    if eased:
+        d["say"] += f" {', '.join(eased)} {'is' if len(eased) == 1 else 'are'} now 68 ohm so the LEDs stay bright."
     return d
 
 
@@ -1942,12 +2383,16 @@ def mcu_extra(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
         return None
     used = set(mcu["pins"])
     light = re.fullmatch(
-        PLEASE + r"(?:add|put|include|give it)\s+(?:some\s+)?(a|an|one|two|2|a pair of)?\s*(?:(" + COLOUR_RX + r")\s+)?"
+        PLEASE
+        + r"(?:add|put|include|give it)\s+(?:some\s+)?(a|an|one|two|2|a pair of)?\s*(?:("
+        + COLOUR_RX
+        + r")\s+)?"
         r"(?:head\s*lights?|front lights?|leds?|lights?)(?:\s+(?:too|as well|on the front|at the front))?",
         a,
     )
     hdr = re.fullmatch(
-        PLEASE + r"(?:add|put|include)\s+(?:a|an|one)?\s*(?:extra\s+|3[- ]pin\s+|three[- ]pin\s+|sensor\s+|"
+        PLEASE
+        + r"(?:add|put|include)\s+(?:a|an|one)?\s*(?:extra\s+|3[- ]pin\s+|three[- ]pin\s+|sensor\s+|"
         r"breakout\s+|expansion\s+|gpio\s+)*(?:pin\s+)?(?:header|connector|breakout|port)(?:\s+(?:too|as well|for a sensor))?",
         a,
     )
@@ -1958,43 +2403,84 @@ def mcu_extra(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
         colour = light.group(2) or "white"
         if colour not in ("red", "green", "blue", "yellow", "white", "orange"):
             return None
-        ohms = "47" if colour in ("white", "blue", "green") else "330"  # 3.3 V drive: white/blue/green (InGaN, ~3 V) leave ~0.3 V
+        ohms = (
+            "47" if colour in ("white", "blue", "green") else "330"
+        )  # 3.3 V drive: white/blue/green (InGaN, ~3 V) leave ~0.3 V
         next(p for p in d["parts"] if p["ref"] == mcu["ref"])["pins"]["24"] = "HEAD"
         refs = []
         for _ in range(n):
             dref, rref = _next_ref(d, "D"), _next_ref(d, "R")
             d["parts"] += [
-                {"ref": rref, "piece": R, "value": ohms, "pins": {"1": "HEAD", "2": f"{dref}_A"}, "group": "output",
-                 "why": f"Sets {dref}'s current from the 3.3 V pin (well under the Pico's 12 mA per pin)."},
-                {"ref": dref, "piece": LED, "value": colour, "pins": {"2": f"{dref}_A", "1": "GND"},
-                 "group": "output", "why": "Headlight: on while the car moves, off when it stops."},
+                {
+                    "ref": rref,
+                    "piece": R,
+                    "value": ohms,
+                    "pins": {"1": "HEAD", "2": f"{dref}_A"},
+                    "group": "output",
+                    "why": f"Sets {dref}'s current from the 3.3 V pin (well under the Pico's 12 mA per pin).",
+                },
+                {
+                    "ref": dref,
+                    "piece": LED,
+                    "value": colour,
+                    "pins": {"2": f"{dref}_A", "1": "GND"},
+                    "group": "output",
+                    "why": "Headlight: on while the car moves, off when it stops.",
+                },
             ]
             refs.append(dref)
             d.setdefault("benchmarks", []).extend(
                 [
-                    {"check": f"idle.{dref}.avg_ma", "min": -1, "max": 0.5, "text": f"{dref} headlight off at power-up"},
-                    {"check": f"cmd_f.{dref}.avg_ma", "min": 1, "max": 12, "text": f"{dref} headlight on while driving"},
-                    {"check": f"cmd_s.{dref}.avg_ma", "min": -1, "max": 0.5, "text": f"{dref} headlight off on stop"},
+                    {
+                        "check": f"idle.{dref}.avg_ma",
+                        "min": -1,
+                        "max": 0.5,
+                        "text": f"{dref} headlight off at power-up",
+                    },
+                    {
+                        "check": f"cmd_f.{dref}.avg_ma",
+                        "min": 1,
+                        "max": 12,
+                        "text": f"{dref} headlight on while driving",
+                    },
+                    {
+                        "check": f"cmd_s.{dref}.avg_ma",
+                        "min": -1,
+                        "max": 0.5,
+                        "text": f"{dref} headlight off on stop",
+                    },
                 ]
             )
         for c in cmds:
             if c.get("high") and str(c["input"])[:1] != "s":
                 c["high"] = list(c["high"]) + ["HEAD"]
-        d["say"] = (f"Added {' and '.join(refs)} as {colour} headlights on GP18: they light on f, b, l and r and go "
-                    "off on s. The firmware is regenerated and tested.")
+        d["say"] = (
+            f"Added {' and '.join(refs)} as {colour} headlights on GP18: they light on f, b, l and r and go "
+            "off on s. The firmware is regenerated and tested."
+        )
         return d
     if hdr and "26" not in used:
-        if any(p["piece"] == HDR3 and p.get("group") == "breakout" for p in base["parts"]):
+        if any(
+            p["piece"] == HDR3 and p.get("group") == "breakout" for p in base["parts"]
+        ):
             return None
         next(p for p in d["parts"] if p["ref"] == mcu["ref"])["pins"]["26"] = "AUX1"
         jref = _next_ref(d, "J")
         d["parts"].append(
-            {"ref": jref, "piece": HDR3, "value": "3V3 GP20 GND", "pins": {"1": "P3V3", "2": "AUX1", "3": "GND"},
-             "group": "breakout", "why": "Sensor header: 3.3 V, spare pin GP20 and ground (a bump switch or a "
-             "distance sensor)."}
+            {
+                "ref": jref,
+                "piece": HDR3,
+                "value": "3V3 GP20 GND",
+                "pins": {"1": "P3V3", "2": "AUX1", "3": "GND"},
+                "group": "breakout",
+                "why": "Sensor header: 3.3 V, spare pin GP20 and ground (a bump switch or a "
+                "distance sensor).",
+            }
         )
         d.setdefault("firmware", {}).setdefault("inputs", []).append("AUX1")
-        d["say"] = f"Added {jref}, a 3-pin sensor header: 3.3 V, GP20 and ground. GP20 stays an input for your sensor (the motor car firmware prints it on ?)."
+        d["say"] = (
+            f"Added {jref}, a 3-pin sensor header: 3.3 V, GP20 and ground. GP20 stays an input for your sensor (the motor car firmware prints it on ?)."
+        )
         return d
     return None
 
@@ -2024,22 +2510,48 @@ def sound_buzzer(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
     d = _copy(base)
     rref, qref, bref = _next_ref(d, "R"), _next_ref(d, "Q"), _next_ref(d, "BZ")
     d["parts"] += [
-        {"ref": rref, "piece": R, "value": "4.7k", "pins": {"1": drive, "2": f"{qref}_B"}, "group": "buzzer",
-         "why": f"Base resistor: about 0.5 mA from the {drive} pin, so the LED on that pin is unchanged."},
-        {"ref": qref, "piece": NPN, "pins": {"1": "GND", "2": f"{qref}_B", "3": f"{bref}_N"}, "group": "buzzer",
-         "why": "Switches the buzzer (a GPIO pin cannot supply its current)."},
-        {"ref": bref, "piece": BUZZ, "pins": {"1": "P3V3", "2": f"{bref}_N"}, "group": "buzzer",
-         "why": "Beeps while the board hears a command."},
+        {
+            "ref": rref,
+            "piece": R,
+            "value": "4.7k",
+            "pins": {"1": drive, "2": f"{qref}_B"},
+            "group": "buzzer",
+            "why": f"Base resistor: about 0.5 mA from the {drive} pin, so the LED on that pin is unchanged.",
+        },
+        {
+            "ref": qref,
+            "piece": NPN,
+            "pins": {"1": "GND", "2": f"{qref}_B", "3": f"{bref}_N"},
+            "group": "buzzer",
+            "why": "Switches the buzzer (a GPIO pin cannot supply its current).",
+        },
+        {
+            "ref": bref,
+            "piece": BUZZ,
+            "pins": {"1": "P3V3", "2": f"{bref}_N"},
+            "group": "buzzer",
+            "why": "Beeps while the board hears a command.",
+        },
     ]
     names = [s.get("name") for s in d.get("scenarios", [])]
     if "quiet" in names and "speaking" in names:
         d.setdefault("benchmarks", []).extend(
             [
-                {"check": f"quiet.{bref}.avg_ma", "max": 0.5, "text": f"{bref} silent when nobody speaks"},
-                {"check": f"speaking.{bref}.avg_ma", "min": 5, "text": f"{bref} beeps on a command"},
+                {
+                    "check": f"quiet.{bref}.avg_ma",
+                    "max": 0.5,
+                    "text": f"{bref} silent when nobody speaks",
+                },
+                {
+                    "check": f"speaking.{bref}.avg_ma",
+                    "min": 5,
+                    "text": f"{bref} beeps on a command",
+                },
             ]
         )
-    d["say"] = f"Added {bref}, a buzzer that beeps whenever the board hears a command ({qref} switches it)."
+    d["say"] = (
+        f"Added {bref}, a buzzer that beeps whenever the board hears a command ({qref} switches it)."
+    )
     return d
 
 
@@ -2052,6 +2564,7 @@ EDITS = (
     add_status_led,
     add_led,
     remove_added,
+    remove_switch,
     remove_part,
     swap_power,
     coin_cell,
@@ -2065,6 +2578,46 @@ def edit(
 ) -> tuple[dict[str, Any], str] | None:
     """(new design, edit name) for a change Etch can make by itself on the current board, else None."""
     a = re.sub(r"\s+", " ", request.lower()).strip(" .!?")
+    one = _edit_one(request, a, base, catalog)
+    if one:
+        return one
+    # several changes in one ask ("add a second led and make it blue"): each clause must be an edit Etch knows,
+    # applied in order on the previous result; "it"/"them" after an addition means the new parts
+    clauses = [c for c in _CLAUSE.split(a) if c.strip()]
+    if len(clauses) < 2:
+        return None
+    d, names, dropped, new_refs = base, [], [], []
+    for c in clauses:
+        c = c.strip(" ,.")
+        m = re.fullmatch(rf"(?:make|turn|change|set)\s+(?:it|them|that|those|the new ones?)\s+(?:to\s+|into\s+)?({COLOUR_RX})", c)
+        new_leds = [r for r in new_refs if any(p["ref"] == r and _is_led(p) for p in d["parts"])]
+        if m and new_leds:
+            nd, name = _colour_leds(d, new_leds, m.group(1)), "recolour"
+        else:
+            hit = _edit_one(c, c, d, catalog)
+            if not hit:
+                return None
+            nd, name = hit
+        dropped += nd.pop("_dropped", [])
+        before = {p["ref"] for p in d["parts"]}
+        new_refs = [p["ref"] for p in nd["parts"] if p["ref"] not in before]
+        says = [x for x in (d.get("say") if d is not base else None, nd.get("say")) if x]
+        nd["say"] = " ".join(says)
+        d, names = nd, names + [name]
+    if dropped:
+        d["_dropped"] = sorted(set(dropped))
+    return d, "+".join(names)
+
+
+_CLAUSE = re.compile(
+    r"\s*,\s*(?:and\s+|then\s+)?|\s+(?:and|then)\s+(?=(?:also\s+)?(?:add|remove|drop|delete|make|use|swap|change|"
+    r"turn|put|run|power|give|switch|set|take|get rid)\b)"
+)
+
+
+def _edit_one(
+    request: str, a: str, base: dict[str, Any], catalog: dict[str, dict[str, Any]] | None
+) -> tuple[dict[str, Any], str] | None:
     for fn in EDITS:
         d = fn(request if fn is recolour else a, base)
         if d and (catalog is None or all(p["piece"] in catalog for p in d["parts"])):

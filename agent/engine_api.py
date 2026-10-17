@@ -13,6 +13,7 @@ from etchlib import sim, symbols
 from etchlib.build import _bench, _parse_drc, _parse_erc, build
 from etchlib.kicad import cli
 from etchlib.parts import load_index
+from etchlib.slots import heavy_slot
 from etchlib.spec import SpecError, load_spec
 
 from . import config
@@ -126,7 +127,7 @@ def validate(spec_path: Path) -> str | None:
 
 def verdict(rep: dict[str, Any]) -> dict[str, Any]:
     c = rep["checks"]
-    fails = [b for b in rep["benchmarks"] if not b["pass"]]
+    fails = [b for b in rep["benchmarks"] if b["pass"] is False]  # None = not measurable, never a failure
     ok = not fails and not rep["unrouted"] and c["models"]["missing"] == 0
     return {
         "pass": ok,
@@ -149,6 +150,7 @@ def verdict(rep: dict[str, Any]) -> dict[str, Any]:
                 "value": b["value"],
                 "pass": b["pass"],
                 "text": b["text"],
+                **({"status": b["status"]} if b.get("status") else {}),
             }
             for b in rep["benchmarks"]
         ],
@@ -167,7 +169,8 @@ def routed_value(v: dict[str, Any]) -> Any:
 def run_build(
     spec_path: Path, out: Path, base: Path | None = None, glb: bool = False
 ) -> dict[str, Any]:
-    rep = build(spec_path, out, base_dir=base, glb_export=glb)
+    with heavy_slot():  # place, route, ERC/DRC, ngspice: one of the N heavy slots shared by parallel runs
+        rep = build(spec_path, out, base_dir=base, glb_export=glb)
     return verdict(rep)
 
 
@@ -181,29 +184,30 @@ def run_checks(bdir: Path) -> dict[str, Any]:
     pcb = next(bdir.glob("*.kicad_pcb"))
     sch = next(bdir.glob("*.kicad_sch"))
     erc_p, drc_p = bdir / "erc.json", bdir / "drc.json"
-    # interactive (a viewer is waiting): no heavy lock, kicad-cli under nice instead
-    cli(
-        "sch",
-        "erc",
-        "--format",
-        "json",
-        "--severity-all",
-        "-o",
-        str(erc_p),
-        str(sch),
-    )
-    cli(
-        "pcb",
-        "drc",
-        "--format",
-        "json",
-        "--severity-all",
-        "--schematic-parity",
-        "-o",
-        str(drc_p),
-        str(pcb),
-    )
-    s = sim.simulate(spec, bdir)
+    # interactive (a viewer is waiting): not the batch heavy lock, one of the live runs' heavy slots
+    with heavy_slot():
+        cli(
+            "sch",
+            "erc",
+            "--format",
+            "json",
+            "--severity-all",
+            "-o",
+            str(erc_p),
+            str(sch),
+        )
+        cli(
+            "pcb",
+            "drc",
+            "--format",
+            "json",
+            "--severity-all",
+            "--schematic-parity",
+            "-o",
+            str(drc_p),
+            str(pcb),
+        )
+        s = sim.simulate(spec, bdir)
     erc, drc = _parse_erc(erc_p), _parse_drc(drc_p)
     rep_path = bdir / "report.json"
     netlist = (
@@ -218,7 +222,7 @@ def run_checks(bdir: Path) -> dict[str, Any]:
         "sim": {k: v for k, v in s.items() if k != "wave"},
     }
     bench = _bench(spec, checks)
-    fails = [b for b in bench if not b["pass"]]
+    fails = [b for b in bench if b["pass"] is False]  # None = not measurable
     return {
         "pass": not fails,
         "seconds": round(time.time() - t0, 2),

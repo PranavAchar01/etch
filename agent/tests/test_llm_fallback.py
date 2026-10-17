@@ -263,3 +263,72 @@ def test_max_tokens_only_off_openai(monkeypatch):
     assert sent["max_tokens"] == config.MAX_TOKENS
     llm._create(config.OPENAI_URL, "k", "gpt-5-mini", {"messages": []}, "low", 5)
     assert "max_tokens" not in sent
+
+
+def test_hedge_fires_fallback_when_primary_stalls(monkeypatch):
+    import threading
+
+    gate = threading.Event()
+    calls = []
+    monkeypatch.setattr(config, "HEDGE_S", 0.05)
+
+    def fake(base, key, model, kw, eff, to):
+        calls.append(base)
+        if base == config.CRUSOE_URL:
+            gate.wait(2)  # a stalled primary
+            return _resp({"from": "primary"})
+        return _resp({"from": "fallback"})
+
+    monkeypatch.setattr(llm, "_create", fake)
+    s = Stream("t", echo=False)
+    ans, _ = llm.call_json(s, "picker", config.MODEL, [], FN, timeout=40)
+    gate.set()
+    assert ans == {"from": "fallback"}
+    assert calls == [config.CRUSOE_URL, config.OPENAI_URL]
+    assert any(e["type"] == "llm_hedge" for e in s.events)
+    ev = [e for e in s.events if e["type"] == "llm"][0]
+    assert ev["fallback"] is True and ev["model"] == config.FALLBACK_MODEL
+    assert llm._fallback_since is None  # one slow call does not park the process on OpenAI
+    assert len((llm.METER).read_text().splitlines()) == 1  # metered once, by the hedge
+
+
+def test_hedge_not_fired_when_primary_is_quick(monkeypatch):
+    calls = []
+    monkeypatch.setattr(config, "HEDGE_S", 5)
+    monkeypatch.setattr(
+        llm, "_create", lambda base, key, model, kw, eff, to: calls.append(base) or _resp({"a": 1})
+    )
+    s = Stream("t", echo=False)
+    assert llm.call_json(s, "picker", config.MODEL, [], FN, timeout=40)[0] == {"a": 1}
+    assert calls == [config.CRUSOE_URL]
+    assert not any(e["type"] == "llm_hedge" for e in s.events)
+
+
+def test_hedge_primary_wins_after_fallback_fired(monkeypatch):
+    import threading
+
+    gate = threading.Event()
+    monkeypatch.setattr(config, "HEDGE_S", 0.05)
+
+    def fake(base, key, model, kw, eff, to):
+        if base == config.CRUSOE_URL:
+            threading.Event().wait(0.2)  # answers late, but before the fallback
+            return _resp({"from": "primary"})
+        gate.wait(2)
+        return _resp({"from": "fallback"})
+
+    monkeypatch.setattr(llm, "_create", fake)
+    s = Stream("t", echo=False)
+    ans, _ = llm.call_json(s, "picker", config.MODEL, [], FN, timeout=40)
+    gate.set()
+    assert ans == {"from": "primary"}
+    assert [e for e in s.events if e["type"] == "llm"][0]["fallback"] is False
+
+
+def test_a_crusoe_fallback_key_has_its_own_window(monkeypatch):
+    # 10-17: the fallback is a second Crusoe key with its own 30/min limit; its calls must not fill key 1's window
+    monkeypatch.setattr(config, "RATE_PER_MIN", 1)
+    assert llm._rate_file("k1") == llm.RATE_FILE
+    assert llm._rate_file("k2") != llm.RATE_FILE
+    assert llm._pace(config.CRUSOE_URL, key="k1") == 0
+    assert llm._pace(config.CRUSOE_URL, key="k2") == 0  # key 1's window is full, key 2's is not

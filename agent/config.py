@@ -8,6 +8,12 @@ ETCH_PRIMARY_TIMEOUT  seconds per primary attempt (default 30); a timed-out, 429
                       more on the primary, then the fallback takes over
 ETCH_RATE_PER_MIN     client-side cap on primary (Crusoe) requests per rolling minute, shared by every Etch process
                       on the machine (default 28; Crusoe's free tier allows 30)
+ETCH_LLM_CONCURRENCY  primary (Crusoe) requests in flight at once per process (default 4); every live run is its own
+                      process, so parallel runs never starve each other of the endpoint
+ETCH_LLM_429_TRIES    extra tries after a primary 429 (max_requests_limit), with jittered exponential backoff (default 4)
+ETCH_HEDGE_S          seconds before a slow primary call is hedged (default 28, about the p95); the hedge never goes
+                      to the same model: Super hedges to Lightning
+ETCH_CAPACITY_SWITCH_S  after a 503 capacity_unavailable, that model's calls use the other model for this long (60)
 ETCH_MAX_TOKENS       output cap per primary call (default 4000); a runaway generation ends instead of timing out
 ETCH_FALLBACK         "openai" (default) or "off"
 ETCH_THINKING         "off" (default) or "on": Nemotron reasoning on non-OpenAI endpoints. Off is about 8x faster
@@ -43,7 +49,18 @@ SUB_MODEL = os.environ.get(
 )  # research/model-pick.md (sub-agents)
 KEY_SOURCE = os.environ.get("ETCH_API_KEY_SOURCE", "jarvis-vault/Crusoe")
 PRIMARY_TIMEOUT = float(os.environ.get("ETCH_PRIMARY_TIMEOUT", "30"))
+# hedge: a primary (Crusoe) call with no answer after this many seconds also goes to the fallback model in
+# parallel, and the first answer wins (the logged Nemotron picker p90 is 10.9 s; stalls cost 42-44 s). 0 = off.
+# 2026-10-17 latency report P1: at 12 s the hedge fired on 75 calls (Super p50 is 14.5 s) and doubled load on a Super
+# that was short of capacity; hedged calls ran 42 s at the median. Now the hedge fires near the p95 (about 28 s, or
+# the rolling p95 of this process's own calls on that model once it has HEDGE_MIN_SAMPLES of them).
+HEDGE_S = float(os.environ.get("ETCH_HEDGE_S", "28"))
+HEDGE_MIN_SAMPLES = 10
+# a 503 capacity_unavailable on a model sends that model's calls to another model at once, for this many seconds
+CAPACITY_SWITCH_S = float(os.environ.get("ETCH_CAPACITY_SWITCH_S", "60"))
 RATE_PER_MIN = int(os.environ.get("ETCH_RATE_PER_MIN", "28"))
+LLM_CONCURRENCY = max(1, int(os.environ.get("ETCH_LLM_CONCURRENCY", "4")))
+LLM_429_TRIES = max(0, int(os.environ.get("ETCH_LLM_429_TRIES", "4")))
 MAX_TOKENS = int(os.environ.get("ETCH_MAX_TOKENS", "4000"))
 FALLBACK = os.environ.get("ETCH_FALLBACK", "openai").lower()
 THINKING = os.environ.get("ETCH_THINKING", "off").lower() == "on"

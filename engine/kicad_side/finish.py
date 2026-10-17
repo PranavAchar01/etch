@@ -216,7 +216,12 @@ def stitch_vias(W, H, cfg):
     keep_out = [tuple(c) for c in g.get("courts", [])]
     if g.get("title_box"):
         keep_out.append(tuple(g["title_box"]))
-    out, placed = [], [(v["x"], v["y"]) for v in g.get("vias", [])]
+    hv_nets, hv = set(g.get("hv_nets") or []), float(g.get("hv_clearance") or 0)
+
+    def gap(n):  # an HV item's neighbours keep the HV class gap (DRC flagged GND stitching next to 170 V)
+        return max(clr, hv) if n in hv_nets else clr
+
+    out, placed = [], [(v["x"], v["y"], gap(v.get("net"))) for v in g.get("vias", [])]
     nx, ny = int(W // pitch), int(H // pitch)
     x0, y0 = (W - (nx - 1) * pitch) / 2, (H - (ny - 1) * pitch) / 2
     for iy in range(ny):
@@ -228,18 +233,18 @@ def stitch_vias(W, H, cfg):
                 continue
             if any(_rect_d(x, y, k) < r + 0.3 for k in keep_out):
                 continue
-            if any(_rect_d(x, y, p["rect"]) < r + clr + (0.3 if p["net"] == net else 0) for p in g["pads"]):
+            if any(_rect_d(x, y, p["rect"]) < r + gap(p["net"]) + (0.3 if p["net"] == net else 0) for p in g["pads"]):
                 continue
             if any(
-                _seg_d(x, y, a, b) < r + t["width"] / 2 + clr
+                _seg_d(x, y, a, b) < r + t["width"] / 2 + gap(t["net"])
                 for t in g["tracks"]
                 if t["net"] != net
                 for a, b in zip(t["pts"], t["pts"][1:])
             ):
                 continue
-            if any(math.hypot(x - vx, y - vy) < d + clr for vx, vy in placed):
+            if any(math.hypot(x - vx, y - vy) < d + c for vx, vy, c in placed):
                 continue
-            placed.append((x, y))
+            placed.append((x, y, clr))
             out.append(
                 f'\t(via\n\t\t(at {x:.4f} {y:.4f})\n\t\t(size {d})\n\t\t(drill {drill})\n\t\t(layers "F.Cu" "B.Cu")\n'
                 f'\t\t(net "{net}")\n\t\t(uuid "{_uid(f"stitch{ix},{iy}")}")\n\t)\n'

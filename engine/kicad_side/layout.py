@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import time
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -14,7 +15,7 @@ import pcbnew  # noqa: E402
 
 from placer import place, rot_box  # noqa: E402
 from rows import place_rows  # noqa: E402
-from router import Router, net_order, route_all  # noqa: E402
+from router import Router, net_order, pin_zones, route_all  # noqa: E402
 
 MM = pcbnew.FromMM
 
@@ -167,6 +168,35 @@ def _clear_under(keep, boxes, clearance):
         "tracks": [t for t in keep.get("tracks", []) if t["net"] not in hit],
         "vias": [v for v in keep.get("vias", []) if v["net"] not in hit],
     }
+
+
+def hv_net_class(pcb_path, rules, pads):
+    """High-voltage nets (rules.hv_nets) get an "HV" net class at rules.hv_clearance (IPC-2221B B2), so the zone
+    filler and DRC keep it. Project rules (.kicad_dru) relax it only where the board cannot do better: pad to
+    pad (placement and the part's own pitch set that gap), and inside the courtyard of a part with an HV pin
+    beside other pins (router.pin_zones, where the router relaxes it too). Pours always keep the HV gap.
+    Creepage is not a separate rule: on one uncut surface the creepage path is the clearance, and KiCad 10's
+    creepage check ignores rule exceptions (it flagged a 2.54 mm resistor's own two pins)."""
+    nets, hv = rules.get("hv_nets") or [], float(rules.get("hv_clearance") or 0)
+    if not nets or hv <= float(rules["clearance"]):
+        return
+    pro = Path(pcb_path).with_suffix(".kicad_pro")
+    d = json.loads(pro.read_text())
+    ns = d.setdefault("net_settings", {})
+    base = next(c for c in ns["classes"] if c["name"] == "Default")
+    ns["classes"] = [c for c in ns["classes"] if c["name"] != "HV"] + [{**base, "name": "HV", "clearance": hv, "priority": 0}]
+    ns["netclass_patterns"] = [p for p in ns.get("netclass_patterns") or [] if p.get("netclass") != "HV"] + [
+        {"netclass": "HV", "pattern": n} for n in nets
+    ]
+    pro.write_text(json.dumps(d, indent=2) + "\n")
+    lo = f"{float(rules['clearance']):g}mm"
+    hv_pair = "(A.NetClass == 'HV' || B.NetClass == 'HV') && A.Type != 'Zone' && B.Type != 'Zone'"
+    out = ["(version 1)", f'(rule "HV pad to pad" (constraint clearance (min {lo}))',
+           f"  (condition \"{hv_pair} && A.Type == 'Pad' && B.Type == 'Pad'\"))"]
+    for ref in sorted(pin_zones(pads, nets)):
+        out += [f'(rule "HV pin pitch {ref}" (constraint clearance (min {lo}))',
+                f"  (condition \"{hv_pair} && A.intersectsCourtyard('{ref}') && B.intersectsCourtyard('{ref}')\"))"]
+    Path(pcb_path).with_suffix(".kicad_dru").write_text("\n".join(out) + "\n")
 
 
 def main(job_path, result_path):
@@ -326,6 +356,10 @@ def main(job_path, result_path):
     # wall-clock budget (set by build.py under the kicad_python timeout) stops routing with the copper so far kept
     budget = job.get("route_budget_s")
     order = net_order(pads, sorted({p["net"] for p in pads if p["net"]}))
+    # HV nets first: they need the widest gap, and a late one finds its pins already walled in by the HV-gap
+    # rings of other nets' tracks (rip-up and retry still sorts out two HV nets that wall each other in)
+    hv_first = set(rules.get("hv_nets") or [])
+    order = [n for n in order if n in hv_first] + [n for n in order if n not in hv_first]
     router, route_info = route_all(make_router, order, budget_s=float(budget) if budget else None)
     route_info["budget_s"] = budget
     new_tracks, new_vias = route_info.pop("new_tracks"), route_info.pop("new_vias")
@@ -364,6 +398,7 @@ def main(job_path, result_path):
         board.Add(txt)
 
     pcbnew.SaveBoard(job["out_pcb"], board)
+    hv_net_class(job["out_pcb"], rules, pads)
     parts_out = {}
     for ref, fp in fps.items():
         fp.BuildCourtyardCaches()

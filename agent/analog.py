@@ -394,15 +394,26 @@ def _fix_power_input(
     """The board's supply is its first power connector, pin 1 + and pin 2 GND. Sweep 10-17: the picker wired
     the power input's pin 2 to the motor net, which put the motor straight across the supply (always on)."""
     for p in design["parts"]:
-        if _spice(by_key.get(p.get("piece"))).get("role") != "power_in" or p.get("load_ohms"):
+        if _spice(by_key.get(p.get("piece"))).get("role") != "power_in" or p.get(
+            "load_ohms"
+        ):
             continue
         pins = p.get("pins") or {}
         if (pins.get("1"), pins.get("2")) == ("GND", "VCC"):
             pins["1"], pins["2"] = "VCC", "GND"
-            res.notes.append(f"{p['ref']}: power input was reversed; pin 1 is now VCC and pin 2 GND.")
+            res.notes.append(
+                f"{p['ref']}: power input was reversed; pin 1 is now VCC and pin 2 GND."
+            )
             return
+        if not {"VCC", "GND"} & set(pins.values()):
+            # neither pin on the supply: a signal header (a GPS module's TX/RX on J1, 10-17 "gps tracker"), not
+            # the board's power input, so its nets stay
+            continue
         others = {
-            n for q in design["parts"] if q is not p for n in (q.get("pins") or {}).values()
+            n
+            for q in design["parts"]
+            if q is not p
+            for n in (q.get("pins") or {}).values()
         }
         for pin, want in (("1", "VCC"), ("2", "GND")):
             have = pins.get(pin)

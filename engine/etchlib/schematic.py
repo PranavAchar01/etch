@@ -48,6 +48,33 @@ def _label(net: str, x: float, y: float, angle: float, seed: str):
     ]
 
 
+PWR_FLAG = "power:PWR_FLAG"
+_SOURCES = ("power_out",)
+
+
+def supply_nets(spec: Spec) -> list[str]:
+    """Nets the board's power-in connector or battery feeds that have power-input pins on them and no power-output
+    pin: KiCad's ERC cannot know a connector pin is a source (it is passive), so each gets a PWR_FLAG, exactly
+    as a person drawing the schematic would. A net already driven by a regulator or module output gets none (two
+    power outputs on one net are an ERC error), and a power-input pin on a net no connector feeds still fails ERC
+    (live-1792273685866: VSYS of a Pico on the J1 rail, "Input Power pin not driven by any Output Power pins")."""
+    etypes: dict[str, set[str]] = {}
+    for p in spec.parts:
+        for pin in symbols.pins(p.lib_id):
+            net = p.pins.get(pin.number)
+            if net is not None:
+                etypes.setdefault(net, set()).add(pin.etype)
+    fed: list[str] = []
+    for p in spec.parts:
+        if (p.spice or {}).get("role") != "power_in":
+            continue
+        for net in p.pins.values():
+            e = etypes.get(net, set())
+            if "power_in" in e and not e & set(_SOURCES) and net not in fed:
+                fed.append(net)
+    return fed
+
+
 def write_schematic(spec: Spec, out_dir: Path) -> dict[str, str]:
     """Returns {ref: symbol instance uuid} for footprint paths on the board."""
     name = spec.name
@@ -55,6 +82,9 @@ def write_schematic(spec: Spec, out_dir: Path) -> dict[str, str]:
     used_libs: dict[str, list] = {}
     for p in spec.parts:
         used_libs.setdefault(p.lib_id, symbols.load(p.lib_id))
+    flags = supply_nets(spec)
+    if flags:
+        used_libs[PWR_FLAG] = symbols.load(PWR_FLAG)
 
     doc: list = [
         "kicad_sch",
@@ -100,7 +130,10 @@ def write_schematic(spec: Spec, out_dir: Path) -> dict[str, str]:
             for pin in upins:
                 inst.append(["pin", Q(pin.number), ["uuid", Q(_uid(f"{name}:{p.ref}:pin{pin.number}"))]])
             inst.append(
-                ["instances", ["project", Q(name), ["path", Q("/" + root_uuid), ["reference", Q(p.ref)], ["unit", unit]]]]
+                [
+                    "instances",
+                    ["project", Q(name), ["path", Q("/" + root_uuid), ["reference", Q(p.ref)], ["unit", unit]]],
+                ]
             )
             doc.append(inst)
             for pin in upins:
@@ -110,6 +143,36 @@ def write_schematic(spec: Spec, out_dir: Path) -> dict[str, str]:
                     doc.append(["no_connect", ["at", px, py], ["uuid", Q(_uid(f"{name}:{p.ref}:nc{pin.number}"))]])
                     continue
                 doc.append(_label(net, px, py, (pin.angle + 180) % 360, f"{name}:{p.ref}:lbl{pin.number}"))
+
+    if flags:
+        (fp,) = symbols.pins(PWR_FLAG)
+        for k, net in enumerate(flags):
+            fx, fy = 38.1 + k * 4 * GRID, 25.4
+            ref = f"#FLG{k + 1:02d}"
+            doc.append(
+                [
+                    "symbol",
+                    ["lib_id", Q(PWR_FLAG)],
+                    ["at", fx, fy, 0],
+                    ["unit", 1],
+                    ["exclude_from_sim", "no"],
+                    ["in_bom", "yes"],
+                    ["on_board", "yes"],
+                    ["dnp", "no"],
+                    ["uuid", Q(_uid(f"{name}:{ref}"))],
+                    _prop("Reference", ref, fx, fy - 2.54, hide=True),
+                    _prop("Value", "PWR_FLAG", fx, fy - 3.81),
+                    _prop("Footprint", "", fx, fy, hide=True),
+                    _prop("Datasheet", "~", fx, fy, hide=True),
+                    _prop("Description", "", fx, fy, hide=True),
+                    ["pin", Q(fp.number), ["uuid", Q(_uid(f"{name}:{ref}:pin"))]],
+                    [
+                        "instances",
+                        ["project", Q(name), ["path", Q("/" + root_uuid), ["reference", Q(ref)], ["unit", 1]]],
+                    ],
+                ]
+            )
+            doc.append(_label(net, fx + fp.x, fy - fp.y, (fp.angle + 180) % 360, f"{name}:{ref}:lbl"))
 
     doc.append(["sheet_instances", ["path", Q("/"), ["page", Q("1")]]])
     doc.append(["embedded_fonts", "no"])

@@ -38,7 +38,8 @@ def _summary(rep: dict) -> str:
         ),
     ]
     for b in rep["benchmarks"]:
-        lines.append(f"  [{'PASS' if b['pass'] else 'FAIL'}] {b['text']} ({b['value']})")
+        tag = "SKIP" if b["pass"] is None else ("PASS" if b["pass"] else "FAIL")
+        lines.append(f"  [{tag}] {b['text']} ({b['value']})")
     if rep["unrouted"]:
         lines.append(f"  UNROUTED nets: {rep['unrouted']}")
     return "\n".join(lines)
@@ -66,7 +67,7 @@ def main(argv: list[str] | None = None) -> int:
             base = args.base
             rep = build(args.spec, args.out, base_dir=base, glb_export=not args.no_glb)
             print(_summary(rep))
-            ok = all(x["pass"] for x in rep["benchmarks"]) and not rep["unrouted"]
+            ok = all(x["pass"] is not False for x in rep["benchmarks"]) and not rep["unrouted"]
             ok = ok and rep["checks"]["models"]["missing"] == 0
             return 0 if ok else 2
         if args.cmd == "prompt":

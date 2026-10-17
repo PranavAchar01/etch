@@ -3,8 +3,10 @@
 The public app (deploy/etch-app on Vercel) talks to this through a Cloudflare quick tunnel. Unlike
 studio/flux_server.py it does NOT serve the pcb-loop folder: only the endpoints below exist.
 
-  GET  /etch/health                      engine up?  {ok, busy, queue, stt}
-  POST /etch/live   {mode, text, base}   start a run -> {job}; one run at a time, small queue
+  GET  /etch/health                      engine up?  {ok, busy, queue, stt, running, max_runs, heavy_slots, heavy_in_use}
+  POST /etch/live   {mode, text, base}   start a run -> {job}; every run starts at once in its own process (no
+                                         queue); 503 only above ETCH_MAX_RUNS. The CPU-heavy steps inside the runs
+                                         share ETCH_HEAVY_SLOTS slots (engine/etchlib/slots.py)
   GET  /etch/job?id=..&since=N           the run's events from index N (polling; quick tunnels do not carry SSE)
   POST /etch/stt    raw f32 16 kHz PCM   local Parakeet speech-to-text (studio/stt/stt_server.cjs on :3421)
   GET  /etch/files/engine/out/live-*/frames/*.png|frames.json, /sim.json   board renders for the page
@@ -61,11 +63,21 @@ HEAVY_LOCK = Path(os.environ.get("ETCH_HEAVY_LOCK", str(Path.home() / "helloworl
 RUNS_PER_IP_HOUR = int(os.environ.get("ETCH_RUNS_PER_IP_HOUR", "10"))
 RUNS_PER_DAY = int(os.environ.get("ETCH_RUNS_PER_DAY", "80"))
 STT_PER_IP_10MIN = 60
-QUEUE_MAX = 3
+# No queue: every run starts at once. These caps only protect memory (each run is its own Python + KiCad).
+MAX_RUNS = int(os.environ.get("ETCH_MAX_RUNS", "12"))
+MAX_FAST_RUNS = int(os.environ.get("ETCH_MAX_FAST_RUNS", "8"))
 RUN_TIMEOUT_S = 15 * 60
 MAX_TEXT = 400
 ASKS_PER_IP_10MIN = int(os.environ.get("ETCH_ASKS_PER_IP_10MIN", "40"))
 MAX_STT_BYTES = 16000 * 4 * 45  # 45 s of audio
+LONG_POLL_MAX_S = 25.0  # under Cloudflare's ~100 s idle cut and any proxy's 60 s read timeout
+# Every public job is journalled to disk (one jsonl per job: meta, each event, its end), so a backend restart
+# no longer loses it: a page still following GET /etch/job keeps its event indices, a finished job stays
+# readable, and a job cut off mid-build is started again (or ended with an error once it is too old).
+JOURNAL = Path(os.environ.get("ETCH_JOB_JOURNAL", str(OUT / ".jobs")))
+JOURNAL_KEEP_S = 3600
+RESUME_WINDOW_S = int(os.environ.get("ETCH_RESUME_WINDOW_S", "1200"))
+RESUME_MAX = 2
 
 
 
@@ -91,7 +103,7 @@ class Limiter:
 LIM = Limiter()
 
 
-# ---------------------------------------------------------------- jobs: one engine run at a time
+# ---------------------------------------------------------------- jobs: one engine process per run, all at once
 class Job:
     def __init__(self, args: list[str], ip: str, mode: str = "design", text: str = ""):
         self.id = secrets.token_urlsafe(12)
@@ -103,24 +115,86 @@ class Job:
         self.done = False
         self.created = time.time()
         self.ended: float | None = None
-        self.state = "queued"  # queued | running | done | failed | cancelled
-        self.stage = "waiting in line"
+        self.state = "running"  # running | done | failed | cancelled (no queue since 2026-10-17)
+        self.stage = "starting the engine"
         self.run: str | None = (
             None  # the engine's live-* folder, once its first event names it
         )
         self.proc: subprocess.Popen | None = None
         self.cancelled = False
         self.lock = threading.Lock()
+        # long-poll: GET /etch/job?wait=N sleeps on this until a new event or the end of the run
+        self.cond = threading.Condition(self.lock)
+        self.lane = "full"  # "fast": a stored board or a code-only recipe/edit, outside the full-build line
+        self.started: float | None = None  # when the engine process was spawned
+        self.first_event: float | None = None
+        self.last_stage: tuple[str, float] | None = None
+        self.stages: list[dict] = []  # [{stage, s}] wall seconds per public stage, for the timing event
+        self.journal: Path | None = None  # this job's on-disk record (JOURNAL), set by start_build
+        self.resumes = 0
+
+    def record(self, row: dict) -> None:
+        """Append one row to this job's journal; a full disk never stops the build."""
+        if not self.journal:
+            return
+        try:
+            with self.journal.open("a") as f:
+                f.write(json.dumps(row, default=str) + "\n")
+        except OSError:
+            pass
+
+    def open_journal(self, d: Path) -> None:
+        d.mkdir(parents=True, exist_ok=True)
+        self.journal = d / f"{self.id}.jsonl"
+        meta = {k: getattr(self, k) for k in ("id", "token", "args", "ip", "mode", "text", "lane", "created")}
+        self.record({"meta": meta})
 
     def emit(self, ev: dict):
-        with self.lock:
+        now = time.time()
+        with self.cond:
+            if self.started and self.first_event is None and ev.get("type") != "rewrite":  # engine events only
+                self.first_event = now
             self.events.append(ev)
+            self.record({"ev": ev})
+            self.cond.notify_all()
         run = ev.get("run")
         if isinstance(run, str) and RUN_RE.match(run):
             self.run = run
         s = stage_of(ev)
         if s:
+            base = re.sub(r",? ?(try \d+|\(\d+ ahead\))$", "", s)
+            if self.last_stage and self.last_stage[0] != base:
+                self.stages.append({"stage": self.last_stage[0], "s": round(now - self.last_stage[1], 2)})
+            if not self.last_stage or self.last_stage[0] != base:
+                self.last_stage = (base, now)
             self.stage = s
+
+    def finish(self) -> None:
+        """Mark the run ended and wake every long-poll waiting on it."""
+        now = time.time()
+        with self.cond:
+            self.ended = now
+            self.done = True
+            self.record({"end": {"state": self.state, "stage": self.stage, "ended": now}})
+            self.cond.notify_all()
+
+    def timing(self) -> dict:
+        """The server's own clock on this run (additive event `lead:timing`, docs/API.md)."""
+        st = self.started or self.created
+        if self.last_stage:  # close the stage the run ended in
+            self.stages.append({"stage": self.last_stage[0], "s": round(time.time() - self.last_stage[1], 2)})
+            self.last_stage = None
+        return {
+            "agent": "lead",
+            "type": "timing",
+            "t": 0,
+            "lane": self.lane,
+            "queued_s": round(st - self.created, 2),
+            "spawn_to_first_event_s": round(self.first_event - st, 2) if self.first_event else None,
+            "run_s": round(time.time() - st, 2),
+            "total_s": round(time.time() - self.created, 2),
+            "stages": self.stages,
+        }
 
     def public(self) -> dict:
         """What any signed-in viewer may see about this run: no IP, no token, no paths."""
@@ -136,6 +210,7 @@ class Job:
             "ended": round(self.ended, 1) if self.ended else None,
             "thumb": bool(self.run and thumb_path(self.run)),
             "zip": bool(self.run and zip_path(self.run)),
+            "lane": self.lane,
         }
 
 
@@ -228,53 +303,150 @@ class Classifier:
 CLASSIFIER = Classifier()
 
 
+def rewriter():
+    """agent/prompt_rewriter.py (stdlib only), imported from the repo root like lane_for's modules."""
+    import sys as _sys
+
+    if str(ROOT) not in _sys.path:
+        _sys.path.insert(0, str(ROOT))
+    from agent import prompt_rewriter
+
+    return prompt_rewriter
+
+
+def router_text(job: "Job", env: dict) -> str:
+    """The text the NVIDIA classifier reads for this design run. With the classifier on and ETCH_REWRITE not 0, one
+    small OpenAI call rewrites the raw ask into one clean sentence first (spelling, device, key parts, question or
+    chat said plainly); the run gets a `lead rewrite` event and the build gets ETCH_REWRITE_RESULT. Fails open to
+    the raw text within ETCH_REWRITE_TIMEOUT (1.5 s). The design itself always keeps the user's own text."""
+    try:
+        rw = rewriter()
+        if not rw.enabled():
+            return job.text
+        res = rw.rewrite(job.text)
+    except Exception:  # noqa: BLE001 - the rewrite is optional; the raw ask is always correct
+        return job.text
+    job.emit(rw.event(res))
+    if res["ok"]:
+        env["ETCH_REWRITE_RESULT"] = json.dumps({k: res[k] for k in ("kind", "device", "text")})
+    return res["text"]
+
+
 JOBS: dict[str, Job] = {}
-WAITING: list[Job] = []
-STATE = {"running": None}
-RUN_LOCK = threading.Lock()
-Q_LOCK = threading.Lock()
+# Running engine processes per lane. A fast-lane run (a stored board, a recipe or a code-only edit) has its own,
+# separate count, so a burst of full builds never makes a stored board wait or fail.
+RUNNING = {"full": 0, "fast": 0}
+CAPS = {"full": lambda: MAX_RUNS, "fast": lambda: MAX_FAST_RUNS}
+RUN_COUNT_LOCK = threading.Lock()
+
+
+def reserve(lane: str) -> bool:
+    """Take one run place in the lane, or False at the memory cap (the caller answers 503, nothing waits)."""
+    with RUN_COUNT_LOCK:
+        if RUNNING[lane] >= CAPS[lane]():
+            return False
+        RUNNING[lane] += 1
+        return True
+
+
+def release(lane: str) -> None:
+    with RUN_COUNT_LOCK:
+        RUNNING[lane] = max(0, RUNNING[lane] - 1)
+
+
+def heavy_status() -> dict:
+    """The engine's heavy slots (engine/etchlib/slots.py), read without importing the engine package."""
+    import importlib.util
+
+    try:
+        mod = HEAVY_STATUS.get("mod")
+        if mod is None:
+            spec = importlib.util.spec_from_file_location("etch_slots", ROOT / "engine/etchlib/slots.py")
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            HEAVY_STATUS["mod"] = mod
+        n = mod.slot_count()
+        return {"heavy_slots": n, "heavy_in_use": mod.slots_in_use(n)}
+    except Exception:  # noqa: BLE001 - health must answer even if the probe cannot
+        return {"heavy_slots": None, "heavy_in_use": None}
+
+
+HEAVY_STATUS: dict = {}
+_CATALOG_KEYS: dict[str, dict] | None = None
+
+
+def catalog_keys() -> dict[str, dict]:
+    global _CATALOG_KEYS
+    if _CATALOG_KEYS is None:
+        try:
+            pieces = json.loads((ROOT / "engine/parts/kicad_catalog.json").read_text())["pieces"]
+            _CATALOG_KEYS = {p["key"]: p for p in pieces}
+        except (OSError, ValueError, KeyError):
+            _CATALOG_KEYS = {}
+    return _CATALOG_KEYS
+
+
+def lane_for(mode: str, text: str, base: Path | None) -> str:
+    """'fast' when the engine will answer from code alone: a stored board, a recipe, or a known edit on the base
+    (the same plain-code checks agent/live.py makes first, under a millisecond, no model). Anything else, or any
+    doubt, is a full build."""
+    try:
+        import sys as _sys
+
+        if str(ROOT) not in _sys.path:
+            _sys.path.insert(0, str(ROOT))
+        from agent import board_store, prefilter, recipes  # stdlib-only modules
+
+        if mode == "design":
+            pf = prefilter.screen(text)
+            if pf and pf.stop:
+                return "fast"  # refused with no model call
+            ask = pf.ask if pf else text
+            if not os.environ.get("ETCH_NO_STORE") and board_store.lookup(ask):
+                return "fast"
+            return "fast" if recipes.match(ask, catalog_keys()) else "full"
+        if mode == "modify" and base is not None:
+            d = json.loads((base / "design.json").read_text())
+            return "fast" if recipes.edit(text, d, catalog_keys() or None) else "full"
+    except Exception:  # noqa: BLE001 - a guess only; the full lane is always correct
+        return "full"
+    return "full"
 
 
 def clean(s: str) -> str:
     return str(s).replace(HOME, "~")
 
 
-def worker(job: Job):
-    with Q_LOCK:
-        WAITING.append(job)
+def save_engine_err(job: Job, err: str, rc: int) -> str | None:
+    """The engine's full stderr after a non-zero exit, kept for the crash board: <run dir>/engine.err, or
+    engine/out/_crashes/<job id>.engine.err when the engine died before it named its run. Returns the path
+    relative to the repo (never shown to the page beyond that), or None if it could not be written."""
+    d = OUT / job.run if job.run else OUT / "_crashes"
+    p = d / "engine.err" if job.run else d / f"{job.id}.engine.err"
     try:
-        while True:
-            if job.cancelled:  # cancelled while waiting in line: nothing was started
-                with Q_LOCK:
-                    if job in WAITING:
-                        WAITING.remove(job)
-                return
-            with Q_LOCK:
-                pos = WAITING.index(job)
-            if pos == 0 and RUN_LOCK.acquire(timeout=1.0):
-                if job.cancelled:
-                    RUN_LOCK.release()
-                    continue
-                break
-            job.emit(
-                {
-                    "agent": "lead",
-                    "type": "queued",
-                    "position": pos + (1 if STATE["running"] else 0),
-                    "t": 0,
-                }
-            )
-            time.sleep(1.0)
-        with Q_LOCK:
-            WAITING.remove(job)
-        STATE["running"] = job.id
+        d.mkdir(parents=True, exist_ok=True)
+        p.write_text(f"# exit {rc}, job {job.id}, mode {job.mode}, {time.strftime('%Y-%m-%d %H:%M:%S')}\n{err}")
+    except OSError:
+        return None
+    return str(p.relative_to(ROOT)) if ROOT in p.parents else str(p)
+
+
+def worker(job: Job):
+    """Run one engine process to the end. The caller already reserved this run's place (reserve(job.lane)):
+    nothing waits here, every run starts at once."""
+    try:
+        if job.cancelled:  # cancelled before its process started: nothing to stop
+            return
         job.state, job.stage = "running", "starting the engine"
+        job.started = time.time()
         # a file, so a chatty stderr can never block the stdout pipe
         errf = tempfile.TemporaryFile(mode="w+")
         # own session = own process group (pgid == proc.pid): cancel and the timeout signal exactly this
         # run's processes (uv, the engine's python, KiCad, ngspice) and nothing else
         env = dict(os.environ)
-        scored = CLASSIFIER.classify(job.text) if job.mode == "design" else None
+        scored = None
+        if job.mode == "design" and os.environ.get("ETCH_CLASSIFIER") == "1":
+            scored = CLASSIFIER.classify(router_text(job, env))
         if scored:
             env["ETCH_CLASSIFIED"] = scored
         proc = subprocess.Popen(
@@ -287,7 +459,13 @@ def worker(job: Job):
             start_new_session=True,
         )
         job.proc = proc
-        timer = threading.Timer(RUN_TIMEOUT_S, lambda: stop_group(job))
+        if job.cancelled:  # cancelled in the instant between the check above and the spawn
+            threading.Thread(target=stop_group, args=(job,), daemon=True).start()
+        def _timed_out():
+            job.timed_out = True
+            stop_group(job)
+
+        timer = threading.Timer(RUN_TIMEOUT_S, _timed_out)
         timer.start()
         ok = None
         for line in proc.stdout:
@@ -309,35 +487,61 @@ def worker(job: Job):
         errf.close()
         if job.cancelled:
             pass
+        elif getattr(job, "timed_out", False):  # the backend's last-resort cap, after the engine's own watchdog
+            mins = round(RUN_TIMEOUT_S / 60)
+            job.emit({"agent": "lead", "type": "say", "t": 0,
+                      "text": f"I stopped this build after {mins} minutes with no result. It was stuck, not slow. "
+                              "Try again in a minute."})
+            job.emit({"agent": "lead", "type": "error", "t": 0, "error": f"timeout: run stopped after {mins} min"})
+            job.state, job.stage = "failed", f"stopped after {mins} minutes"
         elif rc != 0:
             tail = [x for x in err.splitlines() if x.strip()][-1:] or ["engine stopped"]
+            saved = save_engine_err(job, err, rc)
             job.emit(
                 {
                     "agent": "lead",
                     "type": "error",
                     "t": 0,
                     "error": clean(tail[0])[:300],
+                    **({"engine_err": saved} if saved else {}),
                 }
             )
             job.state, job.stage = "failed", "stopped with an error"
+        elif ok is None:  # exited 0 but never said done: a dead run, not a finished one
+            job.emit({"agent": "lead", "type": "error", "t": 0, "error": "The engine stopped without finishing."})
+            job.state, job.stage = "failed", "stopped without a result"
         else:
-            job.state = "done" if ok is not False else "failed"
-            job.stage = "done" if ok is not False else "checks did not all pass"
+            job.state = "done" if ok else "failed"
+            job.stage = "done" if ok else "checks did not all pass"
     except Exception as e:  # report to the page instead of hanging the poll
         job.emit({"agent": "lead", "type": "error", "t": 0, "error": clean(e)[:300]})
         job.state, job.stage = "failed", "stopped with an error"
-        with Q_LOCK:
-            if job in WAITING:
-                WAITING.remove(job)
     finally:
         if job.cancelled:
             job.state, job.stage = "cancelled", "cancelled"
             job.emit({"agent": "lead", "type": "cancelled", "t": 0})
-        job.ended = time.time()
-        if STATE["running"] == job.id:
-            STATE["running"] = None
-            RUN_LOCK.release()
-        job.done = True
+        release(job.lane)
+        job.emit(job.timing())
+        save_terminal(job)
+        job.finish()
+
+
+def save_terminal(job: Job) -> None:
+    """<run dir>/terminal.json: how every run ended (done, failed, cancelled), written by the runner, so a run that
+    died without its own lead.done still has a terminal status on disk for the crash board."""
+    if not job.run:
+        return
+    d = OUT / job.run
+    if not d.is_dir():
+        return
+    rec = {"state": job.state, "stage": job.stage, "job": job.id, "mode": job.mode, "lane": job.lane,
+           "rc": job.proc.returncode if job.proc else None, "ended": time.strftime("%Y-%m-%d %H:%M:%S")}
+    tmp = d / f".terminal.{os.getpid()}.tmp"
+    try:
+        tmp.write_text(json.dumps(rec))
+        os.replace(tmp, d / "terminal.json")
+    except OSError:
+        tmp.unlink(missing_ok=True)
 
 
 def lock_owner() -> int | None:
@@ -695,6 +899,79 @@ def gc_jobs():
         for k, j in list(JOBS.items()):
             if j.done and time.time() - j.created > 3600:
                 JOBS.pop(k, None)
+        for p in JOURNAL.glob("*.jsonl") if JOURNAL.is_dir() else []:
+            try:
+                if time.time() - p.stat().st_mtime > JOURNAL_KEEP_S:
+                    p.unlink()
+            except OSError:
+                pass
+
+
+RESTARTED_SAY = "Etch restarted while it was building this, so it is starting the build again."
+RESTARTED_ERR = "Etch restarted during this build. Start it again."
+
+
+def restore_jobs(now: float | None = None, start=None) -> list[Job]:
+    """Reload the journalled jobs after a backend restart (job 2026-10-17 gbRVE5w_9kCwfMDt: the backend was
+    restarted one second into a build, JOBS was memory only, the page's next GET /etch/job got 404 and its trace
+    read "Done in 3m 08s" over an empty board). Finished jobs come back as they ended. A job cut off mid-build is
+    run again under the same id and token, its old events kept so the page's `since` index still lines up, or,
+    past RESUME_WINDOW_S or RESUME_MAX restarts, ended with lead:error so the page says so. Returns the jobs
+    started again."""
+    now = time.time() if now is None else now
+    start = start or (lambda j: threading.Thread(target=worker, args=(j,), daemon=True).start())
+    resumed = []
+    for p in sorted(JOURNAL.glob("*.jsonl")) if JOURNAL.is_dir() else []:
+        meta, evs, end, resumes = None, [], None, 0
+        try:
+            if now - p.stat().st_mtime > JOURNAL_KEEP_S:
+                continue
+            for line in p.read_text().splitlines():
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue  # a line cut by the restart itself
+                if "meta" in row:
+                    meta = row["meta"]
+                elif "ev" in row:
+                    evs.append(row["ev"])
+                elif "end" in row:
+                    end = row["end"]
+                elif "resume" in row:
+                    resumes = int(row["resume"])
+        except OSError:
+            continue
+        if not meta or meta.get("id") in JOBS or not isinstance(meta.get("args"), list):
+            continue
+        j = Job(meta["args"], meta.get("ip", ""), meta.get("mode", "design"), meta.get("text", ""))
+        j.id, j.token = meta["id"], meta.get("token") or j.token
+        j.created, j.lane = float(meta.get("created") or now), meta.get("lane") or "full"
+        j.events, j.journal, j.resumes = evs, p, resumes
+        for ev in evs:
+            run = ev.get("run")
+            if isinstance(run, str) and RUN_RE.match(run):
+                j.run = run
+        JOBS[j.id] = j
+        if end:
+            j.state, j.stage = end.get("state") or "done", end.get("stage") or "done"
+            j.ended, j.done = end.get("ended"), True
+            continue
+        if any(e.get("agent") == "lead" and e.get("type") == "cancelled" for e in evs):
+            j.state, j.stage = "cancelled", "cancelled"
+            j.finish()
+            continue
+        if now - j.created > RESUME_WINDOW_S or resumes >= RESUME_MAX:
+            j.emit({"agent": "lead", "type": "error", "t": 0, "error": RESTARTED_ERR})
+            j.state, j.stage = "failed", "stopped with an error"
+            j.finish()
+            continue
+        j.resumes += 1
+        j.record({"resume": j.resumes})
+        j.run = None
+        j.emit({"agent": "lead", "type": "say", "t": 0, "text": RESTARTED_SAY})
+        resumed.append(j)
+        start(j)
+    return resumed
 
 
 PIECE_RE = re.compile(r"^/etch/piece/([0-9a-f]{16})\.png$")
@@ -755,8 +1032,15 @@ class H(BaseHTTPRequestHandler):
             return self.send_json(
                 {
                     "ok": True,
-                    "busy": bool(STATE["running"]),
-                    "queue": len(WAITING),
+                    # no queue: busy only means the memory cap is reached (a new run gets a 503)
+                    "busy": RUNNING["full"] >= MAX_RUNS,
+                    "queue": 0,
+                    "fast_busy": RUNNING["fast"] >= MAX_FAST_RUNS,
+                    "fast_queue": 0,
+                    "running": RUNNING["full"],
+                    "fast_running": RUNNING["fast"],
+                    "max_runs": MAX_RUNS,
+                    **heavy_status(),
                     "stt": stt_up(),
                 }
             )
@@ -772,8 +1056,15 @@ class H(BaseHTTPRequestHandler):
             j = JOBS.get(q.get("id", [""])[0])
             if not j:
                 return self.send_json({"error": "no such run"}, 404)
-            since = max(0, int((q.get("since", ["0"])[0] or "0")))
-            with j.lock:
+            try:
+                since = max(0, int((q.get("since", ["0"])[0] or "0")))
+                wait = min(LONG_POLL_MAX_S, max(0.0, float((q.get("wait", ["0"])[0] or "0"))))
+            except ValueError:
+                return self.send_json({"error": "bad request"}, 400)
+            with j.cond:
+                # long-poll (additive): hold the request until an event past `since` exists or the run ends
+                if wait > 0:
+                    j.cond.wait_for(lambda: len(j.events) > since or j.done, timeout=wait)
                 evs = j.events[since:]
                 n = len(j.events)
             return self.send_json(
@@ -1029,11 +1320,14 @@ class H(BaseHTTPRequestHandler):
         return self.send_json({"error": "not found"}, 404)
 
     def start_build(self, ip: str, args: list[str], mode: str, text: str, room: bool = False):
-        """Queue an engine run. room=True only checks capacity (nothing is started)."""
-        if len(WAITING) >= QUEUE_MAX:
+        """Start an engine run at once (no queue). room=True only checks capacity (nothing is started)."""
+        base = Path(args[args.index("--base") + 1]) if "--base" in args else None
+        lane = lane_for(mode, text, base) if mode in ("design", "modify") else "full"
+        if RUNNING[lane] >= CAPS[lane]():
             return self.send_json(
-                {"error": "I am busy with other builds. Try again in a minute."},
-                429,
+                {"error": f"{CAPS[lane]()} builds are running right now, the most this machine takes at once. "
+                          "Try again in a minute."},
+                503,
             )
         if not LIM.allow(
             "runs:" + ip, RUNS_PER_IP_HOUR, 3600, take=False
@@ -1046,9 +1340,17 @@ class H(BaseHTTPRequestHandler):
             )
         if room:
             return None
+        if not reserve(lane):  # lost a race for the last place since the check above
+            return self.send_json(
+                {"error": f"{CAPS[lane]()} builds are running right now, the most this machine takes at once. "
+                          "Try again in a minute."},
+                503,
+            )
         LIM.allow("runs:" + ip, RUNS_PER_IP_HOUR, 3600)
         LIM.allow("runs:day", RUNS_PER_DAY, 86400)
         job = Job(args, ip, mode, text)
+        job.lane = lane
+        job.open_journal(JOURNAL)
         JOBS[job.id] = job
         threading.Thread(target=worker, args=(job,), daemon=True).start()
         return self.send_json({"ok": True, "job": job.id, "token": job.token})
@@ -1287,9 +1589,14 @@ def stt_up() -> bool:
 
 
 if __name__ == "__main__":
+    restore_jobs()
     threading.Thread(target=gc_jobs, daemon=True).start()
     if os.environ.get("ETCH_CLASSIFIER") == "1":
         threading.Thread(target=CLASSIFIER.warm, daemon=True).start()
+        try:
+            rewriter().warm()
+        except Exception:  # noqa: BLE001 - optional
+            pass
     print(f"etch public backend on http://127.0.0.1:{PORT}", flush=True)
     # ETCH_BIND=0.0.0.0 inside a container (docs/DEPLOY.md); the Mac keeps loopback behind the tunnel
     ThreadingHTTPServer((os.environ.get("ETCH_BIND", "127.0.0.1"), PORT), H).serve_forever()

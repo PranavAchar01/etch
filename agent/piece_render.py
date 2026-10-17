@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
-from etchlib.kicad import FOOTPRINT_DIR
+from etchlib.kicad import footprint_root
 from etchlib.kicad import (
     KICAD_CLI as KICAD,  # macOS app bundle or Linux /usr/bin/kicad-cli
 )
@@ -74,7 +74,7 @@ def cached(footprint: str) -> Path | None:
 
 def _mod_path(footprint: str) -> Path:
     lib, name = footprint.split(":", 1)
-    return FOOTPRINT_DIR / f"{lib}.pretty" / f"{name}.kicad_mod"
+    return footprint_root(lib) / f"{lib}.pretty" / f"{name}.kicad_mod"
 
 
 def board_text(footprint: str, mod_text: str | None = None) -> str:

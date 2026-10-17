@@ -7,7 +7,7 @@
 // (bridge.design) that streams in the dock and loads in place as board.html?id=live-<ms> when it is done.
 // While any build runs (design or change) the progress shown on the stage is the render loader (Etch's eyes + the
 // dock's pixel loader), labelled from the job's real stage, until the real board is loaded. Behind it, on a new
-// board, the start screen's real KiCad parts keep drifting as b-roll (start-backdrop.js). No board is invented while
+// board, nothing else is drawn: the start screen's parts leave when the build starts. No board is invented while
 // it builds: the animated assembly (build-anim.js) and the viewer's build preview are off behind BUILD_ANIM.
 import { Q, $, h, esc, LOGO, carry, page, toast, slugOf, isLive, boardFiles, cachedFetch, registerSW, keyBackdrop, WORLD } from "../common.js";
 import { createBoardViewer, MASKS, SILKS, FINISHES } from "../board-viewer.js";
@@ -70,7 +70,7 @@ for (const b of document.querySelectorAll(".top .btn, .tools .ib, .seg button, .
 
 const viewer = createBoardViewer($("cw"));
 // "Rendering your board" over the stage from the moment a build is done (or the page opens a board) until its model is in the scene
-const rl = createRenderLoader($("stage"));
+const rl = createRenderLoader($("stage"), { onCancel: () => cancelBuild() });
 const overlay = createSelectionOverlay($("selOv"), viewer);
 let sel = [];
 
@@ -473,7 +473,7 @@ async function loadDesign({ run, done = false } = {}) {
 // ---------- the build animation: js/editor/build-anim.js (loaded the first time a build starts; optional) ----------
 // OFF (Pranav 10-17: "do not hardcode the animation"): it assembles a board from estimated sizes and planned traces,
 // not the real design. true turns it (and the viewer's build preview fallback) back on; with false a build shows the
-// render loader over the start screen's drifting parts instead (buildLoader below).
+// render loader alone instead (buildLoader below).
 const BUILD_ANIM = false;
 // hooks: createBuildAnim({ viewer, stage, board }) -> { start({ mode, board }), event(ev), finish({ glbReady }) }.
 // finish may be called twice (render:done after the GLB is loaded, then lead:done). Without the module the viewer's
@@ -504,15 +504,22 @@ function finishBuildAnim() {
 let buildLoader = false;
 function buildLoaderOn(text) {
   if (BUILD_ANIM) return;
-  if (!buildLoader) rl.show(text); else rl.label(text);
+  if (!buildLoader) rl.show(text, { cancel: true }); else rl.label(text);
   buildLoader = true;
-  backdrop?.building(true);
+  // nothing but the loader until the real board is in (his call 10-17): the start screen's parts leave
+  if (backdrop) { backdrop.remove(); backdrop = null; }
+}
+// the loader's Cancel button: the engine stops the run, its lead:cancelled event then ends the build as usual
+async function cancelBuild() {
+  try {
+    const r = await bridge.cancel();
+    if (r.ok) { board.building = false; buildLoaderFail("Build cancelled."); lastEnd = "That build was cancelled. Tell me what your board should do and I'll start a new one."; }
+  } catch (e) { toast("Couldn't cancel the build: " + e.message); rl.show("Still building", { cancel: true }); }
 }
 function buildLoaderFail(text = "The build stopped without a board.") {
   if (BUILD_ANIM || !buildLoader) return;
   buildLoader = false;
   rl.fail(text);
-  backdrop?.building(false);
 }
 
 let hero = null, lastAsk = "";
@@ -545,7 +552,7 @@ function startDesign(text) {
   const failed = () => { board.building = false; backdrop?.building(false); buildLoaderFail(); };
   bridge.design(text).then((r) => {
     if (!r || !r.ok) failed();
-    if (!r) lastEnd = "I lost track of that build, so it did not finish. Tell me what your board should do and I'll start a new one.";
+    if (!r && !/cancelled/.test(lastEnd)) lastEnd = "I lost track of that build, so it did not finish. Tell me what your board should do and I'll start a new one.";
   }).catch(failed);
 }
 // the hero's text goes through the dock's own composer, so it shows up there as the person's turn
@@ -640,8 +647,6 @@ function resumeNew(st) {
   document.body.classList.add("ready");
   viewer.lookFrom([0, 1, 0.18], { fitBox: true });
   dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: st.text || "", status: "done" });
-  // the start screen's parts drift behind the build's loader here too
-  if (!BUILD_ANIM && !backdrop) { backdrop = createStartBackdrop($("stage")); backdrop.attach(viewer); backdrop.building(true); }
   const failed = () => { board.building = false; backdrop?.building(false); buildLoaderFail(); };
   bridge.resume(st).then((r) => { if (!r || !r.ok) failed(); }).catch(failed);
 }
@@ -717,7 +722,7 @@ async function main() {
       clearTimeout(main.markT); if (list2.length) main.markT = setTimeout(() => viewer.mark([]), 4000);
     },
     select(ref) { if (ref) setSel([ref], { focus: true }); },
-    // until the GLB arrives: the render loader with the job's stage over the drifting start kit (BUILD_ANIM false);
+    // until the GLB arrives: the render loader with the job's stage, nothing else (BUILD_ANIM false);
     // with BUILD_ANIM, the board taking shape in 3D: js/editor/build-anim.js when it is there (buildAnim.start /
     // event / finish), else the viewer's own simple preview (viewer.build, js/build-preview.js)
     // a started build is remembered, so leaving the page and coming back (or the pill on Explore) can follow it
@@ -746,7 +751,6 @@ async function main() {
         const isNew = board.kind === "new" || viewer.isEmpty;
         if (k === "lead:queued") buildLoaderOn(`Waiting in line · ${ev.position} ahead`);
         else if (k === "lead:start") buildLoaderOn(isNew ? "Starting the build" : "Starting the change");
-        else if (k === "picker:pick" && Array.isArray(ev.parts)) backdrop?.parts(ev.parts); // the real picks join the drifting kit
         else if (k === "lead:error" || k === "lead:cancelled" || (k === "lead:done" && !ev.ok)) buildLoaderFail(k === "lead:cancelled" ? "Build cancelled." : undefined);
         return;
       }

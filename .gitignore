@@ -22,6 +22,10 @@
 !/engine/parts/
 /engine/parts/*
 !/engine/parts/build_index.py
+!/engine/parts/fetch_extra_libs.py
+!/engine/parts/extra_libs/
+/engine/parts/extra_libs/*
+!/engine/parts/extra_libs/MANIFEST.json
 !/engine/parts/index.json
 !/engine/parts/agent_index.json
 !/engine/parts/kicad_catalog.json
@@ -30,6 +34,10 @@
 !/engine/parts/classifier.npz
 !/engine/parts/piece_renders/
 !/engine/parts/cache/
+!/engine/parts/fetch_extra_libs.py
+!/engine/parts/extra_libs/
+/engine/parts/extra_libs/*
+!/engine/parts/extra_libs/MANIFEST.json
 /engine/parts/piece_renders/*.kicad_prl
 
 !/studio/
