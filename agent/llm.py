@@ -9,6 +9,7 @@ import random
 import re
 import threading
 import time
+from collections import deque
 from pathlib import Path
 from typing import Any
 
@@ -163,6 +164,14 @@ def _pace(base_url: str, now=time.time, sleep=time.sleep, key: str = "") -> floa
     rate_file = _rate_file(key)
     rate_file.parent.mkdir(parents=True, exist_ok=True)
     waited = 0.0
+    try:  # Crusoe's own headers said the key is nearly out: every process waits for the reset
+        hold = float(_pause_file(rate_file).read_text()) - now()
+    except (OSError, ValueError):
+        hold = 0.0
+    if hold > 0:
+        hold = min(hold, RETRY_AFTER_MAX_S)
+        sleep(hold)
+        waited += hold
     with open(rate_file.with_suffix(".lock"), "a") as lk:
         while True:
             fcntl.flock(lk, fcntl.LOCK_EX)
@@ -184,6 +193,53 @@ def _pace(base_url: str, now=time.time, sleep=time.sleep, key: str = "") -> floa
             waited += wait
 
 
+def _pause_file(rate_file: Path) -> Path:
+    return rate_file.with_name(rate_file.stem + ".pause")
+
+
+def _dur(v: Any) -> float | None:
+    """A rate-limit reset value: "1s", "6m0s", "250ms", "1.5" -> seconds."""
+    if v is None:
+        return None
+    v = str(v).strip()
+    try:
+        return float(v)
+    except ValueError:
+        pass
+    parts = re.findall(r"([\d.]+)(ms|h|m|s)", v)
+    if not parts:
+        return None
+    unit = {"ms": 0.001, "s": 1.0, "m": 60.0, "h": 3600.0}
+    return sum(float(n) * unit[u] for n, u in parts)
+
+
+LOW_REQUESTS = 2  # remaining requests in the window at or below which every process pauses for the reset
+LOW_TOKENS = 8000
+
+
+def _note_limits(base_url: str, key: str, headers: Any, now=time.time) -> float:
+    """Read x-ratelimit-remaining-* / x-ratelimit-reset-* from a successful primary response. When the key is nearly
+    out, write a shared pause (until the reset) that _pace honours in every Etch process. Returns the pause set."""
+    if _is_openai(base_url) or not headers:
+        return 0.0
+    pause = 0.0
+    for kind, low in (("requests", LOW_REQUESTS), ("tokens", LOW_TOKENS)):
+        try:
+            left = float(headers.get(f"x-ratelimit-remaining-{kind}"))
+        except (TypeError, ValueError):
+            continue
+        if left <= low:
+            pause = max(pause, _dur(headers.get(f"x-ratelimit-reset-{kind}")) or 2.0)
+    if pause > 0:
+        from etchlib.slots import atomic_write_text
+
+        pause = min(pause, RETRY_AFTER_MAX_S)
+        f = _pause_file(_rate_file(key))
+        f.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_text(f, str(now() + pause))
+    return pause
+
+
 def _retry_after(e: Exception) -> float:
     """Seconds a 429 asks us to wait (Retry-After header), capped; 2 s when it gives none."""
     h = getattr(getattr(e, "response", None), "headers", None) or {}
@@ -193,7 +249,7 @@ def _retry_after(e: Exception) -> float:
         return 2.0
 
 
-# ---- 429 "max_requests_limit" (and 503 "capacity_unavailable"): Crusoe also caps requests in flight per key. Parallel runs each keep at most
+# ---- 429 "max_requests_limit": Crusoe also caps requests in flight per key. Parallel runs each keep at most
 # config.LLM_CONCURRENCY primary requests open (a per-process limiter), and a 429 is retried in _create with full
 # jitter, so runs that hit the limit together spread out instead of retrying in lockstep.
 _inflight = threading.BoundedSemaphore(config.LLM_CONCURRENCY)
@@ -216,13 +272,18 @@ def _send(c: Any, base_url: str, key: str, kw: dict[str, Any], sleep=time.sleep)
     backoff. OpenAI requests go straight through (no limiter, no Crusoe window)."""
     if _is_openai(base_url):
         return c.chat.completions.create(**kw)
+    raw_api = getattr(c.chat.completions, "with_raw_response", None)
     for attempt in range(config.LLM_429_TRIES + 1):
         _pace(base_url, key=key)
         with _inflight:
             try:
-                return c.chat.completions.create(**kw)
-            except Exception as e:
-                if _status(e) not in (429, 503) or attempt >= config.LLM_429_TRIES:
+                if raw_api is None:
+                    return c.chat.completions.create(**kw)
+                raw = raw_api.create(**kw)
+                _note_limits(base_url, key, raw.headers)
+                return raw.parse()
+            except Exception as e:  # a 503 is not retried here: chat() moves to another model at once
+                if _status(e) != 429 or attempt >= config.LLM_429_TRIES:
                     raise
                 err = e
         sleep(_backoff(err, attempt + 1))  # outside the limiter: a waiting run does not hold a place
@@ -281,6 +342,42 @@ def _metered(base_url: str, key: str, model: str, kw, effort, timeout, agent: st
     return resp
 
 
+# ---- Hedge timing and target (latency report P1, 2026-10-17)
+_durations: dict[str, deque] = {}
+_capacity_out: dict[str, float] = {}  # model -> when it last answered 503 capacity_unavailable
+
+
+def _record(model: str, secs: float) -> None:
+    _durations.setdefault(model, deque(maxlen=50)).append(secs)
+
+
+def hedge_after(model: str) -> float:
+    """Seconds before a primary call on this model is hedged: the rolling p95 of this process's last 50 calls on it
+    (clamped to 12-45 s) once there are enough of them, else config.HEDGE_S."""
+    d = sorted(_durations.get(model, ()))
+    if config.HEDGE_S <= 0 or len(d) < config.HEDGE_MIN_SAMPLES:
+        return config.HEDGE_S
+    return min(max(d[round(0.95 * (len(d) - 1))], 12.0), 45.0)
+
+
+def hedge_model(model: str) -> str:
+    """Where a hedge goes. Never the same model again (a second Super on the second Crusoe project doubles load on a
+    model that is short of capacity): Super hedges to Lightning, which has its own capacity pool."""
+    fb = config.fallback_model(model)
+    if fb == model and model == config.MODEL and config.SUB_MODEL != model:
+        return config.SUB_MODEL
+    return fb
+
+
+def _swap(model: str) -> str | None:
+    """The other primary model for a 503 capacity_unavailable: Super -> Lightning. None when there is none."""
+    return config.SUB_MODEL if model == config.MODEL and config.SUB_MODEL != model else None
+
+
+def _capacity_503(e: Exception) -> bool:
+    return _status(e) == 503
+
+
 def _hedged(stream: Stream, agent: str, model: str, kw, effort, ptimeout: float, timeout: float | None):
     """One primary request. When it has not answered after config.HEDGE_S and a fallback is configured, the same
     request also goes to the fallback model and the first answer wins: a stalled Crusoe call costs about 12 s
@@ -288,15 +385,16 @@ def _hedged(stream: Stream, agent: str, model: str, kw, effort, ptimeout: float,
     primary error inside the hedge window raises as before (the caller retries or falls back)."""
     import concurrent.futures as cf
 
-    if config.HEDGE_S <= 0 or not _fallback_ready() or _is_openai(config.BASE_URL) or ptimeout <= config.HEDGE_S:
+    after = hedge_after(model)
+    if after <= 0 or not _fallback_ready() or _is_openai(config.BASE_URL) or ptimeout <= after:
         return _create(config.BASE_URL, config.api_key(), model, kw, effort, ptimeout), None
     pool = cf.ThreadPoolExecutor(max_workers=2, thread_name_prefix="llm-hedge")
     try:
         prim = pool.submit(_create, config.BASE_URL, config.api_key(), model, kw, effort, ptimeout)
-        if cf.wait([prim], timeout=config.HEDGE_S).done:
+        if cf.wait([prim], timeout=after).done:
             return prim.result(), None  # an answer, or the primary's own error for the caller's retry/fallback
-        fb_model = config.fallback_model(model)
-        stream.emit(agent, "llm_hedge", model=model, to=fb_model, after_s=config.HEDGE_S)
+        fb_model = hedge_model(model)
+        stream.emit(agent, "llm_hedge", model=model, to=fb_model, after_s=after)
         fb = pool.submit(
             _metered, config.FALLBACK_BASE_URL, config.fallback_key(), fb_model, kw, effort, timeout or 45, agent
         )
@@ -348,17 +446,25 @@ def chat(
     )
     resp = None
     metered = False  # a hedged fallback call meters itself (the losing call is billed too)
+    out_at = _capacity_out.get(model)
+    if out_at is not None and time.time() - out_at < config.CAPACITY_SWITCH_S and _swap(model):
+        stream.emit(agent, "llm_switch", model=model, to=_swap(model), reason="capacity_unavailable (recent)")
+        model = used = _swap(model)
     if not (sticky and _fallback_ready()):
         ptimeout = timeout or 45
         if not _is_openai(base):
             ptimeout = min(ptimeout, config.PRIMARY_TIMEOUT)
         tries = 1 if _is_openai(base) else PRIMARY_TRIES
-        for attempt in range(1, tries + 1):
+        attempt = 0
+        while attempt < tries:
+            attempt += 1
             ta = time.time()
             try:
                 resp, hedged = _hedged(stream, agent, model, kw, effort, ptimeout, timeout)
                 if hedged:
                     base, used, metered = config.FALLBACK_BASE_URL, hedged, True
+                else:
+                    _record(model, time.time() - ta)
                 break
             except ModelError:
                 raise  # the hedge already tried the primary and the fallback
@@ -367,8 +473,15 @@ def chat(
                 stream.emit(
                     agent, "llm_error", model=model, seconds=secs, error=str(e)[:300]
                 )
+                if _capacity_503(e) and _swap(model) and not _is_openai(base):
+                    # the shared deployment is scaling: retrying Super makes it worse, move to Lightning now
+                    _capacity_out[model] = time.time()
+                    stream.emit(agent, "llm_switch", model=model, to=_swap(model), reason="capacity_unavailable")
+                    model = used = _swap(model)
+                    tries = max(tries, attempt + 1)
+                    continue
                 if attempt < tries and _retryable(e):
-                    wait = _retry_after(e) if _status(e) == 429 else 0.0
+                    wait = _backoff(e, attempt) if _status(e) == 429 else 0.0
                     stream.emit(
                         agent,
                         "llm_retry",
