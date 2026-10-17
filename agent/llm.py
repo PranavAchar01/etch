@@ -11,7 +11,9 @@ from typing import Any
 from . import config
 from .events import Stream
 
-_client: Any = None  # openai.OpenAI, imported on first use (a stored board never needs it)
+_client: Any = (
+    None  # openai.OpenAI, imported on first use (a stored board never needs it)
+)
 
 
 class ModelError(RuntimeError):
@@ -22,6 +24,9 @@ class ModelError(RuntimeError):
 # the OpenAI fallback, visibly (an `llm_fallback` event), and later calls in this process stay on the
 # fallback for FALLBACK_STICKY_S so one dead endpoint does not cost every call a timeout.
 FALLBACK_STICKY_S = 600
+PRIMARY_TRIES = (
+    2  # one more primary attempt after a timeout, 429 or 5xx before the fallback
+)
 _clients: dict[str, Any] = {}
 _fallback_since: float | None = None
 
@@ -125,6 +130,57 @@ def _status(e: Exception) -> int | None:
     return getattr(e, "status_code", None)
 
 
+# ---- Client-side pacing for the primary endpoint. Crusoe's free tier allows 30 requests per minute and no
+# card will be added, so every Etch process on this machine (backend, QA builds) shares one rolling window
+# kept in a small file under an flock. A request waits for a slot instead of drawing a 429.
+RATE_FILE = config.OUT / ".primary-rate.json"
+RATE_WINDOW_S = 60.0
+RETRY_AFTER_MAX_S = 20.0
+
+
+def _pace(base_url: str, now=time.time, sleep=time.sleep) -> float:
+    """Block until the rolling window has a free slot, then record this request. Returns seconds waited."""
+    if _is_openai(base_url) or config.RATE_PER_MIN <= 0:
+        return 0.0
+    import fcntl
+
+    RATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    waited = 0.0
+    with open(RATE_FILE.with_suffix(".lock"), "a") as lk:
+        while True:
+            fcntl.flock(lk, fcntl.LOCK_EX)
+            try:
+                try:
+                    stamps = json.loads(RATE_FILE.read_text())
+                except (OSError, ValueError):
+                    stamps = []
+                t = now()
+                stamps = [s for s in stamps if t - s < RATE_WINDOW_S]
+                if len(stamps) < config.RATE_PER_MIN:
+                    stamps.append(t)
+                    RATE_FILE.write_text(json.dumps(stamps))
+                    return round(waited, 2)
+                wait = RATE_WINDOW_S - (t - min(stamps)) + 0.05
+            finally:
+                fcntl.flock(lk, fcntl.LOCK_UN)
+            sleep(wait)
+            waited += wait
+
+
+def _retry_after(e: Exception) -> float:
+    """Seconds a 429 asks us to wait (Retry-After header), capped; 2 s when it gives none."""
+    h = getattr(getattr(e, "response", None), "headers", None) or {}
+    try:
+        return min(float(h.get("retry-after", 2)), RETRY_AFTER_MAX_S)
+    except (TypeError, ValueError):
+        return 2.0
+
+
+def _retryable(e: Exception) -> bool:
+    s = _status(e)
+    return s is None or s == 429 or s >= 500  # None = timeout / connection error
+
+
 def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, timeout):
     """One request to one endpoint. Off OpenAI, reasoning_effort is never sent; a named tool_choice that
     the server rejects with a 5xx/4xx (Crusoe's Lightning 500s on it) is retried once as "auto" (the
@@ -134,10 +190,15 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
         kw["reasoning_effort"] = effort
     if not _is_openai(base_url):
         # Nemotron's chat template switch; thinking off keeps a picker call to a few seconds
-        kw["extra_body"] = {"chat_template_kwargs": {"enable_thinking": config.THINKING}}
+        kw["extra_body"] = {
+            "chat_template_kwargs": {"enable_thinking": config.THINKING}
+        }
+        if config.MAX_TOKENS > 0:
+            kw.setdefault("max_tokens", config.MAX_TOKENS)
     guard(base_url)
     c = _client_for(base_url, key).with_options(timeout=timeout, max_retries=0)
     try:
+        _pace(base_url)
         return c.chat.completions.create(**kw)
     except Exception as e:
         tc = kw.get("tool_choice")
@@ -153,7 +214,10 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
                     "content": f"Answer by calling the tool `{name}` exactly once with valid JSON arguments.",
                 }
             ]
-            return c.chat.completions.create(**dict(kw, tool_choice="auto", messages=msgs))
+            _pace(base_url)
+            return c.chat.completions.create(
+                **dict(kw, tool_choice="auto", messages=msgs)
+            )
         raise
 
 
@@ -177,29 +241,53 @@ def chat(
     effort = effort or (config.REASONING if agent == "lead" else config.SUB_REASONING)
     t0 = time.time()
     base, used = config.BASE_URL, model
-    sticky = _fallback_since is not None and time.time() - _fallback_since < FALLBACK_STICKY_S
+    sticky = (
+        _fallback_since is not None
+        and time.time() - _fallback_since < FALLBACK_STICKY_S
+    )
     resp = None
     if not (sticky and _fallback_ready()):
         ptimeout = timeout or 45
         if not _is_openai(base):
             ptimeout = min(ptimeout, config.PRIMARY_TIMEOUT)
-        try:
-            resp = _create(base, config.api_key(), model, kw, effort, ptimeout)
-        except Exception as e:
-            secs = round(time.time() - t0, 1)
-            stream.emit(agent, "llm_error", model=model, seconds=secs, error=str(e)[:300])
-            if not _fallback_ready():
-                raise ModelError(
-                    f"{model} failed after {secs} s ({type(e).__name__}): {str(e)[:200]}. No fallback configured."
-                ) from e
-            _fallback_since = time.time()
-            stream.emit(
-                agent,
-                "llm_fallback",
-                model=model,
-                to=config.fallback_model(model),
-                reason=f"{type(e).__name__}: {str(e)[:160]}",
-            )
+        tries = 1 if _is_openai(base) else PRIMARY_TRIES
+        for attempt in range(1, tries + 1):
+            ta = time.time()
+            try:
+                resp = _create(base, config.api_key(), model, kw, effort, ptimeout)
+                break
+            except Exception as e:
+                secs = round(time.time() - ta, 1)
+                stream.emit(
+                    agent, "llm_error", model=model, seconds=secs, error=str(e)[:300]
+                )
+                if attempt < tries and _retryable(e):
+                    wait = _retry_after(e) if _status(e) == 429 else 0.0
+                    stream.emit(
+                        agent,
+                        "llm_retry",
+                        model=model,
+                        attempt=attempt + 1,
+                        wait_s=wait,
+                    )
+                    time.sleep(wait)
+                    continue
+                if not _fallback_ready():
+                    raise ModelError(
+                        f"{model} failed after {secs} s ({type(e).__name__}): {str(e)[:200]}. No fallback configured."
+                    ) from e
+                if (
+                    _status(e) != 429
+                ):  # a rate limit clears in seconds; do not park the process on OpenAI
+                    _fallback_since = time.time()
+                stream.emit(
+                    agent,
+                    "llm_fallback",
+                    model=model,
+                    to=config.fallback_model(model),
+                    reason=f"{type(e).__name__}: {str(e)[:160]}",
+                )
+                break
     if resp is None:
         base, used = config.FALLBACK_BASE_URL, config.fallback_model(model)
         t1 = time.time()
@@ -207,7 +295,9 @@ def chat(
             resp = _create(base, config.fallback_key(), used, kw, effort, timeout or 45)
         except Exception as e:
             secs = round(time.time() - t1, 1)
-            stream.emit(agent, "llm_error", model=used, seconds=secs, error=str(e)[:300])
+            stream.emit(
+                agent, "llm_error", model=used, seconds=secs, error=str(e)[:300]
+            )
             raise ModelError(
                 f"{used} (fallback) failed after {secs} s ({type(e).__name__}): {str(e)[:200]}."
             ) from e
@@ -224,7 +314,11 @@ def chat(
         agent,
         "llm",
         model=used,
-        provider="openai" if _is_openai(base) else "crusoe" if "crusoe" in base else base,
+        provider="openai"
+        if _is_openai(base)
+        else "crusoe"
+        if "crusoe" in base
+        else base,
         fallback=base != config.BASE_URL,
         seconds=round(time.time() - t0, 2),
         tokens_in=getattr(u, "prompt_tokens", None),

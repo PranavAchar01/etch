@@ -56,6 +56,7 @@ the fields below. The server itself adds `queued`, `error` and `cancelled` event
 | `lead say` | `text` (the frontend speaks this aloud) |
 | `lead done` | `ok, board, iterations, route, timings, classifier` |
 | `lead error` | `error` |
+| `lead router` | only with `ETCH_CLASSIFIER=1`: `route` (`recipe`, `simple`, `complex`, or `off` when the classifier cannot load), `model` (first picker model, or null), `why, task_type, complexity` (0 to 1), `seconds, load_seconds` |
 
 ### Part selection
 

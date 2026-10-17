@@ -671,6 +671,17 @@ def kicad_equivalent(vendor_fp: str) -> str | None:
     return None
 
 
+YOU_MAX_FETCH = 4  # LCSC ids tried with easyeda2kicad per part
+
+
+def _mpn_words(query: str) -> list[str]:
+    """Words of the ask shaped like a part number (letters and digits, 4+ chars): 'DRV8833', 'HX711'."""
+    return [
+        w for w in re.findall(r"[A-Za-z0-9][A-Za-z0-9\-]{2,}[A-Za-z0-9]", query)
+        if re.search(r"[A-Za-z]", w) and re.search(r"\d", w) and not LCSC_RE.fullmatch(w)
+    ]
+
+
 def you_find(query: str, stream: Stream, tiers: list[dict[str, Any]]) -> dict[str, Any] | None:
     """You.com discovery: search the allowlisted domains, identify the exact part (MPN, maker, datasheet, LCSC id),
     confirm it in the JLCPCB/LCSC catalogue, then fetch the vendor KiCad symbol + footprint + STEP with
@@ -688,34 +699,57 @@ def you_find(query: str, stream: Stream, tiers: list[dict[str, Any]]) -> dict[st
     if mpn and not _seen(mpn, hits):
         tiers.append({"tier": "you.com", "rejected_mpn": mpn, "why": "not in the search text"})
         mpn = ""
-    lcsc = pick.get("lcsc") if pick.get("lcsc") in leads["lcsc"] else None
-    lcsc = lcsc or (leads["lcsc"][0] if leads["lcsc"] else None)
-    cand: dict[str, Any] = {}
-    if not lcsc and mpn:
+    # LCSC ids to try, in order: the scout's pick (only if the search text has it), the ids in the search
+    # text, then catalogue hits for each part number seen in the search text (the scout's MPN first, then
+    # part-number-shaped words of the ask). The first one whose vendor library converts cleanly wins.
+    order: list[str] = []
+    if pick.get("lcsc") in leads["lcsc"]:
+        order.append(pick["lcsc"])
+    order += [x for x in leads["lcsc"] if x not in order]
+    by_lcsc: dict[str, dict[str, Any]] = {}
+    mpns = [mpn] if mpn else []
+    mpns += [w for w in _mpn_words(query) if w not in mpns and _seen(w, hits)]
+    for m in mpns[:3]:
         try:  # confirm the MPN in the catalogue: same part number, an LCSC id that really exists
-            n = re.sub(r"[^A-Z0-9]", "", mpn.upper())
-            cands = [c for c in jlc_search(mpn) if n in re.sub(r"[^A-Z0-9]", "", str(c.get("mpn")).upper())]
-            cands.sort(key=lambda c: -(c.get("stock") or 0))
+            n = re.sub(r"[^A-Z0-9]", "", m.upper())
+            cands = [c for c in jlc_search(m) if n in re.sub(r"[^A-Z0-9]", "", str(c.get("mpn")).upper())]
+            cands.sort(key=lambda c: (not c.get("datasheet"), -(c.get("stock") or 0)))
+            for c in cands:
+                by_lcsc.setdefault(c["lcsc"], c)
+                if c["lcsc"] not in order:
+                    order.append(c["lcsc"])
             if cands:
-                cand, lcsc = cands[0], cands[0]["lcsc"]
+                mpn = mpn or m
         except Exception as e:
-            tiers.append({"tier": "lcsc_confirm", "error": str(e)[:200]})
+            tiers.append({"tier": "lcsc_confirm", "mpn": m, "error": str(e)[:200]})
     src = next((h["url"] for h in hits if mpn and _seen(mpn, [h])), hits[0]["url"])
-    name = mpn or lcsc or query
-    if not lcsc:
+    name = mpn or (order[0] if order else query)
+    if not order:
         stream.emit("part-scout", "web", provider="you.com", found=name, footprint=None,
                     text=f"scout you.com found {name}, but no LCSC/EasyEDA entry to take a real KiCad footprint "
                     "from; not drawing one")
         return None
-    res = easyeda_fetch(lcsc, stream, f"you.com search ({src}), LCSC catalogue, easyeda2kicad")
-    tiers.append({"tier": "easyeda2kicad", "lcsc": lcsc, "status": res["status"]})
-    if res["status"] != "ok":
+    res: dict[str, Any] = {}
+    lcsc = ""
+    for lcsc in order[:YOU_MAX_FETCH]:
+        res = easyeda_fetch(lcsc, stream, f"you.com search ({src}), LCSC catalogue, easyeda2kicad")
+        tiers.append({"tier": "easyeda2kicad", "lcsc": lcsc, "status": res["status"]})
+        if res["status"] == "ok":
+            break
+    cand = by_lcsc.get(lcsc, {})
+    if res.get("status") != "ok":
         stream.emit("part-scout", "web", provider="you.com", found=name, footprint=None,
-                    text=f"scout you.com found {name} (LCSC {lcsc}), but its vendor library has "
-                    f"{'no 3D model' if res['status'] == 'no_model' else 'no usable symbol/footprint'}; not faking one")
+                    text=f"scout you.com found {name} (LCSC {', '.join(order[:YOU_MAX_FETCH])}), but no vendor "
+                    "library had a usable symbol, footprint and 3D model; not faking one")
         return None
     part = res["part"]
-    ds = cand.get("datasheet") or (leads["datasheets"][0] if leads["datasheets"] else None)
+    name = mpn or str(part.get("mpn") or "") or lcsc
+    # a datasheet only when it is this exact part's: the catalogue's, or a search PDF naming its LCSC id / MPN
+    stem = (re.match(r"[A-Z]+\d+", re.sub(r"[^A-Z0-9]", "", mpn.upper())) or [""])[0] if mpn else ""
+    ds = cand.get("datasheet") or next(
+        (u for u in leads["datasheets"] if lcsc in u or (len(stem) >= 4 and stem in re.sub(r"[^A-Z0-9]", "", u.upper()))),
+        None,
+    )
     part.update({k: v for k, v in {"mpn": mpn or cand.get("mpn"), "manufacturer": cand.get("brand"),
                                     "datasheet": ds, "lcsc": lcsc}.items() if v})
     prov = dict(part.get("provenance") or {})
