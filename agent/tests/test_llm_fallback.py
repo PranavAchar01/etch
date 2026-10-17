@@ -323,3 +323,12 @@ def test_hedge_primary_wins_after_fallback_fired(monkeypatch):
     gate.set()
     assert ans == {"from": "primary"}
     assert [e for e in s.events if e["type"] == "llm"][0]["fallback"] is False
+
+
+def test_a_crusoe_fallback_key_has_its_own_window(monkeypatch):
+    # 10-17: the fallback is a second Crusoe key with its own 30/min limit; its calls must not fill key 1's window
+    monkeypatch.setattr(config, "RATE_PER_MIN", 1)
+    assert llm._rate_file("k1") == llm.RATE_FILE
+    assert llm._rate_file("k2") != llm.RATE_FILE
+    assert llm._pace(config.CRUSOE_URL, key="k1") == 0
+    assert llm._pace(config.CRUSOE_URL, key="k2") == 0  # key 1's window is full, key 2's is not

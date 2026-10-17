@@ -3,9 +3,11 @@ only ETCH_BASE_URL / ETCH_MODEL / ETCH_SUB_MODEL / ETCH_API_KEY_SOURCE change.""
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import time
+from pathlib import Path
 from typing import Any
 
 from . import config
@@ -138,27 +140,40 @@ RATE_WINDOW_S = 60.0
 RETRY_AFTER_MAX_S = 20.0
 
 
-def _pace(base_url: str, now=time.time, sleep=time.sleep) -> float:
+def _rate_file(key: str = "") -> Path:
+    """The rolling window for one API key. Crusoe limits each key on its own (30/min), so a second Crusoe key used
+    as the fallback (ETCH_FALLBACK_KEY_SOURCE) keeps its own window instead of eating the primary's."""
+    try:
+        primary = config.api_key()
+    except RuntimeError:
+        primary = ""
+    if not key or key == primary:
+        return RATE_FILE
+    return RATE_FILE.with_name(f".rate-{hashlib.sha256(key.encode()).hexdigest()[:10]}.json")
+
+
+def _pace(base_url: str, now=time.time, sleep=time.sleep, key: str = "") -> float:
     """Block until the rolling window has a free slot, then record this request. Returns seconds waited."""
     if _is_openai(base_url) or config.RATE_PER_MIN <= 0:
         return 0.0
     import fcntl
 
-    RATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    rate_file = _rate_file(key)
+    rate_file.parent.mkdir(parents=True, exist_ok=True)
     waited = 0.0
-    with open(RATE_FILE.with_suffix(".lock"), "a") as lk:
+    with open(rate_file.with_suffix(".lock"), "a") as lk:
         while True:
             fcntl.flock(lk, fcntl.LOCK_EX)
             try:
                 try:
-                    stamps = json.loads(RATE_FILE.read_text())
+                    stamps = json.loads(rate_file.read_text())
                 except (OSError, ValueError):
                     stamps = []
                 t = now()
                 stamps = [s for s in stamps if t - s < RATE_WINDOW_S]
                 if len(stamps) < config.RATE_PER_MIN:
                     stamps.append(t)
-                    RATE_FILE.write_text(json.dumps(stamps))
+                    rate_file.write_text(json.dumps(stamps))
                     return round(waited, 2)
                 wait = RATE_WINDOW_S - (t - min(stamps)) + 0.05
             finally:
@@ -198,7 +213,7 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
     guard(base_url)
     c = _client_for(base_url, key).with_options(timeout=timeout, max_retries=0)
     try:
-        _pace(base_url)
+        _pace(base_url, key=key)
         return c.chat.completions.create(**kw)
     except Exception as e:
         tc = kw.get("tool_choice")
@@ -214,7 +229,7 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
                     "content": f"Answer by calling the tool `{name}` exactly once with valid JSON arguments.",
                 }
             ]
-            _pace(base_url)
+            _pace(base_url, key=key)
             return c.chat.completions.create(
                 **dict(kw, tool_choice="auto", messages=msgs)
             )
@@ -342,7 +357,15 @@ def chat(
         base, used = config.FALLBACK_BASE_URL, config.fallback_model(model)
         t1 = time.time()
         try:
-            resp = _create(base, config.fallback_key(), used, kw, effort, timeout or 45)
+            try:
+                resp = _create(base, config.fallback_key(), used, kw, effort, timeout or 45)
+            except Exception as e:
+                if _status(e) != 429:  # a Crusoe fallback key has its own 30/min limit: wait it out once
+                    raise
+                wait = _retry_after(e)
+                stream.emit(agent, "llm_retry", model=used, attempt=2, wait_s=wait)
+                time.sleep(wait)
+                resp = _create(base, config.fallback_key(), used, kw, effort, timeout or 45)
         except Exception as e:
             secs = round(time.time() - t1, 1)
             stream.emit(
