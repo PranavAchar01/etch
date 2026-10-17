@@ -263,3 +263,15 @@ def test_model_supply_rows_dropped_recipe_rows_kept():
     }
     checks = [b["check"] for b in live.to_spec(design, "ask")["benchmarks"]]
     assert "idle.supply_ma_avg" not in checks and "room.supply_ma_avg" in checks
+
+
+@pytest.mark.skipif(not NGSPICE, reason="no ngspice")
+def test_resistor_without_value_is_assumed_not_fatal():
+    """live-1792276584059 (nixie): R1 had no value, the spec carried the library name and ngspice failed."""
+    parts = _trackpad()
+    parts[1].pop("value")  # R1
+    with tempfile.TemporaryDirectory() as td:
+        sp = _load(Path(td), parts)
+        res = sim.simulate(sp, Path(td))
+    assert res["ok"], res.get("error")
+    assert "10k" in res["not_modelled"]["R1"]
