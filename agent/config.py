@@ -8,6 +8,9 @@ ETCH_PRIMARY_TIMEOUT  seconds per primary attempt (default 30); a timed-out, 429
                       more on the primary, then the fallback takes over
 ETCH_RATE_PER_MIN     client-side cap on primary (Crusoe) requests per rolling minute, shared by every Etch process
                       on the machine (default 28; Crusoe's free tier allows 30)
+ETCH_LLM_CONCURRENCY  primary (Crusoe) requests in flight at once per process (default 4); every live run is its own
+                      process, so parallel runs never starve each other of the endpoint
+ETCH_LLM_429_TRIES    extra tries after a primary 429 (max_requests_limit), with jittered exponential backoff (default 4)
 ETCH_MAX_TOKENS       output cap per primary call (default 4000); a runaway generation ends instead of timing out
 ETCH_FALLBACK         "openai" (default) or "off"
 ETCH_THINKING         "off" (default) or "on": Nemotron reasoning on non-OpenAI endpoints. Off is about 8x faster
@@ -47,6 +50,8 @@ PRIMARY_TIMEOUT = float(os.environ.get("ETCH_PRIMARY_TIMEOUT", "30"))
 # parallel, and the first answer wins (the logged Nemotron picker p90 is 10.9 s; stalls cost 42-44 s). 0 = off.
 HEDGE_S = float(os.environ.get("ETCH_HEDGE_S", "12"))
 RATE_PER_MIN = int(os.environ.get("ETCH_RATE_PER_MIN", "28"))
+LLM_CONCURRENCY = max(1, int(os.environ.get("ETCH_LLM_CONCURRENCY", "4")))
+LLM_429_TRIES = max(0, int(os.environ.get("ETCH_LLM_429_TRIES", "4")))
 MAX_TOKENS = int(os.environ.get("ETCH_MAX_TOKENS", "4000"))
 FALLBACK = os.environ.get("ETCH_FALLBACK", "openai").lower()
 THINKING = os.environ.get("ETCH_THINKING", "off").lower() == "on"

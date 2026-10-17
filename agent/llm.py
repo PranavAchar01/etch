@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import random
 import re
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -191,6 +193,42 @@ def _retry_after(e: Exception) -> float:
         return 2.0
 
 
+# ---- 429 "max_requests_limit" (and 503 "capacity_unavailable"): Crusoe also caps requests in flight per key. Parallel runs each keep at most
+# config.LLM_CONCURRENCY primary requests open (a per-process limiter), and a 429 is retried in _create with full
+# jitter, so runs that hit the limit together spread out instead of retrying in lockstep.
+_inflight = threading.BoundedSemaphore(config.LLM_CONCURRENCY)
+BACKOFF_BASE_S = 0.5
+BACKOFF_CAP_S = 8.0
+
+
+def _backoff(e: Exception, attempt: int, rand=random.uniform) -> float:
+    """Full-jitter exponential backoff for the attempt-th 429 (1-based); a Retry-After header is the floor."""
+    h = getattr(getattr(e, "response", None), "headers", None) or {}
+    try:
+        floor = min(float(h["retry-after"]), RETRY_AFTER_MAX_S) if "retry-after" in h else 0.0
+    except (TypeError, ValueError):
+        floor = 0.0
+    return round(max(floor, rand(0.0, min(BACKOFF_CAP_S, BACKOFF_BASE_S * 2**attempt))), 2)
+
+
+def _send(c: Any, base_url: str, key: str, kw: dict[str, Any], sleep=time.sleep) -> Any:
+    """One primary request under the in-flight limiter and the shared rate window, retrying a 429 with jittered
+    backoff. OpenAI requests go straight through (no limiter, no Crusoe window)."""
+    if _is_openai(base_url):
+        return c.chat.completions.create(**kw)
+    for attempt in range(config.LLM_429_TRIES + 1):
+        _pace(base_url, key=key)
+        with _inflight:
+            try:
+                return c.chat.completions.create(**kw)
+            except Exception as e:
+                if _status(e) not in (429, 503) or attempt >= config.LLM_429_TRIES:
+                    raise
+                err = e
+        sleep(_backoff(err, attempt + 1))  # outside the limiter: a waiting run does not hold a place
+    raise AssertionError("unreachable")
+
+
 def _retryable(e: Exception) -> bool:
     s = _status(e)
     return s is None or s == 429 or s >= 500  # None = timeout / connection error
@@ -216,8 +254,7 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
     guard(base_url)
     c = _client_for(base_url, key).with_options(timeout=timeout, max_retries=0)
     try:
-        _pace(base_url, key=key)
-        return c.chat.completions.create(**kw)
+        return _send(c, base_url, key, kw)
     except Exception as e:
         tc = kw.get("tool_choice")
         if (
@@ -232,10 +269,7 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
                     "content": f"Answer by calling the tool `{name}` exactly once with valid JSON arguments.",
                 }
             ]
-            _pace(base_url, key=key)
-            return c.chat.completions.create(
-                **dict(kw, tool_choice="auto", messages=msgs)
-            )
+            return _send(c, base_url, key, dict(kw, tool_choice="auto", messages=msgs))
         raise
 
 

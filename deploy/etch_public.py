@@ -361,6 +361,20 @@ def clean(s: str) -> str:
     return str(s).replace(HOME, "~")
 
 
+def save_engine_err(job: Job, err: str, rc: int) -> str | None:
+    """The engine's full stderr after a non-zero exit, kept for the crash board: <run dir>/engine.err, or
+    engine/out/_crashes/<job id>.engine.err when the engine died before it named its run. Returns the path
+    relative to the repo (never shown to the page beyond that), or None if it could not be written."""
+    d = OUT / job.run if job.run else OUT / "_crashes"
+    p = d / "engine.err" if job.run else d / f"{job.id}.engine.err"
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+        p.write_text(f"# exit {rc}, job {job.id}, mode {job.mode}, {time.strftime('%Y-%m-%d %H:%M:%S')}\n{err}")
+    except OSError:
+        return None
+    return str(p.relative_to(ROOT)) if ROOT in p.parents else str(p)
+
+
 def worker(job: Job):
     """Run one engine process to the end. The caller already reserved this run's place (reserve(job.lane)):
     nothing waits here, every run starts at once."""
@@ -413,18 +427,23 @@ def worker(job: Job):
             pass
         elif rc != 0:
             tail = [x for x in err.splitlines() if x.strip()][-1:] or ["engine stopped"]
+            saved = save_engine_err(job, err, rc)
             job.emit(
                 {
                     "agent": "lead",
                     "type": "error",
                     "t": 0,
                     "error": clean(tail[0])[:300],
+                    **({"engine_err": saved} if saved else {}),
                 }
             )
             job.state, job.stage = "failed", "stopped with an error"
+        elif ok is None:  # exited 0 but never said done: a dead run, not a finished one
+            job.emit({"agent": "lead", "type": "error", "t": 0, "error": "The engine stopped without finishing."})
+            job.state, job.stage = "failed", "stopped without a result"
         else:
-            job.state = "done" if ok is not False else "failed"
-            job.stage = "done" if ok is not False else "checks did not all pass"
+            job.state = "done" if ok else "failed"
+            job.stage = "done" if ok else "checks did not all pass"
     except Exception as e:  # report to the page instead of hanging the poll
         job.emit({"agent": "lead", "type": "error", "t": 0, "error": clean(e)[:300]})
         job.state, job.stage = "failed", "stopped with an error"
@@ -434,7 +453,26 @@ def worker(job: Job):
             job.emit({"agent": "lead", "type": "cancelled", "t": 0})
         release(job.lane)
         job.emit(job.timing())
+        save_terminal(job)
         job.finish()
+
+
+def save_terminal(job: Job) -> None:
+    """<run dir>/terminal.json: how every run ended (done, failed, cancelled), written by the runner, so a run that
+    died without its own lead.done still has a terminal status on disk for the crash board."""
+    if not job.run:
+        return
+    d = OUT / job.run
+    if not d.is_dir():
+        return
+    rec = {"state": job.state, "stage": job.stage, "job": job.id, "mode": job.mode, "lane": job.lane,
+           "rc": job.proc.returncode if job.proc else None, "ended": time.strftime("%Y-%m-%d %H:%M:%S")}
+    tmp = d / f".terminal.{os.getpid()}.tmp"
+    try:
+        tmp.write_text(json.dumps(rec))
+        os.replace(tmp, d / "terminal.json")
+    except OSError:
+        tmp.unlink(missing_ok=True)
 
 
 def lock_owner() -> int | None:
