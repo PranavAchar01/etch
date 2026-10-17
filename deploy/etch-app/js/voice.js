@@ -1,8 +1,8 @@
 // Etch's voice for the board view: mic capture, STT upload, TTS queue and error lines. Talk: click the mic to toggle,
 // hold it or hold Space to push-to-talk; after Etch answers a spoken turn it listens again by itself. Speech-to-text
-// and text-to-speech go through the Etch engine (POST /etch/stt raw Float32 16 kHz mono, POST /etch/tts); without
-// the engine (mock mode, offline, no route) the browser's own Web Speech API stands in so the page still works end to
-// end.
+// and text-to-speech go through the Etch engine (POST /etch/stt raw Float32 16 kHz mono, POST /etch/tts). Without
+// speech-to-text (mock mode, offline, no route) the browser's speech recognition stands in for listening; speaking
+// only ever uses the Etch voice, and when it can't be reached the caption shows instead.
 import { Q } from "./common.js";
 import * as api from "./etch-api.js";
 
@@ -28,7 +28,7 @@ export function speakable(md, max = 2) {
  * state: "idle" | "listening" | "transcribing" | "speaking" | "off"
  */
 export function createVoice(h) {
-  const v = { engine: null, available: true, vmode: false, talked: false };
+  const v = { engine: null, tts: false, available: true, vmode: false, talked: false };
   let rec = null, starting = false, sayN = 0, pumping = false, cur = null, vctx = null;
   const VQ = [];
   const state = (s, d) => h.onState?.(s, d);
@@ -41,6 +41,7 @@ export function createVoice(h) {
     let backend = false;
     if (api.hasBackend() && Q.get("mock") !== "1") {
       const hl = await api.health().catch(() => null);
+      if (hl) v.tts = true; // speech comes from the Etch engine whenever it answers, even with speech-to-text down
       if (hl && hl.stt !== false) backend = true;
       else if (hl && hl.stt === false && !SR) { v.available = false; state("off", "Voice is offline right now. Type instead."); }
     }
@@ -53,7 +54,7 @@ export function createVoice(h) {
   function stop() { sayN++; VQ.length = 0; if (cur) cur.stop(); cur = null; level("etch", 0); try { speechSynthesis.cancel(); } catch (e) { /* none */ } }
   function say(text) {
     const t = String(text || "").trim(); if (!t) return;
-    VQ.push({ text: t, audio: v.engine === "etch" && v.talked ? api.tts(t) : null });
+    VQ.push({ text: t, audio: v.tts && v.talked ? api.tts(t).catch(() => null) : null });
     while (VQ.length > 3) VQ.shift();
     pump();
   }
@@ -78,24 +79,16 @@ export function createVoice(h) {
     h.onCaption?.(it.text);
     if (!v.talked) return; // nothing is spoken before the person has talked to Etch (the text still shows)
     state("speaking");
-    if (v.engine === "etch") {
-      const blob = it.audio ? await Promise.race([it.audio, sleep(9000).then(() => null)]) : null;
+    await v.ready;
+    if (n !== sayN) return;
+    // only the Etch voice is ever spoken; without it the caption shows and the eyes still move
+    if (v.tts) {
+      const audio = it.audio || api.tts(it.text).catch(() => null);
+      const blob = await Promise.race([audio, sleep(15000).then(() => null)]);
       if (n !== sayN) return;
       if (blob) return playBlob(blob, est, n);
     }
-    if ("speechSynthesis" in window) return speakBrowser(it.text, est, n);
     return hold(est, n);
-  }
-  function speakBrowser(text, est, n) {
-    return new Promise((done) => {
-      let fin = false; const u = new SpeechSynthesisUtterance(text);
-      const end = () => { if (fin) return; fin = true; level("etch", 0); if (cur === item) cur = null; done(); };
-      const item = { stop: () => { try { speechSynthesis.cancel(); } catch (e) { /* none */ } end(); } }; cur = item;
-      u.rate = 1.04; u.onend = end; u.onerror = end;
-      const tick = () => { if (fin) return; level("etch", 0.3 + 0.3 * Math.abs(Math.sin(performance.now() / 90))); requestAnimationFrame(tick); };
-      setTimeout(end, (est * 2.5 + 8) * 1000);
-      try { speechSynthesis.speak(u); tick(); } catch (e) { end(); }
-    });
   }
   function playBlob(blob, est, n) {
     return new Promise((done) => {
