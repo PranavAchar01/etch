@@ -1852,6 +1852,11 @@ def _wire_drives(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str
             )
             want += [(r, k, False) for k, v in r["pins"].items() if str(v) != an] if r else [(p, a, False)]
         elif f == "buzzer" and (plus := _pin_named(pc, "+")) in pins:
+            minus = _pin_named(pc, "-")
+            if minus in pins and count.get(pins[minus]) == 1:
+                # "-" left on a net of its own (piano live-1792275159885 try 3, "BZ1_- only on BZ1 pin 2")
+                p["pins"][minus] = pins[minus] = gnd
+                notes.append(f"{p.get('ref')} - to {gnd}")
             want.append((p, plus, False))
         elif f in ("push button", "switch") and len(pins) == 2:
             if len(set(pins.values())) == 1 and not ground(next(iter(pins.values()))):

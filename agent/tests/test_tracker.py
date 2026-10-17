@@ -213,6 +213,16 @@ def test_lonely_sd_slot_runs_in_spi_mode_on_a_free_bus():
     assert (u1["11"], u1["12"], u1["14"], u1["15"]) == ("DAT0", "DAT3_CD", "CLK", "CMD")
     assert "DET" in u1.values() and "1" not in j1 and "8" not in j1
 
+
+def test_buzzer_minus_on_its_own_net_goes_to_ground():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "1": "TONE"}},
+        {"ref": "R1", "piece": R, "pins": {"1": "TONE", "2": "BZ1_+"}},
+        {"ref": "BZ1", "piece": BUZ, "pins": {"1": "BZ1_+", "2": "BZ1_-"}},
+    ]}
+    live._wire_drives(d, _kept(d))
+    assert _nets(d)["BZ1"] == {"1": "BZ1_+", "2": "GND"}
+
 # The first picker tries of the failing 10-17 runs, as saved: each must now pass the spec gate on try one.
 RUNS = {
     "cretae a gps tracker like an airtag": [
