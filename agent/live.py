@@ -874,6 +874,8 @@ def assemble(
         if drives := _wire_drives(design, kept):
             stream.emit("lead", "say", text="Wired " + "; ".join(drives) + ".")
         _drop_lonely_gpio(design, kept)
+        if dropped := _drop_dangling_passives(design, kept):
+            stream.emit("lead", "say", text=f"Dropped {', '.join(dropped)}: one end went nowhere.")
         _prune_commands(design)
         stand_ins = _led_stand_ins(
             design, kept, keys
@@ -1714,6 +1716,16 @@ def _fix_leds(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
         if not a or not k:
             continue
         ref, pins = str(led.get("ref")), led.setdefault("pins", {})
+        if (
+            a in pins
+            and _norm_net(str(pins[a])) in _GND_ALIASES
+            and _norm_net(str(pins.get(k, ""))) not in _GND_ALIASES
+        ):
+            # drawn backwards, anode on ground (live-1792274265002: "LED1_A" on pin 1, which is K)
+            pins[a], pins[k] = pins.get(k), pins[a]
+            if pins[a] is None:
+                del pins[a]
+            notes.append(f"{ref} turned around, its anode was on {pins[k]}")
         an = str(pins[a]) if a in pins else None
         for r in res:
             rp = r["pins"]
@@ -1856,6 +1868,29 @@ def _wire_drives(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str
         mpins[pin] = new
         notes.append(f"{p.get('ref')} to {mcu.get('ref')} {names[pin]}" + (f" instead of {net}" if rail(net) else ""))
     return notes
+
+
+def _drop_dangling_passives(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """A resistor or capacitor with one end on a supply rail or ground and the other on nothing connects nothing:
+    a regulator's ADJ divider left behind when the regulator was dropped (live-1792274265002, "ADJ only on R2
+    pin 2"). Runs after every wiring repair, so a dangling end that should reach the MCU already does."""
+    by_key = _cat() | {p["key"]: p for p in kept}
+    count = _net_count(design)
+    out, keep = [], []
+    for p in design.get("parts", []):
+        nets = [str(n) for n in (p.get("pins") or {}).values()]
+        fam = str((by_key.get(p.get("piece")) or {}).get("family") or "").lower()
+        if (
+            fam in ("resistor", "capacitor")
+            and len(nets) == 2
+            and sorted(count.get(n, 0) == 1 for n in nets) == [False, True]
+            and any(_RAIL_RX.fullmatch(n) for n in nets if count.get(n, 0) > 1)
+        ):
+            out.append(str(p.get("ref")))
+            continue
+        keep.append(p)
+    design["parts"] = keep
+    return out
 
 
 def _prune_commands(design: dict[str, Any]) -> None:

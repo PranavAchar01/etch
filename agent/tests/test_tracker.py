@@ -216,3 +216,27 @@ def test_failing_tracker_tries_pass_spec_first_try(ask, tmp_path, monkeypatch):
     live.assemble(s, d, [], Path(tmp_path), "", ask, _kept(d), max_iters=1)
     gate = [e for e in s.events if str(e.get("gate", "")).startswith("spec")][-1]
     assert gate["ok"], gate["value"]
+
+
+def test_backwards_led_is_turned_around():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "40": "VBUS"}},
+        {"ref": "R1", "piece": R, "pins": {"1": "VBUS", "2": "LED1_A"}},
+        {"ref": "D1", "piece": LED, "pins": {"1": "LED1_A", "2": "GND"}},
+    ]}
+    kept = _kept(d)
+    live._fix_leds(d, kept)
+    live._wire_drives(d, kept)
+    n = _nets(d)
+    assert n["D1"] == {"1": "GND", "2": "LED1_A"}
+    assert n["R1"]["1"] in n["U1"].values() and n["R1"]["1"] != "VBUS"
+
+
+def test_passive_hanging_off_a_rail_is_dropped():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "40": "VBUS"}},
+        {"ref": "C1", "piece": "kicad:Device:C@C_Disc_D3.0mm_W1.6mm_P2.50mm", "pins": {"1": "VBUS", "2": "GND"}},
+        {"ref": "R2", "piece": R, "pins": {"1": "VBUS", "2": "ADJ"}},
+    ]}
+    assert live._drop_dangling_passives(d, _kept(d)) == ["R2"]
+    assert [p["ref"] for p in d["parts"]] == ["U1", "C1"]
