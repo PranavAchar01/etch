@@ -5,7 +5,9 @@
 //
 //   const dock = createDock(hostEl, { onSend(text, { via }), onMention(ref, { hover }), partScreenPos(ref) })
 //   see the method list at the bottom of createDock (setState, setStatus, setLevel, step, loader, answerStart,
-//   answerAppend, answerEnd, ask, recommend, say, listen, clear, expand, lookAt).
+//   answerAppend, answerEnd, ask, recommend, say, listen, clear, expand, lookAt, emote).
+// It starts and stays collapsed: Etch working, talking or answering never opens it; expand(true, { force: true }) is
+// for an explicit user action only.
 //
 // Shapes live in one goo layer (pill, panel, bubbles), content sits above it and follows the same springs. Every
 // frame only writes clip-path / transform / opacity; layout is read once per change through ResizeObservers.
@@ -164,7 +166,9 @@ export function createDock(hostEl, opts = {}) {
     if (forced === true) return true;
     if (forced === false) return false;
     if (dismissed) return hover;
-    return hover || focusIn || pending > 0 || typing();
+    // collapsed is the default: only the person opens it (hover, click, focus, typing). Nothing Etch does opens it;
+    // a waiting card only keeps an already open dock open, and shows "N waiting" on the pill otherwise.
+    return hover || focusIn || typing() || (open && pending > 0);
   }
   function dismiss() {
     forced = null; hover = false; focusIn = false; dismissed = true; suppress = inside;
@@ -618,7 +622,7 @@ export function createDock(hostEl, opts = {}) {
       for (const tl of t.tls) if (!tl.finished && !tl.running) tl.done(info.seconds);
       const first = speakable(x.a.text, 1);
       eyes.emote("pleased");
-      if (!open && first) { showBubble(first.length > 110 ? first.slice(0, 108) + "…" : first, { kind: "answer", id: "answer:" + id, done: true }); dropBubble(4200); }
+      if (!open && first) { showBubble(first.length > 110 ? first.slice(0, 108) + "…" : first, { kind: "answer", id: "answer:" + id, done: true }); dropBubble(5000); }
       setTimeout(() => { if (answerRef && answers.get(id)) { answerRef = null; retarget(); } }, 2600);
       stick();
     },
@@ -680,7 +684,9 @@ export function createDock(hostEl, opts = {}) {
       base = "idle"; setOverlay(null);
       turn = null;
     },
-    expand(v) {
+    // expand(true) from code does nothing unless it comes from an explicit user action: expand(true, { force: true })
+    expand(v, { force = false } = {}) {
+      if (v && !force) return;
       if (v) { forced = true; suppress = false; dismissed = false; }
       else { forced = null; hover = false; suppress = inside; if (root.contains(document.activeElement)) document.activeElement.blur(); focusIn = false; }
       update();
