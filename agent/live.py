@@ -74,6 +74,8 @@ MISSING_SAY = (
 class PickTimeout(RuntimeError):
     """The picker could not answer on the main model nor on the quick retry: most often the KEPT list does not fit
     the ask (parts missing from the library), so the run ends with the missing-parts message."""
+
+
 BATCH = 24
 MAX_ITERS = 3  # picker path only; worst case stays under a minute
 
@@ -187,7 +189,11 @@ def classify(stream: Stream, ask: str, context: str = "") -> dict[str, Any]:
     kept = [p for p in cat["pieces"] if p["key"] in keep]
     # the table rules rank, never restrict: the parts for every function the ask implies come from the whole
     # library (all KiCad libraries, extra libraries, fetched cache parts), whatever the rules matched
-    lib = [p for p in kicad_library.shortlist(f"{ask}\n{context}".strip()) if p["key"] not in keep]
+    lib = [
+        p
+        for p in kicad_library.shortlist(f"{ask}\n{context}".strip())
+        if p["key"] not in keep
+    ]
     kept += lib
     lst = kicad_library.load()["stats"]
     stream.emit(
@@ -502,21 +508,44 @@ def _pick_call(stream: Stream, model: str, msgs: list) -> dict[str, Any]:
     sub-model with a tight cap; when that fails too, the missing-parts event and PickTimeout."""
     try:
         ans, _ = llm.call_json(
-            stream, "picker", model, msgs, PICK_FN, effort=PICKER_EFFORT, timeout=PICKER_TIMEOUT,
+            stream,
+            "picker",
+            model,
+            msgs,
+            PICK_FN,
+            effort=PICKER_EFFORT,
+            timeout=PICKER_TIMEOUT,
             max_tokens=PICKER_MAX_TOKENS,
         )
         return ans
     except (llm.ModelError, ValueError) as e:
         first = str(e)[:200]
-    stream.emit("picker", "retry", model=config.SUB_MODEL, reason=first, max_tokens=RETRY_MAX_TOKENS)
+    stream.emit(
+        "picker",
+        "retry",
+        model=config.SUB_MODEL,
+        reason=first,
+        max_tokens=RETRY_MAX_TOKENS,
+    )
     try:
         ans, _ = llm.call_json(
-            stream, "picker", config.SUB_MODEL, msgs, PICK_FN, effort=PICKER_EFFORT, timeout=RETRY_TIMEOUT,
+            stream,
+            "picker",
+            config.SUB_MODEL,
+            msgs,
+            PICK_FN,
+            effort=PICKER_EFFORT,
+            timeout=RETRY_TIMEOUT,
             max_tokens=RETRY_MAX_TOKENS,
         )
         return ans
     except (llm.ModelError, ValueError) as e:
-        stream.emit("picker", "missing_parts", reason=f"{first} / retry: {str(e)[:200]}", text=MISSING_SAY)
+        stream.emit(
+            "picker",
+            "missing_parts",
+            reason=f"{first} / retry: {str(e)[:200]}",
+            text=MISSING_SAY,
+        )
         stream.emit("lead", "say", text=MISSING_SAY)
         raise PickTimeout(MISSING_SAY) from e
 
@@ -796,7 +825,9 @@ def assemble(
     tried: set[str] = set()  # made-up piece names already sent to sourcing once
     v: dict[str, Any] | None = None
     last_fail = None
-    stuck_prev: dict[str, Any] = {}  # failing benchmark -> (value, design values) on the previous built try
+    stuck_prev: dict[
+        str, Any
+    ] = {}  # failing benchmark -> (value, design values) on the previous built try
     for it in range(1, max_iters + 1):
         ti = time.time()
         stream.emit("assembly", "iteration", iteration=it, phase="place-route-check")
@@ -838,7 +869,9 @@ def assemble(
         )  # before _fix_refs renames D1 on a capacitor to C1
         _fix_refs(design)
         if folded := _fold_parallel(design):
-            stream.emit("assembly", "repair", iteration=it, kind="parallel", joined=folded)
+            stream.emit(
+                "assembly", "repair", iteration=it, kind="parallel", joined=folded
+            )
         firmware.default_commands(
             design, kept
         )  # GPIO-driven LEDs with no program: 1..N, a = all, o = off
@@ -1157,16 +1190,27 @@ def _static_benchmarks(
     return _remark(v, rows, marked)
 
 
-def _remark(v: dict[str, Any], rows: list[dict[str, Any]], marked: list[str]) -> list[str]:
+def _remark(
+    v: dict[str, Any], rows: list[dict[str, Any]], marked: list[str]
+) -> list[str]:
     if marked:
-        v["failed"] = [f"{b['text']} (got {b['value']})" for b in rows if b["pass"] is False]
+        v["failed"] = [
+            f"{b['text']} (got {b['value']})" for b in rows if b["pass"] is False
+        ]
         v["uncheckable"] = marked
-        v["pass"] = not v["failed"] and not v.get("unrouted") and not v.get("models_missing")
+        v["pass"] = (
+            not v["failed"] and not v.get("unrouted") and not v.get("models_missing")
+        )
     return marked
 
 
 def _part_values(design: dict[str, Any]) -> tuple:
-    return tuple(sorted((str(p.get("ref")), str(p.get("piece")), str(p.get("value"))) for p in design.get("parts", [])))
+    return tuple(
+        sorted(
+            (str(p.get("ref")), str(p.get("piece")), str(p.get("value")))
+            for p in design.get("parts", [])
+        )
+    )
 
 
 def _stuck_benchmarks(
@@ -1182,15 +1226,26 @@ def _stuck_benchmarks(
     for b in rows:
         if b.get("pass") is not False or not isinstance(b.get("value"), (int, float)):
             continue
-        if not re.search(r"(?:^|\.)(supply_ma_avg|supply_ma_peak|avg_ma|peak_ma)$", str(b.get("check", ""))):
+        if not re.search(
+            r"(?:^|\.)(supply_ma_avg|supply_ma_peak|avg_ma|peak_ma)$",
+            str(b.get("check", "")),
+        ):
             continue
         was = prev.get(b["check"])
-        if was and was[1] != vals and abs(was[0] - b["value"]) <= 0.01 * max(1e-6, abs(was[0])):
+        if (
+            was
+            and was[1] != vals
+            and abs(was[0] - b["value"]) <= 0.01 * max(1e-6, abs(was[0]))
+        ):
             b["pass"] = None
             b["status"] = "uncheckable"
             b["text"] += " (not checkable in simulation: no repair moves this reading)"
             marked.append(b["check"])
-    now = {b["check"]: (b["value"], vals) for b in rows if b.get("pass") is False and isinstance(b.get("value"), (int, float))}
+    now = {
+        b["check"]: (b["value"], vals)
+        for b in rows
+        if b.get("pass") is False and isinstance(b.get("value"), (int, float))
+    }
     if marked:
         _remark(v, rows, marked + list(v.get("uncheckable") or []))
     return now, marked
@@ -1210,7 +1265,9 @@ _SOUND_SOURCE = re.compile(
 )
 
 
-def _no_sound_source(design: dict[str, Any], kept: list[dict[str, Any]], ask: str) -> str | None:
+def _no_sound_source(
+    design: dict[str, Any], kept: list[dict[str, Any]], ask: str
+) -> str | None:
     """Functional sanity gate (prod job QsB-ok6GZtu7rQqc, "a music synthesizer ... intro producer", 10-17): a synth
     or instrument ask whose parts hold nothing that makes a signal (no MCU, oscillator, 555, codec/DAC or amp) is
     a passive network that cannot make sound. It goes back to the picker instead of being built."""
@@ -1220,7 +1277,16 @@ def _no_sound_source(design: dict[str, Any], kept: list[dict[str, Any]], ask: st
     for part in design.get("parts", []):
         piece = str(part.get("piece", ""))
         info = by_key.get(piece) or {}
-        text = " ".join(str(x) for x in (piece, part.get("value"), info.get("family"), info.get("description")) if x)
+        text = " ".join(
+            str(x)
+            for x in (
+                piece,
+                part.get("value"),
+                info.get("family"),
+                info.get("description"),
+            )
+            if x
+        )
         if _SOUND_SOURCE.search(text):
             return None
     return (
@@ -1235,7 +1301,10 @@ _IDLE = re.compile(r"idle|quiet|off|standby|rest|silent|sleep|default", re.I)
 
 
 def _idle_benchmarks(
-    design: dict[str, Any], rows: list[dict[str, Any]], sim: dict[str, Any], scen: list[str]
+    design: dict[str, Any],
+    rows: list[dict[str, Any]],
+    sim: dict[str, Any],
+    scen: list[str],
 ) -> list[str]:
     """Second uncheckable case (prod job QbyBcUKTtsmLEaJr, "a music synthesizer similar to an asr10", 10-17): in an
     idle scenario (named idle/quiet/off/..., or the simulator's own single "idle" when the design set none) nothing
@@ -1244,7 +1313,11 @@ def _idle_benchmarks(
     modelled load reads ~0 in that scenario and the failing row wants MORE than it got; an over-limit reading or
     a load that does draw current stays a real failure."""
     loads = [str(r) for r in (sim.get("loads") or {})]
-    leds = [str(r) for r in (sim.get("leds") or {})] if isinstance(sim.get("leds"), dict) else []
+    leds = (
+        [str(r) for r in (sim.get("leds") or {})]
+        if isinstance(sim.get("leds"), dict)
+        else []
+    )
     if not loads:
         return []
     # verdict rows carry no band: the minimum comes from the design's own benchmark (prefixed by scenario or not)
@@ -1253,20 +1326,31 @@ def _idle_benchmarks(
         if isinstance(d, dict):
             c = str(d.get("check", ""))
             bands[c] = d.get("min")
-            bands.setdefault(re.sub(r"^[A-Za-z0-9_]+\.(?=supply_|[A-Z]+\d+\.)", "", c), d.get("min"))
+            bands.setdefault(
+                re.sub(r"^[A-Za-z0-9_]+\.(?=supply_|[A-Z]+\d+\.)", "", c), d.get("min")
+            )
     marked = []
     for b in rows:
         if b.get("pass") is not False:
             continue
-        m = re.fullmatch(r"(?:([A-Za-z0-9_]+)\.)?(supply_ma_avg|supply_ma_peak|([A-Z]+\d+)\.(avg_ma|peak_ma))", str(b.get("check", "")))
+        m = re.fullmatch(
+            r"(?:([A-Za-z0-9_]+)\.)?(supply_ma_avg|supply_ma_peak|([A-Z]+\d+)\.(avg_ma|peak_ma))",
+            str(b.get("check", "")),
+        )
         if not m:
             continue
         sc = m.group(1) or (scen[0] if len(scen) == 1 else None)
-        if not sc or sc not in scen or not (_IDLE.search(sc) or not design.get("scenarios")):
+        if (
+            not sc
+            or sc not in scen
+            or not (_IDLE.search(sc) or not design.get("scenarios"))
+        ):
             continue
         if m.group(3) and m.group(3) not in loads:
             continue
-        if any(abs(float(sim.get(f"{sc}.{r}.avg_ma") or 0)) > 0.05 for r in loads + leds):
+        if any(
+            abs(float(sim.get(f"{sc}.{r}.avg_ma") or 0)) > 0.05 for r in loads + leds
+        ):
             continue  # a load does draw current here: a real measurement
         val = b.get("value")
         lo = b.get("min", bands.get(f"{sc}.{m.group(2)}", bands.get(m.group(2))))
@@ -1274,7 +1358,9 @@ def _idle_benchmarks(
             continue  # not a "wants more than the idle board draws" failure
         b["pass"] = None
         b["status"] = "uncheckable"
-        b["text"] += " (not checkable in simulation: nothing drives the load while idle)"
+        b["text"] += (
+            " (not checkable in simulation: nothing drives the load while idle)"
+        )
         marked.append(b["check"])
     return marked
 
@@ -1450,7 +1536,9 @@ def _fold_parallel(design: dict[str, Any]) -> list[str]:
         old = p.get("value")
         p["value"] = _fmt_ohms(1.0 / g)
         drop.update(str(q["ref"]) for q in copies)
-        notes.append(f"{ref} {old} + {', '.join(str(q['ref']) for q in copies)} in parallel -> {ref} {p['value']}")
+        notes.append(
+            f"{ref} {old} + {', '.join(str(q['ref']) for q in copies)} in parallel -> {ref} {p['value']}"
+        )
     if drop:
         design["parts"] = [p for p in parts if str(p.get("ref")) not in drop]
     return notes
@@ -2171,7 +2259,10 @@ _TWIN_FAMILY = (
     (r"^BUZZER\w*$", ("Buzzer",)),
     (r"^(R|R_SMALL|R_US|RESISTOR)$", ("R",)),
     (r"^(C|C_SMALL|CAPACITOR)$", ("C",)),
-    (r"^(RV|RV_\S*|R_POT\S*|POT\S*|POTENTIOMETER\S*|R_POTENTIOMETER\S*|TRIMPOT\S*)$", ("R_Potentiometer_Trim",)),
+    (
+        r"^(RV|RV_\S*|R_POT\S*|POT\S*|POTENTIOMETER\S*|R_POTENTIOMETER\S*|TRIMPOT\S*)$",
+        ("R_Potentiometer_Trim",),
+    ),
 )
 _HEADER = re.compile(r"(?:CONN|PINHEADER|PINSOCKET)_0?(\d+)X0?(\d+)", re.I)
 
@@ -2192,7 +2283,9 @@ def _twin_piece(
     a 1x06 header), or a USB-C receptacle by its pin names. KEPT pieces first, then the KiCad catalog (through-hole,
     with a SPICE model). The twin must carry every pin the part uses (by number or by name), so the wiring stays."""
     sym, foot = _sym_foot(pc)
-    foot = re.sub(r"_(RED|GREEN|BLUE|YELLOW|WHITE|AMBER|ORANGE|WARM\w*)$", "", foot, flags=re.I)  # a colour is a value
+    foot = re.sub(
+        r"_(RED|GREEN|BLUE|YELLOW|WHITE|AMBER|ORANGE|WARM\w*)$", "", foot, flags=re.I
+    )  # a colour is a value
     used = {str(k) for k in (pins or {})}
 
     def fits(c: dict[str, Any]) -> bool:
@@ -2219,7 +2312,9 @@ def _twin_piece(
         if re.match(pat, up):
             for want in syms:
                 for pool in pools:
-                    hits = [c for c in pool if _sym_foot(c["key"])[0] == want and fits(c)]
+                    hits = [
+                        c for c in pool if _sym_foot(c["key"])[0] == want and fits(c)
+                    ]
                     if hits:
                         return min(hits, key=lambda c: _twin_rank(c, foot))
     if m := _HEADER.search(f"{sym}@{foot}"):
@@ -2919,7 +3014,9 @@ def design(
                         "render": None,
                         "error": f"missing part: {names}",
                     }
-                if lost := [str(m.get("what")) for m in d["missing"] if m.get("not_found")]:
+                if lost := [
+                    str(m.get("what")) for m in d["missing"] if m.get("not_found")
+                ]:
                     stream.emit(
                         "lead",
                         "say",
@@ -3110,7 +3207,31 @@ def modify(
             say=d.get("say"),
         )
     else:
-        d, msgs = pick(stream, request, kept, extra)
+        try:
+            d, msgs = pick(stream, request, kept, extra)
+        except PickTimeout as e:
+            # the missing-parts events are already out; end the job cleanly, same shape as design()
+            res = {
+                "ask": request,
+                "base": str(base_out),
+                "route": "picker",
+                "ok": False,
+                "iterations": 0,
+                "timings": {"total_s": round(time.time() - t0, 2)},
+                "classifier": {},
+                "verdict": None,
+                "board": str(out),
+                "export": None,
+                "render": None,
+                "error": f"missing parts: {e}",
+            }
+            stream.emit(
+                "lead",
+                "done",
+                **{k: res[k] for k in ("ok", "iterations", "timings", "classifier")},
+                error=res["error"],
+            )
+            return res
     t_pick = time.time() - t1
     base_refs = {p["ref"] for p in base["parts"]}
     new_refs = [p["ref"] for p in d.get("parts", []) if p["ref"] not in base_refs]

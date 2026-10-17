@@ -65,3 +65,28 @@ def test_cap_sets_max_tokens_off_openai(monkeypatch):
     monkeypatch.setattr(llm, "guard", lambda b: None)
     llm._create(config.CRUSOE_URL, "k", "m", {"messages": [], "_cap": 1234}, None, 5)
     assert seen["max_tokens"] == 1234 and "_cap" not in seen
+
+
+def test_an_edit_that_times_out_ends_cleanly(monkeypatch, tmp_path):
+    # the edit path raised PickTimeout uncaught after the missing-parts events (sweep 10-17)
+    import json
+
+    from agent import prefilter, recipes
+
+    base = tmp_path / "base"
+    base.mkdir()
+    (base / "design.json").write_text(json.dumps({"parts": []}))
+    monkeypatch.setattr(prefilter, "screen", lambda *a, **k: None)
+    monkeypatch.setattr(live.eng, "url", str)
+    monkeypatch.setattr(recipes, "edit", lambda *a, **k: None)
+    monkeypatch.setattr(live, "classify", lambda *a, **k: {"kept": [], "yes": 0, "no": 0, "rejected": []})
+
+    def boom(*a, **k):
+        raise live.PickTimeout(live.MISSING_SAY)
+
+    monkeypatch.setattr(live, "pick", boom)
+    s = S()
+    res = live.modify("make it fly", base, tmp_path / "out", s, do_render=False)
+    assert res["ok"] is False and res["error"].startswith("missing parts")
+    done = [k for a, kind, k in s.ev if (a, kind) == ("lead", "done")]
+    assert done and done[0]["ok"] is False
