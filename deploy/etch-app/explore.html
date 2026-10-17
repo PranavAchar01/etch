@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Averia+Serif+Libre:wght@400;700&family=Figtree:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/explore.css?v=6">
+<link rel="stylesheet" href="css/explore.css?v=7">
 <link rel="modulepreload" href="js/explore.js">
 <link rel="modulepreload" href="js/common.js">
 <script>
@@ -38,6 +38,12 @@
       <a class="btn primary" id="buildL" href="board.html?new=1"><span id="plusIc"></span>Build a board</a>
       <span class="stat" id="stat" aria-live="polite"></span>
     </div>
+  </section>
+
+  <section class="mine" id="mine" aria-labelledby="mineH" hidden>
+    <div class="mine-bar"><h2 id="mineH">My boards</h2><span class="count" id="mineCount"></span></div>
+    <div class="grid mine-grid" id="mineGrid"></div>
+    <p class="mine-empty" id="mineEmpty" hidden>Boards you build or change show up here. <a id="mineBuild" href="board.html?new=1">Build a board</a></p>
   </section>
 
   <div class="cats-wrap">

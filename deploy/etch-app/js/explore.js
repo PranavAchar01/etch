@@ -1,7 +1,8 @@
 // Explore: the open-source board library (world/index.json). Category chips with a liquid indicator, an
 // expanding search, a licence switch, sort, a lazily filled grid of springy cards, and prefetch: boards near the
 // viewport get their small files warmed into Cache Storage, a hovered or touched board its GLB as well.
-import { Q, $, h, esc, icon, LOGO, carry, page, fmtStars, prefetchBoard, cachedFetch, boardFiles, WORLD, registerSW } from "./common.js";
+import { Q, $, h, esc, icon, LOGO, carry, page, fmtStars, prefetchBoard, cachedFetch, boardFiles, WORLD, registerSW, slugOf, isLive, ago } from "./common.js";
+import * as myBoards from "./my-boards.js";
 
 import { spring, reducedMotion } from "./ui/spring.js";
 import { gooFilter } from "./ui/goo.js";
@@ -407,6 +408,49 @@ const near = () => sentinel.getBoundingClientRect().top < innerHeight + 800;
 let filling = 0;
 function fill() { if (filling) return; filling = requestAnimationFrame(() => { filling = 0; if (st.shown < list.length && near()) { more(); fill(); } }); }
 new IntersectionObserver((es) => { if (es[0].isIntersecting) fill(); }, { rootMargin: "800px 0px" }).observe(sentinel);
+
+// ---- My boards: what this browser built or changed (localStorage, no accounts), newest first, same cards ----
+// A build's picture comes from the engine's /etch/thumb, a library board's from its thumb.webp; a placeholder otherwise.
+async function apiBase() {
+  if (Q.get("api")) return Q.get("api").replace(/\/$/, "");
+  const cfg = await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).catch(() => ({}));
+  return String(cfg.api || "").replace(/\/$/, "");
+}
+function mineCard(b, i, api) {
+  const live = isLive(b.run);
+  const src = live ? (api ? `${api}/etch/thumb?id=${encodeURIComponent(b.run)}` : "") : boardFiles(slugOf(b.run)).thumb;
+  const ph = () => h("span", { class: "mine-ph", html: LOGO });
+  const img = src ? h("img", { src, alt: "", width: "640", height: "400", loading: "lazy", decoding: "async" }) : ph();
+  if (src) {
+    img.addEventListener("load", () => (live ? img.classList.add("in") : keyQueue(img, slugOf(b.run))), { once: true });
+    img.addEventListener("error", () => img.replaceWith(ph()), { once: true });
+  }
+  const title = b.title || (live ? `Etch build ${b.run.replace("live-", "#")}` : "Board");
+  const c = h("article", { class: "card", style: `--i:${Math.min(i, 12)}` },
+    h("a", { class: "card-main", href: page("board") + carry({ id: b.run }), "aria-label": title, title: b.prompt ? `${title}\n“${b.prompt}”` : title },
+      h("div", { class: "th" }, img),
+      h("div", { class: "info" },
+        h("div", { class: "l1" }, h("span", { class: "who" }, [ago((b.t || 0) / 1000), b.prompt].filter(Boolean).join(" · "))),
+        h("div", { class: "l2" }, h("span", { class: "t" }, title)))),
+    h("button", { class: "src mine-x", type: "button", "aria-label": `Remove ${title} from My boards`, title: "Remove from My boards (only here)", html: `<span class="g">${icon("close", 16)}</span>` }));
+  c.lastChild.addEventListener("click", () => { myBoards.remove(b.run); c.remove(); paintMine(); });
+  springy(c);
+  return c;
+}
+function paintMine() {
+  const n = myBoards.list().length;
+  $("mineCount").innerHTML = n ? `<b>${n}</b> board${n === 1 ? "" : "s"} on this device` : "";
+  $("mineEmpty").hidden = n > 0;
+  $("mineGrid").hidden = !n;
+}
+if (myBoards.available()) {
+  $("mine").hidden = false;
+  $("mineBuild").href = page("board") + carry({ new: 1 });
+  const mine = myBoards.list();
+  paintMine();
+  // never holds up the library below: the engine address is only needed for a build's picture
+  if (mine.length) (mine.some((b) => isLive(b.run)) ? apiBase() : Promise.resolve("")).then((api) => $("mineGrid").append(...mine.map((b, i) => mineCard(b, i, api))));
+}
 
 try {
   const idx = await (window.__index || fetch(WORLD + "index.json").then((r) => r.json()));
