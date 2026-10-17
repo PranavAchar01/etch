@@ -473,7 +473,9 @@ def dark_beeper(ask: str) -> dict[str, Any] | None:
 
 
 def dark_light(ask: str) -> dict[str, Any] | None:
-    """Night light: the dark_beeper sensor and switch, driving an LED through a 220 ohm resistor."""
+    """Night light: the dark_beeper sensor and switch, driving an LED through a 220 ohm resistor. With a button in
+    the ask (sweep 10-17: "a night light with one led and a button" lost its button), a push button feeds the LED
+    side, so the LED lights in the dark while it is pressed."""
     a = ask.lower()
     if not (
         re.search(r"\b(dark|night|nightlight|lights? (go|goes|turn\w*) off|dusk)\b", a)
@@ -482,6 +484,8 @@ def dark_light(ask: str) -> dict[str, Any] | None:
     ):
         return None
     colour = next((c for c in COLOURS if re.search(rf"\b{c}\b", a)), None)
+    button = bool(re.search(r"\b(button|push ?button|switch|press\w*)\b", a))
+    led_vcc = "VCC_SW" if button else "VCC"
     parts = [
         {
             "ref": "J1",
@@ -516,7 +520,7 @@ def dark_light(ask: str) -> dict[str, Any] | None:
             "ref": "R3",
             "piece": R,
             "value": "220",
-            "pins": {"1": "VCC", "2": "LED_A"},
+            "pins": {"1": led_vcc, "2": "LED_A"},
             "group": "output",
             "why": "Sets the LED current.",
         },
@@ -529,21 +533,34 @@ def dark_light(ask: str) -> dict[str, Any] | None:
             "why": "Lights in the dark.",
         },
     ]
+    if button:
+        parts.append(
+            {
+                "ref": "SW1",
+                "piece": SW,
+                "pins": {"1": "VCC", "2": "VCC_SW"},
+                "group": "input",
+                "why": "Push button: the LED side only gets power while it is pressed.",
+            }
+        )
+    scen = [{"name": "dark", "ldr": "dark"}, {"name": "light", "ldr": "light"}]
+    bench = [
+        {"check": "dark.D1.avg_ma", "min": 2, "text": "LED on in the dark"},
+        {"check": "light.D1.avg_ma", "max": 0.5, "text": "LED off in the light"},
+        {"check": "dark.D1.peak_ma", "max": 25, "text": "LED under 25 mA"},
+    ]
+    if button:
+        scen = [dict(x, switch="pressed") for x in scen] + [{"name": "released", "ldr": "dark", "switch": "released"}]
+        bench.append({"check": "released.D1.avg_ma", "max": 0.5, "text": "LED off with the button up"})
     return {
         "name": "night_light",
         "title": "NIGHT LIGHT",
         "voltage": 5.0,
         "parts": parts,
-        "scenarios": [
-            {"name": "dark", "ldr": "dark"},
-            {"name": "light", "ldr": "light"},
-        ],
-        "benchmarks": [
-            {"check": "dark.D1.avg_ma", "min": 2, "text": "LED on in the dark"},
-            {"check": "light.D1.avg_ma", "max": 0.5, "text": "LED off in the light"},
-            {"check": "dark.D1.peak_ma", "max": 25, "text": "LED under 25 mA"},
-        ],
-        "say": "A light sensor and one transistor turn the LED on when the room gets dark.",
+        "scenarios": scen,
+        "benchmarks": bench,
+        "say": "A light sensor and one transistor turn the LED on when the room gets dark"
+        + (", while you hold the button." if button else "."),
     }
 
 
@@ -1676,14 +1693,29 @@ def recolour(request: str, base: dict[str, Any]) -> dict[str, Any] | None:
             rf"(?:a\s+|an\s+)?({COLOUR_RX})\s+(?:led|light|one)(?:\s+instead)?(?:\s+please)?",
             a,
         )
-    if not m or len(leds) != 1:
+    if not m or not leds:
         return None
+    if len(leds) > 1 and len({str(p.get("value")) for p in leds}) > 1:
+        return None  # LEDs of different colours: which one is meant is a design call
+    return _colour_leds(base, [p["ref"] for p in leds], m.group(1))
+
+
+def _colour_leds(base: dict[str, Any], refs: list[str], colour: str) -> dict[str, Any]:
+    """The design with the LEDs in refs set to colour (sweep 10-17: "use a blue led instead" on a board with two
+    identical LEDs means both; "add a second led and make it blue" means the new one)."""
     d = json.loads(json.dumps(base))
     for p in d["parts"]:
-        if p["ref"] == leds[0]["ref"]:
-            p["value"] = m.group(1)
-    d["say"] = f"Same board, {leds[0]['ref']} is now {m.group(1)}."
-    if m.group(1) in ("blue", "white"):
+        if p["ref"] in refs:
+            p["value"] = colour
+    d["say"] = f"Same board, {', '.join(refs)} {'is' if len(refs) == 1 else 'are'} now {colour}."
+    for ref in refs:
+        _blue_drive(d, next(p for p in d["parts"] if p["ref"] == ref), colour)
+    return d
+
+
+def _blue_drive(d: dict[str, Any], led: dict[str, Any], colour: str) -> None:
+    leds = [led]
+    if colour in ("blue", "white"):
         # QA round 6: a blue or white LED on a 3.3 V Pico pin through 100 ohm got under 1 mA (about 3 V of its 3.3 V
         # is the LED's own drop), so its series resistor drops to 47 ohm as on the motor car's headlights
         pico = {n for q in d["parts"] if q["piece"] == PICO for n in q["pins"].values()}
@@ -1703,7 +1735,6 @@ def recolour(request: str, base: dict[str, Any]) -> dict[str, Any] | None:
                         )
                 except ValueError:
                     pass
-    return d
 
 
 def sim_ohms(v: str) -> float:
@@ -2148,6 +2179,42 @@ def add_led(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
     return d
 
 
+def remove_switch(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
+    """'remove the button' (sweep 10-17): a two-pin push button in series between two nets is replaced by a wire
+    (its two nets merge), so what it switched is simply always on; its pressed/released scenarios and the
+    "released" checks go with it. A button read by a microcontroller is a design call and goes to the picker."""
+    if not re.fullmatch(
+        PLEASE
+        + r"(?:remove|drop|delete|take out|take off|get rid of|lose)\s+(?:the\s+|that\s+)?(?:push\s*)?(?:button|switch)",
+        a,
+    ):
+        return None
+    sws = [p for p in base["parts"] if p["piece"] == SW]
+    if len(sws) != 1 or any(p["piece"] in (PICO, PICO_W) for p in base["parts"]):
+        return None
+    sw = sws[0]
+    keep, gone = sw["pins"].get("1"), sw["pins"].get("2")
+    if not keep or not gone or keep == gone:
+        return None
+    if gone in SUPPLY + ("GND",):
+        keep, gone = gone, keep
+    d = _copy(base)
+    d["parts"] = [p for p in d["parts"] if p["ref"] != sw["ref"]]
+    for p in d["parts"]:
+        p["pins"] = {k: (keep if v == gone else v) for k, v in p["pins"].items()}
+    scen = [x for x in d.get("scenarios") or [] if x.get("switch") != "released"]
+    d["scenarios"] = [{k: v for k, v in x.items() if k != "switch"} for x in scen]
+    names = {x.get("name") for x in d["scenarios"]}
+    d["benchmarks"] = [
+        b
+        for b in d.get("benchmarks", [])
+        if f".{sw['ref']}." not in f".{b['check']}" and (b["check"].split(".")[0] in names or "." not in b["check"])
+    ]
+    d["_dropped"] = [sw["ref"]]
+    d["say"] = f"Removed {sw['ref']}: what it switched is now always on."
+    return d
+
+
 def remove_part(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
     """Remove a part by its reference (D2, R3, BZ1) or as 'the second/extra/last LED', with the resistor that
     only served it. The microcontroller and the power input stay: without them nothing else works."""
@@ -2247,6 +2314,21 @@ def coin_cell(a: str, base: dict[str, Any]) -> dict[str, Any] | None:
     ]
     d["voltage"] = 3.0
     d["say"] = f"{j['ref']} is now a CR2032 coin cell holder, so the board runs at 3 V."
+    # sweep 10-17: at 3 V an LED's ~2 V drop leaves a third of the 5 V headroom, so a 220 ohm LED resistor gave
+    # 1.7 mA, under the 2 mA "on" check; the series resistors of LEDs fed from the supply drop to 68 ohm
+    anodes = {p["pins"].get("2") for p in d["parts"] if _is_led(p)}
+    eased = []
+    for q in d["parts"]:
+        nets = set(q["pins"].values())
+        if q["piece"] == R and nets & anodes and nets & {"VCC", "VCC_SW"}:
+            try:
+                if sim_ohms(q.get("value", "")) > 68:
+                    q["value"] = "68"
+                    eased.append(q["ref"])
+            except ValueError:
+                pass
+    if eased:
+        d["say"] += f" {', '.join(eased)} {'is' if len(eased) == 1 else 'are'} now 68 ohm so the LEDs stay bright."
     return d
 
 
@@ -2482,6 +2564,7 @@ EDITS = (
     add_status_led,
     add_led,
     remove_added,
+    remove_switch,
     remove_part,
     swap_power,
     coin_cell,
@@ -2495,6 +2578,46 @@ def edit(
 ) -> tuple[dict[str, Any], str] | None:
     """(new design, edit name) for a change Etch can make by itself on the current board, else None."""
     a = re.sub(r"\s+", " ", request.lower()).strip(" .!?")
+    one = _edit_one(request, a, base, catalog)
+    if one:
+        return one
+    # several changes in one ask ("add a second led and make it blue"): each clause must be an edit Etch knows,
+    # applied in order on the previous result; "it"/"them" after an addition means the new parts
+    clauses = [c for c in _CLAUSE.split(a) if c.strip()]
+    if len(clauses) < 2:
+        return None
+    d, names, dropped, new_refs = base, [], [], []
+    for c in clauses:
+        c = c.strip(" ,.")
+        m = re.fullmatch(rf"(?:make|turn|change|set)\s+(?:it|them|that|those|the new ones?)\s+(?:to\s+|into\s+)?({COLOUR_RX})", c)
+        new_leds = [r for r in new_refs if any(p["ref"] == r and _is_led(p) for p in d["parts"])]
+        if m and new_leds:
+            nd, name = _colour_leds(d, new_leds, m.group(1)), "recolour"
+        else:
+            hit = _edit_one(c, c, d, catalog)
+            if not hit:
+                return None
+            nd, name = hit
+        dropped += nd.pop("_dropped", [])
+        before = {p["ref"] for p in d["parts"]}
+        new_refs = [p["ref"] for p in nd["parts"] if p["ref"] not in before]
+        says = [x for x in (d.get("say") if d is not base else None, nd.get("say")) if x]
+        nd["say"] = " ".join(says)
+        d, names = nd, names + [name]
+    if dropped:
+        d["_dropped"] = sorted(set(dropped))
+    return d, "+".join(names)
+
+
+_CLAUSE = re.compile(
+    r"\s*,\s*(?:and\s+|then\s+)?|\s+(?:and|then)\s+(?=(?:also\s+)?(?:add|remove|drop|delete|make|use|swap|change|"
+    r"turn|put|run|power|give|switch|set|take|get rid)\b)"
+)
+
+
+def _edit_one(
+    request: str, a: str, base: dict[str, Any], catalog: dict[str, dict[str, Any]] | None
+) -> tuple[dict[str, Any], str] | None:
     for fn in EDITS:
         d = fn(request if fn is recolour else a, base)
         if d and (catalog is None or all(p["piece"] in catalog for p in d["parts"])):
