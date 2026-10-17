@@ -545,6 +545,11 @@ def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
         }
         if p.get("load_ohms"):
             e["spice"] = {"role": "load", "ohms": float(p["load_ohms"])}
+        if _family(p["piece"]) == "thermistor" and not re.fullmatch(
+            r"\d+(\.\d+)?\s*[kKmMR]?\w*", e["value"] or ""
+        ):
+            # the catalog's leaded NTC is 10k at 25 C; a blank value would become its symbol name in ngspice
+            e["value"] = "10k"
         if e["value"] is None:
             e.pop("value")
         parts.append(e)
