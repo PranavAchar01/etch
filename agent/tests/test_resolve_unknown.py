@@ -21,3 +21,8 @@ def test_unknown_part_sourced_once(monkeypatch):
         live._resolve_unknown(Stream("t", echo=False), [part], [], set(), tried)
     assert calls == ["PIR Sensor"]  # one sourcing attempt, never a guessed piece
     assert part["piece"] == "PIR_Sensor@HC-SR501"
+
+
+def test_pico_names_map_to_the_library_module():
+    assert live._catalog_hit("Raspberry Pi Pico")["key"] == live.PICO_KEY
+    assert live._catalog_hit("Raspberry Pi Pico W")["key"] == live.PICO_W_KEY

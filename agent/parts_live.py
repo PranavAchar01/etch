@@ -632,6 +632,12 @@ def you_leads(hits: list[dict[str, Any]]) -> dict[str, Any]:
     return {"lcsc": lcsc[:5], "datasheets": pdfs[:5]}
 
 
+def _in_text(lcsc: str, hits: list[dict[str, Any]]) -> bool:
+    """An LCSC id counts only when the search text itself contains it as a whole token."""
+    blob = " ".join(f"{h.get('url', '')} {h.get('title', '')} {h.get('snippet', '')}" for h in hits)
+    return bool(re.fullmatch(r"C\d{3,9}", lcsc)) and re.search(rf"(?<![A-Za-z0-9]){lcsc}(?!\d)", blob) is not None
+
+
 def _seen(mpn: str, hits: list[dict[str, Any]]) -> bool:
     """A part number the scout names must appear in the search text itself (no invented parts)."""
     n = re.sub(r"[^A-Z0-9]", "", mpn.upper())
@@ -863,6 +869,9 @@ def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[st
                     stream, query, cands, "JLCPCB/LCSC catalogue search"
                 )
                 lcsc = picked.get("lcsc") or None
+                if lcsc and lcsc not in {c["lcsc"] for c in cands}:
+                    tiers.append({"tier": "lcsc_search", "rejected_lcsc": lcsc, "why": "not a candidate"})
+                    lcsc = None
                 picked.update(next((c for c in cands if c["lcsc"] == lcsc), {}))
         except (
             Exception
@@ -909,6 +918,11 @@ def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[st
         route, leads = web_search(query)
         tiers.append({"tier": route, "leads": len(leads)})
         pick = scout_pick(stream, query, leads, f"{route} results")
+        if pick.get("lcsc") and not _in_text(pick["lcsc"], leads):
+            # sweep 10-17: for "Raspberry Pi Pico" the scout returned C175359 (a 2512 resistor) that no lead
+            # mentions; an id the search text does not contain is invented, so it is never fetched
+            tiers.append({"tier": route, "rejected_lcsc": pick["lcsc"], "why": "not in the search text"})
+            pick["lcsc"] = ""
         if pick.get("lcsc") and pick["lcsc"] != lcsc:
             res = easyeda_fetch(
                 pick["lcsc"], stream, f"{route} search, part-scout read, easyeda2kicad"

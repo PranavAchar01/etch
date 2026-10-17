@@ -98,3 +98,21 @@ def test_invented_part_rejected(env, monkeypatch):
     assert env["fetch"] == []
     assert any(t.get("rejected_mpn") == "XYZ9999" for t in tiers)
     assert any("not drawing one" in (e.get("text") or "") for e in s.events)
+
+
+def test_in_text_needs_the_id_in_the_search_text():
+    hits = [{"url": "https://www.lcsc.com/product-detail/x_C9964.html", "title": "t", "snippet": "C12 a"}]
+    assert pl._in_text("C9964", hits) and not pl._in_text("C996", hits)
+    assert not pl._in_text("C175359", hits) and not pl._in_text("rm -rf", hits)
+
+
+def test_web_tier_rejects_an_invented_lcsc_id(env, monkeypatch):
+    # sweep 10-17: "Raspberry Pi Pico" -> the scout named C175359 (a resistor) that no lead mentions
+    leads = [{"url": "https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf", "title": "Pico", "snippet": "RP2040"}]
+    monkeypatch.setattr(pl.config, "you_key", lambda: None)
+    monkeypatch.setattr(pl, "scout_search", lambda q: leads)
+    monkeypatch.setattr(pl, "scout_pick", lambda *a: {"lcsc": "C175359", "reason": "r"})
+    monkeypatch.setattr(pl, "github_fetch", lambda q, s: {"status": "none"})
+    res = pl.find_part("Raspberry Pi Pico", Stream("t", echo=False))
+    assert env["fetch"] == [] and res["status"] == "leads"
+    assert any(t.get("rejected_lcsc") == "C175359" for t in res["tiers"])
