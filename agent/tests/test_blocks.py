@@ -141,3 +141,32 @@ def test_pick_blocks_uses_the_model_answer(cat, monkeypatch):
     monkeypatch.setattr(llm, "call_json", lambda *a, **k: (ans, None))
     rec = blocks.pick_blocks(Stream("t", echo=False), "a fan that turns on when hot", "m", cat)
     assert rec is not None and rec[1] == "blocks"
+
+
+def test_composed_board_lays_out_every_part_once_in_compact_columns():
+    d, _ = blocks.device_design("fidget toy")
+    cells = [c for b in d["layout_blocks"] for row in b["rows"] for c in row if c and c != "@title"]
+    assert sorted(cells) == sorted(p["ref"] for p in d["parts"])
+    assert all(len(row) <= 2 for b in d["layout_blocks"] for row in b["rows"])
+    # columns about as tall as the Pico, not one block per function left to right (was 205 x 59 mm)
+    assert len(d["layout_blocks"]) <= 5
+
+
+def test_stale_layout_blocks_still_cover_every_part():
+    d, _ = blocks.device_design("fidget toy")
+    parts = [p for p in d["parts"] if p["ref"] != "R1"] + [{**d["parts"][1], "ref": "R99"}]
+    out = live._fit_blocks(d["layout_blocks"], parts, ["power"])
+    cells = [c for b in out for row in b["rows"] for c in row if c and c != "@title"]
+    assert sorted(cells) == sorted(p["ref"] for p in parts)
+
+
+def test_rotary_encoder_is_not_a_resistor(cat):
+    enc = cat[blocks.EC11]
+    assert enc["family"] == "rotary encoder" and enc["spice"]["prefix"] != "R"
+
+
+def test_rewriter_device_name(monkeypatch):
+    monkeypatch.setenv("ETCH_REWRITE_RESULT", json.dumps({"kind": "board", "device": "gps tracker", "text": "x"}))
+    assert live._rewrite_device() == "gps tracker"
+    monkeypatch.setenv("ETCH_REWRITE_RESULT", "not json")
+    assert live._rewrite_device() is None

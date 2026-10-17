@@ -928,14 +928,17 @@ def compose(
         specs.append(
             ("status_led", {})
         )  # every board shows it runs, and the firmware test has an LED to check
+    units: list[list[str]] = []  # the refs each block call added, laid out together
     for n, params in specs:
         fn = BLOCKS.get(n)
         if fn is None:
             raise BlockError(f"unknown block {n}")
+        before = len(b.parts)
         try:
             fn(b, **params)
         except TypeError as e:
             raise BlockError(f"{n}: {e}") from e
+        units.append([p["ref"] for p in b.parts[before:]])
     u = b.mcu()
     parts = [u] + b.parts
     cmds = [
@@ -957,10 +960,95 @@ def compose(
         "benchmarks": [],
         "firmware": {"commands": cmds, "inputs": sorted(set(b.inputs))},
         "blocks": [[n, p] for n, p in specs],
+        "layout_blocks": layout_blocks(parts, units),
         "say": f"{title}: a Raspberry Pi Pico{' W' if b.wireless else ''}"
         + (f" with {', '.join(b.say)}" if b.say else "")
         + f", built from {len(specs)} wired blocks ({', '.join(dict.fromkeys(used)) or 'status LED'}).",
     }
+
+
+# ------------------------------------------------------------------ layout
+_SIZES: dict[str, tuple[float, float]] = {}
+_COURT = re.compile(r"\((?:fp_line|fp_rect|fp_poly|fp_circle|fp_arc)\b((?:(?!\(fp_).)*?)\(layer \"?F\.CrtYd\"?\)", re.S)
+_XY = re.compile(r"\((?:start|end|xy|center|mid) (-?[\d.]+) (-?[\d.]+)\)")
+
+
+def _size(piece: str) -> tuple[float, float]:
+    """A piece's courtyard width x height in mm, read from its KiCad footprint (8 x 8 when unreadable)."""
+    if piece not in _SIZES:
+        from etchlib.kicad import footprint_root
+
+        from .live import _cat
+
+        wh = (8.0, 8.0)
+        try:
+            lib, name = str(_cat()[piece]["footprint"]).split(":", 1)
+            text = (footprint_root(lib) / f"{lib}.pretty" / f"{name}.kicad_mod").read_text()
+            pts = []
+            for m in _COURT.finditer(text):
+                xy = [(float(x), float(y)) for x, y in _XY.findall(m.group(1))]
+                if m.group(0).startswith("(fp_circle") and len(xy) == 2:
+                    (cx, cy), (ex, ey) = xy
+                    r = ((ex - cx) ** 2 + (ey - cy) ** 2) ** 0.5
+                    xy = [(cx - r, cy - r), (cx + r, cy + r)]
+                pts += xy
+            if pts:
+                xs, ys = [x for x, _ in pts], [y for _, y in pts]
+                wh = (max(xs) - min(xs), max(ys) - min(ys))
+        except (KeyError, OSError, ValueError):
+            pass
+        _SIZES[piece] = wh
+    return _SIZES[piece]
+
+
+def layout_blocks(parts: list[dict[str, Any]], units: list[list[str]], gap: float = 2.5) -> list[dict[str, Any]]:
+    """Row-layout blocks for a composed board: the Pico in a column of its own, then each wired block's parts in
+    rows of two (a pull-up next to its button), stacked into columns about as tall as the Pico, so the board
+    grows in both directions instead of one block per function left to right (QA 10-17: the fidget toy came
+    out 205 x 59 mm and its encoder net timed out in the router)."""
+    from .live import _cat
+
+    by_ref = {p["ref"]: p for p in parts}
+
+    def wh(ref: str) -> tuple[float, float]:
+        p = by_ref[ref]
+        w, h = _size(p["piece"])
+        fam = str(_cat().get(p["piece"], {}).get("family", ""))
+        # live._rot: resistors stand at 90 degrees, a power-group connector at 270
+        turn = fam == "resistor" or p["group"] == "power" and "connector" in fam.lower()
+        return (h, w) if turn else (w, h)
+
+    mcu = parts[0]["ref"]
+    wide = [r for unit in units for r in unit if r in by_ref and wh(r)[0] > 12]
+    rows_of = []
+    for unit in units:
+        refs = [r for r in unit if r in by_ref and r not in wide]
+        if refs:
+            rows_of.append([refs[k : k + 2] for k in range(0, len(refs), 2)])
+
+    def height(rows: list[list[str]]) -> float:
+        return sum(max(wh(r)[1] for r in row) + gap for row in rows)
+
+    area = sum(wh(r)[0] * wh(r)[1] for r in by_ref if r != mcu)
+    budget = max(wh(mcu)[1], (area * 3.0) ** 0.5)
+    # wide parts (an encoder, a DO-41 diode, a module) stand one per row in columns of their own, so they never
+    # set the pitch of a column of resistors and buttons
+    cols: list[list[list[str]]] = []
+    for group in ([[[r]] for r in wide], rows_of):
+        cols.append([])
+        for rows in group:
+            for chunk in [rows] if height(rows) <= budget else [[row] for row in rows]:
+                if cols[-1] and height(cols[-1]) + height(chunk) > budget:
+                    cols.append([])
+                cols[-1] += chunk
+    cols = [c for c in cols if c]
+    # the title sits on top of the shortest two-wide column
+    two = [c for c in cols if max(len(row) for row in c) == 2] or cols
+    if two:
+        min(two, key=height).insert(0, ["@title", "@title"])
+    return [{"name": "mcu", "valign": "center", "rows": [[mcu]]}] + [
+        {"name": f"col{i + 1}", "rows": c, "title_h": 5.0} for i, c in enumerate(cols)
+    ]
 
 
 # ------------------------------------------------------------------ device catalog
