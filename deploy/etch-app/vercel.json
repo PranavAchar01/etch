@@ -2,6 +2,7 @@
   "cleanUrls": true,
   "headers": [
     { "source": "/config.json", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
     { "source": "/(.*)", "headers": [
       { "key": "Permissions-Policy", "value": "microphone=(self)" },
       { "key": "X-Content-Type-Options", "value": "nosniff" },
