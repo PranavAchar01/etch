@@ -1256,11 +1256,11 @@ def _channels(
     res = [
         p
         for p in design["parts"]
-        if (by_key.get(p["piece"]) or {}).get("family") == "resistor"
+        if (by_key.get(p.get("piece")) or {}).get("family") == "resistor"
     ]
     out = []
     for p in design["parts"]:
-        fam = (by_key.get(p["piece"]) or {}).get("family")
+        fam = (by_key.get(p.get("piece")) or {}).get("family")
         if fam == "RGB LED":
             dies = [
                 (f"{p['ref']}_{c}", p["pins"].get(n))
@@ -1280,7 +1280,7 @@ def _channels(
             continue
         for ref, anode in dies:
             for r in res:
-                nets = list(r["pins"].values())
+                nets = list((r.get("pins") or {}).values())
                 if anode in nets and len(nets) == 2:
                     drive = nets[1] if nets[0] == anode else nets[0]
                     if drive in gpio:

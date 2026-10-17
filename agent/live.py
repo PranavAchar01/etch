@@ -1448,8 +1448,12 @@ def _normalize_pins(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
     """Pins given by NAME ("C", "Pin_1", "K") become the piece's pin NUMBER when the name is unique on it."""
     by_key = {p["key"]: p for p in kept}
     for part in design.get("parts", []):
+        if not isinstance(part.get("pins"), dict):
+            # a part the model wrote with no pin map (nzcIIiKo49iFA5-o) has no nets yet; code downstream (firmware
+            # channels, lonely nets) reads part["pins"], and the gates then name its open pins
+            part["pins"] = {}
         piece = by_key.get(part.get("piece"))
-        if not piece or not isinstance(part.get("pins"), dict):
+        if not piece:
             continue
         names: dict[str, list[str]] = {}
         for num, nm in piece["pins"].items():
@@ -3948,18 +3952,27 @@ def main(argv: list[str]) -> None:
     from .watchdog import Watchdog
 
     dog = Watchdog(st, out, x.text).start()  # stage and run caps with an honest message (prod zM-s8mWOeq3rjtE3)
-    if x.mode == "design":
-        r = design(x.text, out, st, code=x.code, do_render=not x.no_render)
-    else:
-        r = modify(
-            x.text,
-            Path(x.base).resolve(),
-            out,
-            st,
-            code=x.code,
-            do_render=not x.no_render,
-        )
-    dog.stop()
+    try:
+        if x.mode == "design":
+            r = design(x.text, out, st, code=x.code, do_render=not x.no_render)
+        else:
+            r = modify(
+                x.text,
+                Path(x.base).resolve(),
+                out,
+                st,
+                code=x.code,
+                do_render=not x.no_render,
+            )
+    except Exception as e:
+        # every run ends with a done event, so the studio never waits on a job that already died (QA 10-17,
+        # nzcIIiKo49iFA5-o: a crash in default_commands left the nixie job with no done event); the traceback
+        # still goes to stderr and the exit code stays 1
+        st.emit("lead", "say", text="Something broke on my side while building this. Try again, or reword the ask.")
+        st.emit("lead", "done", ok=False, iterations=0, error=f"internal error: {type(e).__name__}: {e}"[:300])
+        raise
+    finally:
+        dog.stop()
     if not x.events:
         print(
             json.dumps(

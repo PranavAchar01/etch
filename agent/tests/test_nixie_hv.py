@@ -167,3 +167,23 @@ def test_power_block_wraps_into_rows():
     parts = [{"ref": f"R{i}", "piece": R, "group": "power"} for i in range(9)]
     (blk,) = live.auto_layout(parts, ["power"])
     assert len(blk["rows"]) <= 3
+
+
+def test_part_without_pins_does_not_crash_default_commands():
+    # nzcIIiKo49iFA5-o: a resistor written with no pin map crashed firmware._channels (KeyError 'pins'), and the
+    # job ended with no done event
+    from agent import firmware
+
+    led = "kicad:Device:LED@LED_D5.0mm"
+    d = {
+        "parts": [
+            {"ref": "U1", "piece": live.PICO_KEY, "pins": {"4": "LED1", "3": "GND"}},
+            {"ref": "R1", "piece": R, "value": "330"},
+            {"ref": "D1", "piece": led, "pins": {"2": "LED1", "1": "GND"}},
+        ]
+    }
+    cat = live._cat()
+    kept = [cat[k] for k in (live.PICO_KEY, R, led)]
+    live._normalize_pins(d, kept)
+    assert _pins(d, "R1") == {}
+    firmware.default_commands(d, kept)  # no KeyError
