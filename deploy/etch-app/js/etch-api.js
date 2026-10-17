@@ -1,14 +1,12 @@
-// Client for Etch's board endpoints (deploy/EXPLORE_API.md section 2). Same API base and access code as app.js:
-// ?api= or config.json, the code sent as X-Etch-Code and remembered under the same localStorage key.
+// Client for Etch's board endpoints (deploy/EXPLORE_API.md section 2). Same API base as app.js: ?api= or config.json.
 // Falls back to mock-api.js with ?mock=1, when no API base is configured, or when an endpoint is missing (404) or
 // the engine cannot be reached, so the board view always works end to end.
-import { Q, h } from "./common.js";
+import { Q } from "./common.js";
 import * as mock from "./mock-api.js";
 
-let API = "", CODE = "", ready = null;
+let API = "", ready = null;
 const listeners = new Set();
 export const status = { mock: false, why: "" };
-try { CODE = localStorage.getItem("etch-code") || ""; } catch (e) { /* private mode */ }
 
 export function onStatus(f) { listeners.add(f); f(status); }
 function useMock(why) {
@@ -30,53 +28,11 @@ export function init() {
 }
 export const hasBackend = () => !!API;
 
-// ---- access code gate (light) ----
-let gate = null;
-function askCode(msg) {
-  if (!gate) {
-    const input = h("input", { id: "gcode", type: "password", autocomplete: "off", placeholder: "Access code", "aria-label": "Access code" });
-    const err = h("div", { class: "gate-err" });
-    const form = h("form", { class: "gate-card" },
-      h("div", { class: "gate-t" }, "Enter your Etch access code"),
-      h("div", { class: "gate-s" }, "Asking Etch and pinning comments use the Etch engine. The code is remembered in this browser."),
-      input, err,
-      h("div", { class: "gate-row" },
-        h("button", { type: "button", class: "btn outline", onclick: () => finish(false) }, "Use demo answers"),
-        h("button", { type: "submit", class: "btn dark" }, "Continue")));
-    const wrap = h("div", { class: "gate" }, form);
-    document.body.append(wrap);
-    let done = null;
-    const finish = (ok) => { wrap.classList.remove("show"); const d = done; done = null; if (d) d(ok); };
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const c = input.value.trim(); if (!c) return;
-      err.textContent = "Checking…";
-      try {
-        const r = await fetch(API + "/etch/auth", { method: "POST", headers: { "X-Etch-Code": c } });
-        const j = await r.json().catch(() => ({}));
-        if (!r.ok || !j.ok) { err.textContent = j.error || "That code did not work."; return; }
-        CODE = c; try { localStorage.setItem("etch-code", c); } catch (er) { /* not remembered */ }
-        finish(true);
-      } catch (er) { err.textContent = "Etch's engine is not reachable right now."; }
-    });
-    gate = { wrap, input, err, wait: () => new Promise((ok) => (done = ok)) };
-  }
-  gate.err.textContent = msg || "";
-  gate.wrap.classList.add("show");
-  setTimeout(() => gate.input.focus(), 30);
-  return gate.wait();
-}
-
-// authenticated fetch against the backend (also used for a live-* board's GLB / parts / layers)
-export async function authed(path, opt = {}, retry = true) {
+// fetch against the backend (also used for a live-* board's GLB / parts / layers)
+export async function backend(path, opt = {}) {
   await init();
   if (!API) throw new Error("no backend");
-  const r = await fetch(API + path, { ...opt, headers: { ...(opt.headers || {}), "X-Etch-Code": CODE } });
-  if (r.status === 401 && retry) {
-    const ok = await askCode(CODE ? "That code did not work. Try again." : "");
-    if (ok) return authed(path, opt, false);
-  }
-  return r;
+  return fetch(API + path, opt);
 }
 
 // one JSON call; any reason the real endpoint can't answer falls through to the mock
@@ -85,9 +41,8 @@ async function call(path, body, mockFn) {
   if (status.mock) return mockFn();
   let r;
   try {
-    r = await authed(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    r = await backend(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   } catch (e) { useMock("Etch's engine is not reachable"); return mockFn(); }
-  if (r.status === 401) { useMock("no access code"); return mockFn(); }
   // only a missing route falls back to the mock: an engine without the board routes answers 404/405 with no JSON
   // error, or a plain "not found". The routes' own 404s ("no such board", "That comment is gone.") and every other
   // error (403, 409, 422, 429, 503…) are real answers, shown as is.
@@ -133,8 +88,7 @@ export const MAX_TEXT = 400; // API.md: questions, comments and replies over 400
 export async function changeLive({ run, text }) {
   await init();
   if (status.mock || !API) return mock.change({ board: run, text });
-  const r = await authed("/etch/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "modify", text, base: `/engine/out/${run}` }) });
-  if (r.status === 401) throw new Error("Etch needs your access code to change this board.");
+  const r = await backend("/etch/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "modify", text, base: `/engine/out/${run}` }) });
   const j = await parse(r);
   keepToken(j);
   return { ok: true, ...j };
@@ -143,10 +97,10 @@ export async function changeLive({ run, text }) {
 export async function job(id, since = 0) {
   await init();
   if (status.mock || !API || String(id).startsWith("mock-")) return mock.job(id, since);
-  return parse(await authed(`/etch/job?id=${encodeURIComponent(id)}&since=${since}`));
+  return parse(await backend(`/etch/job?id=${encodeURIComponent(id)}&since=${since}`));
 }
 
-// ---- voice (API.md): /etch/health has no auth; /etch/stt takes raw Float32 16 kHz mono; /etch/tts returns audio/mpeg ----
+// ---- voice (API.md): /etch/stt takes raw Float32 16 kHz mono; /etch/tts returns audio/mpeg ----
 export async function health() {
   await init();
   if (!API) throw new Error("no backend");
@@ -154,11 +108,11 @@ export async function health() {
   return r.json();
 }
 export async function stt(buf) {
-  const r = await authed("/etch/stt", { method: "POST", body: buf });
+  const r = await backend("/etch/stt", { method: "POST", body: buf });
   if (r.status === 503) throw new Error("Voice is offline right now. Type instead.");
   return parse(r);
 }
 export function tts(text) {
-  return authed("/etch/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: String(text).slice(0, 400) }) })
+  return backend("/etch/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: String(text).slice(0, 400) }) })
     .then((r) => (r.ok ? r.blob() : null)).catch(() => null);
 }

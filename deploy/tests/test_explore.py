@@ -1,6 +1,6 @@
 """Explore routes (EXPLORE_API.md section 2): ask, comments, change. The model is mocked; nothing is built.
 
-ETCH_ACCESS_CODE is set here, so: python3 -m unittest discover -s deploy/tests
+python3 -m unittest discover -s deploy/tests
 """
 
 from __future__ import annotations
@@ -15,7 +15,6 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-os.environ["ETCH_ACCESS_CODE"] = "test-code"
 TMP = Path(tempfile.mkdtemp(prefix="etch-explore-test-"))
 os.environ["ETCH_EXPLORE_DB"] = str(TMP / "comments.sqlite3")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -167,13 +166,11 @@ class ExploreRoutes(unittest.TestCase):
         self.calls = self.llm.start()
         self.addCleanup(self.llm.stop)
 
-    def call(self, method, path, body=None, code="test-code"):
+    def call(self, method, path, body=None):
         c = http.client.HTTPConnection(
             "127.0.0.1", self.srv.server_address[1], timeout=10
         )
         headers = {"Content-Type": "application/json"}
-        if code:
-            headers["X-Etch-Code"] = code
         c.request(
             method,
             path,
@@ -185,25 +182,12 @@ class ExploreRoutes(unittest.TestCase):
         c.close()
         return r.status, data
 
-    # ---------------------------------------------------------------- auth + ids
+    # ---------------------------------------------------------------- access + ids
 
-    def test_every_route_needs_the_code(self):
-        for method, path in [
-            ("GET", f"/etch/comments?board={GH}"),
-            ("POST", "/etch/ask"),
-            ("POST", "/etch/comments"),
-            ("POST", "/etch/comments/reply"),
-            ("POST", "/etch/comments/delete"),
-            ("POST", "/etch/change"),
-        ]:
-            status, data = self.call(
-                method, path, {} if method == "POST" else None, code=None
-            )
-            self.assertEqual((status, data), (401, {"error": "code"}), path)
-            status, _ = self.call(
-                method, path, {} if method == "POST" else None, code="wrong"
-            )
-            self.assertEqual(status, 401, path)
+    def test_routes_are_open_without_a_code(self):
+        status, data = self.call("GET", f"/etch/comments?board={GH}")
+        self.assertEqual(status, 200)
+        self.assertTrue(data["ok"])
 
     def test_bad_board_ids_are_404_and_never_touch_paths(self):
         for bad in [
@@ -231,7 +215,7 @@ class ExploreRoutes(unittest.TestCase):
             "127.0.0.1", self.srv.server_address[1], timeout=10
         )
         c.request(
-            "POST", "/etch/ask", body=b"{nope", headers={"X-Etch-Code": "test-code"}
+            "POST", "/etch/ask", body=b"{nope"
         )
         r = c.getresponse()
         self.assertEqual(

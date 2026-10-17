@@ -3,6 +3,7 @@
 1. local KiCad library index (engine/parts/index.json + parts the agent added before)
 2. LCSC: id from the query or from JLCPCB's part search, then easyeda2kicad (symbol, footprint, STEP)
 3. GitHub code search for a KiCad footprint (.kicad_mod) plus a STEP in the same repo
+2a. You.com (when keyed): allowlisted distributor/maker search, exact MPN + LCSC id + datasheet, then tier 2
 4. Web search (You.com when keyed, else local SearXNG via scout); the part scout (sub-model) reads the results for an LCSC id or exact part
    number and tier 2 is retried with it
 
@@ -552,26 +553,220 @@ def find_mechanical(
 
 # ---------- tier 4: You.com ----------
 
+YOU_URL = "https://ydc-index.io/v1/search"  # Web Search, POST, X-API-Key header (you.com/docs, checked 2026-10-17)
+# a strict allowlist: distributors, part catalogues and manufacturers. Results come only from these domains.
+YOU_DOMAINS = [
+    "lcsc.com", "jlcpcb.com", "digikey.com", "mouser.com", "octopart.com", "arrow.com", "newark.com",
+    "ti.com", "analog.com", "st.com", "microchip.com", "onsemi.com", "nxp.com", "diodes.com", "vishay.com",
+    "infineon.com", "rohm.com", "toshiba.semicon-storage.com", "renesas.com", "espressif.com",
+    "raspberrypi.com", "adafruit.com", "sparkfun.com", "bourns.com", "te.com", "molex.com", "alldatasheet.com",
+]
+YOU_CACHE = Path(__file__).resolve().parents[1] / "engine" / "parts" / "you_cache"
+YOU_TTL_S = 14 * 86400
+_HIDDEN = re.compile("[\\x00-\\x08\\x0b-\\x1f\\x7f\\u00ad\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\ufeff]")
+_TAG = re.compile(r"<[^>]{0,400}>")
+LCSC_RE = re.compile(r"(?<![A-Za-z0-9])C\d{3,9}(?![A-Za-z0-9])")
 
-def you_search(query: str) -> list[dict[str, Any]]:
+
+def sanitize(text: Any, limit: int = 300) -> str:
+    """Web text is data: strip markup, control, zero-width and bidi characters, collapse space, cap the length."""
+    t = _HIDDEN.sub("", _TAG.sub(" ", str(text or "")))
+    return re.sub(r"\s+", " ", t).strip()[:limit]
+
+
+def _safe_url(u: Any) -> str | None:
+    u = str(u or "").strip()
+    pu = urllib.parse.urlparse(u)
+    host = (pu.hostname or "").lower()
+    if pu.scheme != "https" or len(u) > 400 or re.search(r"\s", u):
+        return None
+    if not any(host == d or host.endswith("." + d) for d in YOU_DOMAINS):
+        return None
+    return u
+
+
+def you_search(query: str, count: int = 8) -> list[dict[str, Any]]:
+    """You.com Web Search restricted to YOU_DOMAINS. Cached on disk (engine/parts/you_cache) for 14 days.
+    Returns sanitized hits only: title, url, host, snippet."""
+    import hashlib
+
     k = config.you_key()
     if not k:
-        raise RuntimeError("no You.com key (env YOU_API_KEY or Keychain you-api-key)")
-    url = "https://ydc-index.io/v1/search?" + urllib.parse.urlencode(
-        {"query": f"{query} LCSC datasheet", "count": 8}
+        raise RuntimeError("no You.com key (env YOU_API_KEY or Keychain jarvis-vault/You.com)")
+    q = sanitize(query, 200)
+    f = YOU_CACHE / (hashlib.sha256(f"{q}|{count}".encode()).hexdigest()[:24] + ".json")
+    if f.exists() and time.time() - f.stat().st_mtime < YOU_TTL_S:
+        return json.loads(f.read_text())["hits"]
+    body = {"query": f"{q} datasheet", "count": count, "include_domains": YOU_DOMAINS}
+    r = json.loads(
+        _get(YOU_URL, {"X-API-Key": k, "Content-Type": "application/json"}, json.dumps(body).encode())
     )
-    r = json.loads(_get(url, {"X-API-Key": k}))
-    web = (r.get("results") or {}).get("web") or r.get("hits") or []
+    hits = []
+    for w in ((r.get("results") or {}).get("web") or [])[:count]:
+        url = _safe_url(w.get("url"))
+        if not url:
+            continue
+        hits.append(
+            {
+                "title": sanitize(w.get("title"), 160),
+                "url": url,
+                "host": urllib.parse.urlparse(url).hostname,
+                "snippet": sanitize(
+                    " ".join([str(w.get("description") or "")] + [str(x) for x in (w.get("snippets") or [])]), 400
+                ),
+            }
+        )
+    YOU_CACHE.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps({"query": q, "at": time.strftime("%Y-%m-%dT%H:%M:%S"), "hits": hits}, indent=1))
+    return hits
+
+
+def you_leads(hits: list[dict[str, Any]]) -> dict[str, Any]:
+    """Facts pulled out of the hits by code, never by the model: LCSC ids, datasheet PDFs."""
+    lcsc: list[str] = []
+    for h in hits:
+        for m in LCSC_RE.findall(f"{h['url']} {h['title']} {h['snippet']}"):
+            if m not in lcsc and ("lcsc" in h["host"] or "jlcpcb" in h["host"] or "LCSC" in h["snippet"]):
+                lcsc.append(m)
+    pdfs = [h["url"] for h in hits if h["url"].lower().split("?")[0].endswith(".pdf")]
+    return {"lcsc": lcsc[:5], "datasheets": pdfs[:5]}
+
+
+def _in_text(lcsc: str, hits: list[dict[str, Any]]) -> bool:
+    """An LCSC id counts only when the search text itself contains it as a whole token."""
+    blob = " ".join(f"{h.get('url', '')} {h.get('title', '')} {h.get('snippet', '')}" for h in hits)
+    return bool(re.fullmatch(r"C\d{3,9}", lcsc)) and re.search(rf"(?<![A-Za-z0-9]){lcsc}(?!\d)", blob) is not None
+
+
+def _seen(mpn: str, hits: list[dict[str, Any]]) -> bool:
+    """A part number the scout names must appear in the search text itself (no invented parts)."""
+    n = re.sub(r"[^A-Z0-9]", "", mpn.upper())
+    if len(n) < 3:
+        return False
+    return any(n in re.sub(r"[^A-Z0-9]", "", f"{h['url']} {h['title']} {h['snippet']}".upper()) for h in hits)
+
+
+# vendor package name -> the KiCad 10 standard footprint with the same body and pitch (only when that file exists)
+_KICAD_EQUIV = [
+    (r"^DIP-(\d+)_.*(?:LS|W)7\.6", "Package_DIP", "DIP-{n}_W7.62mm"),
+    (r"^DIP-(\d+)_.*(?:LS|W)15\.2", "Package_DIP", "DIP-{n}_W15.24mm"),
+    (r"^SOIC-(\d+)_L([\d.]+)-W3\.9", "Package_SO", "SOIC-{n}_3.9x{l}mm_P1.27mm"),
+    (r"^TO-92", "Package_TO_SOT_THT", "TO-92_Inline"),
+    (r"^TO-220-3", "Package_TO_SOT_THT", "TO-220-3_Vertical"),
+]
+
+
+def kicad_equivalent(vendor_fp: str) -> str | None:
+    """The KiCad library footprint a vendor footprint corresponds to, by package name; None when there is no
+    exact match. Recorded for provenance; the build keeps the vendor footprint that was checked against the symbol."""
+    from etchlib.kicad import FOOTPRINT_DIR
+
+    name = vendor_fp.split(":")[-1]
+    for rx, lib, pat in _KICAD_EQUIV:
+        if m := re.search(rx, name):
+            g = m.groups()
+            stem = pat.format(n=g[0] if g else "", l=g[1] if len(g) > 1 else "")
+            if (FOOTPRINT_DIR / f"{lib}.pretty" / f"{stem}.kicad_mod").exists():
+                return f"{lib}:{stem}"
+    return None
+
+
+YOU_MAX_FETCH = 4  # LCSC ids tried with easyeda2kicad per part
+
+
+def _mpn_words(query: str) -> list[str]:
+    """Words of the ask shaped like a part number (letters and digits, 4+ chars): 'DRV8833', 'HX711'."""
     return [
-        {
-            "title": w.get("title"),
-            "url": w.get("url"),
-            "snippet": (w.get("description") or " ".join(w.get("snippets") or []))[
-                :300
-            ],
-        }
-        for w in web[:8]
+        w for w in re.findall(r"[A-Za-z0-9][A-Za-z0-9\-]{2,}[A-Za-z0-9]", query)
+        if re.search(r"[A-Za-z]", w) and re.search(r"\d", w) and not LCSC_RE.fullmatch(w)
     ]
+
+
+def you_find(query: str, stream: Stream, tiers: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """You.com discovery: search the allowlisted domains, identify the exact part (MPN, maker, datasheet, LCSC id),
+    confirm it in the JLCPCB/LCSC catalogue, then fetch the vendor KiCad symbol + footprint + STEP with
+    easyeda2kicad. Returns a find_part result, or None (with the reason in the step log) when no real
+    footprint exists. Nothing is ever drawn or guessed."""
+    hits = you_search(query)
+    leads = you_leads(hits)
+    tiers.append({"tier": "you.com", "hits": len(hits), "lcsc": leads["lcsc"], "datasheets": leads["datasheets"]})
+    stream.emit("part-scout", "web", provider="you.com", query=query, hits=len(hits),
+                urls=[h["url"] for h in hits[:5]])
+    if not hits:
+        return None
+    pick = scout_pick(stream, query, hits, "you.com results")
+    mpn = sanitize(pick.get("mpn"), 60)
+    if mpn and not _seen(mpn, hits):
+        tiers.append({"tier": "you.com", "rejected_mpn": mpn, "why": "not in the search text"})
+        mpn = ""
+    # LCSC ids to try, in order: the scout's pick (only if the search text has it), the ids in the search
+    # text, then catalogue hits for each part number seen in the search text (the scout's MPN first, then
+    # part-number-shaped words of the ask). The first one whose vendor library converts cleanly wins.
+    order: list[str] = []
+    if pick.get("lcsc") in leads["lcsc"]:
+        order.append(pick["lcsc"])
+    order += [x for x in leads["lcsc"] if x not in order]
+    by_lcsc: dict[str, dict[str, Any]] = {}
+    mpns = [mpn] if mpn else []
+    mpns += [w for w in _mpn_words(query) if w not in mpns and _seen(w, hits)]
+    for m in mpns[:3]:
+        try:  # confirm the MPN in the catalogue: same part number, an LCSC id that really exists
+            n = re.sub(r"[^A-Z0-9]", "", m.upper())
+            cands = [c for c in jlc_search(m) if n in re.sub(r"[^A-Z0-9]", "", str(c.get("mpn")).upper())]
+            cands.sort(key=lambda c: (not c.get("datasheet"), -(c.get("stock") or 0)))
+            for c in cands:
+                by_lcsc.setdefault(c["lcsc"], c)
+                if c["lcsc"] not in order:
+                    order.append(c["lcsc"])
+            if cands:
+                mpn = mpn or m
+        except Exception as e:
+            tiers.append({"tier": "lcsc_confirm", "mpn": m, "error": str(e)[:200]})
+    src = next((h["url"] for h in hits if mpn and _seen(mpn, [h])), hits[0]["url"])
+    name = mpn or (order[0] if order else query)
+    if not order:
+        stream.emit("part-scout", "web", provider="you.com", found=name, footprint=None,
+                    text=f"scout you.com found {name}, but no LCSC/EasyEDA entry to take a real KiCad footprint "
+                    "from; not drawing one")
+        return None
+    res: dict[str, Any] = {}
+    lcsc = ""
+    for lcsc in order[:YOU_MAX_FETCH]:
+        res = easyeda_fetch(lcsc, stream, f"you.com search ({src}), LCSC catalogue, easyeda2kicad")
+        tiers.append({"tier": "easyeda2kicad", "lcsc": lcsc, "status": res["status"]})
+        if res["status"] == "ok":
+            break
+    cand = by_lcsc.get(lcsc, {})
+    if res.get("status") != "ok":
+        stream.emit("part-scout", "web", provider="you.com", found=name, footprint=None,
+                    text=f"scout you.com found {name} (LCSC {', '.join(order[:YOU_MAX_FETCH])}), but no vendor "
+                    "library had a usable symbol, footprint and 3D model; not faking one")
+        return None
+    part = res["part"]
+    name = mpn or str(part.get("mpn") or "") or lcsc
+    # a datasheet only when it is this exact part's: the catalogue's, or a search PDF naming its LCSC id / MPN
+    stem = (re.match(r"[A-Z]+\d+", re.sub(r"[^A-Z0-9]", "", mpn.upper())) or [""])[0] if mpn else ""
+    ds = cand.get("datasheet") or next(
+        (u for u in leads["datasheets"] if lcsc in u or (len(stem) >= 4 and stem in re.sub(r"[^A-Z0-9]", "", u.upper()))),
+        None,
+    )
+    part.update({k: v for k, v in {"mpn": mpn or cand.get("mpn"), "manufacturer": cand.get("brand"),
+                                    "datasheet": ds, "lcsc": lcsc}.items() if v})
+    prov = dict(part.get("provenance") or {})
+    fp = str(part.get("footprint") or part.get("key"))
+    if eq := kicad_equivalent(fp):
+        part["kicad_footprint"] = eq
+        prov["kicad_footprint"] = f"{eq} (KiCad 10 library, same package)"
+    prov.update({"route": f"scout you.com found {name}, LCSC {lcsc}, easyeda2kicad", "search_url": src,
+                 "search": "you.com Web Search (allowlisted distributor/manufacturer domains)",
+                 "datasheet": ds})
+    part["provenance"] = prov
+    _register(part)
+    stream.emit("part-scout", "web", provider="you.com", found=name, lcsc=lcsc, footprint=fp,
+                kicad_footprint=part.get("kicad_footprint"),
+                text=f"scout you.com found {name}: LCSC {lcsc}, footprint {fp.split(':')[-1]}"
+                + (f" (= KiCad {part['kicad_footprint']})" if part.get("kicad_footprint") else ""))
+    return {**res, "part": part, "source": "you.com lead, LCSC via easyeda2kicad", "leads": hits}
 
 
 def scout_search(query: str) -> list[dict[str, Any]]:
@@ -681,6 +876,14 @@ def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[st
     if not allow_network:
         return done({"status": "not_found"})
 
+    # tier 2a: You.com (when keyed): identify the exact part on distributor / maker pages, then its vendor library
+    if not lcsc_in_query and config.you_key():
+        try:
+            if res := you_find(query, stream, tiers):
+                return done(res)
+        except Exception as e:  # network, quota or API shape change: the free tiers below still run
+            tiers.append({"tier": "you.com", "error": str(e)[:200]})
+
     # tier 2: LCSC
     lcsc = lcsc_in_query.group(0) if lcsc_in_query else None
     picked: dict[str, Any] = {}
@@ -700,6 +903,9 @@ def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[st
                     stream, query, cands, "JLCPCB/LCSC catalogue search"
                 )
                 lcsc = picked.get("lcsc") or None
+                if lcsc and lcsc not in {c["lcsc"] for c in cands}:
+                    tiers.append({"tier": "lcsc_search", "rejected_lcsc": lcsc, "why": "not a candidate"})
+                    lcsc = None
                 picked.update(next((c for c in cands if c["lcsc"] == lcsc), {}))
         except (
             Exception
@@ -746,6 +952,11 @@ def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[st
         route, leads = web_search(query)
         tiers.append({"tier": route, "leads": len(leads)})
         pick = scout_pick(stream, query, leads, f"{route} results")
+        if pick.get("lcsc") and not _in_text(pick["lcsc"], leads):
+            # sweep 10-17: for "Raspberry Pi Pico" the scout returned C175359 (a 2512 resistor) that no lead
+            # mentions; an id the search text does not contain is invented, so it is never fetched
+            tiers.append({"tier": route, "rejected_lcsc": pick["lcsc"], "why": "not in the search text"})
+            pick["lcsc"] = ""
         if pick.get("lcsc") and pick["lcsc"] != lcsc:
             res = easyeda_fetch(
                 pick["lcsc"], stream, f"{route} search, part-scout read, easyeda2kicad"
