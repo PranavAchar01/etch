@@ -9,13 +9,20 @@ python3 library/crawl.py --limit 200     # GitHub search via `gh` -> library/cac
 python3 library/fetch.py                 # pcb, project, schematics, every 3D model -> library/cache/src/<slug>/
 python3 library/render.py                # kicad-cli GLB + raytraced thumb + parts.json + meta.json
 python3 library/build_index.py --prune   # deploy/etch-app/world/index.json + library/manifest.json
+python3 library/verify.py                # check every rendered board (files, GLB units, parts -> GLB nodes)
 ```
+
+To rebuild the exact committed library instead of crawling again, run `python3 library/seed.py` in place of
+`crawl.py`: it rebuilds `library/cache/{repos,boards}.json` from `library/manifest.json` at the commits
+pinned there, then `fetch.py` / `render.py` / `build_index.py` run as usual.
 
 All steps are incremental: re-running skips repos/boards already done (`--refresh`, `--force`,
 `--retry-failed` to redo, `--only <slug>...` for single boards). Hand-picked boards pinned to an exact
 commit live in `PINNED_BOARDS` in `crawl.py`. Failures and timings: `library/cache/render_log.json`.
 `library/manifest.json` (committed) lists every crawled board as queued / rendered / skipped with the
-reason and its 3D-model summary.
+reason, its 3D-model summary and `identical` flag; rows already there are kept across runs. Owners
+excluded from the library (`DENY_OWNER_SHA256` in `crawl.py`) are never crawled and are dropped from the
+manifest. Error text and logs written to committed files have local paths scrubbed (`common.scrub`).
 
 Needs: `gh` (authenticated), KiCad 9+ (`$ETCH_KICAD_APP`, `/Applications/KiCad/KiCad.app` or the Homebrew
 Caskroom; or set `KICAD_CLI`), Node (`render.py` installs `@gltf-transform/*` + `meshoptimizer` into
@@ -36,7 +43,7 @@ the same colours.
   rotations and hidden models are left exactly as in the pcb.
 - **No geometry is changed to save bytes.** GLBs are only compressed: primitives with the same material
   are joined inside each mesh, then 16-bit position / 10-bit normal quantisation and meshopt. No
-  simplification, decimation or instancing. Boards over 25 MB are skipped, not simplified.
+  simplification, decimation or instancing. Boards still over 20 MB after that (`render.py --max-glb-mb`) are skipped, not simplified.
 - **Only identical boards are published** (`render.py --allow-missing` overrides). `meta.json` records
   `models: {total, resolved, hidden, missing: [{ref, path, reason}]}` and `identical`. A model counts as
   missing when its file is in neither the repo nor any KiCad library, or when kicad-cli cannot read it. One
