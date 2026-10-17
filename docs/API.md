@@ -107,7 +107,8 @@ the fields below. The server itself adds `queued`, `error` and `cancelled` event
 | `assembly analog` | `notes` (what the analog solver changed: resistor values, transistor swap), `findings` (numeric checks that still fail). Quiet: not spoken. |
 | `assembly firmware` | `iteration, pins, tests` |
 | `assembly built` | `iteration, board, tracks, seconds, stages_s` |
-| `assembly gate` | `iteration, gate, check, ok, value` |
+| `assembly gate` | `iteration, gate, check, ok, value`; `ok: null` with `status: "uncheckable"` marks a benchmark the simulation cannot satisfy (a fixed load, the same in every scenario, that one scenario's band expects to differ). It is not passed and not failed; the board passes when every other check passes. |
+| `assembly repair` (kind `uncheckable`) | `iteration, kind, checks, note`: the benchmarks marked as above |
 | `benchmarks check` | one benchmark row (scenario, metric, value, band, ok) |
 | `benchmarks done` | totals: passed, failed |
 

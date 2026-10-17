@@ -391,6 +391,10 @@ PICK_RULES = """Rules (code checks every one):
   Benchmarks state what the ASK needs, with wide limits; never predict exact values. ON = avg_ma at least 2;
   OFF = avg_ma at most 0.5; blinking = blink_hz 0.5 to 4 and duty 0.2 to 0.8; safe LED = peak_ma at most 25.
   At most 6 benchmarks.
+- A module or load connector wired straight across the supply (OLED, sensor board, display: its load pins on VCC/3V3
+  and GND, no transistor or GPIO switching it) is simulated as a FIXED resistance: it draws the same current in every
+  scenario. Never write per-scenario benchmarks that expect it to change (no "display idle when dry, busy when
+  wet"); at most one loose avg_ma band for it, or none.
 - supply_ma_avg only as a loose sanity bound that counts every load: an LED 2-15 mA, a buzzer 10-30 mA, a fan or
   motor 50-200 mA. A load that follows a blink is on about half the time, so its avg_ma is about half its on current.
 - Scenarios only when the ask is about light, battery voltage or a button. A plain blinker or fan has NO scenarios.
@@ -887,16 +891,21 @@ def assemble(
                 stream.emit(
                     "assembly", "gate", iteration=it, gate=name, ok=ok, value=val
                 )
-            for b in v["benchmarks"]:
+            static = _static_benchmarks(design, v, out, kept)
+            if static:
                 stream.emit(
                     "assembly",
-                    "gate",
+                    "repair",
                     iteration=it,
-                    gate=b["text"],
-                    check=b["check"],
-                    ok=b["pass"],
-                    value=b["value"],
+                    kind="uncheckable",
+                    checks=static,
+                    note="these benchmarks measure a fixed load the simulation cannot change; not checked",
                 )
+            for b in v["benchmarks"]:
+                ev = {"check": b["check"], "ok": b["pass"], "value": b["value"]}
+                if b.get("status"):
+                    ev["status"] = b["status"]
+                stream.emit("assembly", "gate", iteration=it, gate=b["text"], **ev)
             lost = must(design, out) if (v["pass"] and must) else None
             if must and v["pass"]:
                 stream.emit(
@@ -981,6 +990,71 @@ def assemble(
     }
 
 
+_RAIL_RX = re.compile(
+    r"(?:GND\w*|AGND|DGND|VSS|VCC\w*|VDD\w*|VBUS|VIN|VSYS|P?3V3|\+?3\.?3V|\+?5V\d*|V5|\+?12V)", re.I
+)
+
+
+def _static_benchmarks(
+    design: dict[str, Any], v: dict[str, Any], out: Path, kept: list[dict[str, Any]]
+) -> list[str]:
+    """Failing benchmarks the simulation can never satisfy, marked in v (pass None, status "uncheckable") with
+    v["pass"] recomputed. One case, kept narrow on purpose: a "load" part (fixed resistance in sim.py) whose load
+    pins both sit on supply or ground rails draws the same current in every scenario, so per-scenario benchmarks
+    on it that pass in one scenario and fail in another with the identical value contradict each other. A
+    switched load (transistor, GPIO) or one that fails everywhere (fixable through load_ohms) is left alone.
+    Field run live-1792266957411 burned 3 tries on "OLED little activity when dry" vs "OLED ~20 mA when wet"."""
+    rows = v.get("benchmarks") or []
+    if v.get("pass") or not any(b.get("pass") is False for b in rows):
+        return []
+    try:
+        sim = json.loads((out / "sim.json").read_text())
+    except (OSError, ValueError):
+        return []
+    scen = [s.get("name") for s in sim.get("scenarios") or [] if s.get("name")]
+    if len(scen) < 2:
+        return []
+    by_key = {p["key"]: p for p in kept}
+    set_refs = {
+        str(r)
+        for s in design.get("scenarios") or []
+        for r in (s.get("set") or {})
+    }  # a scenario that re-values the part makes it scenario-dependent
+    static: set[str] = set()
+    for part in design.get("parts", []):
+        spice = (by_key.get(part.get("piece")) or {}).get("spice") or {}
+        if spice.get("role") != "load" or part["ref"] in set_refs:
+            continue
+        nets = [part.get("pins", {}).get(str(n)) for n in spice.get("pins", [])]
+        if nets and all(n and _RAIL_RX.fullmatch(n) for n in nets):
+            static.add(part["ref"])
+    marked = []
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for b in rows:
+        m = re.fullmatch(r"([A-Za-z0-9_]+)\.([A-Z]+\d+)\.(\w+)", str(b.get("check", "")))
+        if m and m.group(1) in scen and m.group(2) in static:
+            groups.setdefault(f"{m.group(2)}.{m.group(3)}", []).append(b)
+    for metric, bs in groups.items():
+        vals = [sim.get(f"{s}.{metric}") for s in scen]
+        if any(not isinstance(x, (int, float)) for x in vals):
+            continue
+        if max(vals) - min(vals) > 0.01 * max(1e-6, abs(max(vals))):
+            continue  # it does change between scenarios: a real measurement
+        if not any(b["pass"] is True for b in bs):
+            continue  # fails everywhere: the load value can fix it
+        for b in bs:
+            if b["pass"] is False:
+                b["pass"] = None
+                b["status"] = "uncheckable"
+                b["text"] += " (not checkable in simulation: fixed load, same in every scenario)"
+                marked.append(b["check"])
+    if marked:
+        v["failed"] = [f"{b['text']} (got {b['value']})" for b in rows if b["pass"] is False]
+        v["uncheckable"] = marked
+        v["pass"] = not v["failed"] and not v.get("unrouted") and not v.get("models_missing")
+    return marked
+
+
 def _failed_checks(v: dict[str, Any]) -> list[str]:
     """The checks a build verdict failed, by name ("crashed" when the kept layout could not even build)."""
     if "erc_errors" not in v:
@@ -998,7 +1072,7 @@ def _failed_checks(v: dict[str, Any]) -> list[str]:
         )
         if bad
     ]
-    out += [f"benchmark {b.get('check')}" for b in v.get("benchmarks", []) if not b.get("pass")]
+    out += [f"benchmark {b.get('check')}" for b in v.get("benchmarks", []) if b.get("pass") is False]
     return out
 
 
