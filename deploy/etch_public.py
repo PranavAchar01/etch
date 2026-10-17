@@ -54,7 +54,7 @@ STT_URL = os.environ.get("ETCH_STT_URL", "http://127.0.0.1:3421/stt")
 ORIGIN_RE = re.compile(
     os.environ.get(
         "ETCH_ORIGINS",
-        r"^(https://etch-app[a-z0-9-]*\.vercel\.app|http://(localhost|127\.0\.0\.1)(:\d+)?)$",
+        r"^(https://((www\.)?etch\.chat|etch[a-z0-9-]*\.vercel\.app)|http://(localhost|127\.0\.0\.1)(:\d+)?)$",
     )
 )
 HOME = str(Path.home())
