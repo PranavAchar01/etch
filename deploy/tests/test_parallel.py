@@ -222,6 +222,35 @@ class Crusoe429(unittest.TestCase):
         self.assertEqual((c.calls, c.peak), (6, 2))
 
 
+class YouCom429(unittest.TestCase):
+    def test_429_retried_with_jitter_then_answers(self):
+        import urllib.error
+
+        from agent import parts_live
+
+        calls, slept = [], []
+
+        def get(url, headers, data):
+            calls.append(1)
+            if len(calls) <= 2:
+                raise urllib.error.HTTPError(url, 429, "Too Many Requests", {}, None)
+            return b"{}"
+
+        self.assertEqual(parts_live._you_get("u", {}, b"", sleep=slept.append, get=get), b"{}")
+        self.assertEqual((len(calls), len(slept)), (3, 2))
+
+    def test_other_errors_raise_at_once(self):
+        import urllib.error
+
+        from agent import parts_live
+
+        def get(url, headers, data):
+            raise urllib.error.HTTPError(url, 401, "no", {}, None)
+
+        with self.assertRaises(urllib.error.HTTPError):
+            parts_live._you_get("u", {}, b"", sleep=lambda s: None, get=get)
+
+
 class EngineErr(unittest.TestCase):
     def run_job(self, code: str, out: Path):
         job = etch_public.Job([PY, "-c", code], "1.2.3.4", "modify", "x")

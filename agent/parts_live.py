@@ -22,7 +22,9 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import random
 import subprocess
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -58,6 +60,31 @@ def _get(
     if len(body) > MAX_DL:
         raise ValueError("download too large")
     return body
+
+
+# You.com from parallel runs: at most YOU_CONCURRENCY searches in flight per process, and a 429/503 is retried
+# with full-jitter backoff (Retry-After as the floor) so runs that hit the limit together spread out.
+YOU_CONCURRENCY = threading.BoundedSemaphore(max(1, int(__import__("os").environ.get("ETCH_YOU_CONCURRENCY", "4"))))
+YOU_TRIES = 3
+
+
+def _you_get(url: str, headers: dict[str, str], data: bytes, sleep=time.sleep, get=None) -> bytes:
+    import urllib.error
+
+    get = get or _get
+    for attempt in range(1, YOU_TRIES + 2):
+        with YOU_CONCURRENCY:
+            try:
+                return get(url, headers, data)
+            except urllib.error.HTTPError as e:
+                if e.code not in (429, 503) or attempt > YOU_TRIES:
+                    raise
+                try:
+                    floor = min(float((e.headers or {}).get("Retry-After") or 0), 20.0)
+                except (TypeError, ValueError):
+                    floor = 0.0
+        sleep(max(floor, random.uniform(0.0, min(8.0, 0.5 * 2**attempt))))
+    raise AssertionError("unreachable")
 
 
 # ---------- tier 2: LCSC ----------
@@ -608,7 +635,7 @@ def you_search(query: str, count: int = 8) -> list[dict[str, Any]]:
         return json.loads(f.read_text())["hits"]
     body = {"query": f"{q} datasheet", "count": count, "include_domains": YOU_DOMAINS}
     r = json.loads(
-        _get(YOU_URL, {"X-API-Key": k, "Content-Type": "application/json"}, json.dumps(body).encode())
+        _you_get(YOU_URL, {"X-API-Key": k, "Content-Type": "application/json"}, json.dumps(body).encode())
     )
     hits = []
     for w in ((r.get("results") or {}).get("web") or [])[:count]:
