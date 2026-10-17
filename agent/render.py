@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -38,12 +39,13 @@ def start(bdir: Path) -> dict[str, Any]:
             "reason": f"only {free:.1f} GiB free (render needs {MIN_FREE_GIB})",
         }
     out.mkdir(exist_ok=True)
+    # background priority: nice everywhere, plus macOS taskpolicy -b (absent on Linux)
+    bg = ["taskpolicy", "-b"] if sys.platform == "darwin" else []
     cmd = [
         "nice",
         "-n",
         "19",
-        "taskpolicy",
-        "-b",
+        *bg,
         "uv",
         "run",
         "--quiet",

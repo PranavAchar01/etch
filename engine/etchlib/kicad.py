@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -12,6 +13,11 @@ KICAD_APP = Path(os.environ.get("ETCH_KICAD_APP", str(Path.home() / "Application
 KICAD_CLI = KICAD_APP / "Contents/MacOS/kicad-cli"
 KICAD_PY = KICAD_APP / "Contents/Frameworks/Python.framework/Versions/Current/bin/python3"
 SHARED = KICAD_APP / "Contents/SharedSupport"
+if sys.platform.startswith("linux") and "ETCH_KICAD_APP" not in os.environ:
+    # KiCad 10 from the official Ubuntu PPA: kicad-cli on PATH, pcbnew in the system Python, libraries in /usr/share
+    KICAD_CLI = Path(os.environ.get("ETCH_KICAD_CLI", "/usr/bin/kicad-cli"))
+    KICAD_PY = Path(os.environ.get("ETCH_KICAD_PY", "/usr/bin/python3"))
+    SHARED = Path(os.environ.get("ETCH_KICAD_SHARE", "/usr/share/kicad"))
 SYMBOL_DIR = SHARED / "symbols"
 FOOTPRINT_DIR = SHARED / "footprints"
 MODEL_DIR = SHARED / "3dmodels"
