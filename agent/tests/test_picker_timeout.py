@@ -42,7 +42,7 @@ def test_two_timeouts_end_with_the_missing_parts_message(monkeypatch):
     with pytest.raises(live.PickTimeout):
         live._pick_call(s, config.MODEL, [])
     says = [k.get("text") for a, kind, k in s.ev if kind == "say"]
-    assert says == [live.MISSING_SAY] and "don't have all of the components" in live.MISSING_SAY
+    assert says == [live.SLOW_SAY]  # a timeout is not a missing part
     assert any(kind == "missing_parts" for _, kind, _ in s.ev)
 
 
