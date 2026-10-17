@@ -70,6 +70,39 @@ function confidence(text, ref, kind) {
   return Math.round(Math.min(0.9, Math.max(0.6, c)) * 100) / 100;
 }
 
+// ---- benchmarks: units, labels and the sim.json numbers (API.md: picker pick benchmarks, benchmarks check, sim.json) ----
+// "Check that D1 blinks 1-3 Hz", "test whether …": a bench run, not a question or a change
+const BENCH = /^(please\s+|can you\s+|etch,?\s+)*(check|test|verify|measure|benchmark)\s+(that|whether|if|the|how)\b/i;
+function unitOf(check) {
+  const c = String(check || "").toLowerCase();
+  if (/hz|blink|freq|rate/.test(c)) return "Hz";
+  if (/_ma\b|ma_|current|_ma$/.test(c)) return "mA";
+  if (/duty/.test(c)) return "%";
+  if (/volt|_v\b|_v$/.test(c)) return "V";
+  return "";
+}
+function labelOf(check) {
+  const c = String(check || "");
+  const m = /^([A-Z]+\d+)[_:]?(.*)$/.exec(c);
+  const what = (x) => (/blink|hz/i.test(x) ? "blink rate" : /peak/i.test(x) ? "peak current" : /ma|current/i.test(x) ? "current" : /duty/i.test(x) ? "duty" : x.replace(/_/g, " "));
+  if (m) return `${m[1]} ${what(m[2])}`.trim();
+  if (/^supply/i.test(c)) return /peak/i.test(c) ? "Supply peak" : "Supply current";
+  return cap(c.replace(/_/g, " "));
+}
+const num = (v) => (v == null || v === "" || !isFinite(+v) ? null : +v);
+const judge = (v, min, max) => (v == null ? "unmeasured" : min == null && max == null ? "measured" : (min == null || v >= +min) && (max == null || v <= +max) ? "pass" : "fail");
+// the value a planned benchmark key names inside sim.json, if any
+function simValue(sim, key) {
+  if (!sim) return null;
+  const k = String(key || "");
+  if (/^supply_ma_(avg|peak)$/i.test(k)) return num(sim[k.toLowerCase()]);
+  const m = /^([A-Z]+\d+)[_:](blink_hz|avg_ma|peak_ma|duty|hz|ma)$/i.exec(k);
+  if (!m || !sim.leds || !sim.leds[m[1]]) return null;
+  const f = { hz: "blink_hz", ma: "avg_ma" }[m[2].toLowerCase()] || m[2].toLowerCase();
+  const v = num(sim.leds[m[1]][f]);
+  return f === "duty" && v != null && v <= 1 ? v * 100 : v;
+}
+
 // ---- the scripted build for mock mode ----
 const PREFIX = [[/buzzer|beeper|piezo/i, "BZ", "Buzzer"], [/\bled\b|light/i, "D", "LED"], [/resistor/i, "R", "Resistor"],
   [/capacitor|cap\b/i, "C", "Capacitor"], [/button|switch/i, "SW", "Push button"], [/connector|header|jack/i, "J", "Connector"],
@@ -89,6 +122,9 @@ function simulate({ text, ref, board, design = false, startedAt = 0 }) {
   const refs = Object.keys(parts).slice(0, 6);
   const run = "live-" + Date.now();
   const E = []; let t = 0;
+  // what the firmware sim would report for this board (sim.json)
+  const simData = design ? { leds: { D1: { peak_ma: 6.2, avg_ma: 3.1, blink_hz: 2.0, duty: 0.5 } }, supply_ma_avg: 84, supply_ma_peak: 236 }
+    : { leds: {}, supply_ma_avg: 162, supply_ma_peak: 410 };
   const at = (dt, agent, type, f = {}, stage) => { t += dt; E.push({ ev: { agent, type, t: Math.round(t * 100) / 100, run, ...f }, stage }); };
   const lib = ["Device", "Buzzer_Beeper", "Connector", "LED_SMD", "Resistor_SMD", "Capacitor_SMD"];
   at(0.1, "lead", "start", design ? { ask: text } : { ask: text, base: `/engine/out/${board?.id || run}` }, "starting the engine");
@@ -105,7 +141,10 @@ function simulate({ text, ref, board, design = false, startedAt = 0 }) {
       : [{ k: "kicad:Buzzer_Beeper:Big", n: `${add.name} 30 mm`, f: "Buzzer_Beeper", why: "too big for the board" }] });
   for (const { n } of kept) at(0.2, "pieces", "show", { k: "kicad:" + n, n, f: "", img: "" });
   at(0.3, "picker", "start", { model: "etch", kept: kept.length }, "picking parts");
-  at(0.7, "picker", "pick", { model: "etch", seconds: 0.7, benchmarks: [],
+  const benchmarks = design
+    ? [{ check: "D1_blink_hz", min: 1, max: 3, text: "D1 blink rate" }, { check: "D1_avg_ma", min: 1, max: 10, text: "D1 current" }, { check: "supply_ma_avg", max: 120, text: "Supply current" }]
+    : [{ check: "supply_ma_avg", max: 250, text: "Supply current" }, { check: "supply_ma_peak", max: 500, text: "Supply peak" }];
+  at(0.7, "picker", "pick", { model: "etch", seconds: 0.7, benchmarks,
     parts: design ? DESIGN_PARTS.map(([r, v, g]) => ({ ref: r, piece: "kicad:" + v, value: v, group: g, why: g === "power" ? "powers the board" : g === "status" ? "shows it is on" : "runs what you asked for" })) : [{ ref: add.ref, piece: "kicad:" + add.name, value: add.name, group: adding ? "added" : "changed", why: "what you asked for" },
       { ref: "Q" + (Object.keys(parts).filter((r) => /^Q\d/.test(r)).length + 1), piece: "kicad:Device:Q_NPN", value: "NPN", group: "driver", why: `drives ${add.ref} from a GPIO` },
       ...refs.filter((r) => r !== add.ref).map((r) => ({ ref: r, piece: "", value: parts[r]?.value || "", group: "kept", why: "already on the board" }))] });
@@ -118,6 +157,8 @@ function simulate({ text, ref, board, design = false, startedAt = 0 }) {
       const bad = it === 1 && g === "DRC";
       at(0.15, "assembly", "gate", { iteration: it, gate: g, ok: !bad, value: bad ? "2 clearance errors" : g === "routed" ? "100%" : "0" }, "checking");
     }
+    // the benchmarks the picker planned are gates too (the firmware sim measures them on every try)
+    if (it === 2) for (const b of benchmarks) { const v = simValue(simData, b.check); at(0.12, "assembly", "gate", { iteration: it, gate: "benchmark", check: b.check, ok: judge(v, b.min, b.max) === "pass", value: v }, "checking"); }
     at(0.3, "assembly", "built", { iteration: it, seconds: 1.4, board: { w: 52, h: 38 }, tracks: 118 + it * 4, stages_s: {} });
     at(0.2, "assembly", "iteration", { iteration: it, phase: "decide", decision: it === 1 ? "repair" : "done", seconds: 1.9 });
     if (it === 1) at(0.5, "picker", "repair", { iteration: 1, seconds: 0.5, parts: 2 + refs.length }, "repairing");
@@ -131,12 +172,47 @@ function simulate({ text, ref, board, design = false, startedAt = 0 }) {
   const t0 = performance.now() - (startedAt ? Math.max(0, Date.now() - startedAt) : 0);
   return {
     id: "mock-" + run,
+    simData,
     duration: t,
     stages: E.filter((x) => x.stage).map((x) => [x.ev.t, x.stage]),
     poll(since) {
       const el = (performance.now() - t0) / 1000;
       let n = since; while (n < E.length && E[n].ev.t <= el) n++;
       let stage = "starting the engine"; for (let i = 0; i < n; i++) if (E[i].stage) stage = E[i].stage;
+      const done = n >= E.length;
+      return { events: E.slice(since, n).map((x) => x.ev), next: n, done, state: done ? "done" : "running", stage, run };
+    },
+  };
+}
+
+// a scripted bench run (POST /etch/live {mode: "bench"}): the asked-for check plus the supply, measured on the sim
+function simulateBench({ text, board }) {
+  const run = "live-" + Date.now();
+  const E = []; let t = 0;
+  const at = (dt, agent, type, f = {}, stage) => { t += dt; E.push({ ev: { agent, type, t: Math.round(t * 100) / 100, run, ...f }, stage }); };
+  const ref = (/\b([A-Z]{1,3}\d{1,3})\b/.exec(text) || [])[1] || Object.keys(board?.parts || {}).find((r) => /^D\d/.test(r)) || "D1";
+  const nums = (String(text).replace(/\b[A-Z]{1,3}\d{1,3}\b/g, "").match(/\d+(?:\.\d+)?/g) || []).map(Number);
+  const hz = /hz|blink|flash/i.test(text), ma = /ma\b|current/i.test(text);
+  const [min, max] = nums.length >= 2 ? [Math.min(nums[0], nums[1]), Math.max(nums[0], nums[1])] : nums.length ? (/at least|above|over|more than/i.test(text) ? [nums[0], null] : [null, nums[0]]) : hz ? [1, 3] : [null, 20];
+  const unit = hz ? "Hz" : ma ? "mA" : "Hz";
+  const value = hz || !ma ? 2.0 : 3.1;
+  at(0.2, "lead", "start", { ask: text, base: `/engine/out/${board?.id || run}` }, "starting the sim");
+  at(0.4, "lead", "say", { text: `Checking ${ref} on the simulated board.` });
+  const supply = /supply|board current|total current/i.test(text);
+  const ask = supply ? { check: /peak/i.test(text) ? "supply_ma_peak" : "supply_ma_avg", label: /peak/i.test(text) ? "Supply peak" : "Supply current", unit: "mA", value: /peak/i.test(text) ? 236 : 84 }
+    : { check: `${ref}_${unit === "Hz" ? "blink_hz" : "avg_ma"}`, label: `${ref} ${unit === "Hz" ? "blink rate" : "current"}`, unit, value };
+  const ok = judge(ask.value, min, max) === "pass";
+  at(1.2, "benchmarks", "check", { said: text, ...ask, min, max, pass: ok, result: ok ? "in range" : "out of range" }, "measuring");
+  if (!supply) at(0.5, "benchmarks", "check", { said: "supply current", check: "supply_ma_avg", label: "Supply current", max: 250, value: 84, unit: "mA", pass: true, result: "in range" }, "measuring");
+  at(0.3, "benchmarks", "done", { passed: (ok ? 1 : 0) + (supply ? 0 : 1), failed: ok ? 0 : 1, unmeasured: 0, seconds: 2.4 });
+  at(0.1, "lead", "done", { ok: true, iterations: 0, timings: { total_s: Math.round(t * 10) / 10 }, route: "bench", board: `/engine/out/${run}` }, "done");
+  const t0 = performance.now();
+  return {
+    id: "mock-bench-" + run, duration: t, stages: E.filter((x) => x.stage).map((x) => [x.ev.t, x.stage]),
+    poll(since) {
+      const el = (performance.now() - t0) / 1000;
+      let n = since; while (n < E.length && E[n].ev.t <= el) n++;
+      let stage = "starting the sim"; for (let i = 0; i < n; i++) if (E[i].stage) stage = E[i].stage;
       const done = n >= E.length;
       return { events: E.slice(since, n).map((x) => x.ev), next: n, done, state: done ? "done" : "running", stage, run };
     },
@@ -203,6 +279,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
   }
 
   async function ask(text, { ref = null } = {}, retried = false) {
+    if (!retried && BENCH.test(String(text || "").trim())) return bench(text);
     const gen = ++askGen;
     busy();
     const id = nid("ask");
@@ -251,6 +328,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
 
   // ---- change(): recommend card, start the run, follow /etch/job ----
   async function change(text, { ref = null, at = null } = {}) {
+    if (BENCH.test(String(text || "").trim())) return bench(text);
     const rid = nid("chg");
     busy();
     dock.setState("thinking");
@@ -322,7 +400,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
   }
 
   async function follow(jobId, sim, gen, req) {
-    const map = mapper(jobId, { design: !!req?.design });
+    const map = mapper(jobId, { design: !!req?.design, bench: !!req?.bench, simData: sim?.simData || null });
     let since = 0, misses = 0, last = null, stage = "";
     while (!disposed && gen === jobGen) {
       let r;
@@ -360,8 +438,43 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
   }
 
   // one build event -> dock calls (API.md "Build events")
-  function mapper(jid, { design = false } = {}) {
+  function mapper(jid, { design = false, bench: benchRun = false, simData = null } = {}) {
     const S = (k) => `${jid}:${k}`;
+    // the benchmarks card for this run: planned rows, gate results, bench checks, then sim.json numbers
+    let card = null, simDone = false;
+    const planned = new Map();
+    const B = () => card || (card = dock.bench ? dock.bench(jid) : null);
+    async function addSim(run) {
+      if (simDone) return;
+      simDone = true;
+      let sim = simData;
+      if (!sim && run && api?.authed) {
+        try { const r = await api.authed(`/etch/files/engine/out/${run}/sim.json`); sim = r.ok ? await r.json() : null; } catch (e) { sim = null; }
+      }
+      if (!sim || disposed) return;
+      const c = B(); if (!c) return;
+      // planned rows the gates did not settle take their value from the sim
+      for (const [k, p] of planned) {
+        const v = simValue(sim, k);
+        if (v != null && (!c.has(k) || p.open)) { c.row(k, { value: v, status: judge(v, p.min, p.max) }); p.open = false; }
+      }
+      // then what the sim measured that no benchmark covers, with no target
+      const covered = (s) => [...planned.keys()].some((k) => k.toLowerCase().startsWith(s.toLowerCase()));
+      for (const [ref, l] of Object.entries(sim.leds || {})) {
+        if (num(l.blink_hz) && !covered(ref + "_blink") && !covered(ref + "_hz")) c.row(`${ref}_blink_hz`, { label: `${ref} blink rate`, value: num(l.blink_hz), unit: "Hz", status: "measured" });
+        if (num(l.avg_ma) != null && !covered(ref + "_avg") && !covered(ref + "_ma")) c.row(`${ref}_avg_ma`, { label: `${ref} current`, value: num(l.avg_ma), unit: "mA", status: "measured" });
+      }
+      if (num(sim.supply_ma_avg) != null && !covered("supply_ma_avg")) c.row("supply_ma_avg", { label: "Supply current", value: num(sim.supply_ma_avg), unit: "mA", status: "measured" });
+      if (num(sim.supply_ma_peak) != null && !covered("supply_ma_peak")) c.row("supply_ma_peak", { label: "Supply peak", value: num(sim.supply_ma_peak), unit: "mA", status: "measured" });
+    }
+    // after a build: "Benchmarks 3/3 ✓" on the pill for a moment, a nod for all pass, a wince for a fail
+    function verdict() {
+      const c = card; if (!c) return;
+      const { pass, total, failed } = c.summary;
+      if (!total) return;
+      dock.flashStatus?.(`Benchmarks ${pass}/${total} ${failed ? "✗" : "✓"}`, 4000);
+      setTimeout(() => { if (!disposed) dock.emote?.(failed ? "wince" : "nod"); }, 900);
+    }
     let batches = 0, nb = 0, yes = 0, pieces = 0, queued = false, render = null, picked = [], result = null;
     const step = (o) => dock.step(o);
     const fn = (ev) => {
@@ -389,6 +502,12 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
         case "picker:start": step({ id: S("pick"), kind: "task", title: "Picking parts", detail: `from ${ev.kept} kept variants`, status: "running" }); break;
         case "picker:pick":
           picked = Array.isArray(ev.parts) ? ev.parts : [];
+          for (const b of Array.isArray(ev.benchmarks) ? ev.benchmarks : []) {
+            if (!b || !b.check) continue;
+            const p = { label: b.text ? cap(String(b.text)).slice(0, 40) : labelOf(b.check), min: num(b.min), max: num(b.max), unit: b.unit || unitOf(b.check), open: true };
+            planned.set(b.check, p);
+            B()?.row(b.check, { label: p.label, min: p.min, max: p.max, unit: p.unit, status: "pending" });
+          }
           step({ id: S("pick"), kind: "task", title: `Picked ${countOf(picked)} parts${ev.recipe ? " (known circuit)" : ""}`, detail: refList(picked), status: "done", count: picked.length, ref: picked[0]?.ref });
           if (ev.say) dock.say(ev.say);
           break;
@@ -403,7 +522,14 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
             else step({ id: S("decide:" + ev.iteration), kind: "reasoning", title: ev.decision === "re-plan" ? "Checks failed, picking the parts again" : "Some checks failed, repairing the design", status: "done" });
           }
           break;
-        case "assembly:gate": step({ id: S(`gate:${ev.iteration}:${ev.gate}`), kind: "step", title: `${ev.gate} ${ev.ok ? "passed" : "failed"}`, detail: ev.ok && (ev.value === 0 || ev.value === "0") ? "no issues" : brief(ev.value), status: ev.ok ? "done" : "failed" }); break;
+        case "assembly:gate":
+          if (ev.check && (planned.has(ev.check) || /bench/i.test(ev.gate))) {
+            const p = planned.get(ev.check) || {};
+            const v = num(ev.value);
+            B()?.row(ev.check, { label: p.label || labelOf(ev.check), min: p.min, max: p.max, unit: p.unit || unitOf(ev.check), value: v, status: v == null ? "unmeasured" : ev.ok ? "pass" : "fail" });
+            if (planned.has(ev.check)) planned.get(ev.check).open = v == null;
+          } else if (/^(erc|drc|unconnected|routed)$/i.test(String(ev.gate))) B()?.check(ev.gate, !!ev.ok);
+          step({ id: S(`gate:${ev.iteration}:${ev.gate}`), kind: "step", title: `${ev.gate} ${ev.ok ? "passed" : "failed"}`, detail: ev.ok && (ev.value === 0 || ev.value === "0") ? "no issues" : brief(ev.value), status: ev.ok ? "done" : "failed" }); break;
         case "assembly:built": step({ id: S("try:" + ev.iteration), kind: "task", title: `Placing and routing · try ${ev.iteration}`, detail: [ev.board?.w ? `${Math.round(ev.board.w)}×${Math.round(ev.board.h)} mm` : "", ev.tracks != null ? `${countOf(ev.tracks) || ev.tracks} tracks` : "", ev.seconds != null ? `${Math.round(ev.seconds)} s` : ""].filter(Boolean).join(" · "), status: "done" }); break;
         case "picker:repair": {
           const n = countOf(ev.parts), refs = Array.isArray(ev.parts) ? refList(ev.parts, 6) : "";
@@ -416,13 +542,22 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
           if (render) { render(); render = null; }
           step({ id: S("render"), kind: "task", title: "Rendered in 3D", detail: [ev.count != null ? `${countOf(ev.count) || ev.count} frames` : "", ev.seconds != null ? `${Math.round(ev.seconds)} s` : ""].filter(Boolean).join(" · "), status: "done" });
           viewer?.reload?.({ run: ev.run, frames: ev.frames, design });
+          addSim(ev.run);
           break;
-        case "benchmarks:check": step({ id: S("bench:" + (ev.check || ev.label)), kind: "task", title: brief(ev.label || ev.said || ev.check), detail: [`${brief(ev.value) || "?"} ${ev.unit || ""}`.trim(), brief(ev.result)].filter(Boolean).join(" · "), status: ev.pass === false ? "failed" : "done" }); break;
-        case "benchmarks:done": step({ id: S("bench"), kind: "task", title: `Checks: ${countOf(ev.passed) || ev.passed || 0} passed, ${countOf(ev.failed) || ev.failed || 0} failed${ev.unmeasured ? `, ${countOf(ev.unmeasured) || ev.unmeasured} not measured` : ""}`, status: ev.failed ? "failed" : "done" }); break;
+        case "benchmarks:check": {
+          const key = ev.check || ev.label || ev.said;
+          const v = num(ev.value);
+          B()?.row(key, { label: ev.label ? cap(String(ev.label)).slice(0, 40) : labelOf(key), min: num(ev.min), max: num(ev.max), unit: ev.unit || unitOf(key), value: v, status: ev.pass === true ? "pass" : ev.pass === false ? "fail" : v == null ? "unmeasured" : "measured", result: ev.result });
+          if (planned.has(key)) planned.get(key).open = false;
+        }
+          step({ id: S("bench:" + (ev.check || ev.label)), kind: "task", title: brief(ev.label || ev.said || ev.check), detail: [`${brief(ev.value) || "?"} ${ev.unit || ""}`.trim(), brief(ev.result)].filter(Boolean).join(" · "), status: ev.pass === false ? "failed" : "done" }); break;
+        case "benchmarks:done": if (benchRun) verdict();
+          step({ id: S("bench"), kind: "task", title: `Checks: ${countOf(ev.passed) || ev.passed || 0} passed, ${countOf(ev.failed) || ev.failed || 0} failed${ev.unmeasured ? `, ${countOf(ev.unmeasured) || ev.unmeasured} not measured` : ""}`, status: ev.failed ? "failed" : "done" }); break;
         case "lead:done":
           if (ev.ok) {
             result = { ok: true, board: ev.board, run: ev.run, parts: picked };
-            step({ id: S("done"), kind: "step", title: design ? "Board built" : "Board updated", detail: `${ev.iterations} tr${ev.iterations === 1 ? "y" : "ies"} · ${ev.timings?.total_s ?? "?"} s`, status: "done" });
+            if (!benchRun) Promise.resolve(addSim(ev.run || String(ev.board || "").split("/").pop())).then(verdict);
+            step({ id: S("done"), kind: "step", title: benchRun ? "Checks done" : design ? "Board built" : "Board updated", detail: `${ev.iterations} tr${ev.iterations === 1 ? "y" : "ies"} · ${ev.timings?.total_s ?? "?"} s`, status: "done" });
             dock.setState("success"); dock.setStatus("Done");
             if (design) viewer?.reload?.({ run: ev.run, design, done: true });
             const added = design ? null : (picked.find((p) => p.group === "added") || picked.find((p) => p.group === "changed"))?.ref;
@@ -498,6 +633,44 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     return follow(j.job, sim, gen, { text, design: true });
   }
 
+  // ---- bench(): re-run the benchmarks on this build, POST /etch/live {mode: "bench", text, base} ----
+  async function bench(text) {
+    text = String(text || "").replace(/\s+/g, " ").trim();
+    const gen = ++jobGen;
+    busy();
+    const sid = nid("bench");
+    const title = "Sending the check to Etch";
+    const kind = kindOf();
+    dock.setState("working");
+    dock.setStatus("Running the check");
+    if (!isMock() && kind !== "live") {
+      // an imported board has no Etch build to simulate yet
+      dock.step({ id: sid, kind: "tool", title: "Benchmarks need an Etch build", detail: "Change or build this board with Etch first; then its sim can be checked.", status: "failed" });
+      dock.setStatus(""); dock.setState("confused");
+      dock.say("Benchmarks run on an Etch build. Ask for a change to this board first, then I can check it.");
+      later(4000, () => dock.setState("idle"));
+      return null;
+    }
+    dock.step({ id: sid, kind: "tool", title, detail: text, status: "running" });
+    let sim = null, j;
+    const stop = loader("Starting");
+    try {
+      if (isMock()) { await sleep(400); sim = simulateBench({ text, board }); j = { job: sim.id }; }
+      else {
+        const r = await api.authed("/etch/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "bench", text, base: `/engine/out/${board.id}` }) });
+        j = await r.json().catch(() => ({}));
+        if (!r.ok || j.ok === false) { const e = new Error(j.error || `error ${r.status}`); e.status = r.status; throw e; }
+      }
+    } catch (e) {
+      stop();
+      explain(e, sid, title, "tool");
+      return null;
+    }
+    stop();
+    dock.step({ id: sid, kind: "tool", title, detail: `job ${j.job}`, status: "done" });
+    return follow(j.job, sim, gen, { text, bench: true });
+  }
+
   // ---- onLoad(): the page-load work as agent steps ----
   function onLoad(steps = []) {
     const id = nid("load");
@@ -541,5 +714,5 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     try { dock.loader(false); } catch (e) { /* dock already gone */ }
   }
 
-  return { ask, change, design, resume, onLoad, dispose };
+  return { ask, change, design, bench, resume, onLoad, dispose };
 }

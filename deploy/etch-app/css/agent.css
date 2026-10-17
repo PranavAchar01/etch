@@ -354,7 +354,7 @@
 .ag-tl .ag-tr-ic { background: transparent; }
 
 /* dismiss: always there, even while work runs or a card waits */
-.ag-phw { position: relative; min-height: 8px; }
+.ag-phw { position: relative; min-height: 8px; flex: none; }
 .ag-ph { padding-right: 46px; }
 .ag-x {
   position: absolute; top: 9px; right: 9px; z-index: 3; width: 30px; height: 30px; border: 0; border-radius: 50%; cursor: pointer;
@@ -373,3 +373,39 @@
 .ag-dock.listening .ag-wave { display: inline-flex; }
 .ag-wave i { width: 3px; height: 16px; border-radius: 2px; background: var(--ag-fail); transform: scaleY(.18); transition: transform .08s linear; }
 @media (prefers-reduced-motion: reduce) { .ag-wave i { transition: none; } }
+
+/* benchmarks card: one line per benchmark (dot, label, where the value sits, value, target) */
+.ag-bench { padding: 10px 12px 9px; }
+.ag-bn-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.ag-bn-t { flex: 1; font: 400 15px/1.3 var(--ag-serif); color: var(--ag-ink); }
+.ag-bn-pill { flex: none; padding: 3px 8px; border-radius: 999px; font: 650 11px/1.1 var(--ag-sans); font-variant-numeric: tabular-nums; background: var(--ag-soft); color: var(--ag-muted); }
+.ag-bn-pill[data-tone="pass"] { background: #e6f5ec; color: var(--ag-ok); }
+.ag-bn-pill[data-tone="fail"] { background: #fbe7e5; color: var(--ag-fail); }
+.ag-bn-rows { display: flex; flex-direction: column; }
+.ag-bn-row { display: flex; align-items: center; gap: 8px; height: 26px; font: 500 13px/1 var(--ag-sans); color: var(--ag-text); }
+.ag-bn-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #c9ccd3; transition: background-color .3s; }
+.ag-bn-row[data-status="pass"] .ag-bn-dot, .ag-bn-core[data-tone="pass"] .ag-bn-dot { background: var(--ag-ok); }
+.ag-bn-row[data-status="fail"] .ag-bn-dot, .ag-bn-core[data-tone="fail"] .ag-bn-dot { background: var(--ag-fail); }
+.ag-bn-row[data-status="measured"] .ag-bn-dot { background: var(--ag-accent); opacity: .55; }
+.ag-bn-l { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ag-bn-bar { position: relative; flex: none; width: 54px; height: 4px; border-radius: 4px; background: var(--ag-line); }
+.ag-bn-band { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: #cfe9da; }
+.ag-bn-row[data-status="fail"] .ag-bn-band { background: #f3d6d3; }
+.ag-bn-mk { position: absolute; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--ag-ink); box-shadow: 0 0 0 2px #fff; }
+.ag-bn-row[data-status="fail"] .ag-bn-mk { background: var(--ag-fail); }
+.ag-bn-v { flex: none; min-width: 52px; text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--ag-ink); }
+.ag-bn-tg { flex: none; min-width: 50px; text-align: right; font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--ag-faint); }
+.ag-bn-sk { display: inline-block; width: 34px; height: 9px; border-radius: 5px; vertical-align: middle; background: linear-gradient(90deg, #eef0f3 0 30%, #f6f7f9 50%, #eef0f3 70% 100%) 0 0 / 250% 100%; animation: ag-shimmer 1.4s linear infinite; }
+.ag-bn-core { display: flex; align-items: center; gap: 8px; width: 100%; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; font: 500 13px/1 var(--ag-sans); color: var(--ag-muted); text-align: left; }
+.ag-bn-core:hover { color: var(--ag-ink); }
+.ag-bn-core:focus-visible { outline: 2px solid var(--ag-accent); outline-offset: 2px; border-radius: 6px; }
+.ag-bn-ct { flex: 1; }
+.ag-bn-core.open .ag-chev { transform: rotate(180deg); }
+.ag-bn-chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 0 4px 16px; }
+.ag-bn-chip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 4px; border-radius: 999px; font: 600 11px/1.2 var(--ag-sans); background: #e6f5ec; color: var(--ag-ok); }
+.ag-bn-chip[data-tone="fail"] { background: #fbe7e5; color: var(--ag-fail); }
+.ag-bn-chip .ag-ic { width: 12px; height: 12px; }
+.ag-bn-acts { display: flex; margin-top: 6px; }
+.ag-bn-run { padding: 5px 11px; }
+@media (max-width: 420px) { .ag-bn-bar { width: 40px; } .ag-bn-tg { min-width: 44px; } .ag-bn-v { min-width: 46px; } }
+@media (prefers-reduced-motion: reduce) { .ag-bn-sk { animation: none; } }
