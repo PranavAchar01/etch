@@ -215,3 +215,46 @@ def test_usb_pico_rgb_lights_each_die(cat):
     for die in ("D1_R", "D1_G", "D1_B"):
         assert 1 <= res[f"on.{die}.avg_ma"] <= 25, (die, res[f"on.{die}.avg_ma"])
         assert res[f"off.{die}.avg_ma"] <= 0.5
+
+
+# (4) GPIO-driven LEDs with no firmware commands get a default program, so the sim lights them
+
+
+@pytest.mark.skipif(not NGSPICE, reason="no ngspice")
+def test_default_commands_light_gpio_leds(cat):
+    from agent import firmware
+
+    d = copy.deepcopy(PICO_RGB)
+    kept = _kept(d, cat)
+    live._drop_lonely_gpio(d, kept)
+    cmds = firmware.default_commands(d, kept)
+    assert [c["input"] for c in cmds] == ["1", "2", "3", "a", "o"]
+    assert cmds[3]["high"] == ["GPIO15", "GPIO16", "GPIO17"]
+    assert firmware.default_commands(d, kept) is None  # a design with commands is left alone
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td)
+        fw = firmware.build(d, kept, out)
+        assert not isinstance(fw, str), fw
+        d["scenarios"], rep = fw
+        assert rep["pass"]
+        d["benchmarks"] = firmware.benchmarks(d, kept)
+        (out / "spec.yaml").write_text(yaml.safe_dump(live.to_spec(d, "TEST"), sort_keys=False))
+        res = sim.simulate(load_spec(out / "spec.yaml"), out)
+    assert res["ok"], res
+    assert res["cmd_a.D1_R.avg_ma"] >= 1 and res["cmd_a.D1_G.avg_ma"] >= 1 and res["cmd_a.D1_B.avg_ma"] >= 1
+    bad = [
+        (b["check"], res.get(b["check"]))
+        for b in d["benchmarks"]
+        if res.get(b["check"]) is None
+        or (b.get("min") is not None and res[b["check"]] < b["min"])
+        or (b.get("max") is not None and res[b["check"]] > b["max"])
+    ]
+    assert bad == []
+
+
+def test_default_commands_skip_sensor_only_boards(cat):
+    from agent import firmware
+
+    d = copy.deepcopy(PICO_RGB)
+    d["parts"] = [p for p in d["parts"] if not p["ref"].startswith(("D", "R"))]
+    assert firmware.default_commands(d, _kept(d, cat)) is None

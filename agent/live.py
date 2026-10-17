@@ -702,9 +702,7 @@ def assemble(
         _drop_lonely_gpio(design, kept)
         stand_ins = _led_stand_ins(design, kept, keys)  # before _fix_refs renames D1 on a capacitor to C1
         _fix_refs(design)
-        if firmware.default_commands(design, kept):
-            stream.emit("lead", "say", text="No program was given for the LEDs, so each one gets a key: 1, 2, 3 light "
-                        "one each, a lights all, o turns them off.")
+        firmware.default_commands(design, kept)  # GPIO-driven LEDs with no program: 1..N, a = all, o = off
         bad = [
             p["piece"] for p in design.get("parts", []) if p.get("piece") not in keys
         ]
