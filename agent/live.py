@@ -684,6 +684,7 @@ def assemble(
     edit starts from; its placement and unchanged copper seed the build (a full build runs if that fails)."""
     t0 = time.time()
     keys = {p["key"] for p in kept}
+    tried: set[str] = set()  # made-up piece names already sent to sourcing once
     v: dict[str, Any] | None = None
     last_fail = None
     for it in range(1, max_iters + 1):
@@ -704,6 +705,8 @@ def assemble(
                 == 1
             ):
                 part["piece"] = hits[0]
+        if unknown := [p for p in design.get("parts", []) if p.get("piece") not in keys]:
+            _resolve_unknown(stream, unknown, kept, keys, tried)
         _normalize_pins(design, kept)
         if added := _auto_mcu(design, kept, ask):
             keys.add(added["piece"])
@@ -1456,6 +1459,52 @@ def _catalog_hit(text: str) -> dict[str, Any] | None:
         if re.search(pat, low):
             return next((c for c in cat if f":{pn}@" in c["key"]), None)
     return None
+
+
+def _resolve_unknown(
+    stream: Stream,
+    unknown: list[dict[str, Any]],
+    kept: list[dict[str, Any]],
+    keys: set[str],
+    tried: set[str],
+) -> None:
+    """Pieces the picker named that are not in the KEPT list ("2N3904@TO-92", "PIR_Sensor@HC-SR501"): the same
+    real part from the KiCad catalog when it is there, else one sourcing attempt per name (LCSC / EasyEDA, GitHub,
+    You.com; agent/parts_live.py). Nothing is guessed: a name that cannot be sourced stays unknown, the sourcing
+    step says so, and the KEPT-list error goes back to the picker (sweep 10-17, PIR ask: three tries on made-up keys)."""
+    todo: dict[str, list[dict[str, Any]]] = {}
+    for part in unknown:
+        pc = str(part.get("piece", ""))
+        name = pc.split(":")[-1].split("@")[0]
+        foot = pc.split("@")[-1] if "@" in pc else ""
+        hit = _catalog_hit(f"{name} {foot}".replace("_", " "))
+        if hit:
+            part["piece"] = hit["key"]
+            if hit["key"] not in keys:
+                kept.append(hit)
+                keys.add(hit["key"])
+                stream.emit(
+                    "sourcing",
+                    "done",
+                    what=name,
+                    ok=True,
+                    key=hit["key"],
+                    provenance={"route": "KiCad library (missed by the classifier)"},
+                    seconds=0.0,
+                )
+        elif name and name not in tried:
+            todo.setdefault(name, []).append(part)
+    for name in list(todo)[:2]:
+        tried.add(name)
+        what = name.replace("_", " ")
+        got = source_missing(stream, [{"what": what, "search": what}])
+        if not got:
+            continue
+        for part in todo[name]:
+            part["piece"] = got[0]["key"]
+        if got[0]["key"] not in keys:
+            kept.append(got[0])
+            keys.add(got[0]["key"])
 
 
 def source_missing(
