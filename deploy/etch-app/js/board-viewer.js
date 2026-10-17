@@ -757,6 +757,12 @@ export function createBoardViewer(host) {
     get workplane() { return { ...wp }; },
     controls: ctl,
     canvas: cv,
+    // for scene add-ons that draw into the same scene with the same lights (editor/build-anim.js): the scene, the
+    // renderer, the GLB's root (KiCad metres) and the board's top face in that root's frame
+    get scene() { return scene; },
+    get renderer() { return renderer; },
+    get root() { return glbRoot; },
+    get boardTopLocal() { return boardTop; },
     invalidate() { dirty = true; },
     on(name, f) { (ev[name] = ev[name] || []).push(f); return () => { ev[name] = ev[name].filter((x) => x !== f); }; },
     dispose() { alive = false; renderer.dispose(); cv.remove(); labels.remove(); },
