@@ -103,7 +103,13 @@ Y-up; glTF x = board x, glTF z = board y.
 ## 2. Backend endpoints (to build in `deploy/etch_public.py`)
 
 All take/return JSON, need the `X-Etch-Code` header like the other routes, and accept either board id
-kind. Errors: `{ "ok": false, "error": "message" }` with a 4xx/5xx status.
+kind. Basics, ids, limits and error handling follow [API.md](API.md): errors are `{"error": "..."}` with a
+4xx/5xx status, `401 {"error": "code"}` shows the access-code prompt, and other `error` strings are shown to
+the user as is.
+
+For a `live-*` board the UI does not need anything new to change it: "Ask Etch to change it" calls the
+existing `POST /etch/live` with `mode: "modify"` and `base` = that build's `board` path, then polls
+`/etch/job` (API.md "Change it"). `/etch/change` below is only needed for imported `gh:` boards.
 
 ### Ask about a board or a part
 
