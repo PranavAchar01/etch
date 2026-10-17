@@ -513,7 +513,7 @@ function buildLoaderOn(text) {
 async function cancelBuild() {
   try {
     const r = await bridge.cancel();
-    if (r.ok) { board.building = false; buildLoaderFail("Build cancelled."); lastEnd = "That build was cancelled. Tell me what your board should do and I'll start a new one."; }
+    if (r.ok) { clearJob(); board.building = false; buildLoaderFail("Build cancelled."); lastEnd = "That build was cancelled. Tell me what your board should do and I'll start a new one."; }
   } catch (e) { toast("Couldn't cancel the build: " + e.message); rl.show("Still building", { cancel: true }); }
 }
 function buildLoaderFail(text = "The build stopped without a board.") {
