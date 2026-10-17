@@ -20,19 +20,31 @@ done
 
 say "KiCad 10"
 KICAD_APP="${ETCH_KICAD_APP:-}"
-for c in "$HOME/Applications/KiCad/KiCad.app" "/Applications/KiCad/KiCad.app"; do
-  [ -z "$KICAD_APP" ] && [ -x "$c/Contents/MacOS/kicad-cli" ] && KICAD_APP="$c"
+# a cask KiCad can sit only in the Caskroom (installed as a dependency, or its /Applications copy removed)
+cask_kicad() { ls -d "$(brew --caskroom)"/kicad/10.*/KiCad/KiCad.app 2>/dev/null | sort -V | tail -1; }
+for c in "$HOME/Applications/KiCad/KiCad.app" "/Applications/KiCad/KiCad.app" "$(cask_kicad)"; do
+  [ -z "$KICAD_APP" ] && [ -n "$c" ] && [ -x "$c/Contents/MacOS/kicad-cli" ] && KICAD_APP="$c"
 done
 if [ -z "$KICAD_APP" ]; then
   brew install --cask kicad
   KICAD_APP="/Applications/KiCad/KiCad.app"
+  [ -x "$KICAD_APP/Contents/MacOS/kicad-cli" ] || KICAD_APP="$(cask_kicad)"
 fi
+# the engine and the render scripts default to ~/Applications/KiCad/KiCad.app: keep that path pointing at it
+if [ "$KICAD_APP" != "$HOME/Applications/KiCad/KiCad.app" ] && [ ! -e "$HOME/Applications/KiCad/KiCad.app" ]; then
+  mkdir -p "$HOME/Applications/KiCad" && ln -s "$KICAD_APP" "$HOME/Applications/KiCad/KiCad.app"
+fi
+[ -f "$KICAD_APP/Contents/SharedSupport/symbols/MCU_Module.kicad_sym" ] || { echo "KiCad at $KICAD_APP has no symbol libraries."; exit 1; }
 V="$("$KICAD_APP/Contents/MacOS/kicad-cli" version)"
 echo "KiCad $V at $KICAD_APP"
 case "$V" in 10.*) ;; *) echo "Etch needs KiCad 10 (found $V)."; exit 1 ;; esac
 
 say "Engine Python env"
 uv sync --project engine
+
+say "Open-source KiCad libraries (engine/parts/extra_libs, about 1.2 GB at pinned commits)"
+python3 engine/parts/fetch_extra_libs.py
+ETCH_KICAD_APP="$KICAD_APP" uv run --project engine python -m agent.kicad_library --build
 
 say "Speech-to-text (Parakeet TDT 0.6B v3, sherpa-onnx)"
 STT_HOME="$HOME/.cache/hyperframes"
@@ -62,11 +74,13 @@ echo "model in $STT_HOME"
 say "Local settings (.etch.env, no secrets)"
 LOCK="$HOME/helloworld/.heavy-lock"
 [ -d "$HOME/helloworld" ] || LOCK="$R/.heavy-lock"
+KEEP="$(grep '^export ETCH_HEAVY_SLOTS=' .etch.env 2>/dev/null || true)"
 cat > .etch.env <<EOF
 export ETCH_KICAD_APP="$KICAD_APP"
 export ETCH_STT_HOME="$STT_HOME"
 export ETCH_HEAVY_LOCK="$LOCK"
 EOF
+[ -n "$KEEP" ] && echo "$KEEP" >> .etch.env
 cat .etch.env
 
 say "Keychain secrets"
