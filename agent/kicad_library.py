@@ -42,7 +42,7 @@ from . import config
 OUT = config.ENGINE / "parts/kicad_library.json"
 # where the build finds the symbol / footprint libraries that are not KiCad's own (read by etchlib.kicad)
 LIB_PATHS = config.ENGINE / "parts/lib_paths.json"
-VERSION = 4  # bump when the record format changes: load() rebuilds an older file
+VERSION = 6  # bump when the record format changes: load() rebuilds an older file
 
 
 def _extra_dir() -> Path:
@@ -514,19 +514,37 @@ class Footprints:
                 found += [m.group(0) for m in pat.finditer(self.blob)]
             self.filters[filters] = list(dict.fromkeys(found))
         exact, cover = [], []
-        for fid in self.filters[filters][:400]:
+        for fid in sorted(self.filters[filters], key=_hobby_rank)[:400]:
             pads, model, _ = self.info(fid)
             if pins and not pins <= pads:
                 continue
             extra = {p for p in pads - pins if p[:1].isdigit()}
             (exact if not extra else cover).append((not model, fid))
-        exact.sort(key=lambda t: t[0])
-        cover.sort(key=lambda t: t[0])
+        exact.sort(key=lambda t: (t[0], _hobby_rank(t[1])))
+        cover.sort(key=lambda t: (t[0], _hobby_rank(t[1])))
         return (
             [f for m, f in exact if not m][:k]
             or [f for _, f in exact[:1]]
             or [f for _, f in cover[:1]]
         )
+
+
+_HOBBY = (
+    re.compile(r"(PinHeader|PinSocket)_\d+x\d+_P2\.54mm_Vertical$"),
+    re.compile(r"JST_(PH|XH)_B\d+B-\w+-K_1x\d+_P\d\.\d+mm_Vertical$"),
+    re.compile(r"TerminalBlock_Phoenix_MKDS-1,5-\d+-5\.08_1x\d+_P5\.08mm_Horizontal$"),
+)
+
+
+def _hobby_rank(fid: str) -> int:
+    """Generic symbols keep the footprints people solder first: a 2.54 mm pin header or socket, JST PH/XH,
+    a 5.08 mm screw terminal, then any other through-hole footprint, then the rest (so Conn_01x08 always has
+    its PinSocket_1x08 and Conn_01x40 its PinHeader_1x40 among the kept variants)."""
+    name = fid.split(":")[-1]
+    for i, rx in enumerate(_HOBBY):
+        if rx.search(name):
+            return i
+    return 3 if "SMD" not in name and "SMT" not in name else 4
 
 
 # ---------------------------------------------------------------- build
@@ -774,10 +792,13 @@ def build() -> dict[str, Any]:
                 if not fid or not fps.info(fid)[1]:
                     # a generic symbol (R, Conn_01x04, SW_Push, AudioJack3...) gets every exact footprint with a model
                     k = VARIANTS if not fid else 1
+                    # a specific part (it names its own footprint) only takes an alternate of the same package
+                    # ("SOIC-8_3.9x4.9mm..."); never a different jack or module that happens to have the same pads
+                    pkg = "_".join(fid.split(":")[-1].split("_")[:2]) if fid else ""
                     fids += [
                         f
                         for f in fps.match(props.get("ki_fp_filters", ""), set(pins), k)
-                        if f not in fids
+                        if f not in fids and (not pkg or f.split(":")[-1].startswith(pkg))
                     ]
                 if not fids:
                     skipped["no footprint"] += 1
@@ -806,7 +827,10 @@ def build() -> dict[str, Any]:
         },
         "pieces": pieces,
     }
-    OUT.write_text(json.dumps(data, separators=(",", ":")))
+    # atomic: two jobs that both find the library stale must never read a half-written file
+    tmp = OUT.with_suffix(f".{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(data, separators=(",", ":")))
+    tmp.replace(OUT)
     paths: dict[str, dict[str, str]] = {"symbols": {}, "footprints": {}}
     for src in sources:
         if src["name"].startswith("extra:"):
@@ -814,7 +838,9 @@ def build() -> dict[str, Any]:
                 paths["symbols"].setdefault(sf.stem, str(sf))
             for lib, root in src["fp_roots"].items():
                 paths["footprints"].setdefault(lib, str(root))
-    LIB_PATHS.write_text(json.dumps(paths, indent=1))
+    tmp = LIB_PATHS.with_suffix(f".{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(paths, indent=1))
+    tmp.replace(LIB_PATHS)
     load.cache_clear()
     return data
 
@@ -848,7 +874,9 @@ def load() -> dict[str, Any]:
     by_key = {p["key"]: p for p in pieces}
     inv: dict[str, set[int]] = {}
     by_fp: dict[str, list[int]] = {}
+    by_name: dict[str, list[int]] = {}
     for i, p in enumerate(pieces):
+        by_name.setdefault(_compact(p["lib_id"].split(":", 1)[1]), []).append(i)
         name = p["lib_id"].split(":", 1)[1].lower()
         fpn = p["footprint"].split(":", 1)[-1].lower()
         words = set(
@@ -869,6 +897,7 @@ def load() -> dict[str, Any]:
         "inv": inv,
         "vocab": sorted(inv),
         "by_fp": by_fp,
+        "by_name": by_name,
     }
 
 
@@ -1059,6 +1088,57 @@ def _generic_conn(text: str) -> dict[str, Any] | None:
     )[0]
 
 
+# common names that mean one specific library piece. Every target is a real KiCad or ingested-library part; the
+# tests check each one resolves offline with a model. A module people buy as a breakout (OLED, TFT, HC-SR04,
+# SHT31, MAX30102) is the KiCad pin socket it plugs into, named by its pin count, never a drawn module.
+ALIASES: tuple[tuple[str, str, str], ...] = (
+    (r"\b(cherry )?mx\b.*\b(switch|hot ?swap|key)|\bkey ?switch|\bmechanical (key )?switch", "Switch:SW_Push", "MX-Hotswap-1U"),
+    (r"\bchoc\b|\bkailh low ?profile", "Switch:SW_Push", "SW_choc_v2_HS_CPG135001S30_1u"),
+    (r"\b1n4148\b.*\bsod-?123\b|\bsod-?123\b.*\b1n4148\b", "Diode:1N4148W", "D_SOD-123"),
+    (r"\busb[ -]?c\b|\btype[ -]?c\b", "Connector:USB_C_Receptacle_USB2.0_16P", "GCT_USB4105-xx-A_16P_TopMnt_Horizontal"),
+    (r"\btrrs\b", "SparkFun-Connector:Audio_Jack_TRRS_3.5mm_SMD", ""),
+    (r"\b(3\.5 ?mm|headphone|earphone|audio) (audio )?jack\b|\bheadphone (out|output)\b", "Connector_Audio:AudioJack3", "CUI_SJ1-3523N"),
+    (r"\bspeaker( connector| header| terminal)?\b", "Connector_Generic:Conn_01x02", "JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical"),
+    (r"\b(lipo|li-?ion|battery) (connector|jack|plug)|\bjst[ -]?ph\b", "Connector_Generic:Conn_01x02", "JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical"),
+    (r"\bst7789\b|\btft\b|\bips (display|screen)\b", "Connector_Generic:Conn_01x08", "PinSocket_1x08_P2.54mm_Vertical"),
+    (r"\bssd1306\b|\boled\b", "Connector_Generic:Conn_01x06", "PinSocket_1x06_P2.54mm_Vertical"),
+    (r"\bhc-?sr04\b|\bultrasonic\b", "Connector_Generic:Conn_01x04", "PinSocket_1x04_P2.54mm_Vertical"),
+    (r"\bsht3[01]\b|\bmax3010[12]\b|\bgy-\w+\b", "Connector_Generic:Conn_01x04", "PinSocket_1x04_P2.54mm_Vertical"),
+    (r"\bdht22\b|\bam2302\b", "Connector_Generic:Conn_01x03", "PinSocket_1x03_P2.54mm_Vertical"),
+    (r"\bsoil\b.*\b(probe|sensor)\b|\bmoisture (probe|sensor)\b", "Connector_Generic:Conn_01x03", "PinHeader_1x03_P2.54mm_Vertical"),
+    (r"\bservo\b", "Connector_Generic:Conn_01x03", "PinHeader_1x03_P2.54mm_Vertical"),
+    (r"\bneopixel ring\b|\bled ring\b|\bled strip (connector|header)\b", "Connector_Generic:Conn_01x03", "JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical"),
+    (r"\b(ir|infrared) receiver\b|\btsop38", "Interface_Optical:TSOP382xx", "Vishay_MINICAST-3Pin"),
+    (r"\bntc\b|\bthermistor\b", "Device:Thermistor_NTC", "R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical"),
+    (r"\b(ldr|photoresistor|light dependent resistor)\b", "Device:R_Photo", "R_LDR_5.1x4.3mm_P3.4mm_Vertical"),
+    (r"\brelay\b", "Relay:SANYOU_SRD_Form_C", ""),
+    (r"\b(slide )?fader\b|\bslide pot\w*", "Connector_Generic:Conn_01x03", "PinHeader_1x03_P2.54mm_Vertical"),
+    (r"\b(pot|potentiometer|knob)\b", "Device:R_Potentiometer", "Potentiometer_Bourns_3386W_Horizontal"),
+    (r"\b(tactile|push|reset|boot|nav\w*) ?(button|switch)\b|\bbutton\b", "Switch:SW_Push", "SW_PUSH_6mm"),
+    (r"\b(rotary )?encoder\b|\bec11\b", "Device:RotaryEncoder_Switch", "ROT_Alps_EC11E-Switch"),
+    (r"\bmicro ?sd\b|\bsd card\b|\btf card\b", "Connector:Micro_SD_Card_Det1", "Hirose_DM3AT-SF-PEJM5"),
+    (r"\b(12 ?mhz )?crystal\b", "Device:Crystal", "HC49-U_Vertical"),
+    (r"\bbuzzer\b|\bbeeper\b|\bpiezo\b", "Device:Buzzer", "Buzzer_12x9.5RM7.6"),
+    (r"\b(\d+(\.\d+)?k? ?ohm|\d+(\.\d+)?k) resistor\b|\bresistor\b", "Device:R", "R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical"),
+    (r"\bpro ?micro\b|\bnice!?\s?nano\b|\belite-?c\b", "Connector_Generic:Conn_01x12", "PinSocket_1x12_P2.54mm_Vertical"),
+)
+
+
+def _alias(text: str) -> dict[str, Any] | None:
+    t = text.lower().replace("_", " ")
+    by_key = load()["by_key"]
+    for rx, lid, fp in ALIASES:
+        if re.search(rx, t):
+            hits = [
+                p
+                for p in by_key.values()
+                if p["lib_id"] == lid and fp in p["footprint"] and _usable(p)
+            ]
+            if hits:
+                return sorted(hits, key=lambda p: (len(p["footprint"]), p["key"]))[0]
+    return None
+
+
 def resolve(text: str) -> dict[str, Any] | None:
     """One usable piece for a part the picker or an ask named ("1N4148", "DIOD1N4148", "Conn_01x02", "Conn 01x02",
     "CP_Radial_D5.0mm", "SSD1306 OLED"), or None. Part numbers inside a longer token are found too."""
@@ -1066,6 +1146,16 @@ def resolve(text: str) -> dict[str, Any] | None:
     if hit:
         return hit
     L = load()
+    # the text IS a symbol name ("RP2040", "TL072", "1N4148W"): that symbol, before any footprint-name match
+    exact = [
+        L["pieces"][i]
+        for i in L["by_name"].get(_compact(text.split(":")[-1].split("@")[0]), [])
+        if _usable(L["pieces"][i])
+    ]
+    if exact:
+        return sorted(exact, key=lambda p: (_hobby_rank(p["footprint"]), p["key"]))[0]
+    if hit := _alias(text):
+        return hit
     # a footprint name ("CP_Radial_D5.0mm", "R_0805_2012Metric"): the generic Device symbol on it
     fp = _compact(text.split(":")[-1].split("@")[-1])
     if len(fp) >= 6:
@@ -1096,7 +1186,10 @@ def resolve(text: str) -> dict[str, Any] | None:
         if len(cc) < 4:
             continue
         got = search(c, 1)
-        if got and _compact(got[0]["lib_id"].split(":", 1)[1]).startswith(cc[:6]):
+        nm = _compact(got[0]["lib_id"].split(":", 1)[1]) if got else ""
+        # the symbol is that part (W25Q128 -> W25Q128JVS) or a variant of it (TP4056 -> TP4056-42-ESOP8);
+        # a longer name that only shares the stem (RP2040-Zero -> RP2040) is a different part
+        if nm and (nm.startswith(cc) or (cc.startswith(nm) and len(cc) - len(nm) <= 2)):
             return got[0]
     return None
 
