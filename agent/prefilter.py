@@ -26,7 +26,10 @@ ASK_EXAMPLE = "like a light that turns on when it gets dark"
 
 # every decision, one JSON line, no ask text and nothing about who asked (QA round 5): time, kind, stop or rewrite,
 # design or edit, ask length, language guess and intent. ETCH_PREFILTER_LOG overrides the path ("" turns it off).
-LOG = os.environ.get("ETCH_PREFILTER_LOG", str(Path(__file__).resolve().parents[1] / "logs" / "prefilter.jsonl"))
+LOG = os.environ.get(
+    "ETCH_PREFILTER_LOG",
+    str(Path(__file__).resolve().parents[1] / "logs" / "prefilter.jsonl"),
+)
 
 
 @dataclass
@@ -62,12 +65,57 @@ PART_NOUN = (
 )
 # only plain adjectives may sit between the number and the part ("500 red LEDs"), so part numbers
 # ("a 555 timer led") and units ("5000 mAh battery") never count
-ADJ = (r"(?:red|green|blue|yellow|white|warm|cool|orange|purple|pink|rgb|small|tiny|little|big|large|bright|"
-       r"separate|single|individual|more|extra|tactile|push|status|indicator|of|the|those|these)")
-COUNT = re.compile(r"(?<![\w.-])(\d[\d,]*)\s+(?:" + ADJ + r"\s+){0,2}" + PART_NOUN + r"\b", re.I)
+ADJ = (
+    r"(?:red|green|blue|yellow|white|warm|cool|orange|purple|pink|rgb|small|tiny|little|big|large|bright|"
+    r"separate|single|individual|more|extra|tactile|push|status|indicator|of|the|those|these)"
+)
+COUNT = re.compile(
+    r"(?<![\w.-])(\d[\d,]*)\s+(?:" + ADJ + r"\s+){0,2}" + PART_NOUN + r"\b", re.I
+)
 STRIP = re.compile(
     r"\b(strip|ring|matrix|neopixel|ws2812\w*|sk6812|addressable|panel)\b", re.I
 )
+
+# ---- chat, not a board (prod 10-17, job ygA7cMfan1ojs9QZ): "done picking parts?" typed while a build ran became a
+# board description and failed with "U1 has no GPIO pin wired". A short status question, greeting or thanks with no
+# build verb is answered here instead of designed.
+STATUS_Q = re.compile(
+    r"^\W*(?:"
+    r"(?:are|r)\s+(?:you|u)\s+(?:done|finished|there|stuck|working|still|ok(?:ay)?)"
+    r"|(?:is|did)\s+(?:it|this|that|etch|the\s+(?:board|build|job))\s+(?:done|ready|finished|stuck|working|still|"
+    r"taking|broken|frozen|hung|fail(?:ed)?|crash(?:ed)?|work)"
+    r"|(?:all\s+)?(?:done|finished)\s+(?:yet|now|already|picking|building|routing|choosing|thinking|with)"
+    r"|how\s+(?:long|much\s+longer|is\s+it\s+going|far\s+along)|how'?s\s+it\s+going"
+    r"|what'?s?\s+(?:is\s+)?(?:taking|happening|going\s+on|the\s+(?:status|hold\s*-?\s*up|progress|eta))"
+    r"|why\s+is\s+(?:it|this|that)\s+(?:taking|so\s+slow|stuck|still)"
+    r"|any\s+(?:status|updates?|progress|news)"
+    r"|still\s+(?:working|building|going|there|picking|loading|thinking)"
+    r")\b[^\n]{0,48}$",
+    re.I,
+)
+# a bare acknowledgement or greeting: the whole message, nothing after it but punctuation or a name
+GREETING = re.compile(
+    r"^\W*(?:hello|hi|hey|yo|thanks|thank\s+you|thx|ty|ok(?:ay)?|cool|nice|great|lol|hm+|wow|done|finished|ready|"
+    r"status|update|progress|eta|you\s+there)(?:\s+(?:etch|there|again|so\s+much|yet|now))?\W*$",
+    re.I,
+)
+BUILD_VERB = re.compile(
+    r"\b(make|build|create|design|draw|want|need|add|give|wire|put|use|turn|light|blink)s?\b",
+    re.I,
+)
+CHAT_SAY = (
+    "That reads like a question, not a new board, so I did not start one. A build that is running keeps going and "
+    f"shows its progress here. To start a new board, tell me what it should do, {ASK_EXAMPLE}."
+)
+
+
+def is_chat(text: str) -> bool:
+    """A status question, greeting or thanks (under ~12 words, no build verb): not a board ask."""
+    t = (text or "").strip()
+    if len(t.split()) > 12 or BUILD_VERB.search(t):
+        return False
+    return bool(STATUS_Q.match(t) or GREETING.match(t))
+
 
 # ---- other languages: script share, then stopwords for Latin-script languages
 SCRIPTS = (
@@ -416,6 +464,14 @@ def _screen(t: str, edit: bool) -> Verdict | None:
         return Verdict(
             "injection",
             f"I only design circuit boards, so I skipped that. Tell me what the board should do, {ASK_EXAMPLE}.",
+        )
+    if is_chat(t):
+        return Verdict(
+            "chat",
+            CHAT_SAY
+            if not edit
+            else "That reads like a question, not a change, so I left the board as it is. Tell me what to "
+            "change, like add a buzzer or make it blue.",
         )
     if CODE.search(t):
         return Verdict(
