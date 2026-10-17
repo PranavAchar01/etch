@@ -132,6 +132,9 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
     kw = dict(kw, model=model)
     if _is_openai_reasoning(model, base_url) and effort:
         kw["reasoning_effort"] = effort
+    if not _is_openai(base_url):
+        # Nemotron's chat template switch; thinking off keeps a picker call to a few seconds
+        kw["extra_body"] = {"chat_template_kwargs": {"enable_thinking": config.THINKING}}
     guard(base_url)
     c = _client_for(base_url, key).with_options(timeout=timeout, max_retries=0)
     try:

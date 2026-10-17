@@ -6,6 +6,8 @@ ETCH_SUB_MODEL        sub-agent model (default nvidia/Nemotron-3.5-Lightning-30B
 ETCH_API_KEY_SOURCE   Keychain service that holds the key (default jarvis-vault/Crusoe)
 ETCH_PRIMARY_TIMEOUT  seconds before a primary call gives up and the fallback takes over (default 40)
 ETCH_FALLBACK         "openai" (default) or "off"
+ETCH_THINKING         "off" (default) or "on": Nemotron reasoning on non-OpenAI endpoints. Off is about 8x faster
+                      (Super 3.5 s vs 27 s on a picker-sized call) and the analog solver does the numbers.
 ETCH_FALLBACK_BASE_URL / ETCH_FALLBACK_MODEL / ETCH_FALLBACK_SUB_MODEL / ETCH_FALLBACK_KEY_SOURCE
                       the fallback endpoint (default OpenAI gpt-5-mini / gpt-5-nano, Keychain openai-api-key)
 ETCH_MAX_ITERS        repair iterations per build / feature loop (default 4)
@@ -38,6 +40,7 @@ SUB_MODEL = os.environ.get(
 KEY_SOURCE = os.environ.get("ETCH_API_KEY_SOURCE", "jarvis-vault/Crusoe")
 PRIMARY_TIMEOUT = float(os.environ.get("ETCH_PRIMARY_TIMEOUT", "40"))
 FALLBACK = os.environ.get("ETCH_FALLBACK", "openai").lower()
+THINKING = os.environ.get("ETCH_THINKING", "off").lower() == "on"
 FALLBACK_BASE_URL = os.environ.get("ETCH_FALLBACK_BASE_URL", OPENAI_URL)
 FALLBACK_MODEL = os.environ.get("ETCH_FALLBACK_MODEL", "gpt-5-mini")
 FALLBACK_SUB_MODEL = os.environ.get("ETCH_FALLBACK_SUB_MODEL", "gpt-5-nano")
