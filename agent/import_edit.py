@@ -134,6 +134,18 @@ def catalog_text(cat: dict[str, dict], request: str, limit: int = 60) -> str:
     return "\n".join(lines)
 
 
+def alternatives(e: dict[str, Any], cat: dict[str, dict]) -> list[dict[str, Any]]:
+    """The same symbol in other footprints with the same pads, tried smallest first when the planned one has no room."""
+    out = []
+    for o in cat.values():
+        if o["key"] != e["key"] and o["lib_id"] == e["lib_id"] and sorted(o["pins"]) == sorted(e["pins"]) \
+                and o["footprint"] != e["footprint"] and o.get("model") and Path(o["model"]).is_file():
+            lib = o["footprint"].split(":")[0]
+            out.append({"footprint": o["footprint"], "fp_root": str(footprint_root(lib)), "model": o["model"],
+                        "key": o["key"]})
+    return out[:12]
+
+
 def pin_names(e: dict[str, Any]) -> str:
     try:
         return eng._pin_label(e["lib_id"], e["pins"])
@@ -993,7 +1005,8 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
         "add": [{"ref": a["ref"], "value": a["value"], "footprint": a["entry"]["footprint"],
                  "fp_root": str(footprint_root(a["entry"]["footprint"].split(":")[0])),
                  "model": a["entry"]["model"] if a["entry"].get("model") and Path(a["entry"]["model"]).is_file() else None,
-                 "near": a["near"] or None, "pads": a["pads"]} for a in resolved["add"]],
+                 "near": a["near"] or None, "pads": a["pads"], "alternatives": alternatives(a["entry"], cat)}
+                for a in resolved["add"]],
         "assign": resolved["assign"], "remove": resolved["remove"], "values": resolved["values"],
         "new_nets": sorted(resolved["new_nets"]), "route": bool(resolved["add"] or resolved["assign"]),
         "refill": bool(resolved["add"] or resolved["assign"] or resolved["remove"]),
@@ -1003,6 +1016,13 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
         if job["add"] or job["assign"] or job["remove"] or job["values"]:
             kicad_python(SIDE, "apply", str(pcb), str(out / "edit_job.json"), str(out / "edit_result.json"), timeout=600)
             res = json.loads((out / "edit_result.json").read_text())
+            for a in resolved["add"]:  # no room for the planned footprint: a smaller one of the same symbol was used
+                sw = (res.get("placed", {}).get(a["ref"]) or {}).get("swapped_to")
+                alt = next((o for o in cat.values() if sw and o["footprint"] == sw and o["lib_id"] == a["entry"]["lib_id"]), None)
+                if alt:
+                    stream.emit("lead", "say", text=f"{a['ref']} did not fit as {a['entry']['footprint'].split(':')[-1]}, "
+                                                    f"so it is the smaller {sw.split(':')[-1]}.")
+                    a["entry"], a["key"] = alt, alt["key"]
         else:
             res = {"placed": {}, "not_placed": [], "routes": [], "new_tracks": 0, "new_vias": 0, "seconds": {},
                    "board": {"w": facts["board"]["w"], "h": facts["board"]["h"]}, "facts": facts, "errors": []}
@@ -1027,7 +1047,8 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
     if routes or n_add:
         bad = [r for r in routes if not r.get("ok")]
         gates.append(("routed", not bad and len(placed) == n_add,
-                      f"{len(ok_routes)} of {len(routes)} new connections" + (
+                      (f"nothing to route: {', '.join(res.get('not_placed', []))} not placed" if not routes else
+                       f"{len(ok_routes)} of {len(routes)} new connections") + (
                           f"; unrouted (ratsnest): {', '.join(r['pin'] + ' to ' + r['net'] for r in bad[:4])}" if bad else "")))
     if delta.get("ran"):
         gates.append(("DRC", delta["new_errors"] == 0,
