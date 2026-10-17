@@ -497,7 +497,9 @@ function startDesign(text) {
   viewer.lookFrom([0, 1, 0.18], { fitBox: true }); // the camera eases in onto the workplane, still from above
   dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: text, status: "done" });
   $("crTitle").textContent = "New board";
-  bridge.design(text).then((r) => { if (!r || !r.ok) board.building = false; }).catch(() => { board.building = false; });
+  // no board came back (checks failed, error, build lost): stop the backdrop's building look too
+  const failed = () => { board.building = false; backdrop?.building(false); };
+  bridge.design(text).then((r) => { if (!r || !r.ok) failed(); }).catch(failed);
 }
 // the hero's text goes through the dock's own composer, so it shows up there as the person's turn
 function sendViaDock(text) {
