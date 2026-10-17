@@ -19,6 +19,7 @@ const OPEN_SPRING = { stiffness: 250, damping: 21 }, LEAVE_GRACE = 60;
 const PILL_H = 56, GAP = 8, EYES_W = 46, MIC = 40, PAD = 8;
 const STATES = new Set(["idle", "userTalking", "heard", "thinking", "working", "speaking", "success", "confused", "error", "offline"]);
 const DEFAULT_STATUS = "Ask Etch · hold Space to talk";
+const PLACEHOLDER = "Ask Etch or describe a change";
 const plain = (s) => String(s || "").replace(/`([^`]+)`/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\s+/g, " ").trim();
 
 // what a step is, as an eyes activity and a pill line of at most three words
@@ -75,10 +76,15 @@ export function createDock(hostEl, opts = {}) {
   const eyes = createEyes(eyesWrap);
   const statusText = el("span", "ag-status-t", DEFAULT_STATUS);
   const pillLoader = pixelLoader({ size: "xs" });
-  const status = el("div", "ag-status", pillLoader.el, statusText);
+  // while listening: a small live waveform of the mic level next to "Listening…"
+  const wave = el("span", "ag-wave");
+  wave.setAttribute("aria-hidden", "true");
+  const waveBars = Array.from({ length: 5 }, () => el("i"));
+  wave.append(...waveBars);
+  const status = el("div", "ag-status", pillLoader.el, wave, statusText);
   status.setAttribute("aria-live", "polite");
   const input = el("input", "ag-input");
-  input.type = "text"; input.placeholder = "Ask Etch or describe a change"; input.setAttribute("aria-label", "Message Etch"); input.maxLength = 400;
+  input.type = "text"; input.placeholder = PLACEHOLDER; input.setAttribute("aria-label", "Message Etch"); input.maxLength = 400;
   input.autocomplete = "off";
   const send = el("button", "ag-send lq-btn", icon("send"));
   send.type = "submit"; send.setAttribute("aria-label", "Send");
@@ -296,8 +302,14 @@ export function createDock(hostEl, opts = {}) {
 
   // ---------- state ----------
   let base = "idle", overlay = null, overlayT = 0, statusBase = "", statusTemp = "", actWords = "";
+  // While the Etch voice is still being fetched the eyes keep thinking; "speaking" starts with the first sound.
+  // A worried face (confused, error, offline) stays on while that line is spoken.
+  let awaitingVoice = false, speakDone = [];
+  const SAD = new Set(["confused", "error", "offline"]);
   function paintState() {
-    const s = overlay || base;
+    let s = overlay || base;
+    if (s === "speaking" && SAD.has(base)) s = base;
+    else if (s === "speaking" && awaitingVoice) s = "thinking";
     eyes.setState(s);
     root.dataset.state = s;
   }
@@ -419,25 +431,42 @@ export function createDock(hostEl, opts = {}) {
 
   // ---------- voice ----------
   let spaceWaiting = false, fakeSpeak = 0;
+  const waveHist = [0, 0, 0, 0, 0];
+  let gotT = 0;
   const voice = createVoiceAdapter({
     onState(s, d) {
       if (s === "listening") {
-        setOverlay("userTalking"); statusTemp = "Listening…"; paintStatus(); mic.classList.add("rec");
+        setOverlay("userTalking"); statusTemp = "Listening…"; paintStatus(); mic.classList.add("rec"); root.classList.add("listening"); input.placeholder = "Listening…";
         if (spaceWaiting) { spaceWaiting = false; dispatchEvent(new KeyboardEvent("keyup", { code: "Space", key: " " })); }
       } else {
-        mic.classList.remove("rec");
+        mic.classList.remove("rec"); root.classList.remove("listening"); input.placeholder = PLACEHOLDER; waveBars.forEach((b) => (b.style.transform = ""));
         if (s === "transcribing") { setOverlay("heard"); statusTemp = "Got it…"; }
         else if (s === "speaking") { setOverlay("speaking"); statusTemp = ""; }
-        else if (s === "idle") { if (overlay !== "heard") setOverlay(null); statusTemp = ""; eyes.setLevel(0); }
+        else if (s === "idle") { if (overlay === "heard") setOverlay("heard", 1100); else setOverlay(null); if (statusTemp !== "Got it") statusTemp = ""; eyes.setLevel(0); }
         else if (s === "off") { setOverlay(null); statusTemp = ""; if (d) caption(d); eyes.react("squish"); }
         paintStatus();
       }
+      if (s !== "speaking") { awaitingVoice = false; if (s === "idle" || s === "off" || s === "listening") { const f = speakDone; speakDone = []; f.forEach((r) => r()); } paintState(); }
+    },
+    // the person stopped talking: a beat of "Got it" with the heard look before Etch starts thinking
+    onVadEnd() {
+      setOverlay("heard", 1100); statusTemp = "Got it"; paintStatus(); eyes.react("nod");
+      clearTimeout(gotT); gotT = setTimeout(() => { if (statusTemp === "Got it") { statusTemp = ""; paintStatus(); } }, 900);
     },
     onLevel(who, x) {
+      if (who === "etch" && x > 0.01 && awaitingVoice) { awaitingVoice = false; paintState(); }
+      if (who === "you" && root.classList.contains("listening")) {
+        waveHist.push(clamp(x)); waveHist.shift();
+        waveBars.forEach((b, i) => { b.style.transform = `scaleY(${(0.18 + 0.82 * waveHist[i]).toFixed(3)})`; });
+      }
       if ((who === "you" && overlay === "userTalking") || (who === "etch" && overlay === "speaking")) eyes.setLevel(x);
       mic.style.setProperty("--lv", who === "you" ? clamp(x).toFixed(3) : "0");
     },
-    onHeard(text) { setOverlay("heard", 1100); statusTemp = ""; paintStatus(); doSend(text, "voice"); },
+    onHeard(text) {
+      setOverlay("heard", 1100); statusTemp = "Got it"; paintStatus();
+      clearTimeout(gotT); gotT = setTimeout(() => { if (statusTemp === "Got it") { statusTemp = ""; paintStatus(); } }, 900);
+      doSend(text, "voice");
+    },
     onInterim(text) { statusTemp = text ? `“${text.length > 48 ? "…" + text.slice(-46) : text}”` : "Listening…"; paintStatus(); },
     onCaption(text) { caption(text); },
     onError(line) { eyes.react("squish"); caption(line); },
@@ -615,6 +644,9 @@ export function createDock(hostEl, opts = {}) {
       const t = plain(text);
       if (!t) return;
       const spoken = voice.say(t, { force: opts.speak === "always" || asked });
+      // resolves once the line has been said (the agent bridge waits on it before going back to idle)
+      const done = new Promise((r) => { const tm = setTimeout(r, 60000); speakDone.push(() => { clearTimeout(tm); r(); }); });
+      if (spoken) { awaitingVoice = true; paintState(); }
       if (!spoken) {
         // nothing is spoken before the person has used their voice; the eyes still "say" it with the caption
         caption(t);
@@ -623,10 +655,11 @@ export function createDock(hostEl, opts = {}) {
         setOverlay("speaking");
         fakeSpeak = setInterval(() => {
           const k = performance.now() - t0;
-          if (k > dur || overlay !== "speaking") { clearInterval(fakeSpeak); eyes.setLevel(0); if (overlay === "speaking") setOverlay(null); return; }
+          if (k > dur || overlay !== "speaking") { clearInterval(fakeSpeak); eyes.setLevel(0); if (overlay === "speaking") setOverlay(null); const f = speakDone; speakDone = []; f.forEach((r) => r()); return; }
           eyes.setLevel(0.25 + 0.3 * Math.abs(Math.sin(k / 95)));
         }, 50);
       }
+      return done;
     },
     listen() { voice.start({ auto: true }); },
 

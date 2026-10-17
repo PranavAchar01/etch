@@ -105,6 +105,16 @@ class Validate(unittest.TestCase):
         self.assertEqual(errs, [])
         self.assertEqual(r["assign"][0]["net"], "IO14")
 
+    def test_data_and_clock_nets_are_refused_unless_asked_for(self):
+        facts = json.loads(json.dumps(FACTS))
+        facts["nets"]["/USB_D+"] = ["J1.9", "U1.20"]
+        p = plan(add=[add("D20", "led_green_0603"), add("R20", "resistor_0603")],
+                 connect=[con("R20.1", "/USB_D+"), con("R20.2", "LED_A"), con("D20.2", "LED_A"), con("D20.1", "GND")])
+        _, errs = ie.validate(p, facts, CAT, "add a status LED")
+        self.assertTrue(any("carries data" in e for e in errs), errs)
+        _, errs = ie.validate(p, facts, CAT, "add an LED that blinks on USB D+ activity")
+        self.assertEqual(errs, [])
+
     def test_fine_pitch_free_pins_are_refused(self):
         p = plan(add=[add("R20", "resistor_0603")], connect=[con("R20.1", to="U3.2"), con("R20.2", "GND")])
         _, errs = ie.validate(p, FACTS, CAT)

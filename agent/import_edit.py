@@ -58,6 +58,9 @@ PIN_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_+-]{0,24})\.([A-Za-z0-9_+-]{1,10})$")
 NET_RE = re.compile(r"^[A-Za-z0-9_+/\\{}()~.-]{1,60}$")
 POWER_RE = re.compile(r"(^|/)(GND\w*|AGND|DGND|VSS|VCC\w*|VDD\w*|VBUS|VIN|VBAT\w*|\+?\d+V\d*\w*|\+?3V3\w*|\+?3\.3V\w*|\+?5V\w*)$", re.I)
 FREE_RE = re.compile(r"^unconnected-\(")
+# nets a status LED or a buzzer must never hang on: data lines, clocks, RF, memory buses
+SENSITIVE_RE = re.compile(r"USB|(^|[/_])D[+-]$|(^|[/_])D[PM]$|XTAL|XIN|XOUT|OSC|CLK|ANT|(^|[/_])RF|ETH|EMAC|RMII|MDI|"
+                          r"(^|[/_])[TR]X?D?[+-]$|(^|[/_])[TR]D[+-]$|SDIO|SD_|QSPI|PSRAM|FLASH|SPICS|CS0|HS2|BOOT|STRAP", re.I)
 
 MASKS = {"green": "Green", "red": "Red", "blue": "Blue", "black": "Black", "white": "White", "yellow": "Yellow",
          "purple": "Purple", "matte black": "Black"}
@@ -274,6 +277,8 @@ SYSTEM = (
     "same net. Free pins (FREE) may be used.\n"
     "- A net that only joins pins you add (between a resistor and an LED, say) gets a new short name like LED1_A, "
     "and at least two pins.\n"
+    "- A status or power LED that names no signal: supply rail -> resistor -> LED anode, LED cathode -> GND (a "
+    "power indicator). Never put a new part on USB data, Ethernet, clock, crystal, RF, SD/flash or boot-strap nets.\n"
     "- An LED gets a series resistor (330 to 1k). A small buzzer or LED may be driven straight from a GPIO. A reset "
     "button goes between the reset net (RST, RESET, EN, NRST) and GND. Prefer a GPIO that is free or only goes to a "
     "connector; never one already used by another function on the board. A GPIO net that already reaches a "
@@ -329,7 +334,8 @@ def _clean_net(n: str) -> str:
     return re.sub(r"[^A-Za-z0-9_+./-]", "_", n.strip())[:40]
 
 
-def validate(plan: dict[str, Any], facts: dict[str, Any], cat: dict[str, dict]) -> tuple[dict[str, Any], list[str]]:
+def validate(plan: dict[str, Any], facts: dict[str, Any], cat: dict[str, dict],
+             request: str = "") -> tuple[dict[str, Any], list[str]]:
     """The plan checked against the real netlist. Returns (resolved, problems); resolved is what the KiCad side
     applies: add [{ref, key, value, near, pads {pad: net}}], assign [{ref, pad, net}], remove, values, board."""
     errs: list[str] = []
@@ -480,6 +486,11 @@ def validate(plan: dict[str, Any], facts: dict[str, Any], cat: dict[str, dict]) 
             if net in members and all(m in gone for m in members[net]):
                 errs.append(f"{net} only exists on parts this plan removes")
                 continue
+            words = re.findall(r"[a-z0-9]+", net.lower())
+            if SENSITIVE_RE.search(net) and not any(w in request.lower() for w in words if len(w) >= 3):
+                errs.append(f"{net} carries data, a clock or RF; a new part must not hang on it. Use a free GPIO "
+                            "net, or for a status LED the supply rail (a power indicator)")
+                continue
         else:
             if len(pins) < 2:
                 errs.append(f"{pins[0] if pins else '?'} would be alone on its net; connect it to something")
@@ -579,11 +590,43 @@ def set_stackup(text: str, board: dict[str, str], copper: int = 2) -> str:
     return text
 
 
+def kc(*args: str, timeout: float = 420) -> subprocess.CompletedProcess | None:
+    """kicad-cli at nice 10. cli(nice=True) also asks for macOS background QoS, which starved a GLB export past
+    its 300 s timeout while other renders ran (real run 10-17); the in-place edit is someone watching the page."""
+    try:
+        return subprocess.run(["nice", "-n", "10", str(KICAD_CLI), *args], capture_output=True, text=True,
+                              timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return None
+
+
+def glb(out: Path, pcb: Path) -> dict[str, Any]:
+    """view/board.glb for the editor: KiCad's own GLB export with the same flags as agent/viewer.py."""
+    from .viewer import GLB_FLAGS
+
+    t0 = time.time()
+    view = out / "view"
+    view.mkdir(exist_ok=True)
+    tmp = view / ".glb-tmp"
+    shutil.rmtree(tmp, ignore_errors=True)
+    tmp.mkdir()
+    try:
+        kc("pcb", "export", "glb", "-f", *GLB_FLAGS, "-o", str(tmp / "board.glb"), str(pcb), timeout=600)
+        if (tmp / "board.glb").is_file():
+            shutil.move(str(tmp / "board.glb"), str(view / "board.glb"))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    f = view / "board.glb"
+    ok = f.is_file() and f.stat().st_mtime >= pcb.stat().st_mtime
+    return {"ok": ok, "bytes": f.stat().st_size if ok else 0, "seconds": round(time.time() - t0, 1),
+            **({} if ok else {"error": "kicad-cli wrote no GLB"})}
+
+
 # ---------------------------------------------------------------- DRC before and after
 
 
 def drc(pcb: Path, out: Path) -> dict[str, Any]:
-    cli("pcb", "drc", "--format", "json", "--severity-all", "-o", str(out), str(pcb), nice=True, check=False)
+    kc("pcb", "drc", "--format", "json", "--severity-all", "-o", str(out), str(pcb), timeout=300)
     try:
         return json.loads(out.read_text())
     except (OSError, ValueError):
@@ -776,8 +819,8 @@ def export(stream: Stream, out: Path, pcb: Path, facts: dict[str, Any]) -> dict[
     gerb = out / "gerbers"
     shutil.rmtree(gerb, ignore_errors=True)
     gerb.mkdir()
-    cli("pcb", "export", "gerbers", "-o", str(gerb) + "/", str(pcb), nice=True, check=False)
-    cli("pcb", "export", "drill", "-o", str(gerb) + "/", str(pcb), nice=True, check=False)
+    kc("pcb", "export", "gerbers", "-o", str(gerb) + "/", str(pcb), timeout=300)
+    kc("pcb", "export", "drill", "-o", str(gerb) + "/", str(pcb), timeout=300)
     bom = out / f"{name}-bom.csv"
     rows = bom_rows(facts)
     with bom.open("w", newline="") as fh:
@@ -918,7 +961,7 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
         msgs = plan_messages(request, btext, ctext)
         plan = ask_plan(stream, msgs, complete)
         model = PLAN_MODEL
-    resolved, errs = validate(plan, facts, cat)
+    resolved, errs = validate(plan, facts, cat, request)
     tries = 1
     while errs and not plan.get("refuse") and model and tries < 3:
         stream.emit("picker", "repair", iteration=tries, parts=len(plan.get("add") or []), say="; ".join(errs)[:300],
@@ -927,7 +970,7 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
         msgs.append({"role": "user", "content": "These problems were found against the board's real netlist:\n- "
                      + "\n- ".join(errs) + "\nFix them and call edit_plan again with the whole plan."})
         plan = ask_plan(stream, msgs, complete)
-        resolved, errs = validate(plan, facts, cat)
+        resolved, errs = validate(plan, facts, cat, request)
         tries += 1
     t_plan = time.time() - t1
     stream.emit("picker", "pick", seconds=round(t_plan, 2), recipe=plan.get("_recipe") or "in-place edit", model=model,
@@ -1018,10 +1061,15 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
     from . import viewer
 
     t4 = time.time()
-    g = viewer.glb(out)
     viewer.parts(out)
+    g = glb(out, pcb)
+    viewer.parts(out)  # after the GLB too: /etch/parts serves its cache only when it is newer than the board
     t_glb = time.time() - t4
     rd = render(stream, out, pcb) if do_render else None
+    if not g["ok"]:
+        gates.append(("3D board", False, "the GLB export did not finish; the editor builds it when it opens the board"))
+        stream.emit("assembly", "gate", iteration=1, gate="3D board", ok=False, value=gates[-1][2])
+        all_ok = False
     if all_ok:
         bits = [f"{a['ref']} is on the board" for a in resolved["add"]] or ["The change is made"]
         msg = (", ".join(bits) + ". Every new connection is routed and DRC found nothing new.") if n_add else \
