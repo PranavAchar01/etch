@@ -632,7 +632,7 @@ async function main() {
   if (ID) rl.show();
   await api.init();
   if (!api.status.mock) {
-    const cfg = Q.get("api") ? {} : await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).catch(() => ({}));
+    const cfg = Q.get("api") ? {} : await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).then((c) => (c.config_url ? fetch(c.config_url, { cache: "no-store" }).then((r) => r.json()) : c)).catch(() => ({}));
     apiBase = String(Q.get("api") || cfg.api || "").replace(/\/$/, "");
   }
   createPartsPanel($("paneParts"), { apiBase, onDragStart: (p, e) => ghostDrop.start(p, e), onDragEnd: (p, e) => ghostDrop.end(p, e) });

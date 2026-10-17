@@ -428,7 +428,7 @@ try {
 // ---- My boards: what the person saved in the editor, first, in the same white cards (js/my-boards.js) ----
 const DOTS = '<svg class="ic" width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true"><circle cx="4.5" cy="9" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="13.5" cy="9" r="1.4"/></svg>';
 let apiBase = "";
-fetch("config.json", { cache: "no-store" }).then((r) => r.json()).then((c) => { apiBase = String(Q.get("api") || c.api || "").replace(/\/$/, ""); renderMine(); }).catch(() => {});
+fetch("config.json", { cache: "no-store" }).then((r) => r.json()).then((c) => (c.config_url ? fetch(c.config_url, { cache: "no-store" }).then((r) => r.json()) : c)).then((c) => { apiBase = String(Q.get("api") || c.api || "").replace(/\/$/, ""); renderMine(); }).catch(() => {});
 function closeMenus() { for (const m of document.querySelectorAll(".mine-menu")) m.remove(); }
 addEventListener("click", (e) => { if (!e.target.closest(".mine-menu, .mine-more")) closeMenus(); });
 addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenus(); });
