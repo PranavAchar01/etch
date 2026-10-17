@@ -6142,8 +6142,14 @@
    "variant": null,
    "aliases": [
     "fidget toy",
+    "fidget",
     "fidget box",
+    "fidget board",
     "fidget cube",
+    "fidget clicker",
+    "stress toy",
+    "busy board",
+    "clicky toy",
     "stim toy"
    ],
    "blocks": [
@@ -106298,6 +106304,12 @@
    "base": "fidget",
    "variant": "wireless",
    "aliases": [
+    "wireless fidget",
+    "bluetooth fidget",
+    "wifi fidget",
+    "smart fidget",
+    "connected fidget",
+    "iot fidget",
     "wireless fidget toy",
     "bluetooth fidget toy",
     "wifi fidget toy",
@@ -106309,13 +106321,7 @@
     "wifi fidget box",
     "smart fidget box",
     "connected fidget box",
-    "iot fidget box",
-    "wireless fidget cube",
-    "bluetooth fidget cube",
-    "wifi fidget cube",
-    "smart fidget cube",
-    "connected fidget cube",
-    "iot fidget cube"
+    "iot fidget box"
    ],
    "blocks": [
     [
@@ -106354,6 +106360,10 @@
    "base": "fidget",
    "variant": "rechargeable",
    "aliases": [
+    "rechargeable fidget",
+    "battery powered fidget",
+    "portable fidget",
+    "cordless fidget",
     "rechargeable fidget toy",
     "battery powered fidget toy",
     "portable fidget toy",
@@ -106361,11 +106371,7 @@
     "rechargeable fidget box",
     "battery powered fidget box",
     "portable fidget box",
-    "cordless fidget box",
-    "rechargeable fidget cube",
-    "battery powered fidget cube",
-    "portable fidget cube",
-    "cordless fidget cube"
+    "cordless fidget box"
    ],
    "blocks": [
     [
@@ -106408,6 +106414,10 @@
    "base": "fidget",
    "variant": "display",
    "aliases": [
+    "fidget with display",
+    "fidget with screen",
+    "fidget with oled",
+    "fidget with a screen",
     "fidget toy with display",
     "fidget toy with screen",
     "fidget toy with oled",
@@ -106415,11 +106425,7 @@
     "fidget box with display",
     "fidget box with screen",
     "fidget box with oled",
-    "fidget box with a screen",
-    "fidget cube with display",
-    "fidget cube with screen",
-    "fidget cube with oled",
-    "fidget cube with a screen"
+    "fidget box with a screen"
    ],
    "blocks": [
     [
@@ -106460,6 +106466,10 @@
    "base": "fidget",
    "variant": "buzzer",
    "aliases": [
+    "fidget with buzzer",
+    "fidget with alarm",
+    "fidget with beeper",
+    "beeping fidget",
     "fidget toy with buzzer",
     "fidget toy with alarm",
     "fidget toy with beeper",
@@ -106467,11 +106477,7 @@
     "fidget box with buzzer",
     "fidget box with alarm",
     "fidget box with beeper",
-    "beeping fidget box",
-    "fidget cube with buzzer",
-    "fidget cube with alarm",
-    "fidget cube with beeper",
-    "beeping fidget cube"
+    "beeping fidget box"
    ],
    "blocks": [
     [
@@ -106510,6 +106516,11 @@
    "base": "fidget",
    "variant": "rgb",
    "aliases": [
+    "rgb fidget",
+    "colour fidget",
+    "color fidget",
+    "light up fidget",
+    "led fidget",
     "rgb fidget toy",
     "colour fidget toy",
     "color fidget toy",
@@ -106519,12 +106530,7 @@
     "colour fidget box",
     "color fidget box",
     "light up fidget box",
-    "led fidget box",
-    "rgb fidget cube",
-    "colour fidget cube",
-    "color fidget cube",
-    "light up fidget cube",
-    "led fidget cube"
+    "led fidget box"
    ],
    "blocks": [
     [
@@ -106563,15 +106569,15 @@
    "base": "fidget",
    "variant": "speaker",
    "aliases": [
+    "fidget with speaker",
+    "talking fidget",
+    "fidget with sound",
     "fidget toy with speaker",
     "talking fidget toy",
     "fidget toy with sound",
     "fidget box with speaker",
     "talking fidget box",
-    "fidget box with sound",
-    "fidget cube with speaker",
-    "talking fidget cube",
-    "fidget cube with sound"
+    "fidget box with sound"
    ],
    "blocks": [
     [
@@ -106610,15 +106616,15 @@
    "base": "fidget",
    "variant": "usbc",
    "aliases": [
+    "usb c fidget",
+    "usb-c fidget",
+    "usb powered fidget",
     "usb c fidget toy",
     "usb-c fidget toy",
     "usb powered fidget toy",
     "usb c fidget box",
     "usb-c fidget box",
-    "usb powered fidget box",
-    "usb c fidget cube",
-    "usb-c fidget cube",
-    "usb powered fidget cube"
+    "usb powered fidget box"
    ],
    "blocks": [
     [
@@ -106657,6 +106663,10 @@
    "base": "fidget",
    "variant": "logging",
    "aliases": [
+    "logging fidget",
+    "fidget with sd card",
+    "fidget logger",
+    "recording fidget",
     "logging fidget toy",
     "fidget toy with sd card",
     "fidget toy logger",
@@ -106664,11 +106674,7 @@
     "logging fidget box",
     "fidget box with sd card",
     "fidget box logger",
-    "recording fidget box",
-    "logging fidget cube",
-    "fidget cube with sd card",
-    "fidget cube logger",
-    "recording fidget cube"
+    "recording fidget box"
    ],
    "blocks": [
     [
@@ -106707,12 +106713,12 @@
    "base": "fidget",
    "variant": "gps",
    "aliases": [
+    "fidget with gps",
+    "gps fidget",
     "fidget toy with gps",
     "gps fidget toy",
     "fidget box with gps",
-    "gps fidget box",
-    "fidget cube with gps",
-    "gps fidget cube"
+    "gps fidget box"
    ],
    "blocks": [
     [
@@ -106751,9 +106757,9 @@
    "base": "fidget",
    "variant": "wireless+rechargeable",
    "aliases": [
+    "wireless rechargeable fidget",
     "wireless rechargeable fidget toy",
-    "wireless rechargeable fidget box",
-    "wireless rechargeable fidget cube"
+    "wireless rechargeable fidget box"
    ],
    "blocks": [
     [
@@ -106800,9 +106806,9 @@
    "base": "fidget",
    "variant": "wireless+display",
    "aliases": [
+    "wireless fidget with display",
     "wireless fidget toy with display",
-    "wireless fidget box with display",
-    "wireless fidget cube with display"
+    "wireless fidget box with display"
    ],
    "blocks": [
     [
@@ -106847,9 +106853,9 @@
    "base": "fidget",
    "variant": "rechargeable+display",
    "aliases": [
+    "rechargeable fidget with display",
     "rechargeable fidget toy with display",
-    "rechargeable fidget box with display",
-    "rechargeable fidget cube with display"
+    "rechargeable fidget box with display"
    ],
    "blocks": [
     [
@@ -106898,9 +106904,9 @@
    "base": "fidget",
    "variant": "wireless+buzzer",
    "aliases": [
+    "wireless fidget with alarm",
     "wireless fidget toy with alarm",
-    "wireless fidget box with alarm",
-    "wireless fidget cube with alarm"
+    "wireless fidget box with alarm"
    ],
    "blocks": [
     [
@@ -106943,9 +106949,9 @@
    "base": "fidget",
    "variant": "rechargeable+rgb",
    "aliases": [
+    "rechargeable rgb fidget",
     "rechargeable rgb fidget toy",
-    "rechargeable rgb fidget box",
-    "rechargeable rgb fidget cube"
+    "rechargeable rgb fidget box"
    ],
    "blocks": [
     [
@@ -106992,9 +106998,9 @@
    "base": "fidget",
    "variant": "wireless+rgb",
    "aliases": [
+    "wireless rgb fidget",
     "wireless rgb fidget toy",
-    "wireless rgb fidget box",
-    "wireless rgb fidget cube"
+    "wireless rgb fidget box"
    ],
    "blocks": [
     [

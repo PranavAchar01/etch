@@ -212,7 +212,7 @@ slot_machine | slot machine | slot machine;fruit machine;one armed bandit | disp
 tic_tac_toe | tic tac toe | tic tac toe;noughts and crosses | km9 npx9 buz
 puzzle_lock | escape room puzzle | escape room puzzle;escape room prop;puzzle lock;riddle box | kp servo leds3 buz
 board_game_timer | game timer | game timer;chess clock;turn timer;board game timer | btn2 disp:segment buz
-fidget | fidget toy | fidget toy;fidget box;fidget cube;stim toy | btn4 enc vib npx4
+fidget | fidget toy | fidget;fidget toy;fidget box;fidget board;fidget cube;fidget clicker;stress toy;busy board;clicky toy;stim toy | btn4 enc vib npx4
 rc_car_remote | RC transmitter | rc transmitter;radio controller;rc remote;transmitter | joy nrf btn4 aa
 ## health and fitness
 pill_reminder | pill reminder | pill reminder;medication reminder;pill box;pill dispenser | i2c:ds3231 buz leds4 btn4
