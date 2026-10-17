@@ -132,3 +132,31 @@ def test_env_key_wins(monkeypatch):
         assert config.key_for("jarvis-vault/Crusoe") == "env-key"
     finally:
         config.key_for.cache_clear()
+
+
+def test_thinking_switch_only_off_openai(monkeypatch):
+    sent = {}
+
+    class C:
+        def with_options(self, **_):
+            return self
+
+        @property
+        def chat(self):
+            return self
+
+        @property
+        def completions(self):
+            return self
+
+        def create(self, **kw):
+            sent.update(kw)
+            return _resp({"a": 1})
+
+    monkeypatch.setattr(llm, "_client_for", lambda b, k: C())
+    monkeypatch.setattr(llm, "guard", lambda b: None)
+    llm._create(config.CRUSOE_URL, "k", config.MODEL, {"messages": []}, None, 5)
+    assert sent["extra_body"] == {"chat_template_kwargs": {"enable_thinking": config.THINKING}}
+    sent.clear()
+    llm._create(config.OPENAI_URL, "k", "gpt-5-mini", {"messages": []}, "low", 5)
+    assert "extra_body" not in sent and sent["reasoning_effort"] == "low"
