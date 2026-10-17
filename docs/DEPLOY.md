@@ -54,6 +54,7 @@ container; mount a volume there to keep builds across restarts.
 | `ETCH_CLASSIFIER_DIR` / `ETCH_CLASSIFIER_THREADS` | HF cache / `2` | local model folder; CPU threads for the classifier |
 | `ETCH_THINKING` | `off` | `on` turns Nemotron reasoning back on (about 8x slower per call) |
 | `ETCH_KICAD_CLI` / `ETCH_KICAD_PY` / `ETCH_KICAD_SHARE` | `/usr/bin/kicad-cli`, `/usr/bin/python3`, `/usr/share/kicad` | KiCad paths on Linux |
+| `ETCH_TTS_MODEL` / `ETCH_TTS_VOICE` | `gpt-4o-mini-tts-2025-12-15` / `cedar` | Etch's spoken voice (OpenAI `/v1/audio/speech`, needs `OPENAI_API_KEY`) |
 | `ETCH_STT_URL` | `http://127.0.0.1:3421/stt` | speech-to-text server (not in the image; `/etch/stt` returns 503 without it) |
 
 ### Not in the container
