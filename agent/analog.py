@@ -388,6 +388,33 @@ def _fix_flyback(
             )
 
 
+def _fix_power_input(
+    design: dict[str, Any], by_key: dict[str, dict[str, Any]], res: Result
+) -> None:
+    """The board's supply is its first power connector, pin 1 + and pin 2 GND. Sweep 10-17: the picker wired
+    the power input's pin 2 to the motor net, which put the motor straight across the supply (always on)."""
+    for p in design["parts"]:
+        if _spice(by_key.get(p.get("piece"))).get("role") != "power_in" or p.get("load_ohms"):
+            continue
+        pins = p.get("pins") or {}
+        if (pins.get("1"), pins.get("2")) == ("GND", "VCC"):
+            pins["1"], pins["2"] = "VCC", "GND"
+            res.notes.append(f"{p['ref']}: power input was reversed; pin 1 is now VCC and pin 2 GND.")
+            return
+        others = {
+            n for q in design["parts"] if q is not p for n in (q.get("pins") or {}).values()
+        }
+        for pin, want in (("1", "VCC"), ("2", "GND")):
+            have = pins.get(pin)
+            if have and have not in ("VCC", "GND") and want in others:
+                pins[pin] = want
+                res.notes.append(
+                    f"{p['ref']}: power input pin {pin} was on {have}; it is now {want} "
+                    f"(pin 1 is +, pin 2 is GND), so {have} is no longer tied to the supply."
+                )
+        return
+
+
 def _swap_model(
     design: dict[str, Any],
     sw: Switch,
@@ -578,6 +605,7 @@ def solve(
     """Check every recognised switch; change values / driver only where the current design cannot work."""
     res = Result()
     by_key = {p["key"]: p for p in kept} | catalog
+    _fix_power_input(design, by_key, res)
     if KEY_2222 not in by_key or KEY_3904 not in by_key:
         return res
     v = float(design.get("voltage", 5.0) or 5.0)

@@ -124,3 +124,28 @@ def test_correct_flyback_untouched(cat):
     res = analog.solve(d, [], cat, "spin a fan when dark")
     assert next(p for p in d["parts"] if p["ref"] == "D1")["pins"] == {"1": "VCC", "2": "Q1_C"}
     assert not any("flyback" in n for n in res.notes)
+
+
+def test_power_input_on_load_net_is_moved_to_gnd(cat):
+    # run live-1792259861853: J1 pin 2 on the motor net put the motor across the supply (200 mA when released)
+    d = copy.deepcopy(FAN)
+    j1 = d["parts"][0]
+    j1["pins"] = {"1": "VCC", "2": "Q1_C"}
+    res = analog.solve(d, [], cat, "spin a fan when dark")
+    assert j1["pins"] == {"1": "VCC", "2": "GND"}
+    assert any("power input pin 2" in n for n in res.notes)
+
+
+def test_reversed_power_input_is_swapped(cat):
+    d = copy.deepcopy(FAN)
+    d["parts"][0]["pins"] = {"1": "GND", "2": "VCC"}
+    analog.solve(d, [], cat, "spin a fan when dark")
+    assert d["parts"][0]["pins"] == {"1": "VCC", "2": "GND"}
+
+
+def test_good_power_input_and_load_connector_untouched(cat):
+    d = copy.deepcopy(FAN)
+    res = analog.solve(d, [], cat, "spin a fan when dark")
+    assert d["parts"][0]["pins"] == {"1": "VCC", "2": "GND"}
+    assert next(p for p in d["parts"] if p["ref"] == "J2")["pins"] == {"1": "VCC", "2": "Q1_C"}
+    assert not any("power input" in n for n in res.notes)
