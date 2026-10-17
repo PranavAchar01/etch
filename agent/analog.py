@@ -367,6 +367,27 @@ def _fix_load(
     sw.load_ohms = float(new)
 
 
+def _fix_flyback(
+    design: dict[str, Any], sw: Switch, by_key: dict[str, dict[str, Any]], res: Result
+) -> None:
+    """A diode across the load must point its cathode at the supply. Wired the other way it conducts the
+    moment the switch closes and shorts the supply through the transistor; swap its two pins."""
+    load = next(p for p in design["parts"] if p.get("ref") == sw.load_ref)
+    supply = {n for n in (load.get("pins") or {}).values() if n != sw.coll}
+    for p in design["parts"]:
+        pc = by_key.get(p.get("piece")) or {}
+        k, a = _pin_by_name(pc, "K"), _pin_by_name(pc, "A")
+        pins = p.get("pins") or {}
+        if not k or not a or pc.get("family") != "diode":
+            continue
+        if pins.get(a) in supply and pins.get(k) == sw.coll:
+            pins[a], pins[k] = sw.coll, pins[a]
+            res.notes.append(
+                f"{p['ref']}: flyback diode was backwards (anode on {pins[k]}); cathode now on {pins[k]}, "
+                f"anode on {sw.coll}, so it only clamps the {sw.load_ref} turn-off spike."
+            )
+
+
 def _swap_model(
     design: dict[str, Any],
     sw: Switch,
@@ -563,6 +584,7 @@ def solve(
     gpio = _gpio_nets(design, by_key)
     for sw in find_switches(design, by_key):
         _fix_load(design, sw, ask, v, res)
+        _fix_flyback(design, sw, by_key, res)
         # step in only when the design fails at datasheet minimum gain with no overdrive (it would not switch
         # reliably on a real board); new values are then sized with the full 2x overdrive
         rows = evaluate(sw, design, v, gpio, od=1.0)
