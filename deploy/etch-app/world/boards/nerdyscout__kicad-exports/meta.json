@@ -1,0 +1,59 @@
+{
+ "id": "gh:nerdyscout/kicad-exports",
+ "slug": "nerdyscout__kicad-exports",
+ "title": "Kicad Exports",
+ "owner": "nerdyscout",
+ "repo": "kicad-exports",
+ "category": "tools",
+ "stars": 79,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  20.32,
+  20.32
+ ],
+ "parts": 7,
+ "glb_bytes": 94884,
+ "url": "https://github.com/nerdyscout/kicad-exports",
+ "commit": "0e69837f0fd3a7804ad752a6f7fa7b32c72473bf",
+ "pcb_path": "test_data/test.kicad_pcb",
+ "description": "Auto generate exports (schematics, gerbers, plots) for any KiCAD5 project.",
+ "license_url": "https://github.com/nerdyscout/kicad-exports/blob/0e69837/LICENSE",
+ "author_url": "https://github.com/nerdyscout",
+ "topics": [
+  "automation",
+  "exports",
+  "gerbers",
+  "kicad",
+  "plots",
+  "schematics"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 6,
+  "resolved": 6,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.11938,
+   -5e-05,
+   0.0889
+  ],
+  "max": [
+   0.1397,
+   0.0032,
+   0.10922
+  ]
+ },
+ "rendered": "2026-10-17T18:17:02Z",
+ "kicad": "10.0.7"
+}

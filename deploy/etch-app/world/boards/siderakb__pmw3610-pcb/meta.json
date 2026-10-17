@@ -1,0 +1,57 @@
+{
+ "id": "gh:siderakb/pmw3610-pcb",
+ "slug": "siderakb__pmw3610-pcb",
+ "title": "PMW3610 PCB",
+ "owner": "siderakb",
+ "repo": "pmw3610-pcb",
+ "category": "keyboards",
+ "stars": 121,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  23.5,
+  31.5
+ ],
+ "parts": 24,
+ "glb_bytes": 365820,
+ "url": "https://github.com/siderakb/pmw3610-pcb",
+ "commit": "02658835a74cb683d0237ab21a1538de79452a9e",
+ "pcb_path": "pmw3610_pcb.kicad_pcb",
+ "description": "PMW3610 laser mouse sensor breakout board, support either 1.8V or 3.3V logic",
+ "license_url": "https://github.com/siderakb/pmw3610-pcb/blob/0265883/LICENSE",
+ "author_url": "https://github.com/siderakb",
+ "topics": [
+  "kicad",
+  "oshw",
+  "pcb",
+  "zmk"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 13,
+  "resolved": 13,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.13825,
+   -0.0014,
+   0.08425
+  ],
+  "max": [
+   0.16175,
+   0.01013,
+   0.11575
+  ]
+ },
+ "rendered": "2026-10-17T18:14:33Z",
+ "kicad": "10.0.7"
+}

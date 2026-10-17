@@ -1,0 +1,64 @@
+{
+ "id": "gh:justbuchanan/oasis/pcb/main",
+ "slug": "justbuchanan__oasis__pcb__main",
+ "title": "Oasis · PCB",
+ "owner": "justbuchanan",
+ "repo": "oasis",
+ "category": "iot",
+ "stars": 270,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  35.93,
+  65.0
+ ],
+ "parts": 45,
+ "glb_bytes": 751452,
+ "url": "https://github.com/justbuchanan/oasis",
+ "commit": "3462f162f80e11c78705218441af37639d87bfdc",
+ "pcb_path": "pcb/main/pcb.kicad_pcb",
+ "description": "3d-printed smart terrarium",
+ "license_url": "https://github.com/justbuchanan/oasis/blob/3462f16/LICENSE",
+ "author_url": "https://github.com/justbuchanan",
+ "topics": [
+  "3d-printing",
+  "cadquery",
+  "kicad",
+  "oasis",
+  "terrarium"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 45,
+  "resolved": 44,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "reset1",
+    "path": "${KICAD9_3DMODEL_DIR}/Button_Switch_SMD.3dshapes/SW_Push_1P1T_XKB_TS-1187A.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.08203,
+   -0.00862,
+   0.0675
+  ],
+  "max": [
+   0.1194,
+   0.0123,
+   0.1325
+  ]
+ },
+ "rendered": "2026-10-17T18:07:47Z",
+ "kicad": "10.0.7"
+}

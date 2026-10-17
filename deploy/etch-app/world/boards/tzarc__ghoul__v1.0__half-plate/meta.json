@@ -1,0 +1,65 @@
+{
+ "id": "gh:tzarc/ghoul/v1.0/half-plate",
+ "slug": "tzarc__ghoul__v1.0__half-plate",
+ "title": "Ghoul · Half Plate",
+ "owner": "tzarc",
+ "repo": "ghoul",
+ "category": "keyboards",
+ "stars": 75,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  95.25,
+  76.2
+ ],
+ "parts": 26,
+ "glb_bytes": 124188,
+ "url": "https://github.com/tzarc/ghoul",
+ "commit": "895c4d3bcf7e9b969828ce3d9fdd27389a92d861",
+ "pcb_path": "v1.0/half-plate/half-plate.kicad_pcb",
+ "description": "Ghoul Planck-like MicroMod keyboard",
+ "license_url": "https://github.com/tzarc/ghoul/blob/895c4d3/LICENSE",
+ "author_url": "https://github.com/tzarc",
+ "topics": [
+  "diy",
+  "ergonomic-keyboard",
+  "hardware",
+  "keyboard",
+  "kicad",
+  "mechanical-keyboard",
+  "mechanical-keyboards",
+  "micromod",
+  "pcb",
+  "qmk",
+  "rp2040",
+  "stm32"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.06429,
+   -8e-05,
+   0.03334
+  ],
+  "max": [
+   0.15954,
+   0.00158,
+   0.10954
+  ]
+ },
+ "rendered": "2026-10-17T18:18:14Z",
+ "kicad": "10.0.7"
+}

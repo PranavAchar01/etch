@@ -1,0 +1,60 @@
+{
+ "id": "gh:stas2k/galspanic",
+ "slug": "stas2k__galspanic",
+ "title": "Galspanic",
+ "owner": "stas2k",
+ "repo": "galspanic",
+ "category": "retro",
+ "stars": 44,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  50.0,
+  150.0
+ ],
+ "parts": 19,
+ "glb_bytes": 791076,
+ "url": "https://github.com/stas2k/galspanic",
+ "commit": "b90ae3bb29a3ca4bceba48cc3b01dd7f7ca8adb1",
+ "pcb_path": "galspanic.kicad_pcb",
+ "description": "X68000 RAM Expansion",
+ "license_url": "https://github.com/stas2k/galspanic/blob/b90ae3b/LICENSE",
+ "author_url": "https://github.com/stas2k",
+ "topics": [
+  "gal",
+  "galasm",
+  "kicad",
+  "ram",
+  "retro",
+  "sram",
+  "x68000"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "ENIG",
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 13,
+  "resolved": 13,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -819.00597,
+   -135.97931,
+   -2457.41091
+  ],
+  "max": [
+   819.14397,
+   135.9868,
+   2457.63891
+  ]
+ },
+ "rendered": "2026-10-17T17:58:58Z",
+ "kicad": "10.0.7"
+}

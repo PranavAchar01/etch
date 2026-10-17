@@ -1,0 +1,58 @@
+{
+ "id": "gh:Jana-Marie/ligra/ligra_front",
+ "slug": "jana-marie__ligra__ligra_front",
+ "title": "Ligra · Ligra Front",
+ "owner": "Jana-Marie",
+ "repo": "ligra",
+ "category": "lighting",
+ "stars": 215,
+ "license": "CERN-OHL-S-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  106.65,
+  106.65
+ ],
+ "parts": 4,
+ "glb_bytes": 605120,
+ "url": "https://github.com/Jana-Marie/ligra",
+ "commit": "8a98f3938c20fe3ed07bfb34e7d43f243e21f519",
+ "pcb_path": "ligra_front/ligra_front.kicad_pcb",
+ "description": "an open source image projector build from scratch and based off of flea market parts.",
+ "license_url": "https://github.com/Jana-Marie/ligra/blob/8a98f39/LICENSE",
+ "author_url": "https://github.com/Jana-Marie",
+ "topics": [
+  "electronics",
+  "kicad",
+  "light",
+  "oshw",
+  "projector"
+ ],
+ "board": {
+  "mask": "black",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.04667,
+   -8e-05,
+   0.04667
+  ],
+  "max": [
+   0.15333,
+   0.00158,
+   0.15333
+  ]
+ },
+ "rendered": "2026-10-17T18:12:47Z",
+ "kicad": "10.0.7"
+}

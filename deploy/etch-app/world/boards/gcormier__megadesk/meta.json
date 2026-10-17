@@ -1,0 +1,60 @@
+{
+ "id": "gh:gcormier/megadesk",
+ "slug": "gcormier__megadesk",
+ "title": "Megadesk",
+ "owner": "gcormier",
+ "repo": "megadesk",
+ "category": "dev-boards",
+ "stars": 819,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  41.7,
+  32.2
+ ],
+ "parts": 28,
+ "glb_bytes": 475632,
+ "url": "https://github.com/gcormier/megadesk",
+ "commit": "2d1bf8d30337841dc9f5c1ef0724701185f99c39",
+ "pcb_path": "pcb/megadesk.kicad_pcb",
+ "description": "Open-source IKEA Bekant controller board",
+ "license_url": "https://github.com/gcormier/megadesk/blob/2d1bf8d/LICENSE",
+ "author_url": "https://github.com/gcormier",
+ "topics": [
+  "arduino",
+  "bekant",
+  "ikea",
+  "ikea-bekant",
+  "ikeahack",
+  "kicad",
+  "megadesk"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 22,
+  "resolved": 22,
+  "hidden": 1,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.0992,
+   -0.0014,
+   0.1046
+  ],
+  "max": [
+   0.1409,
+   0.00413,
+   0.1368
+  ]
+ },
+ "rendered": "2026-10-17T18:03:00Z",
+ "kicad": "10.0.7"
+}

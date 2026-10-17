@@ -1,0 +1,73 @@
+{
+ "id": "gh:oaslananka/kicad-mcp-pro/packages/kicad-fixtures/fixtures/multi-sheet-schematic",
+ "slug": "oaslananka__kicad-mcp-pro__packages__kicad-fixtures__fixtures__multi-sheet-schematic",
+ "title": "Kicad Mcp Pro · Multi Sheet Schematic",
+ "owner": "oaslananka",
+ "repo": "kicad-mcp-pro",
+ "category": "computing",
+ "stars": 135,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  100.0,
+  60.0
+ ],
+ "parts": 5,
+ "glb_bytes": 8540,
+ "url": "https://github.com/oaslananka/kicad-mcp-pro",
+ "commit": "4ec5eec3d615a2280796df1fe3c4d47e4b539852",
+ "pcb_path": "packages/kicad-fixtures/fixtures/multi-sheet-schematic/multi-sheet-schematic.kicad_pcb",
+ "description": "MCP server for KiCad, connecting AI agents to schematic and PCB workflows, ERC/DRC validation, DFM checks, BOM analysis, and manufacturing preparation—with controlled edits and human-gated release workflows.",
+ "license_url": "https://github.com/oaslananka/kicad-mcp-pro/blob/4ec5eec/LICENSE",
+ "author_url": "https://github.com/oaslananka",
+ "topics": [
+  "ai-agent",
+  "bom",
+  "claude",
+  "dfm",
+  "drc",
+  "eda",
+  "eda-automation",
+  "electronics",
+  "erc",
+  "gerber-export",
+  "kicad",
+  "kicad-plugin",
+  "llm",
+  "manufacturing",
+  "mcp-server",
+  "model-context-protocol",
+  "pcb-design",
+  "python",
+  "schematic",
+  "simulation"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   0.1,
+   0.00157,
+   0.06
+  ]
+ },
+ "rendered": "2026-10-17T18:13:16Z",
+ "kicad": "10.0.7"
+}

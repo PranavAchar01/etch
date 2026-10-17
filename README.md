@@ -21,8 +21,10 @@ cd etch
 
 | Path | What |
 | --- | --- |
-| `deploy/etch-app/` | The page (static: `index.html`, `app.js`, `viewer3d.js`). This folder is what Vercel serves. |
-| `deploy/etch_public.py` | The backend API the page calls (port 3439). |
+| `deploy/etch-app/` | The page (static: `index.html`, `app.js`, `viewer3d.js`), the Explore library (`explore.html`) and the board view (`board.html`, `js/`, `css/`). This folder is what Vercel serves. |
+| `deploy/etch-app/world/` | The prerendered open-source boards Explore shows (GLB, thumbnail, parts, credits per board). Built by `library/`. |
+| `deploy/etch_public.py` | The backend API the page calls (port 3439). Routes and build events: [deploy/API.md](deploy/API.md). Board view routes are in `deploy/explore.py`. |
+| `library/` | Finds licensed KiCad boards on GitHub and prerenders them into `deploy/etch-app/world/` ([library/README.md](library/README.md)). |
 | `deploy/*.sh` | How it runs on the host Mac: launchd restart, Cloudflare tunnel, Vercel redeploy, STT keeper. |
 | `agent/` | The lead agent and sub-agents that write and repair board specs ([agent/README.md](agent/README.md)). |
 | `engine/` | Spec in, verified KiCad board out ([engine/README.md](engine/README.md)). |
@@ -32,6 +34,16 @@ cd etch
 | `vendor/espressif-kicad-libraries/` | ESP32 parts from Espressif's KiCad library 3.2.1 (CC-BY-SA 4.0, see its PROVENANCE.md). |
 
 Build outputs (`engine/out/`) and the usage meter (`qa/`) are created at run time and are not in the repo.
+
+## Deploying Explore
+
+`deploy/redeploy.sh` uploads `deploy/etch-app/` as is, including `world/` (about 155 MB). Before running it:
+
+1. Restart the backend so it loads `deploy/explore.py` (`deploy/restart.sh`), and check `/etch/health`.
+2. Open `explore.html` and `board.html?id=gh:OLIMEX/ESP32-POE/HARDWARE/ESP32-PoE-hardware-revision-M2` against the local backend (`?api=http://127.0.0.1:3439`). Ask a question, pin a comment on a part and delete it.
+3. `world/` holds GPL, CC-BY-SA and CERN-OHL-S boards. Each board page shows its author, repo, commit and licence; keep those visible.
+
+To add or refresh boards: see [library/README.md](library/README.md), then commit `world/` and `library/manifest.json`.
 
 ## Settings
 

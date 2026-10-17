@@ -1,0 +1,61 @@
+{
+ "id": "gh:dnlbauer/corax-keyboard/corax56/pcbs/pcbs",
+ "slug": "dnlbauer__corax-keyboard__corax56__pcbs__pcbs",
+ "title": "Corax Keyboard · Switchplate",
+ "owner": "dnlbauer",
+ "repo": "corax-keyboard",
+ "category": "keyboards",
+ "stars": 145,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  152.37,
+  110.81
+ ],
+ "parts": 5,
+ "glb_bytes": 30796,
+ "url": "https://github.com/dnlbauer/corax-keyboard",
+ "commit": "7e01724621f12f1c1099f78c978bcb6aca19b795",
+ "pcb_path": "corax56/pcbs/pcbs/switchplate.kicad_pcb",
+ "description": "A column-staggered wireless spilt keyboard with scrollwheels, thumb- and pinky cluster.",
+ "license_url": "https://github.com/dnlbauer/corax-keyboard/blob/7e01724/LICENSE",
+ "author_url": "https://github.com/dnlbauer",
+ "topics": [
+  "ergogen",
+  "hardware",
+  "keyboard",
+  "kicad",
+  "mechanical-keyboard",
+  "pcb",
+  "split-keyboard",
+  "zmk"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.0492,
+   -5e-05,
+   0.0461
+  ],
+  "max": [
+   0.20161,
+   0.00156,
+   0.15705
+  ]
+ },
+ "rendered": "2026-10-17T18:12:53Z",
+ "kicad": "10.0.7"
+}

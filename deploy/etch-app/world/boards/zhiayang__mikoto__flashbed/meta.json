@@ -1,0 +1,58 @@
+{
+ "id": "gh:zhiayang/mikoto/flashbed",
+ "slug": "zhiayang__mikoto__flashbed",
+ "title": "Mikoto · Mikoto Flashbed",
+ "owner": "zhiayang",
+ "repo": "mikoto",
+ "category": "iot",
+ "stars": 357,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  54.0,
+  41.5
+ ],
+ "parts": 48,
+ "glb_bytes": 589292,
+ "url": "https://github.com/zhiayang/mikoto",
+ "commit": "86318f6c69495b8308354b6393d85229177b26ae",
+ "pcb_path": "flashbed/mikoto-flashbed.kicad_pcb",
+ "description": "Bluetooth LE nRF52840 microcontroller in a pro-micro footprint.",
+ "license_url": "https://github.com/zhiayang/mikoto/blob/86318f6/LICENSE",
+ "author_url": "https://github.com/zhiayang",
+ "topics": [
+  "bluetooth",
+  "electronics",
+  "kicad",
+  "nrf52840",
+  "wireless"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 41,
+  "resolved": 41,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -0.027,
+   -0.0014,
+   -0.018
+  ],
+  "max": [
+   0.027,
+   0.00413,
+   0.03054
+  ]
+ },
+ "rendered": "2026-10-17T18:07:09Z",
+ "kicad": "10.0.7"
+}

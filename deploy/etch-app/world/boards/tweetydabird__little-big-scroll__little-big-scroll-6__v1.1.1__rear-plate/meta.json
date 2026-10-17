@@ -1,0 +1,61 @@
+{
+ "id": "gh:TweetyDaBird/Little-Big-Scroll/Little Big Scroll 6/v1.1.1/Rear Plate",
+ "slug": "tweetydabird__little-big-scroll__little-big-scroll-6__v1.1.1__rear-plate",
+ "title": "Little Big Scroll · Little Big Scroll 6 Rear Plate",
+ "owner": "TweetyDaBird",
+ "repo": "Little-Big-Scroll",
+ "category": "keyboards",
+ "stars": 55,
+ "license": "CC-BY-SA-4.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  59.24,
+  87.01
+ ],
+ "parts": 6,
+ "glb_bytes": 46756,
+ "url": "https://github.com/TweetyDaBird/Little-Big-Scroll",
+ "commit": "97dc5f4876bb283ea938eaba5a553b861abf4b4e",
+ "pcb_path": "Little Big Scroll 6/v1.1.1/Rear Plate/Little Big Scroll 6 - Rear Plate.kicad_pcb",
+ "description": "A family of macropads featuring a large Encoder wheel and (1?)/4 or 6 keys.",
+ "license_url": "https://github.com/TweetyDaBird/Little-Big-Scroll/blob/97dc5f4/LICENSE",
+ "author_url": "https://github.com/TweetyDaBird",
+ "topics": [
+  "arduino",
+  "kicad",
+  "macropad",
+  "mechanical-keyboard",
+  "pcb",
+  "powered-by-qmk",
+  "pro-micro",
+  "vial-kb"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "None",
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -970.49077,
+   -25.79714,
+   -1425.44564
+  ],
+  "max": [
+   970.71131,
+   25.79865,
+   1425.62421
+  ]
+ },
+ "rendered": "2026-10-17T17:56:03Z",
+ "kicad": "10.0.7"
+}

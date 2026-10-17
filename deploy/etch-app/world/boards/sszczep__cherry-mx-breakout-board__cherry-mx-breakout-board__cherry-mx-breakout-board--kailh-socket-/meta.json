@@ -1,0 +1,62 @@
+{
+ "id": "gh:sszczep/Cherry-MX-Breakout-Board/Cherry MX Breakout Board/Cherry MX Breakout Board (Kailh Socket)",
+ "slug": "sszczep__cherry-mx-breakout-board__cherry-mx-breakout-board__cherry-mx-breakout-board--kailh-socket-",
+ "title": "Cherry MX Breakout Board · Cherry MX Breakout Board (Kailh Socket)",
+ "owner": "sszczep",
+ "repo": "Cherry-MX-Breakout-Board",
+ "category": "keyboards",
+ "stars": 113,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  18.27,
+  25.91
+ ],
+ "parts": 3,
+ "glb_bytes": 139704,
+ "url": "https://github.com/sszczep/Cherry-MX-Breakout-Board",
+ "commit": "3a203af15e45b09b21ce512d06c5d0275e049c50",
+ "pcb_path": "Cherry MX Breakout Board/Cherry MX Breakout Board (Kailh Socket).kicad_pcb",
+ "description": "Cherry MX Breakout Boards with reverse-mounted addressable RGB LED and hot-swap.",
+ "license_url": "https://github.com/sszczep/Cherry-MX-Breakout-Board/blob/3a203af/LICENSE",
+ "author_url": "https://github.com/sszczep",
+ "topics": [
+  "breakout-board",
+  "cherry-mx",
+  "cherrymx",
+  "keyboard",
+  "kicad",
+  "mechanical-keyboard",
+  "pcb",
+  "rgb",
+  "schematic"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 4,
+  "resolved": 4,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.14353,
+   -0.00193,
+   0.09703
+  ],
+  "max": [
+   0.1618,
+   0.01013,
+   0.12294
+  ]
+ },
+ "rendered": "2026-10-17T18:14:45Z",
+ "kicad": "10.0.7"
+}

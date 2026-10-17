@@ -1,0 +1,75 @@
+{
+ "id": "gh:KOEGlike/meko/hardware/pcb",
+ "slug": "koeglike__meko__hardware__pcb",
+ "title": "Meko · PCB",
+ "owner": "KOEGlike",
+ "repo": "meko",
+ "category": "audio",
+ "stars": 87,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 6,
+ "size_mm": [
+  50.24,
+  77.16
+ ],
+ "parts": 286,
+ "glb_bytes": 4129388,
+ "url": "https://github.com/KOEGlike/meko",
+ "commit": "19e8bf6483dc50f256ca904f2e421b848d1de6c6",
+ "pcb_path": "hardware/pcb/meko.kicad_pcb",
+ "description": "A linux music player with ddr3, a 70hz e-paper display and a haptic touchpad",
+ "license_url": "https://github.com/KOEGlike/meko/blob/19e8bf6/LICENSE",
+ "author_url": "https://github.com/KOEGlike",
+ "topics": [
+  "dac",
+  "embedded",
+  "fusion",
+  "kicad",
+  "nrf5340",
+  "zephyr-rtos"
+ ],
+ "board": {
+  "mask": "black",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 0.756
+ },
+ "models": {
+  "total": 213,
+  "resolved": 210,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "IC3",
+    "path": "${KICAD10_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/VQFN-24-1EP_4x4mm_P0.5mm_EP2.45x2.45mm.step",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "U5",
+    "path": "${KICAD10_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/TDFN-14-1EP_3x3mm_P0.4mm_EP1.78x2.35mm.step",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "IC1",
+    "path": "${KICAD10_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/VQFN-32-1EP_5x5mm_P0.5mm_EP3.15x3.15mm.step",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.12046,
+   -0.00488,
+   0.10463
+  ],
+  "max": [
+   0.29631,
+   0.0023,
+   0.2135
+  ]
+ },
+ "rendered": "2026-10-17T18:19:06Z",
+ "kicad": "10.0.7"
+}

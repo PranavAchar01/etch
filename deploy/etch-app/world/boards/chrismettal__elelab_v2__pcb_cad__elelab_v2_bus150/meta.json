@@ -1,0 +1,57 @@
+{
+ "id": "gh:Chrismettal/EleLab_v2/PCB_CAD/EleLab_v2_Bus150",
+ "slug": "chrismettal__elelab_v2__pcb_cad__elelab_v2_bus150",
+ "title": "EleLab V2 · EleLab V2 Bus150",
+ "owner": "Chrismettal",
+ "repo": "EleLab_v2",
+ "category": "everything-else",
+ "stars": 530,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  150.0,
+  50.0
+ ],
+ "parts": 40,
+ "glb_bytes": 544720,
+ "url": "https://github.com/Chrismettal/EleLab_v2",
+ "commit": "9306cddca1e8b6b14c4f6a4f572579d2eedd44df",
+ "pcb_path": "PCB_CAD/EleLab_v2_Bus150/EleLab_v2_Bus150.kicad_pcb",
+ "description": "Cheap DIY lab system for hobbyists and the tinkering folk",
+ "license_url": "https://github.com/Chrismettal/EleLab_v2/blob/9306cdd/LICENSE",
+ "author_url": "https://github.com/Chrismettal",
+ "topics": [
+  "electronics",
+  "freecad",
+  "kicad",
+  "lab"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 36,
+  "resolved": 36,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.09396,
+   -0.00141,
+   0.08
+  ],
+  "max": [
+   0.25403,
+   0.01013,
+   0.13
+  ]
+ },
+ "rendered": "2026-10-17T18:04:47Z",
+ "kicad": "10.0.7"
+}

@@ -1,0 +1,69 @@
+{
+ "id": "gh:transistorfet/computie/hardware/68k-Supervisor",
+ "slug": "transistorfet__computie__hardware__68k-supervisor",
+ "title": "Computie · 68kBoardSupervisorShield",
+ "owner": "transistorfet",
+ "repo": "computie",
+ "category": "retro",
+ "stars": 69,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  89.92,
+  53.34
+ ],
+ "parts": 6,
+ "glb_bytes": 959324,
+ "url": "https://github.com/transistorfet/computie",
+ "commit": "760e1b8046cc8e6e2dc9e471a0c6300c68ef26fe",
+ "pcb_path": "hardware/68k-Supervisor/68kBoardSupervisorShield.kicad_pcb",
+ "description": "A collection of 68k computer projects, including a unix-like operating system written in C that runs on them",
+ "license_url": "https://github.com/transistorfet/computie/blob/760e1b8/LICENSE",
+ "author_url": "https://github.com/transistorfet",
+ "topics": [
+  "68000",
+  "68010",
+  "68030",
+  "68k",
+  "c",
+  "electronics",
+  "hardware",
+  "kicad",
+  "kicad-pcb",
+  "m68k",
+  "mc68000",
+  "motorola-68000",
+  "open-source-hardware",
+  "pcb",
+  "sbc",
+  "unix-like"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 5,
+  "resolved": 5,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -1473.01849,
+   -189.07323,
+   -873.80842
+  ],
+  "max": [
+   1473.25878,
+   189.08196,
+   873.9786
+  ]
+ },
+ "rendered": "2026-10-17T17:54:20Z",
+ "kicad": "10.0.7"
+}

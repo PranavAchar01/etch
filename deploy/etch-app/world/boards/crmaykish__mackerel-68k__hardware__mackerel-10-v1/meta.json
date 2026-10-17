@@ -1,0 +1,97 @@
+{
+ "id": "gh:crmaykish/mackerel-68k/hardware/mackerel-10-v1",
+ "slug": "crmaykish__mackerel-68k__hardware__mackerel-10-v1",
+ "title": "Mackerel 68K · Mackerel 10 V1",
+ "owner": "crmaykish",
+ "repo": "mackerel-68k",
+ "category": "retro",
+ "stars": 96,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  210.0,
+  170.0
+ ],
+ "parts": 114,
+ "glb_bytes": 4289400,
+ "url": "https://github.com/crmaykish/mackerel-68k",
+ "commit": "50786ed64897e037c57989c3322f02ea375584b7",
+ "pcb_path": "hardware/mackerel-10-v1/mackerel-10-v1.kicad_pcb",
+ "description": "A series of single-board Motorola 68k computers with support for modern Linux",
+ "license_url": "https://github.com/crmaykish/mackerel-68k/blob/50786ed/LICENSE",
+ "author_url": "https://github.com/crmaykish",
+ "topics": [
+  "68000",
+  "68008",
+  "68010",
+  "68030",
+  "embedded",
+  "homebrew",
+  "homebrew-computer",
+  "kicad",
+  "linux",
+  "m68k",
+  "motorola-68000",
+  "motorola-680x0",
+  "oshw",
+  "retrobrew",
+  "retrocomputing",
+  "sbc",
+  "single-board-computers",
+  "uclinux"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 106,
+  "resolved": 101,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "U2",
+    "path": "${KICAD8_3DMODEL_DIR}/Package_LCC.3dshapes/PLCC-84_THT-Socket.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "U11",
+    "path": "${KICAD8_3DMODEL_DIR}/Package_LCC.3dshapes/PLCC-84_THT-Socket.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "HS1",
+    "path": "${KICAD8_3DMODEL_DIR}/Heatsink.3dshapes/Heatsink_Stonecold_HS-S02_13.21x9.53mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "U14",
+    "path": "${KICAD8_3DMODEL_DIR}/Package_LCC.3dshapes/PLCC-44_THT-Socket.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J4",
+    "path": "${KICAD8_3DMODEL_DIR}/TerminalBlock.3dshapes/TerminalBlock_bornier-4_P5.08mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.02,
+   -0.0023,
+   0.02
+  ],
+  "max": [
+   0.23,
+   0.02245,
+   0.19
+  ]
+ },
+ "rendered": "2026-10-17T18:16:34Z",
+ "kicad": "10.0.7"
+}

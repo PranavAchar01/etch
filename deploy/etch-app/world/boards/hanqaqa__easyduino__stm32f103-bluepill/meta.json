@@ -1,0 +1,61 @@
+{
+ "id": "gh:Hanqaqa/Easyduino/STM32F103 Bluepill",
+ "slug": "hanqaqa__easyduino__stm32f103-bluepill",
+ "title": "Easyduino · Easyduino STM32F103",
+ "owner": "Hanqaqa",
+ "repo": "Easyduino",
+ "category": "dev-boards",
+ "stars": 753,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  23.0,
+  53.0
+ ],
+ "parts": 30,
+ "glb_bytes": 820956,
+ "url": "https://github.com/Hanqaqa/Easyduino",
+ "commit": "53b14b66d64f25c55f88971c1c1b51656126bd30",
+ "pcb_path": "STM32F103 Bluepill/Easyduino_STM32F103.kicad_pcb",
+ "description": "Easily dive into different PCB KiCad designs of the most popular microcontroller devboards",
+ "license_url": "https://github.com/Hanqaqa/Easyduino/blob/53b14b6/License.txt",
+ "author_url": "https://github.com/Hanqaqa",
+ "topics": [
+  "arduino",
+  "esp32",
+  "esp32s3",
+  "kicad",
+  "kicad-pcb",
+  "rp2040",
+  "stm32",
+  "stm32f103"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 30,
+  "resolved": 30,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.126,
+   -0.00863,
+   0.073
+  ],
+  "max": [
+   0.149,
+   0.01013,
+   0.126
+  ]
+ },
+ "rendered": "2026-10-17T18:03:14Z",
+ "kicad": "10.0.7"
+}

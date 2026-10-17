@@ -1,0 +1,61 @@
+{
+ "id": "gh:RandomDelta6/USB-Mouse",
+ "slug": "randomdelta6__usb-mouse",
+ "title": "USB Mouse",
+ "owner": "RandomDelta6",
+ "repo": "USB-Mouse",
+ "category": "everything-else",
+ "stars": 44,
+ "license": "CC-BY-SA-4.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  39.0,
+  78.0
+ ],
+ "parts": 31,
+ "glb_bytes": 298828,
+ "url": "https://github.com/RandomDelta6/USB-Mouse",
+ "commit": "403dc37bdf09aad633af2cb44b4aff8dad6c8bdb",
+ "pcb_path": "Mouse.kicad_pcb",
+ "description": "A basic USB mouse PCB based on the PAW3526D8-FJY2 Sensor. ",
+ "license_url": "https://github.com/RandomDelta6/USB-Mouse/blob/403dc37/LICENSE",
+ "author_url": "https://github.com/RandomDelta6",
+ "topics": [
+  "circuit-design",
+  "diy",
+  "electronics",
+  "hardware",
+  "kicad",
+  "mouse",
+  "pcb",
+  "pcb-design"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 24,
+  "resolved": 24,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -638.76236,
+   -90.11483,
+   -1277.79918
+  ],
+  "max": [
+   638.95566,
+   90.11516,
+   1278.02688
+  ]
+ },
+ "rendered": "2026-10-17T17:58:44Z",
+ "kicad": "10.0.7"
+}

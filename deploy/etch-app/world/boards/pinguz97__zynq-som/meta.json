@@ -1,0 +1,60 @@
+{
+ "id": "gh:pinguz97/Zynq-SoM",
+ "slug": "pinguz97__zynq-som",
+ "title": "Zynq SoM",
+ "owner": "pinguz97",
+ "repo": "Zynq-SoM",
+ "category": "computing",
+ "stars": 49,
+ "license": "CERN-OHL-S-2.0",
+ "copyable": true,
+ "layers": 8,
+ "size_mm": [
+  50.0,
+  42.0
+ ],
+ "parts": 287,
+ "glb_bytes": 5929340,
+ "url": "https://github.com/pinguz97/Zynq-SoM",
+ "commit": "ad96951a225fbf9f263b555ef070a536b09ff710",
+ "pcb_path": "Zynq_SoM.kicad_pcb",
+ "description": "Kicad design files for a Zynq 7020 SoM",
+ "license_url": "https://github.com/pinguz97/Zynq-SoM/blob/ad96951/LICENSE",
+ "author_url": "https://github.com/pinguz97",
+ "topics": [
+  "fpga",
+  "kicad",
+  "open-hardware",
+  "pcb",
+  "pcb-design",
+  "pcb-layout",
+  "zynq-7000"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "ENIG",
+  "thickness_mm": 1.24
+ },
+ "models": {
+  "total": 266,
+  "resolved": 266,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -819.04245,
+   -47.50673,
+   -687.96296
+  ],
+  "max": [
+   819.30745,
+   47.50366,
+   688.18696
+  ]
+ },
+ "rendered": "2026-10-17T17:58:59Z",
+ "kicad": "10.0.7"
+}

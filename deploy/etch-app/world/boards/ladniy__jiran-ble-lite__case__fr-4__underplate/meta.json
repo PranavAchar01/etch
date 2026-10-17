@@ -1,0 +1,63 @@
+{
+ "id": "gh:Ladniy/jiran-ble-lite/case/fr-4/underplate",
+ "slug": "ladniy__jiran-ble-lite__case__fr-4__underplate",
+ "title": "Jiran BLE Lite · Underplate",
+ "owner": "Ladniy",
+ "repo": "jiran-ble-lite",
+ "category": "keyboards",
+ "stars": 54,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  152.4,
+  104.65
+ ],
+ "parts": 5,
+ "glb_bytes": 51076,
+ "url": "https://github.com/Ladniy/jiran-ble-lite",
+ "commit": "c2a5ef422c265f0d4e3d38f81c557ca802eab125",
+ "pcb_path": "case/fr-4/underplate/underplate.kicad_pcb",
+ "description": "Wireless ergo-split keyboard, based on nRF52840 module.",
+ "license_url": "https://github.com/Ladniy/jiran-ble-lite/blob/c2a5ef4/LICENSE",
+ "author_url": "https://github.com/Ladniy",
+ "topics": [
+  "18650",
+  "ble",
+  "bluetooth",
+  "holyiot18010",
+  "jiran",
+  "keyboard",
+  "kicad",
+  "nrf52840",
+  "opensource",
+  "zmk"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -2496.69951,
+   -25.73452,
+   -1714.25241
+  ],
+  "max": [
+   2496.9911,
+   25.73603,
+   1714.44266
+  ]
+ },
+ "rendered": "2026-10-17T17:56:09Z",
+ "kicad": "10.0.7"
+}

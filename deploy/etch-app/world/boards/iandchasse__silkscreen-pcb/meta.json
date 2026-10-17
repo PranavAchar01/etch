@@ -1,0 +1,64 @@
+{
+ "id": "gh:iandchasse/silkscreen-pcb",
+ "slug": "iandchasse__silkscreen-pcb",
+ "title": "Silkscreen PCB",
+ "owner": "iandchasse",
+ "repo": "silkscreen-pcb",
+ "category": "displays",
+ "stars": 579,
+ "license": "CERN-OHL-S-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  60.0,
+  111.25
+ ],
+ "parts": 185,
+ "glb_bytes": 2632452,
+ "url": "https://github.com/iandchasse/silkscreen-pcb",
+ "commit": "6941e64567ef795ed46843e99aad00ffaf855051",
+ "pcb_path": "silkscreen_pcb.kicad_pcb",
+ "description": "Silkscreen: open-hardware ESP32-S3 e-paper reader mainboard (KiCad 9). Formerly the de-link hub.",
+ "license_url": "https://github.com/iandchasse/silkscreen-pcb/blob/6941e64/LICENSE",
+ "author_url": "https://github.com/iandchasse",
+ "topics": [
+  "e-paper",
+  "ereader",
+  "esp32-s3",
+  "kicad",
+  "open-hardware"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 177,
+  "resolved": 176,
+  "hidden": 4,
+  "missing": [
+   {
+    "ref": "U14",
+    "path": "${KICAD9_3DMODEL_DIR}/Package_SON.3dshapes/MicroCrystal_C7_SON-8_1.5x3.2mm_P0.9mm.step",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.04327,
+   -0.00517,
+   0.0351
+  ],
+  "max": [
+   0.10543,
+   0.01013,
+   0.15017
+  ]
+ },
+ "rendered": "2026-10-17T18:05:53Z",
+ "kicad": "10.0.7"
+}

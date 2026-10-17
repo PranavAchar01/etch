@@ -1,0 +1,69 @@
+{
+ "id": "gh:Gekkio/gb-hardware/GB-CARTPP-XC",
+ "slug": "gekkio__gb-hardware__gb-cartpp-xc",
+ "title": "Gb Hardware · GB CARTPP XC",
+ "owner": "Gekkio",
+ "repo": "gb-hardware",
+ "category": "retro",
+ "stars": 378,
+ "license": "CC-BY-4.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  80.0,
+  55.0
+ ],
+ "parts": 29,
+ "glb_bytes": 712412,
+ "url": "https://github.com/Gekkio/gb-hardware",
+ "commit": "b5ade559bd988fd6c4f5941615d4d6d79dec9098",
+ "pcb_path": "GB-CARTPP-XC/GB-CARTPP-XC.kicad_pcb",
+ "description": "Game Boy -related custom hardware by gekkio",
+ "license_url": "https://github.com/Gekkio/gb-hardware/blob/b5ade55/LICENSE",
+ "author_url": "https://github.com/Gekkio",
+ "topics": [
+  "game-boy-hardware",
+  "gameboy",
+  "hardware-designs",
+  "kicad",
+  "kicad-schematics"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.0
+ },
+ "models": {
+  "total": 19,
+  "resolved": 17,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "J3",
+    "path": "${KISYS3DMOD}/Gekkio_Connector_PCBEdge.3dshapes/GameBoy_Cartridge_AGS_1x32-1MP_P1.50mm_Socket_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J1",
+    "path": "${KISYS3DMOD}/Connector_USB.3dshapes/USB_C_Receptacle_HRO_TYPE-C-31-M-12.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.05,
+   -5e-05,
+   0.05
+  ],
+  "max": [
+   0.13,
+   0.0068,
+   0.105
+  ]
+ },
+ "rendered": "2026-10-17T18:06:25Z",
+ "kicad": "10.0.7"
+}
