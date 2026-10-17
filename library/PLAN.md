@@ -47,8 +47,7 @@ The output format is `deploy/EXPLORE_API.md` section 1.
 ## Licences
 
 Only allow-listed licences are imported (see `library/README.md`). Every board keeps its upstream author,
-repo link, pinned commit and licence file link, and the UI shows them. The library contains no data from
-HeyPCB's closed library; boards come directly from the upstream GitHub repos.
+repo link, pinned commit and licence file link, and the UI shows them.
 
 ## Status
 

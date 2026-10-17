@@ -56,13 +56,13 @@ def env(tmp_path, monkeypatch):
     out = tmp_path / "out"
     world = tmp_path / "world"
     src = tmp_path / "src"
-    b = world / "heypcb__demo-board"
+    b = world / "acme__demo-board"
     b.mkdir(parents=True)
     (b / "meta.json").write_text(
         json.dumps(
             {
-                "id": "gh:HeyPCB/demo-board",
-                "slug": "heypcb__demo-board",
+                "id": "gh:Acme/demo-board",
+                "slug": "acme__demo-board",
                 "title": "Demo Board",
                 "license": "MIT",
                 "copyable": True,
@@ -82,8 +82,8 @@ def env(tmp_path, monkeypatch):
     nc.mkdir()
     (nc / "meta.json").write_text(json.dumps({"id": "gh:acme/closed", "title": "Closed", "copyable": False}))
     (nc / "parts.json").write_text(json.dumps({"parts": {}}))
-    (src / "heypcb__demo-board").mkdir(parents=True)
-    (src / "heypcb__demo-board" / "board.kicad_pcb").write_text(PCB)
+    (src / "acme__demo-board").mkdir(parents=True)
+    (src / "acme__demo-board" / "board.kicad_pcb").write_text(PCB)
     run = out / "live-1792256382082"
     run.mkdir(parents=True)
     (run / "design.json").write_text(
@@ -142,7 +142,7 @@ def req(env, path, body=None, code=CODE):
         return e.code, json.loads(e.read())
 
 
-GH = "gh:HeyPCB/demo-board"
+GH = "gh:Acme/demo-board"
 
 
 # ---------------------------------------------------------------- ids
@@ -150,9 +150,9 @@ def test_slug_mapping_matches_library():
     sys.path.insert(0, str(ROOT / "library"))
     from common import slugify
 
-    for bid in ["gh:HeyPCB/esp32-s3-devkit", "gh:Owner/Repo/hardware/Main Board", "gh:a/b/c+d"]:
+    for bid in ["gh:Acme/esp32-s3-devkit", "gh:Owner/Repo/hardware/Main Board", "gh:a/b/c+d"]:
         assert explore_api.slugify(bid) == slugify(bid)
-    assert explore_api.slugify("gh:HeyPCB/esp32-s3-devkit") == "heypcb__esp32-s3-devkit"
+    assert explore_api.slugify("gh:Acme/esp32-s3-devkit") == "acme__esp32-s3-devkit"
     assert explore_api.slugify("gh:a/b/Sub Dir") == "a__b__sub-dir"
 
 
@@ -166,7 +166,7 @@ def test_bad_board_ids(bad):
 
 def test_good_board_ids():
     assert explore_api.check_board("live-1792256382082") == ("live", "live-1792256382082")
-    assert explore_api.check_board(GH) == ("gh", "heypcb__demo-board")
+    assert explore_api.check_board(GH) == ("gh", "acme__demo-board")
 
 
 # ---------------------------------------------------------------- auth
@@ -278,7 +278,7 @@ def test_comments_crud_and_numbering(env):
         assert c["messages"][1]["mentions"] == ["R1", "D1"] and c["messages"][1]["thoughts"]
         made.append(c)
     # stored per board, atomically, under engine/out/comments/
-    f = env["out"] / "comments" / "gh__heypcb__demo-board.json"
+    f = env["out"] / "comments" / "gh__acme__demo-board.json"
     assert json.loads(f.read_text())["board"] == GH
     assert not [p for p in f.parent.iterdir() if p.suffix == ".tmp"]
 

@@ -15,7 +15,7 @@ against this contract. Two halves:
 
 | Kind | Id | Example |
 | --- | --- | --- |
-| Imported open-source board | `gh:<owner>/<repo>` or `gh:<owner>/<repo>/<subdir>` | `gh:HeyPCB/esp32-s3-devkit` |
+| Imported open-source board | `gh:<owner>/<repo>` or `gh:<owner>/<repo>/<subdir>` | `gh:OLIMEX/ESP32-POE` |
 | Etch build | `live-<ms>` (existing) | `live-1792255903767` |
 
 On disk and in URLs an imported id becomes a slug: `owner__repo` or `owner__repo__sub__dir`
@@ -42,14 +42,14 @@ world/
   "categories": [{ "id": "keyboards", "label": "Keyboards", "count": 41 }],
   "boards": [
     {
-      "id": "gh:HeyPCB/esp32-s3-devkit",
-      "slug": "heypcb__esp32-s3-devkit",
-      "title": "ESP32-S3 DevKit",
-      "owner": "HeyPCB",
-      "repo": "esp32-s3-devkit",
+      "id": "gh:OLIMEX/ESP32-POE",
+      "slug": "olimex__esp32-poe",
+      "title": "ESP32 POE",
+      "owner": "OLIMEX",
+      "repo": "ESP32-POE",
       "category": "dev-boards",
       "stars": 0,
-      "license": "MIT",
+      "license": "Apache-2.0",
       "copyable": true,
       "layers": 2,
       "size_mm": [52.0, 25.4],
@@ -67,12 +67,12 @@ tools, rf, retro, lighting, displays, power, wearables, everything-else`.
 
 ```json
 {
-  "url": "https://github.com/HeyPCB/esp32-s3-devkit",
+  "url": "https://github.com/OLIMEX/ESP32-POE",
   "commit": "9f1c2e4...",
   "pcb_path": "hardware/esp32-s3-devkit.kicad_pcb",
   "description": "repo description from GitHub",
-  "license_url": "https://github.com/HeyPCB/esp32-s3-devkit/blob/9f1c2e4/LICENSE",
-  "author_url": "https://github.com/HeyPCB",
+  "license_url": "https://github.com/OLIMEX/ESP32-POE/blob/9f1c2e4/LICENSE",
+  "author_url": "https://github.com/OLIMEX",
   "topics": ["kicad", "esp32"],
   "board": { "mask": "green", "silk": "white", "finish": "HASL", "thickness_mm": 1.6 },
   "rendered": "2026-10-17T18:00:00Z",
@@ -124,7 +124,7 @@ existing `POST /etch/live` with `mode: "modify"` and `base` = that build's `boar
 `POST /etch/ask`
 
 ```json
-{ "board": "gh:HeyPCB/esp32-s3-devkit", "ref": "U6", "question": "What does this part do?",
+{ "board": "gh:OLIMEX/ESP32-POE", "ref": "U6", "question": "What does this part do?",
   "thread": "c_8f2a" }
 ```
 
@@ -145,7 +145,7 @@ panel). Response:
 
 ```json
 { "ok": true, "comments": [
-  { "id": "c_8f2a", "board": "gh:HeyPCB/esp32-s3-devkit", "n": 1, "ref": "U6",
+  { "id": "c_8f2a", "board": "gh:OLIMEX/ESP32-POE", "n": 1, "ref": "U6",
     "anchor": [0.0123, 0.0016, 0.0081], "author": "You", "created": 1792256901,
     "messages": [
       { "role": "user", "text": "What does this part do?", "at": 1792256901 },
