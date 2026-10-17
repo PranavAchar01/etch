@@ -1215,6 +1215,7 @@ def tts_meter(text: str) -> None:
     # gpt-4o-mini-tts: $0.60 / 1M text tokens in, about $0.015 per audio minute out (openai.com/api/pricing);
     # speech runs about 15 characters a second, priced 1.5x high to stay on the safe side
     usd = (len(text) / 4 * 0.60 / 1e6 + len(text) / 15 / 60 * 0.015) * 1.5
+    METER.parent.mkdir(parents=True, exist_ok=True)
     with METER.open("a") as f:
         f.write(
             json.dumps(
