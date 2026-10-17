@@ -41,6 +41,7 @@ from . import (
     board_store,
     config,
     firmware,
+    analog,
     kicad_catalog,
     llm,
     piece_render,
@@ -375,6 +376,8 @@ PICK_RULES = """Rules (code checks every one):
 - Every LED gets a series resistor. LED value is its colour: RED, GREEN, YELLOW, BLUE or WHITE.
   Resistor and capacitor values are E-series strings: "220", "4.7k", "100k", "1Meg", "100n", "22u".
 - A connector that drives an off-board load (fan, motor) is NOT a power input: give it load_ohms (its rated resistance).
+  A small 5 V fan draws about 150 mA (load_ohms 33); a small 5 V hobby motor about 200 mA (load_ohms 25). Its ON
+  benchmark band must include that current (fan: <REF>.avg_ma 75-200), and PN2222A (up to 600 mA) drives it, not 2N3904.
 - Light-dependent boards: use an LDR and add scenarios dark (ldr: dark) and light (ldr: light).
   Battery level boards: add scenarios at several supply voltages (voltage: ...). Buttons: scenarios pressed / released.
 - group: function blocks left to right, e.g. power, sensor, driver, output. Group "power" holds only the power input.
@@ -408,7 +411,8 @@ Known-good circuit patterns (textbook topologies; use the one that fits, then si
 - Dark-activated (beep / light when dark): a divider at Q1 base: fixed resistor (47k-100k) from VCC to base, LDR from
   base to GND. Light: LDR is low, base is low, Q1 off. Dark: LDR is high, base rises, Q1 on. The load (buzzer + to VCC,
   - to Q1 collector; or LED + series resistor) sits between VCC and the collector. Emitter to GND.
-- Fan or motor: NPN low-side switch. Base through 1k from the driving signal, emitter GND, collector to the fan
+- Fan or motor: NPN low-side switch. Base through 1k from a GPIO, or from a light divider with NO extra base-to-GND
+  resistor (code then sizes the divider and adds a second transistor if the sensor is too weak), emitter GND, collector to the fan
   connector pin 2, connector pin 1 to VCC, a flyback diode (1N4148 or 1N400x) with K on VCC and A on the collector.
 - Battery level indicator: one row per level: LED + series resistor (330-1k) + zener in series from VCC to GND
   (zener K toward VCC). A level lights when VCC > zener voltage + about 2 V. Pick zeners that split the range.
@@ -704,6 +708,7 @@ def assemble(
         stand_ins = _led_stand_ins(design, kept, keys)  # before _fix_refs renames D1 on a capacitor to C1
         _fix_refs(design)
         firmware.default_commands(design, kept)  # GPIO-driven LEDs with no program: 1..N, a = all, o = off
+        an_findings = _analog(stream, design, kept, keys, ask)
         bad = [
             p["piece"] for p in design.get("parts", []) if p.get("piece") not in keys
         ]
@@ -892,6 +897,7 @@ def assemble(
                 "requested change to make checks pass; keep it and fix the problem another way. Submit the whole design again."
                 if lost
                 else _feedback(v, _metric_names(out))
+                + "".join(f"\n- analog check: {f}" for f in an_findings)
                 + "\nYour nets were:\n"
                 + _wiring(design, kept)
             )
@@ -1290,6 +1296,25 @@ def _lonely_nets(design: dict[str, Any]) -> list[str]:
 def rep_board(out: Path) -> tuple[float, float]:
     b = json.loads((out / "layout.json").read_text())["board"]
     return b["w"], b["h"]
+
+
+def _analog(
+    stream: Stream, design: dict[str, Any], kept: list[dict[str, Any]], keys: set[str], ask: str
+) -> list[str]:
+    """Deterministic transistor-switch check (agent/analog.py) before every build: sizes base resistors, swaps a
+    driver that cannot carry the load, and makes load benchmarks agree with the load model. Returns what it could
+    not fix, for the repair prompt."""
+    cat = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
+    res = analog.solve(design, kept, cat, ask)
+    for pc in res.added:
+        if pc["key"] not in keys:
+            kept.append(pc)
+            keys.add(pc["key"])
+    notes = res.notes + analog.bands(design, kept, cat)
+    if notes:
+        # its own event, not "lead:say": the say line is read aloud, and these are engineering notes
+        stream.emit("assembly", "analog", notes=notes, findings=res.findings)
+    return res.findings
 
 
 def _feedback(v: dict[str, Any], metrics: list[str]) -> str:

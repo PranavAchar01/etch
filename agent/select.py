@@ -87,7 +87,7 @@ CANON: dict[str, tuple[str, ...]] = {
     "capacitor": ("C@C_Disc_D5.0mm_W2.5mm_P2.50mm",),
     "electrolytic capacitor": ("C_Polarized@CP_Radial_D5.0mm_P2.00mm",),
     "LED": ("LED@LED_D5.0mm",),
-    "BJT transistor": ("2N3904@", "2N3906@"),
+    "BJT transistor": ("2N3904@", "2N3906@", "PN2222A@"),
     "diode": ("1N4148@", "1N4007@", "1N5819@"),
     "buzzer": ("Buzzer@Buzzer_12x9.5RM7.6",),
     "light sensor": ("A1050@",),
