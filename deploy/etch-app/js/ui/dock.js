@@ -13,7 +13,7 @@ import { spring, tick, reducedMotion, onReducedMotion, clamp, lerp, smooth } fro
 import { gooLayer, spawnBlob, squish, wobble } from "./goo.js";
 import { createEyes } from "./eyes.js";
 import { createVoiceAdapter, speakable } from "./voice-adapter.js";
-import { el, icon, pixelLoader, thinkingTrace, toolChip, taskRow, streamAnswer, approvalCard, recommendCard, bindMentions, fmtSecs } from "./trace.js";
+import { el, icon, pixelLoader, timeline, stagger, streamAnswer, approvalCard, recommendCard, bindMentions, fmtSecs } from "./trace.js";
 
 const OPEN_SPRING = { stiffness: 250, damping: 21 }, LEAVE_GRACE = 60;
 const PILL_H = 56, GAP = 8, EYES_W = 46, MIC = 40, PAD = 8;
@@ -40,7 +40,9 @@ export function createDock(hostEl, opts = {}) {
   const turnsEl = el("div", "ag-turns");
   const empty = el("div", "ag-empty", el("div", "ag-empty-t", "What should we look at?"), el("div", "ag-empty-d", "Ask about any part, or ask for a change. Click the mic or hold Space to talk."));
   const scroll = el("div", "ag-scroll", empty, turnsEl);
-  const inner = el("div", "ag-panel-in", header, scroll);
+  const newPill = el("button", "ag-newpill lq-btn");
+  newPill.type = "button"; newPill.hidden = true;
+  const inner = el("div", "ag-panel-in", header, scroll, newPill);
   const panel = el("div", "ag-panel", inner);
   panel.setAttribute("role", "region");
   panel.setAttribute("aria-label", "Etch agent");
@@ -177,15 +179,31 @@ export function createDock(hostEl, opts = {}) {
     if (!open) sizeCollapsed();
   });
   ro.observe(inner); ro.observe(status);
-  let stickRaf = 0;
-  function stick(force) {
-    if (stickRaf) return;
-    stickRaf = requestAnimationFrame(() => {
-      stickRaf = 0;
-      const near = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 120;
-      if (force || near) scroll.scrollTop = scroll.scrollHeight;
-    });
+  // The timeline follows new items only while the reader is at the bottom (within 40 px). Scrolled up, they stay put
+  // and a "N new updates" pill counts what arrived below. Rows updated in place keep their scroll anchor.
+  let stickRaf = 0, pinned = true, unseen = 0;
+  const atBottom = () => scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight <= 40;
+  function toBottom() { scroll.scrollTop = scroll.scrollHeight; pinned = true; unseen = 0; paintPill(); }
+  function paintPill() {
+    newPill.hidden = !unseen;
+    if (unseen) newPill.replaceChildren(`${unseen} new update${unseen === 1 ? "" : "s"}`, icon("chev"));
   }
+  scroll.addEventListener("scroll", () => {
+    pinned = atBottom();
+    if (pinned && unseen) { unseen = 0; paintPill(); }
+  }, { passive: true });
+  newPill.addEventListener("click", () => { scroll.scrollTo({ top: scroll.scrollHeight, behavior: reducedMotion() ? "auto" : "smooth" }); unseen = 0; pinned = true; paintPill(); });
+  // force: the person just sent something or opened the dock; fresh: a new item arrived (counts while scrolled up)
+  function stick(force, fresh = false) {
+    if (force) pinned = true;
+    else if (!pinned && fresh) { unseen++; paintPill(); }
+    if (stickRaf || !pinned) return;
+    stickRaf = requestAnimationFrame(() => { stickRaf = 0; if (pinned) toBottom(); });
+  }
+  new ResizeObserver(() => {
+    if (!pinned && atBottom()) { pinned = true; unseen = 0; paintPill(); }
+    if (pinned && open) stick();
+  }).observe(turnsEl);
 
   // ---------- bubbles (collapsed only) ----------
   let bub = null, bubT = 0;
@@ -237,12 +255,24 @@ export function createDock(hostEl, opts = {}) {
     statusText.textContent = t;
     statusText.classList.remove("ag-in"); void statusText.offsetWidth; statusText.classList.add("ag-in");
   }
-  let curLine = "";
+  // The headline is the current activity ("Looking at J1"); the step itself is the live row at the bottom of the
+  // timeline, which alone carries the loader. With no live row (waiting in line, say) the header shows the loader.
+  let curLine = "", loaderLabel = "", loading = false, liveR = null;
   function paintLine() {
-    let t = "";
-    for (const s of steps.values()) if (s.data.status === "running" && s.data.title) t = s.data.title;
-    t = t || curLine || statusBase || "";
-    if (phLine.textContent !== t) phLine.textContent = t;
+    const t = statusBase || (loading && !liveR ? loaderLabel : "") || curLine || "";
+    if (phLine.textContent !== t) { phLine.textContent = t; phLine.title = t; }
+    const showLoader = loading && !liveR;
+    if (showLoader && !phLoader.running) phLoader.start(); else if (!showLoader && phLoader.running) phLoader.stop();
+    header.hidden = !t && !showLoader;
+  }
+  function pickLive() {
+    let r = null;
+    if (turn) for (const tl of turn.tls) for (const x of tl.rows.values()) if (x.data.status === "running" && !x.dupOf && x.el.isConnected) r = x;
+    if (r === liveR) return;
+    if (liveR) liveR.live(false);
+    liveR = r;
+    if (r) r.live(true);
+    paintLine();
   }
 
   // ---------- eyes follow parts ----------
@@ -277,40 +307,37 @@ export function createDock(hostEl, opts = {}) {
   // ---------- turns ----------
   const steps = new Map(), answers = new Map(), cards = new Map();
   let turn = null;
+  // One chronological flow per turn: the person's message, then every step, card and answer in the order they
+  // happened. Steps go into the turn's current timeline; a card or an answer closes it, and later steps open a new one.
+  function fold(t, seconds) { if (t) for (const tl of t.tls) if (!tl.finished && !tl.running) tl.done(tl === t.tl ? seconds : undefined); }
   function newTurn(text, via) {
-    if (turn) {
-      turn.el.classList.add("old");
-      if (turn.trace) { if (!turn.trace.finished) turn.trace.done(); turn.trace.setOpen(false); }
-    }
-    const t = { el: el("div", "ag-turn lq-in"), trace: null, chips: null, tasks: null, loader: null, ans: el("div", "ag-turn-ans"), cards: el("div", "ag-turn-cards") };
+    if (turn) { turn.el.classList.add("old"); fold(turn); }
+    const t = { el: el("div", "ag-turn lq-in"), tl: null, tls: [], user: !!text };
     if (text) {
       const u = el("div", "ag-you", el("span", "ag-you-t", text));
       if (via === "voice") u.prepend(icon("mic", "ag-you-ic"));
       t.el.append(u);
     }
-    t.act = el("div", "ag-turn-act");
-    t.el.append(t.act, t.ans, t.cards);
     turnsEl.append(t.el);
     empty.hidden = true;
     while (turnsEl.children.length > 8) turnsEl.firstChild.remove();
     turn = t;
-    stick(true);
+    pickLive();
+    stick(!!text, true);
     return t;
   }
   const cur = () => turn || newTurn();
-  // a trace whose rows are all finished folds into "Thought for …" a moment later, unless another step starts
-  function settleTrace(tr) {
-    clearTimeout(tr.settleT);
-    const busy = () => [...tr.rows.values()].some((r) => r.data.status === "running");
-    if (busy()) return;
-    tr.settleT = setTimeout(() => { if (!busy() && !tr.finished) tr.done(); }, 1200);
+  function tlOf(t) {
+    if (!t.tl) { t.tl = timeline({ verb: t.user ? "Thought for" : "Ready in" }); t.el.append(t.tl.el); t.tls.push(t.tl); }
+    return t.tl;
   }
+  function place(t, node) { if (t.tl && !t.tl.running) t.tl.done(); t.tl = null; stagger(node); t.el.append(node); stick(false, true); }
   function doSend(text, via) {
     text = String(text || "").trim();
     if (!text) return;
     newTurn(text, via);
     asked = true; // sending is a user gesture, so Etch may answer out loud from here on
-    curLine = "";
+    curLine = ""; statusBase = "";
     paintLine();
     if (opts.onSend) opts.onSend(text, { via });
   }
@@ -345,12 +372,11 @@ export function createDock(hostEl, opts = {}) {
     onCaption(text) { caption(text); },
     onError(line) { eyes.react("squish"); caption(line); },
   });
+  // what Etch says shows as a bubble over the collapsed pill; the open panel already has it in the timeline
   function caption(text) {
     const t = plain(text);
     if (!t) return;
-    curLine = t.length > 140 ? t.slice(0, 137) + "…" : t;
-    paintLine();
-    showBubble(curLine, { caption: true });
+    showBubble(t.length > 140 ? t.slice(0, 137) + "…" : t, { caption: true });
     dropBubble(Math.max(2600, t.split(" ").length * 380));
   }
   mic.addEventListener("pointerdown", (e) => { if (e.button !== 0) return; e.preventDefault(); voice.toggle(); });
@@ -398,6 +424,8 @@ export function createDock(hostEl, opts = {}) {
     setState(s) {
       if (!STATES.has(s)) return;
       base = s;
+      // the agent settling down folds the finished timeline into its one-line summary
+      if (/^(idle|success|confused|error|offline)$/.test(s)) setTimeout(() => { if (base === s) fold(turn); }, 300);
       // the agent moving on clears the dock's own short-lived voice looks
       if (overlay === "heard" && s !== "idle") setOverlay(null);
       paintState();
@@ -411,51 +439,43 @@ export function createDock(hostEl, opts = {}) {
       const data = { ...d, kind, status: d.status || "running" };
       let s = steps.get(d.id);
       const was = s ? s.data.status : null;
-      if (s) { s.data = { ...s.data, ...data }; s.comp.update ? s.comp.update(s.data) : s.trace.row(s.data); }
+      if (s) { s.data = { ...s.data, ...data }; s.tl.row(s.data); }
       else {
-        const t = cur();
-        let comp, trace = null;
-        if (kind === "tool") {
-          if (!t.chips) { t.chips = el("div", "ag-chips"); t.act.append(t.chips); }
-          comp = toolChip(data); t.chips.append(comp.el);
-        } else if (kind === "task") {
-          if (!t.tasks) { t.tasks = el("div", "ag-tasks"); t.tasks.setAttribute("role", "list"); t.act.append(t.tasks); }
-          comp = taskRow(data); t.tasks.append(comp.el);
-        } else {
-          if (!t.trace) { t.trace = thinkingTrace({ open: true }); t.act.prepend(t.trace.el); }
-          trace = t.trace; trace.row(data); comp = {};
-        }
-        s = { data, comp, trace, turn: t };
+        const tl = tlOf(cur());
+        s = { data, tl };
         steps.set(d.id, s);
+        tl.row(data);
+        stick(false, true);
       }
       const st = s.data.status;
       if (st === "running") showBubble(s.data.title, { id: d.id, kind });
       else if (bub && bub.id === d.id) { showBubble(s.data.title, { id: d.id, kind, done: st === "done" }); dropBubble(st === "failed" ? 1400 : 650); }
       if (st === "failed" && was !== "failed") eyes.react("shake");
-      if (s.trace) settleTrace(s.trace);
-      paintLine(); retarget(); stick();
+      // a finished step keeps its check for a beat before the loader moves on
+      if (was === "running" && st !== "running") setTimeout(pickLive, 250); else pickLive();
+      retarget(); stick();
     },
 
     loader(on, label) {
-      const t = cur();
       if (on) {
-        if (!t.loader) { t.loader = pixelLoader({ label: label || "Working" }); t.loader.el.classList.add("ag-turn-loader", "lq-in"); t.act.prepend(t.loader.el); }
-        t.loader.start(label);
-        phLoader.start(); pillLoader.start();
+        loading = true;
+        loaderLabel = String(label || "Working").replace(/\s*·\s*[\d.]+\s*s$/, "");
+        pillLoader.start();
         root.classList.add("loading");
       } else {
-        if (t.loader) { t.loader.stop(); t.loader.el.remove(); t.loader = null; }
-        phLoader.stop(); pillLoader.stop();
+        loading = false; loaderLabel = "";
+        pillLoader.stop();
         root.classList.remove("loading");
       }
-      stick();
+      paintLine();
     },
 
     answerStart(id, { ref } = {}) {
       const t = cur();
-      if (t.trace && !t.trace.finished) { t.trace.done(); t.trace.setOpen(false); }
+      t.hadTl = t.tls.length > 0;
+      if (t.tl) { const tl = t.tl; t.tl = null; if (!tl.running) tl.done(); }
       const a = streamAnswer({ ref, onFollowup: (f) => doSend(f, "followup") });
-      t.ans.append(a.el);
+      place(t, a.el);
       answers.set(id, { a, bubbleAt: 0 });
       answerRef = ref || null;
       retarget();
@@ -478,11 +498,11 @@ export function createDock(hostEl, opts = {}) {
     answerEnd(id, info = {}) {
       const x = answers.get(id);
       if (!x) return;
-      x.a.end(info);
       const t = cur();
-      if (t.trace && !t.trace.finished) t.trace.done(info.seconds);
+      // the folded timeline above already says how long it took and how many steps; no second meta line
+      x.a.end(t.hadTl ? { ...info, seconds: null, thoughts: null } : info);
+      for (const tl of t.tls) if (!tl.finished && !tl.running) tl.done(info.seconds);
       const first = speakable(x.a.text, 1);
-      curLine = first; paintLine();
       if (!open && first) { showBubble(first.length > 110 ? first.slice(0, 108) + "…" : first, { kind: "answer", id: "answer:" + id, done: true }); dropBubble(4200); }
       setTimeout(() => { if (answerRef && answers.get(id)) { answerRef = null; retarget(); } }, 2600);
       stick();
@@ -492,11 +512,10 @@ export function createDock(hostEl, opts = {}) {
       const key = id ?? "ask:" + Math.random();
       if (cards.has(key)) cards.get(key).cancel();
       const c = approvalCard({ question, options, multi });
-      cur().cards.append(c.el);
+      place(cur(), c.el);
       cards.set(key, c);
       pending++; if (forced === false) forced = null; update();
       eyes.react("surprise");
-      stick(true);
       c.promise.finally(() => { if (cards.get(key) === c) cards.delete(key); pending = Math.max(0, pending - 1); update(); });
       return c.promise;
     },
@@ -504,11 +523,10 @@ export function createDock(hostEl, opts = {}) {
       const key = id ?? "rec:" + Math.random();
       if (cards.has(key)) cards.get(key).cancel();
       const c = recommendCard({ title, detail, confidence, actions });
-      cur().cards.append(c.el);
+      place(cur(), c.el);
       cards.set(key, c);
       pending++; if (forced === false) forced = null; update();
       eyes.react("blink");
-      stick(true);
       c.promise.finally(() => { if (cards.get(key) === c) cards.delete(key); pending = Math.max(0, pending - 1); update(); });
       return c.promise;
     },
@@ -535,7 +553,7 @@ export function createDock(hostEl, opts = {}) {
     clear() {
       for (const c of cards.values()) c.cancel();
       cards.clear(); steps.clear(); answers.clear();
-      turnsEl.replaceChildren(); turn = null; empty.hidden = false;
+      turnsEl.replaceChildren(); turn = null; empty.hidden = false; liveR = null; unseen = 0; paintPill();
       api.loader(false);
       dropBubble(0);
       answerRef = lookRef = hoverRef = clickRef = null; retarget();

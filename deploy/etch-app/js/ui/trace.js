@@ -1,6 +1,7 @@
 // Agent activity primitives: everything the agent does gets a visible element.
 //   pixelLoader()      pixel grid shimmer + elapsed time while waiting
 //   thinkingTrace()    expandable trace of step / reasoning / search / coding rows
+//   timeline()         one turn's chronological rows: noise grouped into summary lines, folds to one line when done
 //   toolChip()         small chip for one tool call ("Read parts.json")
 //   taskRow()          running / failed / completed rows with counts and progress
 //   streamAnswer()     streamed answer: **bold**, `code`, refdes chips, mentions, follow-ups
@@ -8,7 +9,7 @@
 //   recommendCard()    a proposed change with a confidence meter, Accept / Alternatives -> Promise
 //   bindMentions()     one delegated listener that turns refdes chip hovers and clicks into callbacks
 // New elements arrive with the .lq-in liquid entrance (see css/agent.css); nothing here reads layout per frame.
-import { spring, clamp } from "./spring.js";
+import { spring, clamp, reducedMotion } from "./spring.js";
 import { squish } from "./goo.js";
 
 // ---- tiny DOM helpers ----
@@ -55,6 +56,54 @@ export function fmtSecs(s) {
   return `${m}m ${String(r).padStart(2, "0")}s`;
 }
 
+// items added in a burst enter one after another rather than all at once
+let lastIn = 0;
+export function stagger(node, gap = 70) {
+  const now = performance.now();
+  const at = Math.min(now + 420, Math.max(now, lastIn + gap));
+  lastIn = at;
+  if (at - now > 1) node.style.animationDelay = Math.round(at - now) + "ms";
+  return node;
+}
+
+// a failed step's title in plain words: "Copying the board into Etch's own design" -> "Couldn't copy the board"
+const ADD_E = /(?:at|ac|ak|av|iz|ar|it|os|ut|us|ag|ir|ov)$/;
+const verb = (w) => {
+  let v = w.toLowerCase();
+  if (v.length > 3 && /([bdgmnprt])\1$/.test(v)) v = v.slice(0, -1);
+  else if (ADD_E.test(v) && v.length <= 7) v += "e";
+  return v;
+};
+export function failTitle(t) {
+  const s = String(t || "").trim();
+  const m = /^([A-Z][a-z]+)ing\b\s*(.*)$/.exec(s);
+  if (!m) return s;
+  const [main, ...tail] = m[2].split(" · ");
+  const rest = main.split(/\s+(?:into|to|from|for|with|in|on|onto|using|via|so)\s+/i)[0]
+    .replace(/\b([a-z]{3,})ing\b/g, (_, w) => verb(w)).split(/\s+/).filter(Boolean).slice(0, 4).join(" ");
+  return `Couldn't ${verb(m[1])}${rest ? " " + rest : ""}${tail.length ? " · " + tail.join(" · ") : ""}`;
+}
+// a long technical error gets a plain first line; the raw text stays one click away
+export function plainError(msg) {
+  const m = String(msg || "").replace(/\s+/g, " ").trim();
+  if (!m) return "";
+  if (m.length <= 60 && !/[\[\]{}<>_]|::|\w:\w/.test(m)) return m;
+  const R = [
+    [/pins?\s*\[[^\]]*\]\s*do(?:es)? not exist on\s*\S*conn/i, "A connector had the wrong pin count"],
+    [/do(?:es)? not exist on/i, "A part was wired to pins it doesn't have"],
+    [/footprint[^.]*not found|no (?:such )?footprint/i, "A part's footprint couldn't be found"],
+    [/clearance|\bDRC\b/i, "The layout broke a spacing rule"],
+    [/unconnected|\bERC\b/i, "Some pins aren't connected"],
+    [/timed? ?out/i, "It took too long"],
+    [/\b429\b|too many requests/i, "Etch is busy right now"],
+    [/licen[cs]e/i, "The board's licence doesn't allow this"],
+    [/spec error|invalid spec|schema/i, "The design spec had a mistake"],
+  ];
+  for (const [re, t] of R) if (re.test(m)) return t;
+  const first = m.split(/(?<=[.!?])\s|:\s/)[0];
+  return first.length <= 70 && !/[\[\]{}_]|::/.test(first) ? first : "Something went wrong in this step";
+}
+
 // ---- pixel loader: a 3x3 grid whose cells light in a diagonal wave, plus a label and an elapsed timer ----
 export function pixelLoader({ label = "", timer = true, size = "md" } = {}) {
   const grid = el("span", "ag-pix ag-pix-" + size);
@@ -93,27 +142,169 @@ export function traceRow(d) {
   const ic = el("span", "ag-tr-ic");
   const title = el("span", "ag-tr-t");
   const detail = el("span", "ag-tr-d");
+  const raw = el("span", "ag-tr-raw");
   const meta = el("span", "ag-tr-m");
-  const row = el("li", "ag-tr-row lq-in", ic, el("span", "ag-tr-txt", title, detail), meta);
+  const fill = el("i", "ag-bar-fill"), bar = el("span", "ag-bar ag-tr-bar", fill);
+  const row = el("li", "ag-tr-row lq-in", ic, el("span", "ag-tr-txt", title, detail, raw, bar), meta);
+  raw.hidden = true; bar.hidden = true;
+  let loader = null, liveT = 0, times = 1;
+  const paintMeta = () => {
+    const n = api.data;
+    const m = loader ? fmtSecs(loader.seconds) : n.seconds != null ? fmtSecs(n.seconds) : n.count != null ? String(n.count) : "";
+    meta.textContent = times > 1 ? `×${times}${m ? " · " + m : ""}` : m;
+  };
+  const toggleRaw = (e) => {
+    if (row.dataset.expand == null || (e.target.closest && e.target.closest(".ag-ref"))) return;
+    if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    raw.hidden = !raw.hidden;
+    row.setAttribute("aria-expanded", raw.hidden ? "false" : "true");
+  };
+  row.addEventListener("click", toggleRaw);
+  row.addEventListener("keydown", toggleRaw);
   const api = {
     el: row,
     data: {},
+    get key() { return `${api.data.title}|${api.data.detail}`; },
+    bump() { times++; paintMeta(); wobbleIn(row); return times; },
+    // the one live row in the dock carries the loader and the elapsed time
+    live(on) {
+      if (on && !loader) {
+        loader = pixelLoader({ timer: false, size: "xs" }).start();
+        ic.replaceChildren(loader.el);
+        liveT = setInterval(paintMeta, 100); paintMeta();
+      } else if (!on && loader) {
+        loader.stop(); loader = null; clearInterval(liveT);
+        const k = api.data.kind === "coding" ? "tool" : api.data.kind || "step";
+        ic.replaceChildren(api.data.status === "running" ? icon(k, "is-live") : statusIcon(k, api.data.status));
+        paintMeta();
+      }
+    },
     update(p) {
       const prev = api.data;
       const n = (api.data = { ...prev, ...p });
       const kind = n.kind === "coding" ? "tool" : n.kind || "step";
-      row.dataset.kind = kind; row.dataset.status = n.status || "running";
-      if (prev.status !== n.status || prev.kind !== n.kind) { ic.replaceChildren(n.status === "running" ? icon(kind, "is-live") : statusIcon(kind, n.status)); }
-      title.replaceChildren(String(n.title || KIND_LABEL[kind] || ""));
+      const st = n.status || "running";
+      row.dataset.kind = kind; row.dataset.status = st;
+      if (!loader && (prev.status !== n.status || prev.kind !== n.kind)) ic.replaceChildren(st === "running" ? icon(kind, "is-live") : statusIcon(kind, st));
+      const failed = st === "failed";
+      title.replaceChildren(String((failed ? failTitle(n.title) : n.title) || KIND_LABEL[kind] || ""));
       if (n.ref) title.append(" ", refChip(n.ref));
-      title.classList.toggle("ag-shimmer", n.status === "running");
-      detail.textContent = n.detail || "";
-      detail.hidden = !n.detail;
-      meta.textContent = n.seconds != null ? fmtSecs(n.seconds) : n.count != null ? String(n.count) : "";
+      const plain = failed ? plainError(n.detail) : String(n.detail || "");
+      detail.textContent = plain;
+      detail.hidden = !plain;
+      const full = String(n.detail || "").trim();
+      const more = failed && full && full !== plain;
+      raw.textContent = more ? full : "";
+      if (more) { row.dataset.expand = ""; row.tabIndex = 0; row.setAttribute("aria-expanded", raw.hidden ? "false" : "true"); row.title = "Show the details"; }
+      else { delete row.dataset.expand; row.removeAttribute("tabindex"); row.removeAttribute("aria-expanded"); row.removeAttribute("title"); raw.hidden = true; }
+      const pr = st === "running" && n.progress != null ? +n.progress : null;
+      bar.hidden = pr == null;
+      if (pr != null) fill.style.transform = `scaleX(${clamp(pr > 1 ? pr / 100 : pr)})`;
+      paintMeta();
       return api;
     },
   };
   return api.update(d);
+}
+function wobbleIn(n) { n.classList.remove("ag-bump"); void n.offsetWidth; n.classList.add("ag-bump"); }
+
+// ---- timeline: one turn's rows in the order they happened ----
+const GATE = /^(.+?) (passed|failed)$/;
+const isGate = (d) => (d.kind || "step") === "step" && GATE.test(d.title || "");
+// rows people rarely read once they are done: tool calls, searches, passed checks
+const lowValue = (d) => d.status === "done" && (d.kind === "tool" || d.kind === "coding" || d.kind === "search" || isGate(d));
+const lc = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+export function timeline({ verb = "Thought for" } = {}) {
+  const sumText = el("span", "ag-tl-st");
+  const sum = el("button", "ag-tl-sum", icon("spark", "is-spark"), sumText, icon("chev", "ag-chev"));
+  sum.type = "button"; sum.hidden = true;
+  const list = el("ol", "ag-tl-list");
+  const root = el("div", "ag-tl", sum, list);
+  const rows = new Map(), all = [];
+  const t0 = performance.now();
+  let finished = false;
+  const setOpen = (o) => { root.classList.toggle("open", !!o); sum.setAttribute("aria-expanded", o ? "true" : "false"); };
+  sum.addEventListener("click", () => setOpen(!root.classList.contains("open")));
+
+  function groupSummary(g) {
+    let gates = 0; const titles = [];
+    for (const r of g.rows) { if (isGate(r.data)) gates++; else titles.push(String(r.data.title || "")); }
+    const bits = titles.slice(0, 3).map((x, i) => (i ? lc(x) : x));
+    if (titles.length > 3) bits.push(`+${titles.length - 3} more`);
+    if (gates) bits.push(`${gates} check${gates === 1 ? "" : "s"} passed`);
+    g.text.textContent = bits.join(" · ");
+  }
+  function makeGroup(before) {
+    const text = el("span", "ag-tl-gt"), gl = el("ol", "ag-tl-gl");
+    const gh = el("button", "ag-tl-gh", icon("done", "is-done"), text, icon("chev", "ag-chev"));
+    gh.type = "button"; gh.setAttribute("aria-expanded", "false");
+    const li = el("li", "ag-tl-group", gh, gl);
+    gh.addEventListener("click", () => { const o = !li.classList.contains("open"); li.classList.toggle("open", o); gh.setAttribute("aria-expanded", o ? "true" : "false"); });
+    const g = { li, gl, text, rows: [] };
+    li._g = g;
+    list.insertBefore(li, before);
+    return g;
+  }
+  // a finished low-value row joins its low-value neighbours in one summary line
+  function regroup(r) {
+    if (!r.el.isConnected || !lowValue(r.data) || r.el.parentElement !== list) return;
+    const prev = r.el.previousElementSibling, next = r.el.nextElementSibling;
+    const lowRow = (n) => n && n._r && lowValue(n._r.data);
+    let g = null;
+    if (prev && prev._g) g = prev._g;
+    else if (lowRow(prev)) { g = makeGroup(prev); g.gl.append(prev); g.rows.push(prev._r); }
+    else if (next && next._g) { next._g.gl.prepend(r.el); next._g.rows.unshift(r); groupSummary(next._g); return; }
+    else if (lowRow(next)) { g = makeGroup(r.el); g.gl.append(r.el, next); g.rows.push(r, next._r); groupSummary(g); return; }
+    if (!g && isGate(r.data)) g = makeGroup(r.el); // a lone passed check still folds into "1 check passed"
+    if (!g) return;
+    g.gl.append(r.el); g.rows.push(r); groupSummary(g);
+  }
+  const api = {
+    el: root, rows,
+    get finished() { return finished; },
+    get running() { return all.some((r) => r.data.status === "running"); },
+    row(d) {
+      let r = rows.get(d.id);
+      if (r) r.update(d);
+      else {
+        r = traceRow(d); r.el._r = r;
+        stagger(r.el);
+        rows.set(d.id, r); all.push(r);
+        list.append(r.el);
+      }
+      if (r.data.status === "failed") {
+        // the same failure twice in a row is one row with ×2
+        const twin = all.find((o) => o !== r && o.data.status === "failed" && o.key === r.key && !o.dupOf);
+        if (twin && !r.dupOf) { r.dupOf = twin; twin.bump(); r.el.remove(); }
+      }
+      if (finished && r.data.status === "running") api.reopen();
+      if (lowValue(r.data)) { clearTimeout(r.groupT); r.groupT = setTimeout(() => regroup(r), 250); }
+      return r;
+    },
+    reopen() { finished = false; root.classList.remove("done"); sum.hidden = true; setOpen(true); },
+    done(seconds) {
+      if (!all.length) return;
+      finished = true;
+      for (const r of all) { clearTimeout(r.groupT); regroup(r); }
+      const s = seconds ?? (performance.now() - t0) / 1000;
+      const n = all.filter((r) => !r.dupOf).length;
+      const tries = Math.max(0, ...all.map((r) => +(/\btry (\d+)/i.exec(r.data.title || "") || [])[1] || 0));
+      const build = all.some((r) => r.data.kind === "task" || r.data.kind === "tool");
+      const last = all[all.length - 1];
+      const gates = all.some((r) => isGate(r.data));
+      let line = tries ? `Built in ${tries} tr${tries === 1 ? "y" : "ies"} · ${fmtSecs(s)}` : `${build && verb === "Thought for" ? "Done in" : verb} ${fmtSecs(s)}`;
+      line += ` · ${n} step${n === 1 ? "" : "s"}`;
+      if (last.data.status === "failed") line += " · stopped on a problem";
+      else if (gates) line += " · every check passes";
+      sumText.textContent = line;
+      sum.hidden = false;
+      root.classList.add("done");
+      setOpen(false);
+    },
+  };
+  setOpen(true);
+  return api;
 }
 export function thinkingTrace({ open = false, label = "Thinking" } = {}) {
   const loader = pixelLoader({ timer: false, size: "sm" });
@@ -267,49 +458,74 @@ export function streamAnswer({ ref, onFollowup } = {}) {
   const root = el("div", "ag-ans lq-in", text, ments, meta, follow);
   root.setAttribute("aria-live", "polite");
   meta.hidden = ments.hidden = follow.hidden = true;
-  let buf = "", raf = 0, live = true, refs = ref ? [ref] : [];
-  const paint = () => { raf = 0; text.innerHTML = renderMd(buf, { refs, caret: live }); };
+  // words arrive in bursts from the engine; they are shown at an even, readable pace (one every WORD_MS)
+  const WORD_MS = 40;
+  let buf = "", shown = 0, raf = 0, pace = 0, live = true, pendingEnd = null, refs = ref ? [ref] : [];
+  const paint = () => { raf = 0; text.innerHTML = renderMd(buf.slice(0, shown), { refs, caret: live }); };
   const later = () => { if (!raf) raf = requestAnimationFrame(paint); };
+  const WORD = /\S+\s*|\s+/y;
+  const reveal = () => {
+    WORD.lastIndex = shown;
+    const m = WORD.exec(buf);
+    shown = m ? WORD.lastIndex : buf.length;
+    later();
+    if (shown >= buf.length) { clearInterval(pace); pace = 0; if (pendingEnd) { const e = pendingEnd; pendingEnd = null; finish(e); } }
+  };
+  function finish({ mentions, followups, seconds, thoughts } = {}) {
+    live = false;
+    const ms = (mentions || []).map((m) => (typeof m === "string" ? { ref: m } : m)).filter((m) => m && m.ref);
+    refs = [...new Set([...refs, ...ms.map((m) => m.ref)])];
+    if (raf) cancelAnimationFrame(raf);
+    paint();
+    // parts already linked in the text (or just the selected one) need no extra row
+    const said = new Set([...text.querySelectorAll(".ag-ref")].map((c) => c.dataset.ref));
+    const extra = ms.filter((m) => !said.has(m.ref) && !(ms.length === 1 && m.ref === ref));
+    if (extra.length) {
+      ments.hidden = false;
+      ments.replaceChildren(el("span", "ag-ans-k", "Also"), ...extra.map((m) => { const c = refChip(m.ref); if (m.label) { c.append(el("span", "ag-ref-l", m.label)); } return c; }));
+    }
+    const bits = [];
+    if (seconds != null) bits.push(`Answered in ${fmtSecs(seconds)}`);
+    const nT = Array.isArray(thoughts) ? thoughts.length : thoughts;
+    if (nT) bits.push(`${nT} thought${nT === 1 ? "" : "s"}`);
+    if (bits.length) {
+      meta.hidden = false;
+      meta.replaceChildren(el("span", "", bits.join(" · ")));
+      if (Array.isArray(thoughts) && thoughts.length) {
+        const ol = el("ol", "ag-ans-th", ...thoughts.map((t) => el("li", "", String(t))));
+        ol.hidden = true;
+        const b = el("button", "ag-ans-show", "Show thinking");
+        b.type = "button"; b.setAttribute("aria-expanded", "false");
+        b.addEventListener("click", () => { ol.hidden = !ol.hidden; b.setAttribute("aria-expanded", ol.hidden ? "false" : "true"); b.textContent = ol.hidden ? "Show thinking" : "Hide thinking"; });
+        meta.append(el("span", "", " · "), b);
+        root.insertBefore(ol, follow);
+      }
+    }
+    // at most two short follow-ups
+    const short = (followups || []).map(String).filter((f) => f.trim().split(/\s+/).length <= 5).slice(0, 2);
+    if (short.length) {
+      follow.hidden = false;
+      follow.replaceChildren(...short.map((f) => {
+          const b = el("button", "ag-follow lq-btn lq-in", f);
+          b.type = "button"; stagger(b);
+          squish(b);
+          b.addEventListener("click", () => onFollowup && onFollowup(f));
+          return b;
+      }));
+    }
+    root.dispatchEvent(new CustomEvent("ag-ended", { bubbles: true }));
+  }
   paint();
   return {
     el: root,
     get text() { return buf; },
     get live() { return live; },
-    append(chunk) { buf += String(chunk ?? ""); later(); },
-    end({ mentions, followups, seconds, thoughts } = {}) {
-      live = false;
-      const ms = (mentions || []).map((m) => (typeof m === "string" ? { ref: m } : m)).filter((m) => m && m.ref);
-      refs = [...new Set([...refs, ...ms.map((m) => m.ref)])];
-      if (raf) cancelAnimationFrame(raf);
-      paint();
-      if (ms.length) {
-        ments.hidden = false;
-        ments.replaceChildren(el("span", "ag-ans-k", "Parts"), ...ms.map((m) => { const c = refChip(m.ref); if (m.label) { c.append(el("span", "ag-ref-l", m.label)); } return c; }));
-      }
-      const bits = [];
-      if (seconds != null) bits.push(`Answered in ${fmtSecs(seconds)}`);
-      const nT = Array.isArray(thoughts) ? thoughts.length : thoughts;
-      if (nT) bits.push(`${nT} thought${nT === 1 ? "" : "s"}`);
-      if (bits.length) {
-        meta.hidden = false;
-        meta.replaceChildren(icon("spark", "is-spark"), el("span", "", bits.join(" · ")));
-        if (Array.isArray(thoughts) && thoughts.length) {
-          const det = el("details", "ag-ans-thoughts");
-          det.append(el("summary", "", "Show thinking"), el("ol", "", ...thoughts.map((t) => el("li", "", String(t)))));
-          meta.append(det);
-        }
-      }
-      if (followups && followups.length) {
-        follow.hidden = false;
-        follow.replaceChildren(...followups.map((f, i) => {
-          const b = el("button", "ag-follow lq-btn lq-in", String(f));
-          b.type = "button"; b.style.animationDelay = i * 60 + "ms";
-          squish(b);
-          b.addEventListener("click", () => onFollowup && onFollowup(String(f)));
-          return b;
-        }));
-      }
+    append(chunk) {
+      buf += String(chunk ?? "");
+      if (reducedMotion()) { shown = buf.length; later(); return; }
+      if (!pace) { reveal(); pace = setInterval(reveal, WORD_MS); }
     },
+    end(info = {}) { if (shown < buf.length) pendingEnd = info; else finish(info); },
   };
 }
 
@@ -396,41 +612,53 @@ export function approvalCard({ question = "", options = [], multi = false, kicke
   return { el: root, promise, cancel: () => finish(null), get open() { return open; }, focus: () => (btns[0] || go).focus() };
 }
 
-/** recommendCard({ title, detail, confidence 0..1 or 0..100, actions }) -> { el, promise, cancel() }; resolves an action or null. */
-export function recommendCard({ title = "", detail = "", confidence = null, actions, kicker = "Recommendation" } = {}) {
-  const { root, head } = cardShell("ag-rec", kicker);
+/** recommendCard({ title, detail, confidence 0..1 or 0..100, actions }) -> { el, promise, cancel() }; resolves an action or null.
+ *  One line of title, one line of detail, a small confidence pill, Accept / Alternatives and a dismiss x. An action
+ *  with id cancel / dismiss / skip becomes the x. */
+export function recommendCard({ title = "", detail = "", confidence = null, actions } = {}) {
+  const root = el("div", "ag-card ag-rec lq-in");
+  root.setAttribute("role", "group");
   const conf = confidence == null ? null : clamp(+confidence > 1 ? +confidence / 100 : +confidence);
-  const pct = el("span", "ag-rec-pct");
-  if (conf != null) head.append(pct);
-  const close = el("button", "ag-card-x", icon("close"));
+  const q = el("div", "ag-rec-t", title);
+  q.title = title;
+  root.setAttribute("aria-label", title);
+  const close = el("button", "ag-card-x lq-btn", icon("close"));
   close.type = "button"; close.setAttribute("aria-label", "Dismiss");
-  head.append(close);
-  root.append(el("div", "ag-card-q", title));
-  if (detail) root.append(el("div", "ag-card-d", detail));
+  squish(close);
+  const head = el("div", "ag-rec-head", q);
   if (conf != null) {
-    const fill = el("i", "ag-meter-fill");
-    const meter = el("div", "ag-meter", fill);
-    meter.setAttribute("role", "meter");
-    meter.setAttribute("aria-valuemin", "0"); meter.setAttribute("aria-valuemax", "100");
-    meter.setAttribute("aria-valuenow", String(Math.round(conf * 100)));
-    meter.setAttribute("aria-label", "Confidence");
-    meter.dataset.level = conf >= 0.75 ? "high" : conf >= 0.45 ? "mid" : "low";
-    root.append(el("div", "ag-meter-row", el("span", "ag-meter-k", "Confidence"), meter));
-    const s = spring(0, { preset: { stiffness: 120, damping: 16 }, precision: 0.001, onUpdate: (v) => { fill.style.transform = `scaleX(${clamp(v, 0, 1.05)})`; pct.textContent = Math.round(clamp(v) * 100) + "%"; } });
-    setTimeout(() => s.set(conf), 160);
+    const pill = el("span", "ag-rec-pct", Math.round(conf * 100) + "%");
+    pill.dataset.level = conf >= 0.75 ? "high" : conf >= 0.45 ? "mid" : "low";
+    pill.title = "How sure Etch is that this works";
+    pill.setAttribute("aria-label", `Confidence ${Math.round(conf * 100)}%`);
+    head.append(pill);
   }
-  const acts = (actions && actions.length ? actions : [{ id: "accept", label: "Accept", primary: true }, { id: "alternatives", label: "Alternatives" }])
+  head.append(close);
+  root.append(head);
+  if (detail) { const d = el("div", "ag-rec-d", detail); d.title = detail; root.append(d); }
+  const norm = (actions && actions.length ? actions : [{ id: "accept", label: "Accept" }, { id: "alternatives", label: "Alternatives" }])
     .map((a, i) => (typeof a === "string" ? { id: a, label: a, primary: i === 0 } : { id: a.id ?? a.value ?? a.label, label: a.label ?? a.id, primary: a.primary ?? i === 0 }));
+  const isX = (a) => /^(cancel|dismiss|skip|no)$/i.test(String(a.id));
+  const xAct = norm.find(isX);
+  const acts = norm.filter((a) => !isX(a));
   let done; const promise = new Promise((r) => (done = r));
   let open = true;
-  const finish = (v, label) => { if (!open) return; open = false; settleCard(root, v == null ? "Dismissed" : label); done(v); };
+  const SAID = { accept: "Accepted", alternatives: "Asked for alternatives" };
+  const finish = (v, label) => {
+    if (!open) return; open = false;
+    root.classList.add("settled");
+    root.querySelectorAll("button").forEach((b) => (b.disabled = true));
+    const s = el("div", "ag-card-sum lq-in", icon(v == null || isX({ id: v }) ? "close" : "done", v == null || isX({ id: v }) ? "" : "is-done"), el("span", "", v == null || isX({ id: v }) ? "Dismissed" : SAID[v] || label));
+    root.append(s);
+    done(v);
+  };
   const row = el("div", "ag-card-acts", ...acts.map((a) => {
-    const b = el("button", "ag-btn lq-btn " + (a.primary ? "primary" : "ghost"), a.label);
+    const b = el("button", "ag-btn lq-btn " + (a.primary ? "primary" : "soft"), a.label);
     b.type = "button"; squish(b);
     b.addEventListener("click", () => finish(a.id, a.label));
     return b;
   }));
   root.append(row);
-  close.addEventListener("click", () => finish(null));
+  close.addEventListener("click", () => finish(xAct ? xAct.id : null));
   return { el: root, promise, cancel: () => finish(null), get open() { return open; }, focus: () => row.querySelector("button")?.focus() };
 }

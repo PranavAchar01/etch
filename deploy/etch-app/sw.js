@@ -1,11 +1,12 @@
 // Etch service worker: instant Explore and board pages. Precaches the app shell (CSS, JS, vendored three.js) and
 // answers the library (index.json) and board files (meta, parts, thumb, GLB) stale-while-revalidate from the same
-// Cache Storage that Explore's prefetch fills. Page navigations, config.json, the build app (index.html, app.js,
-// viewer3d.js) and the backend are never touched.
-const SHELL = "etch-shell-v2";
+// Cache Storage that Explore's prefetch fills. Page navigations (explore, board, kit), config.json and the backend are
+// never touched.
+const SHELL = "etch-shell-v3";
 const BOARDS = "etch-boards-v1";
 const SHELL_FILES = [
-  "css/editor.css", "js/common.js", "js/explore.js", "js/editor/main.js", "js/editor/viewcube.js", "js/editor/parts-panel.js", "js/editor/agent-bridge.js", "js/editor/selection.js", "js/editor/inspector.js", "js/editor/board-list.js", "js/editor/drop.js", "js/editor/icons.js", "js/editor/kinds.js", "js/editor/dock-loader.js", "js/board-viewer.js", "js/etch-api.js", "js/mock-api.js", "js/voice.js", "js/mascot.js",
+  "css/explore.css", "css/editor.css", "css/agent.css", "css/new-board.css", "js/common.js", "js/explore.js", "js/editor/main.js", "js/editor/viewcube.js", "js/editor/parts-panel.js", "js/editor/agent-bridge.js", "js/editor/selection.js", "js/editor/inspector.js", "js/editor/board-list.js", "js/editor/drop.js", "js/editor/icons.js", "js/editor/kinds.js", "js/editor/dock-loader.js", "js/editor/dock-stub.js", "js/editor/new-board.js", "js/editor/start-backdrop.js",
+  "js/ui/dock.js", "js/ui/eyes.js", "js/ui/goo.js", "js/ui/spring.js", "js/ui/trace.js", "js/ui/voice-adapter.js", "js/board-viewer.js", "js/etch-api.js", "js/mock-api.js", "js/voice.js", "js/mascot.js",
   "vendor/three/build/three.module.min.js", "vendor/three/examples/jsm/loaders/GLTFLoader.js", "vendor/three/examples/jsm/controls/OrbitControls.js",
   "vendor/three/examples/jsm/environments/RoomEnvironment.js", "vendor/three/examples/jsm/utils/BufferGeometryUtils.js", "vendor/three/examples/jsm/libs/meshopt_decoder.module.js",
 ];

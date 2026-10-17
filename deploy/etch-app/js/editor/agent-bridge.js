@@ -383,7 +383,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
             else step({ id: S("decide:" + ev.iteration), kind: "reasoning", title: ev.decision === "re-plan" ? "Checks failed, picking the parts again" : "Some checks failed, repairing the design", status: "done" });
           }
           break;
-        case "assembly:gate": step({ id: S(`gate:${ev.iteration}:${ev.gate}`), kind: "step", title: `${ev.gate} ${ev.ok ? "passed" : "failed"}`, detail: brief(ev.value), status: ev.ok ? "done" : "failed" }); break;
+        case "assembly:gate": step({ id: S(`gate:${ev.iteration}:${ev.gate}`), kind: "step", title: `${ev.gate} ${ev.ok ? "passed" : "failed"}`, detail: ev.ok && (ev.value === 0 || ev.value === "0") ? "no issues" : brief(ev.value), status: ev.ok ? "done" : "failed" }); break;
         case "assembly:built": step({ id: S("try:" + ev.iteration), kind: "task", title: `Placing and routing · try ${ev.iteration}`, detail: [ev.board?.w ? `${Math.round(ev.board.w)}×${Math.round(ev.board.h)} mm` : "", ev.tracks != null ? `${countOf(ev.tracks) || ev.tracks} tracks` : "", ev.seconds != null ? `${Math.round(ev.seconds)} s` : ""].filter(Boolean).join(" · "), status: "done" }); break;
         case "picker:repair": {
           const n = countOf(ev.parts), refs = Array.isArray(ev.parts) ? refList(ev.parts, 6) : "";
