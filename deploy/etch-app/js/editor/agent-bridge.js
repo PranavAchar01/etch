@@ -546,6 +546,12 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
           }
           break;
         case "assembly:gate":
+          // the firmware test lives in the benchmarks card, not the step list
+          if (/^firmware/i.test(String(ev.gate))) {
+            const n = num(String(ev.value ?? "").match(/\d+/)?.[0]);
+            B()?.row("firmware_tests", { label: ev.gate.replace(/^f/, "F"), value: n, unit: n != null ? "tests" : "", status: ev.ok ? "pass" : "fail", result: brief(ev.value) });
+            break;
+          }
           if (ev.check && (planned.has(ev.check) || /bench/i.test(ev.gate))) {
             const p = planned.get(ev.check) || {};
             const v = num(ev.value);
