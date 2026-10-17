@@ -1,0 +1,67 @@
+"""Prod "9 pad macro pad" (10-17): the picker on Nemotron Super timed out on both keys and the user saw a bare
+timeout. Now: an output cap, one quick retry on the sub-model, then the missing-parts message."""
+
+import pytest
+
+from agent import config, live, llm
+
+
+class S:
+    def __init__(self):
+        self.ev = []
+
+    def emit(self, agent, kind, **k):
+        self.ev.append((agent, kind, k))
+
+
+def test_picker_retries_on_the_quick_model(monkeypatch):
+    calls = []
+
+    def fake(stream, agent, model, msgs, fn, effort=None, timeout=None, max_tokens=None):
+        calls.append((model, max_tokens, timeout))
+        if len(calls) == 1:
+            raise llm.ModelError("Request timed out.")
+        return {"parts": []}, None
+
+    monkeypatch.setattr(llm, "call_json", fake)
+    s = S()
+    assert live._pick_call(s, config.MODEL, []) == {"parts": []}
+    assert calls == [
+        (config.MODEL, live.PICKER_MAX_TOKENS, live.PICKER_TIMEOUT),
+        (config.SUB_MODEL, live.RETRY_MAX_TOKENS, live.RETRY_TIMEOUT),
+    ]
+    assert ("picker", "retry") in [(a, k) for a, k, _ in s.ev]
+
+
+def test_two_timeouts_end_with_the_missing_parts_message(monkeypatch):
+    def fake(*a, **k):
+        raise llm.ModelError("Request timed out.")
+
+    monkeypatch.setattr(llm, "call_json", fake)
+    s = S()
+    with pytest.raises(live.PickTimeout):
+        live._pick_call(s, config.MODEL, [])
+    says = [k.get("text") for a, kind, k in s.ev if kind == "say"]
+    assert says == [live.MISSING_SAY] and "don't have all of the components" in live.MISSING_SAY
+    assert any(kind == "missing_parts" for _, kind, _ in s.ev)
+
+
+def test_cap_sets_max_tokens_off_openai(monkeypatch):
+    seen = {}
+
+    class C:
+        def with_options(self, **k):
+            return self
+
+        class chat:
+            class completions:
+                @staticmethod
+                def create(**kw):
+                    seen.update(kw)
+                    return "ok"
+
+    monkeypatch.setattr(llm, "_client_for", lambda b, k: C())
+    monkeypatch.setattr(llm, "_pace", lambda *a, **k: 0.0)
+    monkeypatch.setattr(llm, "guard", lambda b: None)
+    llm._create(config.CRUSOE_URL, "k", "m", {"messages": [], "_cap": 1234}, None, 5)
+    assert seen["max_tokens"] == 1234 and "_cap" not in seen

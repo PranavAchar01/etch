@@ -59,6 +59,20 @@ PICKER_MODEL = (
 )  # ETCH_MODEL; one attempt per provider, OpenAI fallback in llm.chat
 PICKER_EFFORT = "minimal"
 PICKER_TIMEOUT = 40
+# output caps (prod "9 pad macro pad", 10-17: an unfit KEPT list sent Nemotron Super on a long answer and both
+# keys timed out): a design JSON is ~1-2.5k tokens; a capped answer ends instead of running into the timeout
+PICKER_MAX_TOKENS = 3000
+RETRY_MAX_TOKENS = 2000
+RETRY_TIMEOUT = 25
+MISSING_SAY = (
+    "Looks like we don't have all of the components for this board yet. Explore the library to see what we have, "
+    "or try again in a few minutes."
+)
+
+
+class PickTimeout(RuntimeError):
+    """The picker could not answer on the main model nor on the quick retry: most often the KEPT list does not fit
+    the ask (parts missing from the library), so the run ends with the missing-parts message."""
 BATCH = 24
 MAX_ITERS = 3  # picker path only; worst case stays under a minute
 
@@ -443,6 +457,30 @@ def _piece_line(p: dict[str, Any]) -> str:
     return f"{p['key']} | {p['family']} | pins {pins} | sim: {p['spice_note']}"
 
 
+def _pick_call(stream: Stream, model: str, msgs: list) -> dict[str, Any]:
+    """One picker answer: the main model with an output cap; on a timeout or model failure, one retry on the quick
+    sub-model with a tight cap; when that fails too, the missing-parts event and PickTimeout."""
+    try:
+        ans, _ = llm.call_json(
+            stream, "picker", model, msgs, PICK_FN, effort=PICKER_EFFORT, timeout=PICKER_TIMEOUT,
+            max_tokens=PICKER_MAX_TOKENS,
+        )
+        return ans
+    except (llm.ModelError, ValueError) as e:
+        first = str(e)[:200]
+    stream.emit("picker", "retry", model=config.SUB_MODEL, reason=first, max_tokens=RETRY_MAX_TOKENS)
+    try:
+        ans, _ = llm.call_json(
+            stream, "picker", config.SUB_MODEL, msgs, PICK_FN, effort=PICKER_EFFORT, timeout=RETRY_TIMEOUT,
+            max_tokens=RETRY_MAX_TOKENS,
+        )
+        return ans
+    except (llm.ModelError, ValueError) as e:
+        stream.emit("picker", "missing_parts", reason=f"{first} / retry: {str(e)[:200]}", text=MISSING_SAY)
+        stream.emit("lead", "say", text=MISSING_SAY)
+        raise PickTimeout(MISSING_SAY) from e
+
+
 def pick(
     stream: Stream,
     ask: str,
@@ -465,15 +503,7 @@ def pick(
             + "\n".join(_piece_line(p) for p in kept),
         },
     ]
-    ans, _ = llm.call_json(
-        stream,
-        "picker",
-        model,
-        msgs,
-        PICK_FN,
-        effort=PICKER_EFFORT,
-        timeout=PICKER_TIMEOUT,
-    )
+    ans = _pick_call(stream, model, msgs)
     msgs.append({"role": "assistant", "content": json.dumps(ans)})
     stream.emit(
         "picker",
@@ -992,15 +1022,10 @@ def assemble(
             break
         msgs.append({"role": "user", "content": fb})
         tr = time.time()
-        design, _ = llm.call_json(
-            stream,
-            "picker",
-            PICKER_MODEL,
-            msgs,
-            PICK_FN,
-            effort=PICKER_EFFORT,
-            timeout=PICKER_TIMEOUT,
-        )
+        try:
+            design = _pick_call(stream, PICKER_MODEL, msgs)
+        except PickTimeout:
+            break  # the last built try's verdict stands
         msgs.append({"role": "assistant", "content": json.dumps(design)})
         stream.emit(
             "picker",
@@ -2810,55 +2835,78 @@ def design(
         stream.emit(
             "lead", "say", text=f"{len(cl['kept'])} parts fit. Picking the circuit."
         )
-        d, msgs = pick(
-            stream, ask, cl["kept"], context, model=rt.get("model") if rt else None
-        )
-        if d.get("missing"):
-            got = source_missing(stream, d["missing"])
-            if not got:
-                names = ", ".join(str(m.get("what")) for m in d["missing"])
-                stream.emit(
-                    "lead",
-                    "say",
-                    text=f"I could not find a real, sourced {names}, so I stopped instead of using a wrong part.",
-                )
-                stream.emit(
-                    "lead",
-                    "done",
-                    ok=False,
-                    iterations=0,
-                    timings={"total_s": round(time.time() - t0, 2)},
-                    classifier={},
-                    error=f"missing part: {names}",
-                )
-                return {
-                    "ask": ask,
-                    "ok": False,
-                    "iterations": 0,
-                    "timings": {"total_s": round(time.time() - t0, 2)},
-                    "classifier": {},
-                    "verdict": None,
-                    "board": str(out),
-                    "export": None,
-                    "render": None,
-                    "error": f"missing part: {names}",
-                }
-            if lost := [str(m.get("what")) for m in d["missing"] if m.get("not_found")]:
-                stream.emit(
-                    "lead",
-                    "say",
-                    text=f"I could not find a real, sourced {', '.join(lost)}; the rest goes ahead and that part "
-                    "uses the closest one KiCad has.",
-                )
-            cl["kept"] = cl["kept"] + got
+        try:
             d, msgs = pick(
-                stream,
-                ask,
-                cl["kept"],
-                context
-                + "\nFetched for this ask (now in the KEPT list): "
-                + ", ".join(f"{g['key']} ({g['family']})" for g in got),
+                stream, ask, cl["kept"], context, model=rt.get("model") if rt else None
             )
+            if d.get("missing"):
+                got = source_missing(stream, d["missing"])
+                if not got:
+                    names = ", ".join(str(m.get("what")) for m in d["missing"])
+                    stream.emit(
+                        "lead",
+                        "say",
+                        text=f"I could not find a real, sourced {names}, so I stopped instead of using a wrong part.",
+                    )
+                    stream.emit(
+                        "lead",
+                        "done",
+                        ok=False,
+                        iterations=0,
+                        timings={"total_s": round(time.time() - t0, 2)},
+                        classifier={},
+                        error=f"missing part: {names}",
+                    )
+                    return {
+                        "ask": ask,
+                        "ok": False,
+                        "iterations": 0,
+                        "timings": {"total_s": round(time.time() - t0, 2)},
+                        "classifier": {},
+                        "verdict": None,
+                        "board": str(out),
+                        "export": None,
+                        "render": None,
+                        "error": f"missing part: {names}",
+                    }
+                if lost := [str(m.get("what")) for m in d["missing"] if m.get("not_found")]:
+                    stream.emit(
+                        "lead",
+                        "say",
+                        text=f"I could not find a real, sourced {', '.join(lost)}; the rest goes ahead and that part "
+                        "uses the closest one KiCad has.",
+                    )
+                cl["kept"] = cl["kept"] + got
+                d, msgs = pick(
+                    stream,
+                    ask,
+                    cl["kept"],
+                    context
+                    + "\nFetched for this ask (now in the KEPT list): "
+                    + ", ".join(f"{g['key']} ({g['family']})" for g in got),
+                )
+        except PickTimeout as e:
+            stream.emit(
+                "lead",
+                "done",
+                ok=False,
+                iterations=0,
+                timings={"total_s": round(time.time() - t0, 2)},
+                classifier={},
+                error=f"missing parts: {e}",
+            )
+            return {
+                "ask": ask,
+                "ok": False,
+                "iterations": 0,
+                "timings": {"total_s": round(time.time() - t0, 2)},
+                "classifier": {},
+                "verdict": None,
+                "board": str(out),
+                "export": None,
+                "render": None,
+                "error": f"missing parts: {e}",
+            }
     t_pick = time.time() - t1
     show.confirm(d, {**cat, **{p["key"]: p for p in cl["kept"]}})
     stream.emit("lead", "say", text=d.get("say") or "Placing, routing and checking.")

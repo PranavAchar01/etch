@@ -201,6 +201,7 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
     the server rejects with a 5xx/4xx (Crusoe's Lightning 500s on it) is retried once as "auto" (the
     caller still reads a structured answer from the tool call or the JSON in the text)."""
     kw = dict(kw, model=model)
+    cap = kw.pop("_cap", None)
     if _is_openai_reasoning(model, base_url) and effort:
         kw["reasoning_effort"] = effort
     if not _is_openai(base_url):
@@ -208,7 +209,9 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
         kw["extra_body"] = {
             "chat_template_kwargs": {"enable_thinking": config.THINKING}
         }
-        if config.MAX_TOKENS > 0:
+        if cap:
+            kw["max_tokens"] = cap
+        elif config.MAX_TOKENS > 0:
             kw.setdefault("max_tokens", config.MAX_TOKENS)
     guard(base_url)
     c = _client_for(base_url, key).with_options(timeout=timeout, max_retries=0)
@@ -290,10 +293,14 @@ def chat(
     tool_choice: Any = None,
     effort: str | None = None,
     timeout: float | None = None,
+    max_tokens: int | None = None,
 ) -> Any:
-    """One completion; emits an `llm` event with model, provider, latency and token counts."""
+    """One completion; emits an `llm` event with model, provider, latency and token counts. max_tokens caps the
+    output off OpenAI (in place of ETCH_MAX_TOKENS) so a runaway answer ends instead of timing out."""
     global _fallback_since
     kw: dict[str, Any] = {"messages": messages}
+    if max_tokens:
+        kw["_cap"] = max_tokens
     if tools:
         kw["tools"] = tools
         if tool_choice is not None:
@@ -409,6 +416,7 @@ def call_json(
     fn: dict[str, Any],
     effort: str | None = None,
     timeout: float | None = None,
+    max_tokens: int | None = None,
 ) -> tuple[dict[str, Any], Any]:
     """Ask for one structured answer through a forced tool call; fall back to JSON in the text
     (some open-model servers ignore a named tool_choice)."""
@@ -422,6 +430,7 @@ def call_json(
         tool_choice={"type": "function", "function": {"name": fn["name"]}},
         effort=effort,
         timeout=timeout,
+        max_tokens=max_tokens,
     )
     if msg.tool_calls:
         return json.loads(msg.tool_calls[0].function.arguments or "{}"), msg
