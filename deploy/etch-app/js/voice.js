@@ -1,15 +1,15 @@
-// Etch's voice for the board view, adapted from app.js (its mic capture, STT upload, TTS queue and error lines; app.js
-// itself is unchanged). Talk: click the mic to toggle, hold it or hold Space to push-to-talk; after Etch answers a
-// spoken turn it listens again by itself. Speech-to-text and text-to-speech go through the Etch engine
-// (POST /etch/stt raw Float32 16 kHz mono, POST /etch/tts); without the engine (mock mode, offline, no route) the
-// browser's own Web Speech API stands in so the page still works end to end.
+// Etch's voice for the board view: mic capture, STT upload, TTS queue and error lines. Talk: click the mic to toggle,
+// hold it or hold Space to push-to-talk; after Etch answers a spoken turn it listens again by itself. Speech-to-text
+// and text-to-speech go through the Etch engine (POST /etch/stt raw Float32 16 kHz mono, POST /etch/tts); without
+// the engine (mock mode, offline, no route) the browser's own Web Speech API stands in so the page still works end to
+// end.
 import { Q } from "./common.js";
 import * as api from "./etch-api.js";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-// 16 kHz box filter, same as app.js
+// 16 kHz box filter
 function to16k(x, rate) {
   if (Math.abs(rate - 16000) < 1) return x;
   const r = rate / 16000, n = Math.floor(x.length / r), y = new Float32Array(n);

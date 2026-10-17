@@ -28,8 +28,9 @@ export function carry(params = {}) {
   return s ? "?" + s : "";
 }
 // Vercel serves /explore (cleanUrls); python's http.server only knows explore.html. Link the way we were reached.
+// The homepage ("index") is Explore.
 const HTML = /\.html$/.test(location.pathname);
-export const page = (name) => (name === "index" ? (HTML ? "index.html" : "/") : HTML ? name + ".html" : name);
+export const page = (name) => { const n = name === "index" ? "explore" : name; return HTML ? n + ".html" : n; };
 
 export function slugOf(id) {
   return String(id).replace(/^gh:/, "").toLowerCase().replace(/\//g, "__").replace(/[^a-z0-9_.-]/g, "-");

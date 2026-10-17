@@ -1,5 +1,5 @@
 #!/bin/bash
-# Deploy deploy/etch-app (static page + config.json) to Vercel production (project etch-app).
+# Deploy deploy/etch-app (Explore, the board editor, config.json) to Vercel production (project etch-app).
 set -eu
 D="$(cd "$(dirname "$0")" && pwd)"
 export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"

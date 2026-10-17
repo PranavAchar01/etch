@@ -21,7 +21,7 @@ cd etch
 
 | Path | What |
 | --- | --- |
-| `deploy/etch-app/` | The page (static: `index.html`, `app.js`, `viewer3d.js`), the Explore library (`explore.html`) and the board view (`board.html`, `js/`, `css/`). This folder is what Vercel serves. |
+| `deploy/etch-app/` | The static site Vercel serves: the Explore library and homepage (`explore.html`, `/` rewrites to it), the board editor (`board.html`, `board.html?new=1` builds a new board from a description) and the UI kit demo (`kit.html`), with `js/` and `css/`. |
 | `deploy/etch-app/world/` | The prerendered open-source boards Explore shows (GLB, thumbnail, parts, credits per board). Built by `library/`. |
 | `deploy/etch_public.py` | The backend API the page calls (port 3439). Routes and build events: [deploy/API.md](deploy/API.md). Board view routes are in `deploy/explore.py`. |
 | `library/` | Finds licensed KiCad boards on GitHub and prerenders them into `deploy/etch-app/world/` ([library/README.md](library/README.md)). |
