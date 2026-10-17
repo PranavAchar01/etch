@@ -999,7 +999,7 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
     t_plan = time.time() - t1
     stream.emit("picker", "pick", seconds=round(t_plan, 2), recipe=plan.get("_recipe") or "in-place edit", model=model,
                 parts=[{"ref": a["ref"], "piece": a["key"], "value": a["value"], "group": "added", "why": a["why"]}
-                       for a in sorted(resolved["add"], key=lambda a: not a["near"])],  # anchored parts first, partners next to them scenarios=[], benchmarks=[], say=plan.get("say"))
+                       for a in resolved["add"]], scenarios=[], benchmarks=[], say=plan.get("say"))
     if plan.get("refuse"):
         return finish(stream, request, out, t0, False, str(plan["refuse"])[:300], timings={"plan_s": round(t_plan, 2)})
     stream.emit("assembly", "iteration", iteration=1, phase="place-route-check")
