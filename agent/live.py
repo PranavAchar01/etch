@@ -36,7 +36,7 @@ from typing import Any
 
 import yaml
 from etchlib.kicad import cli
-from etchlib.parts import load_index, read_index
+from etchlib.parts import load_index, read_index, register
 
 from . import (
     analog,
@@ -44,6 +44,7 @@ from . import (
     config,
     firmware,
     kicad_catalog,
+    kicad_library,
     llm,
     piece_render,
     prefilter,
@@ -107,6 +108,32 @@ CLASSIFY_FN = {
 BASIC_STOCK = ("resistor", "capacitor", "electrolytic capacitor")
 
 
+def _cat() -> dict[str, dict[str, Any]]:
+    """Every piece any stage may use, by key: the full parts library (all KiCad libraries, the ingested extra
+    libraries and fetched cache parts, agent/kicad_library.py), with the curated catalog's entries on top. No stage
+    screens against a short library list."""
+    full = dict(kicad_library.load()["by_key"])
+    full.update({p["key"]: p for p in kicad_catalog.load()["pieces"]})
+    return full
+
+
+def _lib_piece(text: str) -> dict[str, Any] | None:
+    """A part named in words ("9 mechanical switches (through-hole)", "1N4148", "Conn_01x02") as one usable library
+    piece, or None (then sourcing runs; nothing is guessed)."""
+    t = re.sub(r"^\s*\d+\s*x?\s+", "", str(text or "")).strip()
+    t = re.sub(r"\(([^)]*)\)", r" \1", t).strip()
+    if not t:
+        return None
+    if (hit := kicad_library.resolve(t)) is not None:
+        return hit
+    # a description ("mechanical switches", "rotary encoder"): the first part of the function it names
+    low = t.lower()
+    for rx, qs in kicad_library.FUNCTIONS:
+        if re.search(rx, low):
+            return kicad_library.resolve(qs[0])
+    return None
+
+
 def classify(stream: Stream, ask: str, context: str = "") -> dict[str, Any]:
     """Which catalog pieces this ask can use. select.select_parts is the one swappable function: a keyword
     table in code by default (well under a millisecond), or the OpenAI Decisions API with ETCH_CLASSIFIER=decisions
@@ -158,6 +185,19 @@ def classify(stream: Stream, ask: str, context: str = "") -> dict[str, Any]:
         detail=sel.detail,
     )
     kept = [p for p in cat["pieces"] if p["key"] in keep]
+    # the table rules rank, never restrict: the parts for every function the ask implies come from the whole
+    # library (all KiCad libraries, extra libraries, fetched cache parts), whatever the rules matched
+    lib = [p for p in kicad_library.shortlist(f"{ask}\n{context}".strip()) if p["key"] not in keep]
+    kept += lib
+    lst = kicad_library.load()["stats"]
+    stream.emit(
+        "classifier",
+        "library",
+        pieces=lst.get("pieces"),
+        symbols=lst.get("symbols_read"),
+        footprints=lst.get("footprints"),
+        added=[{"k": p["key"], "n": p["name"], "f": p["family"]} for p in lib],
+    )
     rejected = [
         {
             **p,
@@ -578,6 +618,11 @@ def _rot(key: str, group: str) -> int:
 
 
 def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
+    idx = load_index()
+    if missing := {p["piece"] for p in design["parts"] if p["piece"] not in idx}:
+        # pieces from the full library (not the curated catalog): make them known to the engine's index
+        cat = _cat()
+        register([cat[k] for k in missing if k in cat])
     parts = []
     for p in design["parts"]:
         e = {
@@ -680,7 +725,8 @@ def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
             "margin": 2.5,
             "gap": 2.5,
             "hole": {"r": 3.5, "inset": 3.5},
-            "blocks": auto_layout(design["parts"], seen),
+            # a recipe may lay out its own blocks (a key matrix wants a grid, not rows of four by family)
+            "blocks": design.get("layout_blocks") or auto_layout(design["parts"], seen),
         },
         "finish": {
             "mask": "#08502AE6",
@@ -1329,7 +1375,7 @@ def _fix_refs(design: dict[str, Any]) -> None:
         used.add(new)
         p["ref"] = new
         pat = re.compile(rf"\b{re.escape(old)}\b")
-        for k in ("scenarios", "benchmarks", "say"):
+        for k in ("scenarios", "benchmarks", "say", "layout_blocks"):
             if k in design:
                 design[k] = json.loads(pat.sub(new, json.dumps(design[k])))
 
@@ -1606,7 +1652,7 @@ def _auto_mcu(
     ]
     if not lonely:
         return None
-    cat = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
+    cat = _cat()
     key = (
         PICO_W_KEY
         if re.search(
@@ -1938,7 +1984,7 @@ def _analog(
     """Deterministic transistor-switch check (agent/analog.py) before every build: sizes base resistors, swaps a
     driver that cannot carry the load, and makes load benchmarks agree with the load model. Returns what it could
     not fix, for the repair prompt."""
-    cat = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
+    cat = _cat()
     res = analog.solve(design, kept, cat, ask)
     for pc in res.added:
         if pc["key"] not in keys:
@@ -2104,8 +2150,10 @@ def _catalog_hit(text: str) -> dict[str, Any] | None:
     low = text.lower()
     for pat, pn in _GENERIC:
         if re.search(pat, low):
-            return next((c for c in cat if f":{pn}@" in c["key"]), None)
-    return None
+            if hit := next((c for c in cat if f":{pn}@" in c["key"]), None):
+                return hit
+    # then the whole library (every KiCad library, extra libraries, fetched cache parts) before any web fetch
+    return _lib_piece(text)
 
 
 def _sym_foot(pc: str) -> tuple[str, str]:
@@ -2203,7 +2251,9 @@ def _twin_piece(
             ),
             None,
         )
-    return None
+    # last: the whole library's piece for this name (every KiCad library, extra libraries, fetched cache parts)
+    lp = _lib_piece(f"{sym} {foot}".replace("_", " ").strip())
+    return lp if lp is not None and fits(lp) else None
 
 
 def _resolve_unknown(
@@ -2299,7 +2349,7 @@ def source_missing(
         part = res.get("part") or {}
         pins = part.get("pins") or []
         if res.get("status") in ("found", "ok") and part.get("source") == "kicad-lib":
-            cat = {c["key"]: c for c in kicad_catalog.load()["pieces"]}
+            cat = _cat()
             if part["key"] in cat and cat[part["key"]].get("spice"):
                 got.append(cat[part["key"]])
                 stream.emit(
@@ -2557,7 +2607,7 @@ def _stored(
     """Answer from a stored, verified board: copy it in and replay its parts, checks and frames."""
     board_store.copy_into(row, out)
     d = json.loads((out / "design.json").read_text())
-    cat = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
+    cat = _cat()
     stream.emit(
         "classifier",
         "done",
@@ -2790,7 +2840,7 @@ def design(
     )
     cl = classify(stream, ask, context)
     t_cls = time.time() - t0
-    cat = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
+    cat = _cat()
     show = PieceShow(stream)
     show.candidates(cl["kept"])
     t1 = time.time()
@@ -3002,7 +3052,7 @@ def modify(
     summary = "; ".join(
         f"{p['ref']} {p['piece']} {p.get('value', '')}" for p in base["parts"]
     )
-    by_key = {p["key"]: p for p in kicad_catalog.load()["pieces"]}
+    by_key = _cat()
     # an edit Etch knows (recolour, add a buzzer or power LED, remove it, swap the power input, smaller parts):
     # the new design comes from code, so no classifier and no model call, straight to place + route + checks
     hit = recipes.edit(request, base, by_key)

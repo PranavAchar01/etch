@@ -1624,8 +1624,15 @@ def match(
 ) -> tuple[dict[str, Any], str, list[dict[str, Any]]] | None:
     """(design, recipe name, the catalog pieces it uses) for the first recipe that fits the ask."""
     ask = _defill(ask) or ask
+    from . import device_recipes, esp32
+
+    # device recipes first: "keyboard" would otherwise reach typed_rgb, and "keypad" is in BEYOND
+    for fn in device_recipes.DEVICE_RECIPES:
+        d = fn(ask)
+        if d and all(p["piece"] in catalog for p in d["parts"]):
+            used = list({p["piece"]: catalog[p["piece"]] for p in d["parts"]}.values())
+            return d, fn.__name__, used
     beyond = _beyond_recipes(ask)
-    from . import esp32
 
     chip = esp32.chip_for(ask)
     for fn in (esp32.esp32_sensor, *RECIPES):

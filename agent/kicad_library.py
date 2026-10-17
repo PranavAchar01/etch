@@ -798,7 +798,8 @@ def build() -> dict[str, Any]:
                     fids += [
                         f
                         for f in fps.match(props.get("ki_fp_filters", ""), set(pins), k)
-                        if f not in fids and (not pkg or f.split(":")[-1].startswith(pkg))
+                        if f not in fids
+                        and (not pkg or f.split(":")[-1].startswith(pkg))
                     ]
                 if not fids:
                     skipped["no footprint"] += 1
@@ -1092,35 +1093,131 @@ def _generic_conn(text: str) -> dict[str, Any] | None:
 # tests check each one resolves offline with a model. A module people buy as a breakout (OLED, TFT, HC-SR04,
 # SHT31, MAX30102) is the KiCad pin socket it plugs into, named by its pin count, never a drawn module.
 ALIASES: tuple[tuple[str, str, str], ...] = (
-    (r"\b(cherry )?mx\b.*\b(switch|hot ?swap|key)|\bkey ?switch|\bmechanical (key )?switch", "Switch:SW_Push", "MX-Hotswap-1U"),
-    (r"\bchoc\b|\bkailh low ?profile", "Switch:SW_Push", "SW_choc_v2_HS_CPG135001S30_1u"),
-    (r"\b1n4148\b.*\bsod-?123\b|\bsod-?123\b.*\b1n4148\b", "Diode:1N4148W", "D_SOD-123"),
-    (r"\busb[ -]?c\b|\btype[ -]?c\b", "Connector:USB_C_Receptacle_USB2.0_16P", "GCT_USB4105-xx-A_16P_TopMnt_Horizontal"),
+    (
+        r"\b(cherry )?mx\b.*\b(switch|hot ?swap|key)|\bkey ?switch|\bmechanical (key )?switch",
+        "Switch:SW_Push",
+        "MX-Hotswap-1U",
+    ),
+    (
+        r"\bchoc\b|\bkailh low ?profile",
+        "Switch:SW_Push",
+        "SW_choc_v2_HS_CPG135001S30_1u",
+    ),
+    (
+        r"\b1n4148\b.*\bsod-?123\b|\bsod-?123\b.*\b1n4148\b",
+        "Diode:1N4148W",
+        "D_SOD-123",
+    ),
+    (
+        r"\busb[ -]?c\b|\btype[ -]?c\b",
+        "Connector:USB_C_Receptacle_USB2.0_16P",
+        "GCT_USB4105-xx-A_16P_TopMnt_Horizontal",
+    ),
     (r"\btrrs\b", "SparkFun-Connector:Audio_Jack_TRRS_3.5mm_SMD", ""),
-    (r"\b(3\.5 ?mm|headphone|earphone|audio) (audio )?jack\b|\bheadphone (out|output)\b", "Connector_Audio:AudioJack3", "CUI_SJ1-3523N"),
-    (r"\bspeaker( connector| header| terminal)?\b", "Connector_Generic:Conn_01x02", "JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical"),
-    (r"\b(lipo|li-?ion|battery) (connector|jack|plug)|\bjst[ -]?ph\b", "Connector_Generic:Conn_01x02", "JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical"),
-    (r"\bst7789\b|\btft\b|\bips (display|screen)\b", "Connector_Generic:Conn_01x08", "PinSocket_1x08_P2.54mm_Vertical"),
-    (r"\bssd1306\b|\boled\b", "Connector_Generic:Conn_01x06", "PinSocket_1x06_P2.54mm_Vertical"),
-    (r"\bhc-?sr04\b|\bultrasonic\b", "Connector_Generic:Conn_01x04", "PinSocket_1x04_P2.54mm_Vertical"),
-    (r"\bsht3[01]\b|\bmax3010[12]\b|\bgy-\w+\b", "Connector_Generic:Conn_01x04", "PinSocket_1x04_P2.54mm_Vertical"),
-    (r"\bdht22\b|\bam2302\b", "Connector_Generic:Conn_01x03", "PinSocket_1x03_P2.54mm_Vertical"),
-    (r"\bsoil\b.*\b(probe|sensor)\b|\bmoisture (probe|sensor)\b", "Connector_Generic:Conn_01x03", "PinHeader_1x03_P2.54mm_Vertical"),
+    (
+        r"\b(3\.5 ?mm|headphone|earphone|audio) (audio )?jack\b|\bheadphone (out|output)\b",
+        "Connector_Audio:AudioJack3",
+        "CUI_SJ1-3523N",
+    ),
+    (
+        r"\bspeaker( connector| header| terminal)?\b",
+        "Connector_Generic:Conn_01x02",
+        "JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",
+    ),
+    (
+        r"\b(lipo|li-?ion|battery) (connector|jack|plug)|\bjst[ -]?ph\b",
+        "Connector_Generic:Conn_01x02",
+        "JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",
+    ),
+    (
+        r"\bst7789\b|\btft\b|\bips (display|screen)\b",
+        "Connector_Generic:Conn_01x08",
+        "PinSocket_1x08_P2.54mm_Vertical",
+    ),
+    (
+        r"\bssd1306\b|\boled\b",
+        "Connector_Generic:Conn_01x06",
+        "PinSocket_1x06_P2.54mm_Vertical",
+    ),
+    (
+        r"\bhc-?sr04\b|\bultrasonic\b",
+        "Connector_Generic:Conn_01x04",
+        "PinSocket_1x04_P2.54mm_Vertical",
+    ),
+    (
+        r"\bsht3[01]\b|\bmax3010[12]\b|\bgy-\w+\b",
+        "Connector_Generic:Conn_01x04",
+        "PinSocket_1x04_P2.54mm_Vertical",
+    ),
+    (
+        r"\bdht22\b|\bam2302\b",
+        "Connector_Generic:Conn_01x03",
+        "PinSocket_1x03_P2.54mm_Vertical",
+    ),
+    (
+        r"\bsoil\b.*\b(probe|sensor)\b|\bmoisture (probe|sensor)\b",
+        "Connector_Generic:Conn_01x03",
+        "PinHeader_1x03_P2.54mm_Vertical",
+    ),
     (r"\bservo\b", "Connector_Generic:Conn_01x03", "PinHeader_1x03_P2.54mm_Vertical"),
-    (r"\bneopixel ring\b|\bled ring\b|\bled strip (connector|header)\b", "Connector_Generic:Conn_01x03", "JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical"),
-    (r"\b(ir|infrared) receiver\b|\btsop38", "Interface_Optical:TSOP382xx", "Vishay_MINICAST-3Pin"),
-    (r"\bntc\b|\bthermistor\b", "Device:Thermistor_NTC", "R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical"),
-    (r"\b(ldr|photoresistor|light dependent resistor)\b", "Device:R_Photo", "R_LDR_5.1x4.3mm_P3.4mm_Vertical"),
+    (
+        r"\bneopixel ring\b|\bled ring\b|\bled strip (connector|header)\b",
+        "Connector_Generic:Conn_01x03",
+        "JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical",
+    ),
+    (
+        r"\b(ir|infrared) receiver\b|\btsop38",
+        "Interface_Optical:TSOP382xx",
+        "Vishay_MINICAST-3Pin",
+    ),
+    (
+        r"\bntc\b|\bthermistor\b",
+        "Device:Thermistor_NTC",
+        "R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical",
+    ),
+    (
+        r"\b(ldr|photoresistor|light dependent resistor)\b",
+        "Device:R_Photo",
+        "R_LDR_5.1x4.3mm_P3.4mm_Vertical",
+    ),
     (r"\brelay\b", "Relay:SANYOU_SRD_Form_C", ""),
-    (r"\b(slide )?fader\b|\bslide pot\w*", "Connector_Generic:Conn_01x03", "PinHeader_1x03_P2.54mm_Vertical"),
-    (r"\b(pot|potentiometer|knob)\b", "Device:R_Potentiometer", "Potentiometer_Bourns_3386W_Horizontal"),
-    (r"\b(tactile|push|reset|boot|nav\w*) ?(button|switch)\b|\bbutton\b", "Switch:SW_Push", "SW_PUSH_6mm"),
-    (r"\b(rotary )?encoder\b|\bec11\b", "Device:RotaryEncoder_Switch", "ROT_Alps_EC11E-Switch"),
-    (r"\bmicro ?sd\b|\bsd card\b|\btf card\b", "Connector:Micro_SD_Card_Det1", "Hirose_DM3AT-SF-PEJM5"),
+    (
+        r"\b(slide )?fader\b|\bslide pot\w*",
+        "Connector_Generic:Conn_01x03",
+        "PinHeader_1x03_P2.54mm_Vertical",
+    ),
+    (
+        r"\b(pot|potentiometer|knob)\b",
+        "Device:R_Potentiometer",
+        "Potentiometer_Bourns_3386W_Horizontal",
+    ),
+    (
+        r"\b(tactile|push|reset|boot|nav\w*) ?(button|switch)\b|\bbutton\b",
+        "Switch:SW_Push",
+        "SW_PUSH_6mm",
+    ),
+    (
+        r"\b(rotary )?encoder\b|\bec11\b",
+        "Device:RotaryEncoder_Switch",
+        "ROT_Alps_EC11E-Switch",
+    ),
+    (
+        r"\bmicro ?sd\b|\bsd card\b|\btf card\b",
+        "Connector:Micro_SD_Card_Det1",
+        "Hirose_DM3AT-SF-PEJM5",
+    ),
     (r"\b(12 ?mhz )?crystal\b", "Device:Crystal", "HC49-U_Vertical"),
     (r"\bbuzzer\b|\bbeeper\b|\bpiezo\b", "Device:Buzzer", "Buzzer_12x9.5RM7.6"),
-    (r"\b(\d+(\.\d+)?k? ?ohm|\d+(\.\d+)?k) resistor\b|\bresistor\b", "Device:R", "R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical"),
-    (r"\bpro ?micro\b|\bnice!?\s?nano\b|\belite-?c\b", "Connector_Generic:Conn_01x12", "PinSocket_1x12_P2.54mm_Vertical"),
+    (
+        r"\b(\d+(\.\d+)?k? ?ohm|\d+(\.\d+)?k) resistor\b|\bresistor\b",
+        "Device:R",
+        "R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical",
+    ),
+    (
+        r"\bpro ?micro\b|\bnice!?\s?nano\b|\belite-?c\b",
+        "Connector_Generic:Conn_01x12",
+        "PinSocket_1x12_P2.54mm_Vertical",
+    ),
 )
 
 
@@ -1135,7 +1232,16 @@ def _alias(text: str) -> dict[str, Any] | None:
                 if p["lib_id"] == lid and fp in p["footprint"] and _usable(p)
             ]
             if hits:
-                return sorted(hits, key=lambda p: (len(p["footprint"]), p["key"]))[0]
+                # a footprint whose name starts with the wanted one beats a longer name that only contains it
+                # ("PinHeader_1x03" must not land on "FanPinHeader_1x03")
+                return sorted(
+                    hits,
+                    key=lambda p: (
+                        not p["footprint"].split(":")[-1].startswith(fp),
+                        len(p["footprint"]),
+                        p["key"],
+                    ),
+                )[0]
     return None
 
 
@@ -1207,12 +1313,209 @@ def stats() -> dict[str, Any]:
     }
 
 
+# ---------------------------------------------------------------- what an ask needs
+
+# function words in an ask -> the parts that do that job, as search text over the WHOLE library. These only add
+# candidates (the picker still chooses); nothing here narrows what any stage can reach.
+FUNCTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        r"\bkey ?board|\bmacro ?pad|\bkey ?pad|\bnum ?pad|\b\d+ ?(key|pad)s?\b|\bmechanical\b|\bhot ?swap|\bkeys?\b",
+        (
+            "mechanical key switch",
+            "1N4148",
+            "Raspberry Pi Pico",
+            "choc switch",
+            "EC11 rotary encoder",
+            "WS2812B",
+        ),
+    ),
+    (
+        r"\bsynth\w*|\bsampler\b|\bdrum machine|\bmidi\b|\bgroove ?box|\binstrument|\bmusic|\bsequencer|\basr-?10\b",
+        (
+            "Raspberry Pi Pico",
+            "PCM5102A",
+            "TL072",
+            "3.5mm audio jack",
+            "potentiometer",
+            "6N138",
+            "push button",
+            "mechanical key switch",
+            "PAM8403",
+            "W25Q128JVS",
+            "rotary encoder",
+            "WS2812B",
+        ),
+    ),
+    (
+        r"\bguitar|\bpedal|\bfuzz|\boverdrive|\bdistortion|\breverb|\bdelay pedal",
+        (
+            "TL072",
+            "NE5532",
+            "3.5mm audio jack",
+            "potentiometer",
+            "push button",
+            "LED",
+            "1N4148",
+        ),
+    ),
+    (
+        r"\bmp3|\bmp4|\bmusic player|\bmedia player|\bpodcast|\bwalkman|\bipod|\bplay(s|ing)? (music|songs|audio)",
+        (
+            "micro SD card",
+            "PCM5102A",
+            "MAX98357A",
+            "3.5mm audio jack",
+            "Raspberry Pi Pico",
+            "push button",
+            "TP4056",
+            "JST PH battery connector",
+            "speaker connector",
+            "OLED",
+        ),
+    ),
+    (
+        r"\bspeaker|\bamplif|\bamp\b|\bheadphone|\baudio|\bsound|\bplay",
+        ("PAM8403", "MAX98357A", "speaker connector", "3.5mm audio jack", "TPA6132"),
+    ),
+    (r"\bmic\b|\bmicrophone|\bvoice|\bclap|\blisten", ("MAX9814", "microphone")),
+    (
+        r"\bscreen|\bdisplay|\boled|\blcd|\btft|\bvideo|\bmp4",
+        ("SSD1306 OLED", "ST7789 TFT display"),
+    ),
+    (
+        r"\bdrone|\bquadcopter|\bmultirotor|\bfly",
+        (
+            "AO3400",
+            "MPU6050",
+            "ESP32-S3",
+            "JST PH battery connector",
+            "TP4056",
+            "1N5819",
+            "AP2112K-3.3",
+        ),
+    ),
+    (
+        r"\brobot ?arm|\bservo|\bgripper|\bpan.?tilt|\banimatron",
+        (
+            "servo header",
+            "PCA9685",
+            "Raspberry Pi Pico",
+            "DC barrel jack",
+            "electrolytic capacitor",
+        ),
+    ),
+    (
+        r"\brobot|\bcar\b|\bwheel|\bmotor|\brover|\btank\b",
+        ("DRV8833", "TB6612FNG", "L293D", "screw terminal 2 pin", "HC-SR04"),
+    ),
+    (
+        r"\bweather|\bbarometer|\bpressure|\baltitude",
+        ("BME280", "BMP280", "ESP32-WROOM-32E", "SSD1306 OLED"),
+    ),
+    (
+        r"\btemperature|\bthermo|\bhumid|\bclimate",
+        ("NTC thermistor", "DHT22", "SHT31", "BME280"),
+    ),
+    (
+        r"\bsoil|\bplant|\bwater(s|ing)?\b|\bgarden|\birrigat|\bpump",
+        ("soil moisture probe", "AO3400", "relay", "1N4001", "screw terminal 2 pin"),
+    ),
+    (
+        r"\bheart|\bpulse|\bbpm|\bspo2|\boximeter",
+        ("MAX30102", "LDR photoresistor", "LED"),
+    ),
+    (
+        r"\block\b|\bdoor\b|\bsolenoid|\bsmart lock|\bkeyless",
+        ("relay", "AO3400", "1N4001", "push button", "buzzer", "ESP32-WROOM-32E"),
+    ),
+    (
+        r"\bwi-?fi|\bbluetooth|\bwireless|\binternet|\bonline|\bphone app|\besp32|\bsmart\b|\biot\b|\bremote\b",
+        ("ESP32-WROOM-32E", "ESP32-S3", "ESP32-C3", "AP2112K-3.3", "USB-C receptacle"),
+    ),
+    (r"\binfrared|\bir\b|\btv remote", ("IR receiver TSOP38238", "IR LED")),
+    (
+        r"\bmotion|\btilt|\baccel|\bgyro|\bimu\b|\bstep counter|\bpedometer|\bbalanc",
+        ("MPU6050",),
+    ),
+    (r"\bdistance|\bultrasonic|\bparking|\bobstacle|\bradar", ("HC-SR04",)),
+    (
+        r"\bbattery|\blipo|\bli-?ion|\bportable|\bwearable|\brechargeable|\bcharg",
+        ("TP4056", "MCP73831", "JST PH battery connector", "AP2112K-3.3"),
+    ),
+    (
+        r"\busb-?c\b|\busb\b|\btype-?c",
+        ("USB-C receptacle", "USBLC6-2SC6", "5.1k resistor"),
+    ),
+    (
+        r"\brgb\b|\bneopixel|\bws2812|\baddressable|\brainbow|\bled strip|\bunderglow",
+        ("WS2812B", "SK6812 mini-e", "neopixel ring connector"),
+    ),
+    (r"\bbuzz|\bbeep|\balarm|\bsiren|\bchime", ("buzzer",)),
+    (r"\blight sensor|\bdark|\bnight|\bldr\b|\bbright", ("LDR photoresistor",)),
+    (r"\bknob|\bdial|\bvolume|\bencoder", ("rotary encoder", "potentiometer")),
+    (
+        r"\bclock|\btime\b|\btimer|\balarm clock|\brtc\b",
+        ("DS3231", "Crystal 32.768kHz", "SSD1306 OLED"),
+    ),
+    (r"\bserial|\buart|\bftdi|\bprogrammer|\bch340", ("CH340G",)),
+    (r"\bgps\b|\btracker", ("GPS module socket", "ESP32-WROOM-32E")),
+    (r"\bcamera|\bphoto booth|\bvision", ("ESP32-S3", "FPC connector")),
+)
+
+_CORE = ("Raspberry Pi Pico",)
+
+
+def shortlist(ask: str, k: int = 40) -> list[dict[str, Any]]:
+    """The library pieces an ask most plausibly needs, from every source the library holds (KiCad, the ingested
+    extra libraries, fetched cache parts): the parts for each function the ask implies, then the best hit for
+    each content word and part number in it. Usable pieces only (footprint pads, 3D model, simulation entry);
+    deterministic, no model call, a few milliseconds."""
+    a = ask.lower()
+    queries: list[str] = []
+    for rx, qs in FUNCTIONS:
+        if re.search(rx, a):
+            queries += qs
+    # part numbers and plain nouns from the ask itself ("with an MPU6050", "a TL072 preamp", "a relay")
+    queries += [
+        m.group(0)
+        for m in _PN.finditer(ask)
+        if re.search(r"\d", m.group(0)) and len(m.group(0)) >= 4
+    ]
+    words = [w for w in _tok(a) if len(w) >= 3 and w not in _STOP and not w.isdigit()]
+    queries += words
+    queries += list(_CORE)
+    out: dict[str, dict[str, Any]] = {}
+    for q in dict.fromkeys(queries):
+        hit = resolve(q)
+        if hit is None and q in words:
+            got = search(q, 1)
+            # a plain word only counts when it names the part or its family, not when it is in some description
+            hit = (
+                got[0]
+                if got
+                and (q in got[0]["family"].split() or q in _compact(got[0]["lib_id"]))
+                else None
+            )
+        elif hit is None:
+            got = search(q, 1)
+            hit = got[0] if got else None
+        if hit is not None:
+            out.setdefault(hit["key"], hit)
+        if len(out) >= k:
+            break
+    return list(out.values())
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] != "--build":
         t = time.time()
         load()
         t1 = time.time()
-        for p in search(" ".join(sys.argv[1:]), 8):
+        for p in (
+            shortlist(" ".join(sys.argv[1:]))
+            if "--ask" in sys.argv
+            else search(" ".join(sys.argv[1:]), 8)
+        ):
             print(p["key"], "|", p["family"], "|", p.get("descr", "")[:60])
         print(
             f"load {t1 - t:.2f}s, search {(time.time() - t1) * 1000:.1f} ms",
