@@ -326,7 +326,10 @@ export function timeline({ verb = "Thought for" } = {}) {
         live.append(r.el);
       }
       if (r.data.status === "failed") {
-        const twin = all.find((o) => o !== r && o.data.status === "failed" && o.key === r.key && !o.dupOf);
+        // the same failure twice in a row is one row with ×2
+        // only the row just before it: a repeat in a later try keeps its own row under that try
+        const prev = all.slice(0, all.indexOf(r)).reverse().find((o) => !o.dupOf);
+        const twin = prev && prev.data.status === "failed" && prev.key === r.key ? prev : null;
         if (twin && !r.dupOf) { r.dupOf = twin; twin.bump(); r.el.remove(); }
       }
       if (finished && r.data.status === "running") api.reopen();
