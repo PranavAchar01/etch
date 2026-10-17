@@ -59,7 +59,7 @@ NET_RE = re.compile(r"^[A-Za-z0-9_+/\\{}()~.-]{1,60}$")
 POWER_RE = re.compile(r"(^|/)(GND\w*|AGND|DGND|VSS|VCC\w*|VDD\w*|VBUS|VIN|VBAT\w*|\+?\d+V\d*\w*|\+?3V3\w*|\+?3\.3V\w*|\+?5V\w*)$", re.I)
 FREE_RE = re.compile(r"^unconnected-\(")
 # nets a status LED or a buzzer must never hang on: data lines, clocks, RF, memory buses
-SENSITIVE_RE = re.compile(r"USB|(^|[/_])D[+-]$|(^|[/_])D[PM]$|XTAL|XIN|XOUT|OSC|CLK|ANT|(^|[/_])RF|ETH|EMAC|RMII|MDI|"
+SENSITIVE_RE = re.compile(r"USB|(^|[/_])CC\d|SBU|(^|[/_])D[+-]$|(^|[/_])D[PM]$|XTAL|XIN|XOUT|OSC|CLK|ANT|(^|[/_])RF|ETH|EMAC|RMII|MDI|"
                           r"(^|[/_])[TR]X?D?[+-]$|(^|[/_])[TR]D[+-]$|SDIO|SD_|QSPI|PSRAM|FLASH|SPICS|CS0|HS2|BOOT|STRAP", re.I)
 
 MASKS = {"green": "Green", "red": "Red", "blue": "Blue", "black": "Black", "white": "White", "yellow": "Yellow",
@@ -89,7 +89,7 @@ def catalog() -> dict[str, dict[str, Any]]:
         out[p["key"]] = {
             "key": p["key"], "lib_id": p["lib_id"], "footprint": p["footprint"], "family": p.get("category", ""),
             "name": p.get("name", ""), "value": p.get("value") or "", "pins": [str(x) for x in p["pins"]],
-            "model": p.get("model"), "source": p.get("source", "index"),
+            "model": p.get("model"), "source": p.get("source", "index"), "curated": True,
         }
     if KICAD_CATALOG_PATH.exists():
         for p in read_index(KICAD_CATALOG_PATH).get("pieces", []):
@@ -123,7 +123,7 @@ def catalog_text(cat: dict[str, dict], request: str, limit: int = 60) -> str:
     fams = {SYNONYMS.get(w, w) for w in words}
     rows, extra = [], []
     for e in cat.values():
-        if e["source"] != "kicad-lib":
+        if e.get("curated"):
             rows.append(e)
         elif any(f.lower() in e["family"].lower() or f in e["name"].lower() for f in fams):
             extra.append(e)
@@ -205,14 +205,17 @@ def board_text(facts: dict[str, Any], title: str, ref: str | None = None, limit:
         for q in pads:
             if is_free(q["net"], members) and q["layers"]:
                 free.append(f"{p['ref']}.{q['num']}" + (f" [{q['fn']}]" if q["fn"] else ""))
-    for n, m in members.items():  # a signal that only goes to a header: a GPIO that is free to use
+    conn = {r for r, p in parts.items() if re.match(r"^(J|P|CON|EXT|UEXT|H)\w*\d", r)
+            or re.search(r"pin_?header|pinheader|conn|header|castell|socket", p["fpid"], re.I)}
+    for n, m in members.items():  # a GPIO that only goes to a header pin: free to use
         refs = {x.split(".")[0] for x in m}
-        if 2 <= len(m) <= 3 and not POWER_RE.search(n) and any(re.match(r"^(J|P|CON|EXT|UEXT|H)\w*\d", r) for r in refs):
+        if 2 <= len(m) <= 3 and not POWER_RE.search(n) and not SENSITIVE_RE.search(n) and (
+                refs & conn or re.search(r"(^|/)(GPIO|IO|P[A-K])_?\d+$", n, re.I)):
             gpio.append(f"{n} ({', '.join(m)})")
     if free:
         lines.append("Free pins (no net yet, safe to wire to): " + ", ".join(free[:80]))
     if gpio:
-        lines.append("Signal nets that only reach a connector (free to use): " + "; ".join(sorted(gpio)[:40]))
+        lines.append("GPIO nets that only reach a header or connector pin (free to use): " + "; ".join(sorted(gpio)[:40]))
     lines += ["", "Footprints (ref | value | footprint | side, x, y mm | pad=net, [pin function]):"]
     order = sorted(parts, key=_ref_key)
     if ref and ref in parts:
