@@ -30,6 +30,10 @@
 !/engine/parts/classifier.npz
 !/engine/parts/piece_renders/
 !/engine/parts/cache/
+!/engine/parts/fetch_extra_libs.py
+!/engine/parts/extra_libs/
+/engine/parts/extra_libs/*
+!/engine/parts/extra_libs/MANIFEST.json
 /engine/parts/piece_renders/*.kicad_prl
 
 !/studio/

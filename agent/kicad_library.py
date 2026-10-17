@@ -43,12 +43,25 @@ OUT = config.ENGINE / "parts/kicad_library.json"
 # where the build finds the symbol / footprint libraries that are not KiCad's own (read by etchlib.kicad)
 LIB_PATHS = config.ENGINE / "parts/lib_paths.json"
 VERSION = 4  # bump when the record format changes: load() rebuilds an older file
-EXTRA = Path(os.environ.get("ETCH_EXTRA_LIBS", str(config.ENGINE / "parts/extra_libs")))
-if not EXTRA.exists():
-    # the fetch job writes into the main checkout; a worktree or a deploy copy reads it there
-    _main = Path.home() / "helloworld/pcb-loop/engine/parts/extra_libs"
-    if _main.exists():
-        EXTRA = _main
+
+
+def _extra_dir() -> Path:
+    """engine/parts/extra_libs (fetched by engine/parts/fetch_extra_libs.py; only MANIFEST.json is committed).
+    A worktree or deploy copy without the fetched folders reads the main checkout's."""
+    if os.environ.get("ETCH_EXTRA_LIBS"):
+        return Path(os.environ["ETCH_EXTRA_LIBS"])
+    for d in (
+        config.ENGINE / "parts/extra_libs",
+        Path.home() / "helloworld/pcb-loop/engine/parts/extra_libs",
+    ):
+        if d.is_dir() and any(c.is_dir() for c in d.iterdir()):
+            return d
+    return config.ENGINE / "parts/extra_libs"
+
+
+EXTRA = _extra_dir()
+# GPL libraries are listed in the manifest with their flag but not ingested unless asked for (ETCH_ALLOW_GPL=1)
+ALLOW_GPL = os.environ.get("ETCH_ALLOW_GPL") == "1"
 
 KICAD_LICENCE = "CC-BY-SA-4.0 with the KiCad libraries exception (https://www.kicad.org/libraries/license/)"
 KICAD_REPOS = {
@@ -135,6 +148,8 @@ SYNONYMS = {
     "encoder": "rotary encoder",
     "esd": "usblc6",
     "ldr": "r_photo photoresistor",
+    "usb-c": "usb_c_receptacle_usb2.0_16p",
+    "type-c": "usb_c_receptacle_usb2.0_16p",
     "photoresistor": "r_photo",
     "midi": "din 5",
     "fader": "slide potentiometer",
@@ -222,7 +237,7 @@ def _sources() -> list[dict[str, Any]]:
                     "meta": meta,
                 }
             )
-    man = EXTRA / "MANIFEST.json"
+    man = Path(os.environ.get("ETCH_EXTRA_MANIFEST", str(EXTRA / "MANIFEST.json")))
     if man.exists():
         try:
             entries = json.loads(man.read_text())
@@ -254,6 +269,8 @@ def _sources() -> list[dict[str, Any]]:
                 or BAD_LICENCE.search(lic)
                 or re.search(r"\b(nc|unknown|skip|non-?commercial)\b", flag, re.I)
             ):
+                continue
+            if re.search(r"\bA?GPL", f"{lic} {flag}") and not ALLOW_GPL:
                 continue
             root = None
             for k in ("dir", "path", "folder", "slug", "name", "source", "id"):
@@ -289,9 +306,17 @@ def _sources() -> list[dict[str, Any]]:
                     "licence": lic,
                     "route": f"open-source library {e.get('name') or root.name}",
                     "meta": {
-                        k: e.get(k)
-                        for k in ("url", "version", "commit", "repo", "tag", "flag")
-                        if e.get(k)
+                        **{
+                            k: e.get(k)
+                            for k in ("url", "version", "commit", "repo", "tag")
+                            if e.get(k)
+                        },
+                        "licence_flag": flag,
+                        # CC-BY / CC-BY-SA ask for credit wherever the part ends up (the export's attribution list)
+                        "attribution": f"{e.get('name') or root.name} ({e.get('url', '')}"
+                        + (f" @ {str(e.get('commit'))[:12]}" if e.get("commit") else "")
+                        + f"), {lic}",
+                        "attribution_required": bool(re.search(r"CC-?BY", lic, re.I)),
                     },
                 }
             )
@@ -453,6 +478,24 @@ class Footprints:
             )
         for c in self.dir_maps[d]:
             if Path(c).stem.lower().startswith(prefix):
+                return c
+        # a maker-prefixed name ("InvenSense_QFN-24_4x4mm_P0.5mm"): the generic package with the same body and pitch
+        pk = next(
+            (i for i, w in enumerate(parts) if re.match(r"^[A-Za-z]+-\d+", w)), None
+        )
+        size = next(
+            (w for w in parts if re.fullmatch(r"\d+(\.\d+)?x\d+(\.\d+)?mm", w)), None
+        )
+        if not pk or not size:
+            return None
+        pkg = parts[pk].split("-1EP")[0].lower()
+        for c in self.dir_maps[d]:
+            cs = Path(c).stem
+            if (
+                cs.lower().startswith(pkg)
+                and f"_{size}_" in f"_{cs}_"
+                and f"_{parts[pitch]}" in cs
+            ):
                 return c
         return None
 
