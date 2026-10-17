@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import time
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -167,6 +168,33 @@ def _clear_under(keep, boxes, clearance):
         "tracks": [t for t in keep.get("tracks", []) if t["net"] not in hit],
         "vias": [v for v in keep.get("vias", []) if v["net"] not in hit],
     }
+
+
+def hv_net_class(pcb_path, rules):
+    """High-voltage nets (rules.hv_nets) get an "HV" net class at rules.hv_clearance (IPC-2221B B2), so the zone
+    filler and DRC keep it, plus a project rule: a pin-pitch exception for pairs that involve a pad (a fine-pitch part's pins sit closer than the board gap; the router keeps the
+    full gap everywhere but the fan-out next to a pin, and pours always keep it). Creepage is not a separate
+    rule: on one uncut surface the creepage path is the clearance, and KiCad 10's creepage check ignores the
+    pad exception (it flagged a 2.54 mm resistor's own two pins), so it would fail every such part."""
+    nets, hv = rules.get("hv_nets") or [], float(rules.get("hv_clearance") or 0)
+    if not nets or hv <= float(rules["clearance"]):
+        return
+    pro = Path(pcb_path).with_suffix(".kicad_pro")
+    d = json.loads(pro.read_text())
+    ns = d.setdefault("net_settings", {})
+    base = next(c for c in ns["classes"] if c["name"] == "Default")
+    ns["classes"] = [c for c in ns["classes"] if c["name"] != "HV"] + [{**base, "name": "HV", "clearance": hv, "priority": 0}]
+    ns["netclass_patterns"] = [p for p in ns.get("netclass_patterns") or [] if p.get("netclass") != "HV"] + [
+        {"netclass": "HV", "pattern": n} for n in nets
+    ]
+    pro.write_text(json.dumps(d, indent=2) + "\n")
+    lo = f"{float(rules['clearance']):g}mm"
+    Path(pcb_path).with_suffix(".kicad_dru").write_text(
+        "(version 1)\n"
+        f'(rule "HV pin pitch" (constraint clearance (min {lo}))\n'
+        "  (condition \"(A.NetClass == 'HV' || B.NetClass == 'HV') && (A.Type == 'Pad' || B.Type == 'Pad')"
+        " && A.Type != 'Zone' && B.Type != 'Zone'\"))\n"
+    )
 
 
 def main(job_path, result_path):
@@ -364,6 +392,7 @@ def main(job_path, result_path):
         board.Add(txt)
 
     pcbnew.SaveBoard(job["out_pcb"], board)
+    hv_net_class(job["out_pcb"], rules)
     parts_out = {}
     for ref, fp in fps.items():
         fp.BuildCourtyardCaches()

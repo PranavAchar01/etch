@@ -2246,10 +2246,11 @@ def _auto_mcu(
     I2C0, the rest on free GPIO, power from the Pico's own USB rails when nothing else powers the board."""
     if firmware.mcu_part(design, kept):
         return None
+    hv = set(_hv_nets(design, kept, ask)[1])  # a 170 V anode on a GPIO pin would kill the Pico
     lonely = [
         n
         for n in _lonely_nets(design)
-        if n.upper() not in ("GND",) + _SUPPLY_5V + _SUPPLY_3V3
+        if n.upper() not in ("GND",) + _SUPPLY_5V + _SUPPLY_3V3 and n not in hv
     ]
     if not lonely:
         return None
