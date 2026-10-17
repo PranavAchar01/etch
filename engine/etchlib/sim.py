@@ -125,6 +125,124 @@ def _node(net: str) -> str:
     return "0" if net.upper() in ("GND", "0", "VSS") else net
 
 
+def _idd_ohms(s: dict[str, Any]) -> str:
+    """The resistor on a module's internal 3.3 V node that draws its running current (catalog idd_ma, else the
+    Pico datasheet value)."""
+    return f"{float(s.get('v_io', 3.3)) / (float(s.get('idd_ma', MCU_IDLE_MA)) * 1e-3):.4g}"
+
+
+class NothingToSimulate(ValueError):
+    """The board has no supply the transient can start from (no power connector, no USB module): nothing to run.
+    simulate() reports that as a pass with a note, never a failure."""
+
+
+# Raspberry Pi Pico datasheet, power-consumption table: about 20-25 mA from VBUS running code at 125 MHz
+# ("Popcorn"), about 13 mA idling in BOOTSEL. MicroPython idling in its REPL sits near 20 mA. The tested firmware
+# keeps the chip running (never dormant), so idle = running. Before 10-17 the module drew nothing in simulation,
+# so an idle Pico board read 0.2 mA (live-1792268207874) and every model-written "idle current" band failed.
+MCU_IDLE_MA = 20.0
+
+# Typical supply current of chips the index has no SPICE card for, from their datasheets (5 V, default clock).
+# Used two ways: the chip draws it in simulation (between its supply and ground pins), and the supply budget adds it.
+IC_IDLE_MA: list[tuple[str, float, str]] = [
+    (r"ATTINY(25|45|85)", 1.0, "ATtiny85 datasheet: about 1 mA active at the 1 MHz factory clock, 5 V"),
+    (r"ATTINY", 1.0, "ATtiny datasheet: about 1 mA active at 1 MHz, 5 V"),
+    (r"ATMEGA(48|88|168|328)", 9.0, "ATmega328P datasheet: about 9 mA active at 16 MHz, 5 V"),
+    (r"ATMEGA", 9.0, "ATmega datasheet: about 9 mA active at 16 MHz, 5 V"),
+    (r"RP2040", 20.0, "RP2040 datasheet: about 20 mA running at 125 MHz"),
+    (r"STM32", 5.0, "STM32F0 datasheet: about 5 mA running at 8 MHz"),
+    (r"CH340", 12.0, "CH340 datasheet: about 12 mA working current"),
+    (r"FT232", 15.0, "FT232R datasheet: 15 mA operating current"),
+    (r"CP210", 20.0, "CP2102 datasheet: about 20 mA normal operation"),
+    (r"(TLC|ICM7|LMC)555", 0.2, "CMOS 555 datasheet: under 0.2 mA"),
+    (r"(NE|LM|SA|SE)?555|556", 3.0, "NE555 datasheet: 3 mA at 5 V, output low"),
+    (r"LM358|LM2904|LM324", 0.7, "LM358 datasheet: 0.7 mA, both amplifiers"),
+    (r"74141|K155ID1|SN74141", 16.0, "SN74141 datasheet: about 16 mA"),
+    (r"MC34063|MC33063", 2.5, "MC34063 datasheet: about 2.5 mA"),
+    (r"MAX1771", 0.11, "MAX1771 datasheet: 110 uA"),
+    (r"74(HC|HCT|AHC|LVC|AC)|CD40|^40\d\d|4017|4093|40106", 0.01, "CMOS logic datasheet: static current in uA"),
+    (r"ULN200|ULN280", 0.5, "ULN2003 datasheet: input and leakage, under 1 mA"),
+    (r"PC817|4N2|4N3|6N13", 0.0, "optocoupler: draws through its LED resistor only"),
+]
+IC_DEFAULT_MA = 1.0
+
+# Typical 5 mm / 3 mm indicator LED datasheet absolute maximum continuous forward current
+LED_ABS_MAX_MA = 30.0
+
+_SUPPLY_PIN = re.compile(r"^(VCC\w*|VDD\w*|AVCC|V\+|VIN|VS|VBAT|\+?5V|\+?3V3|\+?3\.3V|VBUS|VPP|VLOGIC|VIO)$", re.I)
+_GND_PIN = re.compile(r"^(GND\w*|VSS\w*|V-|AGND|DGND|PGND|0V)$", re.I)
+
+
+def _idle_ma(name: str) -> tuple[float, str]:
+    n = name.upper()
+    for pat, ma, why in IC_IDLE_MA:
+        if re.search(pat, n):
+            return ma, why
+    return IC_DEFAULT_MA, f"no datasheet value on file for {name}: {IC_DEFAULT_MA} mA assumed"
+
+
+def _reg_vout(name: str) -> float | None:
+    n = name.upper()
+    if m := re.search(r"78L?M?(\d\d)", n):
+        return float(m.group(1))
+    if m := re.search(r"(\d{1,2})\.(\d)", n):
+        return float(f"{m.group(1)}.{m.group(2)}")
+    if m := re.search(r"(\d)V(\d)", n):
+        return float(f"{m.group(1)}.{m.group(2)}")
+    if m := re.search(r"-(\d)(\d)(?:\d\d)?(?:[A-Z]|$)", n):
+        return float(f"{m.group(1)}.{m.group(2)}")
+    return None
+
+
+def _pin_names(p: Any) -> dict[str, str]:
+    try:
+        from . import symbols
+
+        return {x.number: x.name for x in symbols.pins(p.lib_id)}
+    except Exception:  # a fetched part whose symbol is not in the local libraries: no names, modelled as open pins
+        return {}
+
+
+def fallback_spice(p: Any) -> tuple[dict[str, Any], str]:
+    """A SPICE stand-in for a part the index gives no card (an IC, a regulator, an inductor, a module), so the
+    transient still runs (QA 10-17: one unmapped part used to fail the whole simulation). A chip with named supply
+    and ground pins draws its datasheet typical current between them; a fixed linear regulator regulates; an
+    inductor is an inductor; anything else is open pins. Returns (spice mapping, how it is modelled)."""
+    lib = str(p.lib_id)
+    name = lib.split(":", 1)[-1]
+    if re.match(r"Device:L(_|$)", lib):
+        try:
+            _val(p.value)
+            return {"prefix": "L", "pins": sorted(p.pins)[:2]}, f"inductor {p.value}"
+        except ValueError:
+            pass
+    names = _pin_names(p)
+    up = {n: str(nm).upper().replace("~{", "").replace("}", "") for n, nm in names.items()}
+    vi = next((n for n, nm in up.items() if nm in ("VI", "IN", "VIN") and n in p.pins), None)
+    vo = next((n for n, nm in up.items() if nm in ("VO", "OUT", "VOUT") and n in p.pins), None)
+    gnd = next((n for n, nm in up.items() if _GND_PIN.match(nm) and n in p.pins), None)
+    if vi and vo and gnd and (vout := _reg_vout(name)) is not None:
+        big = bool(re.search(r"78", name))
+        iq_ma = 5.0 if big or re.search(r"1117", name) else 1.0
+        drop = 2.0 if big else (1.1 if re.search(r"1117", name) else 0.5)
+        return (
+            {
+                "prefix": "U",
+                "pins": [vi, vo, gnd],
+                "role": "ldo",
+                "vout": vout,
+                "dropout": drop,
+                "iq_ohms": 5.0 / iq_ma * 1e3,
+            },
+            f"linear regulator {vout:g} V out, {drop:g} V dropout, about {iq_ma:g} mA quiescent (datasheet typical)",
+        )
+    sup = [n for n, nm in up.items() if _SUPPLY_PIN.match(nm) and n in p.pins and _node(p.pins[n]) != "0"]
+    if sup and gnd:
+        ma, why = _idle_ma(name)
+        return {"prefix": "U", "pins": [sup[0], gnd], "role": "ic", "idd_ma": ma}, why
+    return {"prefix": "U", "pins": sorted(p.pins), "role": "passive"}, "no SPICE model: pins left open"
+
+
 def scenarios(spec: Spec) -> list[dict[str, Any]]:
     """Named operating conditions, e.g. [{name: dark, ldr: dark}, {name: light, ldr: light}] or
     [{name: v3_0, voltage: 3.0}]. A board with an LDR and no scenarios gets dark + light automatically."""
@@ -148,7 +266,7 @@ def netlist(
     for p in spec.parts:
         s = p.spice
         if not s:
-            raise ValueError(f"{p.ref}: no spice mapping in the index; cannot simulate")
+            s, _ = fallback_spice(p)
         nodes = [_node(p.pins.get(n, f"NC_{p.ref}_{n}")) for n in s["pins"]]
         pre = s["prefix"]
         role = s.get("role")
@@ -200,6 +318,7 @@ def netlist(
             lines.append(f"V{p.ref}_LDO {vbus} {reg} DC {v - float(s.get('v_io', 3.3)):.3f}")
             lines.append(f"R{p.ref}_V3 {reg} {v3} 0.1")
             lines.append(f"R{p.ref}_SYS {vbus} {vsys} 0.5")
+            lines.append(f"R{p.ref}_IDD {reg} 0 {_idd_ohms(s)}")  # the chip's own running current
             for k, gp in enumerate(s.get("gnd") or []):
                 nd = _node(p.pins.get(gp, "GND"))
                 if nd != "0":
@@ -233,6 +352,7 @@ def netlist(
             lines.append(f"V{p.ref}_S {p.ref}_O {reg} DC 0")
             lines.append(f"F{p.ref} {src} 0 V{p.ref}_S 1")
             lines.append(f"R{p.ref}_Q {src} 0 2k")
+            lines.append(f"R{p.ref}_IDD {reg} 0 {_idd_ohms(s)}")  # the chip's own running current
             lines.append(f"R{p.ref}_V3 {reg} {v3} 0.1")
             for k, gp in enumerate(s.get("gnd") or []):
                 nd = _node(p.pins.get(gp, "GND"))
@@ -298,6 +418,20 @@ def netlist(
         elif role == "ldr":
             lit = scen.get("ldr", "light")
             lines.append(f"R{p.ref} {nodes[0]} {nodes[1]} {sets.get(p.ref, s.get(lit, '10k'))}")
+        elif role == "ic":
+            # a chip with no SPICE card (fallback_spice): its datasheet typical supply current between its supply and
+            # ground pins once the rail is up (scaled down below 1.8 V so an unpowered chip draws nothing); its
+            # other pins are open (a 1G leak keeps each node defined)
+            vcc, g = nodes[0], nodes[1]
+            if vcc != g:
+                lines.append(f"B{p.ref}_IDD {vcc} {g} I={float(s['idd_ma']) * 1e-3:.6g}*min(1, max(0, V({vcc},{g})/1.8))")
+            for k, (pin, net) in enumerate(sorted(p.pins.items())):
+                nd = _node(net)
+                if pin not in s["pins"] and nd != "0":
+                    lines.append(f"R{p.ref}_LK{k} {nd} 0 1G")
+        elif pre == "L":
+            lines.append(f"L{p.ref} {nodes[0]} {p.ref}_L {sets.get(p.ref, p.value)}")
+            lines.append(f"R{p.ref}_DCR {p.ref}_L {nodes[1]} 0.1")
         elif role == "passive":
             # not driven in simulation: a high-value leak to ground keeps each pin's node defined
             for k, nd in enumerate(nodes):
@@ -332,7 +466,7 @@ def netlist(
         else:
             raise ValueError(f"{p.ref}: unsupported spice prefix {pre}")
     if supply is None:
-        raise ValueError("no power-in connector; nothing to simulate from")
+        raise NothingToSimulate("no power-in connector or USB module to run from")
     lines += [card(m) for m in sorted(models)]
     vecs = " ".join(
         [f"@d{r.lower()}[id]" for r in leds] + [f"i(v{supply.lower()})"] + [f"@r{r.lower()}[i]" for r in loads]
@@ -428,26 +562,96 @@ def _run_one(spec: Spec, out_dir: Path, scen: dict[str, Any], t_stop: float, ste
     }
 
 
+def not_modelled(spec: Spec) -> dict[str, str]:
+    """Parts the index has no SPICE card for, and how the simulation stands in for each (fallback_spice)."""
+    return {p.ref: fallback_spice(p)[1] for p in spec.parts if not p.spice}
+
+
+def supply_budget(spec: Spec, scen: dict[str, Any] | None = None) -> dict[str, Any]:
+    """The supply-current band a board should draw, from its parts' datasheet / catalog values, not from a model:
+    every MCU's running current, every regulator's quiescent current, every chip's typical supply current, each
+    modelled load at its rated resistance, each LED die at its absolute maximum, and each resistor with the whole
+    supply across it (pull-ups, dividers, LED resistors). The ceiling is that sum plus 25 % and 5 mA: an upper bound
+    no correct board exceeds, so going over it means a short or a part pulling far more than its datasheet. The
+    floor is half the MCUs' running current: below it a microcontroller is not powered."""
+    scen = scen or {}
+    v = float(scen.get("voltage", spec.raw.get("power", {}).get("voltage", 5.0)))
+    sets = {str(k): str(x) for k, x in (scen.get("set") or {}).items()}
+    terms: list[tuple[str, float, str]] = []
+    floor = 0.0
+
+    def ohms(x: Any) -> float | None:
+        try:
+            r = _val(x)
+        except ValueError:
+            return None
+        return r if r > 0 else None
+
+    for p in spec.parts:
+        s = p.spice or fallback_spice(p)[0]
+        role, pre = s.get("role"), s.get("prefix")
+        if role == "mcu":
+            if s.get("rail"):
+                ma = float(s.get("v_io", 3.3)) / float(s.get("idd_ohms", 35)) * 1e3
+                terms.append((p.ref, ma, "Wi-Fi module receive current (catalog)"))
+            else:
+                ma = float(s.get("idd_ma", MCU_IDLE_MA))
+                terms.append((p.ref, ma + v / 2e3 * 1e3, "MCU module running current (datasheet) plus its regulator"))
+            floor += 0.5 * ma
+        elif role == "ldo":
+            terms.append((p.ref, v / float(s.get("iq_ohms", 1000)) * 1e3, "regulator quiescent current (datasheet)"))
+        elif role == "ic":
+            terms.append((p.ref, float(s["idd_ma"]), "chip supply current (datasheet typical)"))
+        elif role in ("load", "hbridge"):
+            r = ohms(sets.get(p.ref, s.get("ohms", 100)))
+            if r:
+                terms.append((p.ref, v / r * 1e3, f"rated load {r:g} ohm"))
+        elif role == "mic":
+            terms.append((p.ref, v / 6.6e3 * 1e3, "microphone module (about 0.5 mA)"))
+        elif role == "rgb":
+            terms.append((p.ref, 3 * LED_ABS_MAX_MA, "three LED dice at their absolute maximum"))
+        elif role == "ldr":
+            r = min(x for x in (ohms(s.get("dark", "1Meg")), ohms(s.get("light", "1k")), ohms(sets.get(p.ref))) if x)
+            terms.append((p.ref, v / r * 1e3, "LDR at its lowest resistance with the supply across it"))
+        elif pre == "D" and str(led_model(str(s.get("model", "")), p.value)).startswith("LED"):
+            terms.append((p.ref, LED_ABS_MAX_MA, "LED absolute maximum (datasheet)"))
+        elif pre in ("R", "P") and role is None:
+            r = ohms(sets.get(p.ref, p.value))
+            if r:
+                terms.append((p.ref, v / r * 1e3, f"{r:g} ohm with the supply across it"))
+    total = sum(t[1] for t in terms)
+    return {
+        "floor_ma": round(floor, 3),
+        "ceiling_ma": round(total * 1.25 + 5.0, 1),
+        "terms": [{"ref": r, "ma": round(ma, 3), "why": w} for r, ma, w in terms],
+    }
+
+
 def simulate(spec: Spec, out_dir: Path, t_stop: float | None = None, step: float = 0.5e-3) -> dict[str, Any]:
     cfg = spec.raw.get("sim") or {}
     t_stop = float(t_stop or cfg.get("t_stop", 6.0))
     scs = scenarios(spec)
     t0 = time.time()
+    stand_in = not_modelled(spec)
     try:
         netlist(spec, t_stop, step, scs[0])  # mapping errors surface before any process starts
         with cf.ThreadPoolExecutor(max_workers=max(1, len(scs))) as ex:
             runs = list(ex.map(lambda s: _run_one(spec, out_dir, s, t_stop, step), scs))
-    except (ValueError, RuntimeError) as e:
-        # a part with no SPICE mapping: the board still builds and the other gates still run,
-        # but every simulation benchmark reads as missing (and so fails)
-        return {"ok": False, "error": str(e)[:1200], "runtime_s": round(time.time() - t0, 3)}
-    first = runs[0]
-    if not first["leds"] and not first["loads"]:
+    except NothingToSimulate as e:
+        # no supply to start a transient from: not a failure of the board; every simulation benchmark is reported
+        # as not measurable (engine/etchlib/build.py _bench), never as a failed reading
         return {
-            "ok": False,
-            "error": "no LED or load in the circuit; nothing for the transient benchmarks to measure",
+            "ok": True,
+            "simulated": False,
+            "note": f"not simulated: {e}",
+            "not_modelled": stand_in,
             "runtime_s": round(time.time() - t0, 3),
         }
+    except (ValueError, RuntimeError) as e:
+        # a real netlist error (a resistor valued "RED", a diode with no card): the other gates still run, and the
+        # error goes back to the repair step
+        return {"ok": False, "error": str(e)[:1200], "runtime_s": round(time.time() - t0, 3)}
+    first = runs[0]
     res: dict[str, Any] = {
         "ok": True,
         "engine": "ngspice",
@@ -458,7 +662,15 @@ def simulate(spec: Spec, out_dir: Path, t_stop: float | None = None, step: float
         "zeners = generic card at nominal voltage; buzzer/fan = rated load",
         "scenarios": [{"name": r["name"], **r["scenario"], "runtime_s": r["runtime_s"]} for r in runs],
         "leds": {r: first["outputs"][r] for r in first["leds"]},
+        "simulated": True,
+        "not_modelled": stand_in,
+        "budget": {r["name"]: supply_budget(spec, r["scenario"]) for r in runs},
     }
+    if not first["leds"] and not first["loads"]:
+        # no LED and no modelled load (a nixie or HV supply, a display, a relay, a module, an MCU with pull-ups):
+        # the transient still runs and the probe is the supply current, which every board has (QA 10-17: the
+        # trackpad live-1792274444325 and the nixie driver R3DcFGa3We_iGdwo failed "no LED or load" on every try)
+        res["probe"] = "supply current (no LED or modelled load on this board)"
     multi = len(runs) > 1 or runs[0]["name"] != "default"
     for r in runs:
         pre = (r["name"] + ".") if multi else ""
@@ -467,6 +679,9 @@ def simulate(spec: Spec, out_dir: Path, t_stop: float | None = None, step: float
         for ref, m in r["outputs"].items():
             for k in ("peak_ma", "avg_ma", "blink_hz", "duty"):
                 res[f"{pre}{ref}.{k}"] = m[k]
+    peaks = [m["peak_ma"] for r in runs for ref, m in r["outputs"].items() if ref in r["leds"]]
+    if peaks:
+        res["led_peak_ma_max"] = max(peaks)  # the hardest-driven LED die in any scenario (code benchmark)
     # legacy flat keys from the first scenario (first LED, first load)
     res.setdefault("supply_ma_avg", first["supply_ma_avg"])
     res.setdefault("supply_ma_peak", first["supply_ma_peak"])

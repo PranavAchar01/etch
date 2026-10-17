@@ -106,19 +106,67 @@ def _netlist_parity(xml_path: Path, pads: list[dict[str, Any]]) -> dict[str, Any
 
 
 def _bench(spec: Spec, checks: dict[str, Any]) -> list[dict[str, Any]]:
-    flat = {
+    """The spec's benchmarks measured, plus the simulation benchmarks code derives from the circuit itself.
+
+    A benchmark that names a metric this board's simulation does not produce (a model-written "OLED.avg_ma" on a
+    part that is not a modelled load, "dark.while.BUZ1.avg_ma", any simulation metric on a board with nothing to
+    simulate) can never be met by repairing the circuit: it is reported as not measurable (pass None) instead of
+    failed (QA 10-17: 67 % of failed model-written benchmarks read None or ~0, and the repair loop fixed 3 of 103).
+    A real simulation error (ok False) still fails them, so the error reaches the repair step."""
+    sim_res = checks["sim"]
+    gates = {
         "drc_violations": checks["drc"]["violations"],
         "unconnected": checks["drc"]["unconnected"],
         "erc_errors": checks["erc"]["errors"],
         "parity": checks["drc"]["parity"] + checks["netlist"]["mismatches"],
     }
-    flat.update({k: v for k, v in checks["sim"].items() if isinstance(v, (int, float))})
+    flat = dict(gates)
+    flat.update({k: v for k, v in sim_res.items() if isinstance(v, (int, float)) and not isinstance(v, bool)})
+    sim_ran = bool(sim_res.get("ok"))
     out = []
     for b in spec.raw.get("benchmarks", []):
         val = flat.get(b["check"])
-        ok = val is not None and b.get("min", -1e18) <= val <= b.get("max", 1e18)
-        out.append({"check": b["check"], "text": b.get("text", b["check"]), "value": val, "pass": bool(ok)})
-    return out
+        row = {"check": b["check"], "text": b.get("text", b["check"]), "value": val}
+        if val is None and sim_ran and b["check"] not in gates:
+            why = sim_res.get("note") if sim_res.get("simulated") is False else "this board's simulation has no such metric"
+            row.update(pass_=None, status="not measurable")
+            row["text"] += f" (not measurable: {why})"
+        else:
+            row["pass_"] = bool(val is not None and b.get("min", -1e18) <= val <= b.get("max", 1e18))
+        row["pass"] = row.pop("pass_")
+        out.append(row)
+    return out + _sim_bench(sim_res)
+
+
+def _sim_bench(sim_res: dict[str, Any]) -> list[dict[str, Any]]:
+    """Benchmarks code writes from the circuit (sim.supply_budget), never from a model: per scenario, the supply
+    current inside the band the parts' datasheets allow (MCU running current, regulator quiescent, chip supply
+    currents, pull-ups and other resistors, loads, LEDs); and every LED under its absolute maximum current."""
+    if not sim_res.get("ok") or sim_res.get("simulated") is False:
+        return []
+    rows = []
+    budget = sim_res.get("budget") or {}
+    multi = len(budget) > 1 or any(n != "default" for n in budget)
+    for name, bud in budget.items():
+        key = f"{name}.supply_ma_avg" if multi else "supply_ma_avg"
+        val = sim_res.get(key)
+        lo, hi = float(bud["floor_ma"]), float(bud["ceiling_ma"])
+        text = f"supply current inside the parts' datasheet budget, {lo:g} to {hi:g} mA" + (f" ({name})" if multi else "")
+        rows.append({"check": key, "text": text, "value": val, "pass": val is not None and lo <= val <= hi, "by": "code"})
+    if sim_res.get("led_peak_ma_max") is not None:
+        from .sim import LED_ABS_MAX_MA
+
+        val = sim_res["led_peak_ma_max"]
+        rows.append(
+            {
+                "check": "led_peak_ma_max",
+                "text": f"every LED under its {LED_ABS_MAX_MA:g} mA absolute maximum",
+                "value": val,
+                "pass": val <= LED_ABS_MAX_MA,
+                "by": "code",
+            }
+        )
+    return rows
 
 
 def _prune_dead_vias(pcb: Path, report: Path) -> int:
