@@ -39,10 +39,10 @@ from etchlib.kicad import cli
 from etchlib.parts import load_index, read_index
 
 from . import (
+    analog,
     board_store,
     config,
     firmware,
-    analog,
     kicad_catalog,
     llm,
     piece_render,

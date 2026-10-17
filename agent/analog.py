@@ -18,6 +18,7 @@ the picker's load_ohms is kept unless it is outside 30 to 400 mA for a fan or mo
 
 from __future__ import annotations
 
+import itertools
 import math
 import re
 from dataclasses import dataclass, field
@@ -98,7 +99,7 @@ def hfe_min(model: str, ic_ma: float) -> float:
     pts = DRIVERS[model]["hfe"]
     if ic_ma <= pts[0][0]:
         return pts[0][1]
-    for (i0, h0), (i1, h1) in zip(pts, pts[1:]):
+    for (i0, h0), (i1, h1) in itertools.pairwise(pts):
         if ic_ma <= i1:
             f = (math.log(ic_ma) - math.log(i0)) / (math.log(i1) - math.log(i0))
             return h0 + f * (h1 - h0)
