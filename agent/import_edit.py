@@ -590,11 +590,43 @@ def set_stackup(text: str, board: dict[str, str], copper: int = 2) -> str:
     return text
 
 
+def kc(*args: str, timeout: float = 420) -> subprocess.CompletedProcess | None:
+    """kicad-cli at nice 10. cli(nice=True) also asks for macOS background QoS, which starved a GLB export past
+    its 300 s timeout while other renders ran (real run 10-17); the in-place edit is someone watching the page."""
+    try:
+        return subprocess.run(["nice", "-n", "10", str(KICAD_CLI), *args], capture_output=True, text=True,
+                              timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return None
+
+
+def glb(out: Path, pcb: Path) -> dict[str, Any]:
+    """view/board.glb for the editor: KiCad's own GLB export with the same flags as agent/viewer.py."""
+    from .viewer import GLB_FLAGS
+
+    t0 = time.time()
+    view = out / "view"
+    view.mkdir(exist_ok=True)
+    tmp = view / ".glb-tmp"
+    shutil.rmtree(tmp, ignore_errors=True)
+    tmp.mkdir()
+    try:
+        kc("pcb", "export", "glb", "-f", *GLB_FLAGS, "-o", str(tmp / "board.glb"), str(pcb), timeout=600)
+        if (tmp / "board.glb").is_file():
+            shutil.move(str(tmp / "board.glb"), str(view / "board.glb"))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    f = view / "board.glb"
+    ok = f.is_file() and f.stat().st_mtime >= pcb.stat().st_mtime
+    return {"ok": ok, "bytes": f.stat().st_size if ok else 0, "seconds": round(time.time() - t0, 1),
+            **({} if ok else {"error": "kicad-cli wrote no GLB"})}
+
+
 # ---------------------------------------------------------------- DRC before and after
 
 
 def drc(pcb: Path, out: Path) -> dict[str, Any]:
-    cli("pcb", "drc", "--format", "json", "--severity-all", "-o", str(out), str(pcb), nice=True, check=False)
+    kc("pcb", "drc", "--format", "json", "--severity-all", "-o", str(out), str(pcb), timeout=300)
     try:
         return json.loads(out.read_text())
     except (OSError, ValueError):
@@ -787,8 +819,8 @@ def export(stream: Stream, out: Path, pcb: Path, facts: dict[str, Any]) -> dict[
     gerb = out / "gerbers"
     shutil.rmtree(gerb, ignore_errors=True)
     gerb.mkdir()
-    cli("pcb", "export", "gerbers", "-o", str(gerb) + "/", str(pcb), nice=True, check=False)
-    cli("pcb", "export", "drill", "-o", str(gerb) + "/", str(pcb), nice=True, check=False)
+    kc("pcb", "export", "gerbers", "-o", str(gerb) + "/", str(pcb), timeout=300)
+    kc("pcb", "export", "drill", "-o", str(gerb) + "/", str(pcb), timeout=300)
     bom = out / f"{name}-bom.csv"
     rows = bom_rows(facts)
     with bom.open("w", newline="") as fh:
@@ -1029,10 +1061,15 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
     from . import viewer
 
     t4 = time.time()
-    g = viewer.glb(out)
     viewer.parts(out)
+    g = glb(out, pcb)
+    viewer.parts(out)  # after the GLB too: /etch/parts serves its cache only when it is newer than the board
     t_glb = time.time() - t4
     rd = render(stream, out, pcb) if do_render else None
+    if not g["ok"]:
+        gates.append(("3D board", False, "the GLB export did not finish; the editor builds it when it opens the board"))
+        stream.emit("assembly", "gate", iteration=1, gate="3D board", ok=False, value=gates[-1][2])
+        all_ok = False
     if all_ok:
         bits = [f"{a['ref']} is on the board" for a in resolved["add"]] or ["The change is made"]
         msg = (", ".join(bits) + ". Every new connection is routed and DRC found nothing new.") if n_add else \
