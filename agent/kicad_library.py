@@ -1248,10 +1248,13 @@ def _alias(text: str) -> dict[str, Any] | None:
 def resolve(text: str) -> dict[str, Any] | None:
     """One usable piece for a part the picker or an ask named ("1N4148", "DIOD1N4148", "Conn_01x02", "Conn 01x02",
     "CP_Radial_D5.0mm", "SSD1306 OLED"), or None. Part numbers inside a longer token are found too."""
+    L = load()
+    # an exact piece key ("kicad:Device:LED@LED_D5.0mm") is that piece, footprint included
+    if (p := L["by_key"].get(text.strip())) is not None and _usable(p):
+        return p
     hit = _generic_conn(text)
     if hit:
         return hit
-    L = load()
     # the text IS a symbol name ("RP2040", "TL072", "1N4148W"): that symbol, before any footprint-name match
     exact = [
         L["pieces"][i]
@@ -1326,7 +1329,7 @@ FUNCTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "buzzer",
             "Battery_Cell",
             "push button",
-            "LED",
+            "kicad:Device:LED@LED_D5.0mm",
         ),
     ),
     (
@@ -1474,6 +1477,7 @@ FUNCTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 _CORE = ("Raspberry Pi Pico",)
+_TINY = re.compile(r"01005|0201Metric|0402Metric|_0201_|_0402_|WLP-|BGA", re.I)
 
 
 def shortlist(ask: str, k: int = 40) -> list[dict[str, Any]]:
@@ -1510,6 +1514,16 @@ def shortlist(ask: str, k: int = 40) -> list[dict[str, Any]]:
         elif hit is None:
             got = search(q, 1)
             hit = got[0] if got else None
+        if hit is not None and _TINY.search(hit["key"]):
+            # 01005 / 0201 / 0402 pads do not route at hobby rules (live-1792272486984: "LED" resolved to
+            # LED_01005 and the tracker failed routing GND and LED_A twice); take the hobby-sized variant
+            L = load()
+            same = [
+                p
+                for p in L["pieces"]
+                if p["lib_id"] == hit["lib_id"] and _usable(p) and not _TINY.search(p["key"])
+            ]
+            hit = min(same, key=lambda p: (_hobby_rank(p["footprint"]), p["key"]), default=None)
         if hit is not None:
             out.setdefault(hit["key"], hit)
         if len(out) >= k:
