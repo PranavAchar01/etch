@@ -1116,4 +1116,5 @@ def stt_up() -> bool:
 if __name__ == "__main__":
     threading.Thread(target=gc_jobs, daemon=True).start()
     print(f"etch public backend on http://127.0.0.1:{PORT}", flush=True)
-    ThreadingHTTPServer(("127.0.0.1", PORT), H).serve_forever()
+    # ETCH_BIND=0.0.0.0 inside a container (docs/DEPLOY.md); the Mac keeps loopback behind the tunnel
+    ThreadingHTTPServer((os.environ.get("ETCH_BIND", "127.0.0.1"), PORT), H).serve_forever()
