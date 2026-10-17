@@ -11,6 +11,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+import { createBuildPreview } from "./build-preview.js";
 
 export const MASKS = { green: 0x0a5428, purple: 0x4b2a83, red: 0xa82222, yellow: 0xd4b21c, blue: 0x173f93, white: 0xf1f1ee, black: 0x161616 };
 export const SILKS = { white: 0xf5f5f1, black: 0x1b1b1b, yellow: 0xf3d43c };
@@ -698,6 +699,17 @@ export function createBoardViewer(host) {
     }
   }
 
+  // ---------- the board taking shape while Etch builds it (build-preview.js) ----------
+  const build = createBuildPreview(THREE, {
+    scene, reduced: REDUCED,
+    invalidate: () => { dirty = true; buildOn = true; },
+    parts: () => parts,
+    partBox: (ref) => partBox(ref),
+    boardRect: () => boardWorldRect(),
+    boardTop: () => glbRoot.localToWorld(new THREE.Vector3(0, boardTop, 0)).y,
+  });
+  let buildOn = false, buildLast = performance.now();
+
   // ---------- loop: render only when something changed ----------
   let firstFrame = false;
   function tick() {
@@ -705,6 +717,8 @@ export function createBoardViewer(host) {
     requestAnimationFrame(tick);
     const now = performance.now();
     if (anim) stepAnim(now);
+    if (buildOn) { try { buildOn = build.step(Math.min(0.05, (now - buildLast) / 1000)); } catch (e) { buildOn = false; console.warn("build preview:", e); } dirty = true; }
+    buildLast = now;
     if (ctl.update()) dirty = true;
     if (pend && model) { const [x, y] = pend; pend = null; const h = hit(x, y); setHover(h?.object.userData.ref || null); }
     if (!dirty || !model) return;
@@ -721,7 +735,7 @@ export function createBoardViewer(host) {
   requestAnimationFrame(tick);
 
   return {
-    load, empty, reset, view, lookFrom, fitView, zoomBy, focus, setOrtho, select, mark, setHover, project, partAnchor, partBox,
+    load, empty, reset, view, build, lookFrom, fitView, zoomBy, focus, setOrtho, select, mark, setHover, project, partAnchor, partBox,
     setHidden, isolate, worldToScreen, pickBoard, mmToScreen, boardRect,
     refAt: (x, y) => hit(x, y)?.object.userData.ref || null, // client coords -> refdes under them
     setMask, setSilk, setFinish, setFloor,
@@ -743,6 +757,12 @@ export function createBoardViewer(host) {
     get workplane() { return { ...wp }; },
     controls: ctl,
     canvas: cv,
+    // for scene add-ons that draw into the same scene with the same lights (editor/build-anim.js): the scene, the
+    // renderer, the GLB's root (KiCad metres) and the board's top face in that root's frame
+    get scene() { return scene; },
+    get renderer() { return renderer; },
+    get root() { return glbRoot; },
+    get boardTopLocal() { return boardTop; },
     invalidate() { dirty = true; },
     on(name, f) { (ev[name] = ev[name] || []).push(f); return () => { ev[name] = ev[name].filter((x) => x !== f); }; },
     dispose() { alive = false; renderer.dispose(); cv.remove(); labels.remove(); },

@@ -480,3 +480,21 @@ button { font: inherit; color: inherit; }
   .card { animation: none; }
   .btn:active, .cat:active, .sw:active, .s-btn:active { transform: none; }
 }
+
+/* ---- My boards (js/my-boards.js): a first row above the library ---- */
+.mine { margin: 4px 0 28px; }
+.mine h2 { margin: 0 0 14px; font: 400 24px/1.2 var(--head); color: var(--ink); }
+.mine h2 span { margin-left: 8px; font: 500 13px var(--body); color: var(--ink-3); }
+.mine-grid { grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); }
+.mine-card .yours { flex: none; margin-right: 8px; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 12.5px; font-weight: 600; line-height: 1.5; }
+.mine-card .l1 { align-items: center; }
+.mine-card .th-none { position: absolute; inset: 18% 22%; border-radius: 12px; background: linear-gradient(135deg, #eef3f7, #e2eaf1); }
+.mine-more { border: 0; cursor: pointer; }
+.mine-menu { position: absolute; top: 60px; right: 12px; z-index: 5; min-width: 150px; padding: 6px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px #e6e6e6, 0 12px 28px rgba(17, 17, 17, .12); display: flex; flex-direction: column; animation: mine-pop .2s var(--liquid); }
+@keyframes mine-pop { from { opacity: 0; transform: translateY(-4px) scale(.96); } }
+.mine-menu button { border: 0; background: none; text-align: left; padding: 9px 12px; border-radius: 9px; font: 500 14px var(--body); color: var(--ink); cursor: pointer; }
+.mine-menu button:hover, .mine-menu button:focus-visible { background: #f2f5f8; outline: 0; }
+.mine-menu .bad { color: #c03b34; }
+.mine-in { flex: 1; min-width: 0; font: 600 17px var(--body); color: #141414; border: 0; border-radius: 8px; padding: 2px 6px; margin: -2px -6px; box-shadow: 0 0 0 1.5px var(--accent); outline: 0; }
+.toast { position: fixed; left: 50%; top: 84px; transform: translate(-50%, -8px); background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 10px; font: 500 13px var(--body); opacity: 0; pointer-events: none; transition: opacity .2s, transform .3s var(--liquid); z-index: 2000; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }

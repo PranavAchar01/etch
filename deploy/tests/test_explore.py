@@ -476,6 +476,19 @@ class ExploreRoutes(unittest.TestCase):
         self.assertIn("agent.import_edit", args)
         self.assertEqual(Path(args[args.index("--base") + 1]), run)
 
+    def test_live_modify_of_an_in_place_edit_stays_in_place(self):
+        run = TMP / "out" / "live-1792256559991"
+        run.mkdir(parents=True, exist_ok=True)
+        (run / "design.json").write_text(json.dumps({"title": "T", "parts": []}))
+        (run / "imported.json").write_text(json.dumps({"board": GH, "inplace": True}))
+        with mock.patch.object(etch_public, "OUT", TMP / "out"):
+            s, data = self.call("POST", "/etch/live", {"mode": "modify", "text": "make it red",
+                                                       "base": f"/engine/out/{run.name}"})
+        self.assertEqual(s, 200, data)
+        args = etch_public.JOBS[data["job"]].args
+        self.assertIn("agent.import_edit", args)
+        self.assertNotIn("agent.live", args)
+
     def test_change_gh_not_copyable_is_403(self):
         meta = TMP / "world" / "boards" / SLUG / "meta.json"
         m = json.loads(meta.read_text())

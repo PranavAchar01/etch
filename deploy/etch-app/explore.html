@@ -40,10 +40,9 @@
     </div>
   </section>
 
-  <section class="mine" id="mine" aria-labelledby="mineH" hidden>
-    <div class="mine-bar"><h2 id="mineH">My boards</h2><span class="count" id="mineCount"></span></div>
+  <section class="mine" id="mine" hidden aria-labelledby="mineT">
+    <h2 id="mineT">My boards <span>saved in this browser</span></h2>
     <div class="grid mine-grid" id="mineGrid"></div>
-    <p class="mine-empty" id="mineEmpty" hidden>Boards you build or change show up here. <a id="mineBuild" href="board.html?new=1">Build a board</a></p>
   </section>
 
   <div class="cats-wrap">
@@ -74,5 +73,6 @@
   <div class="sentinel" id="more"></div>
 </main>
 <script type="module" src="js/explore.js"></script>
+<script type="module" src="js/ui/stack-help.js"></script>
 </body>
 </html>

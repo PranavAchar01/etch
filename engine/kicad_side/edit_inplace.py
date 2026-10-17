@@ -348,6 +348,26 @@ def load_fp(fp_root, fpid):
     return fp
 
 
+def mod_area(fp_root, fpid):
+    """Courtyard box area of a library footprint, read from its .kicad_mod text. (Loading many footprints only to
+    measure them left pcbnew's SWIG wrappers returning untyped objects afterwards.)"""
+    import re
+
+    lib, name = fpid.split(":", 1)
+    try:
+        text = open(os.path.join(fp_root, lib + ".pretty", name + ".kicad_mod")).read()
+    except OSError:
+        return None
+    xs, ys = [], []
+    for blk in re.split(r"\(fp_", text)[1:]:
+        if '"F.CrtYd"' not in blk[:2000]:
+            continue
+        for x, y in re.findall(r"\((?:start|end|xy|center|mid)\s+([-\d.]+)\s+([-\d.]+)", blk):
+            xs.append(float(x))
+            ys.append(float(y))
+    return (max(xs) - min(xs)) * (max(ys) - min(ys)) if xs else None
+
+
 def set_model(fp, path):
     olds = list(fp.Models())
     fp.Models().clear()
@@ -405,6 +425,7 @@ class Placer:
         self.keepouts = keepout_areas(board)
         self.clear = max(rules["clearance"], rules["min_clearance"]) + 0.05
         self.edge = max(rules["edge_clearance"], 0.3) + 0.1
+        self.bb = _box(board.GetBoardEdgesBoundingBox())  # read once: later SWIG calls for it can come back untyped
 
     def add_court(self, box, side, holes=None):
         self.courts[side].add(box, box)
@@ -447,8 +468,8 @@ class Placer:
 
     def place(self, fp, anchor, nets, toward=None, sides=("top", "bottom"), radius=None):
         """Nearest free spot to anchor (x, y) for footprint fp; toward: a point the pads should face (cost)."""
-        bb = self.board.GetBoardEdgesBoundingBox()
-        R = radius or min(60.0, max(mm(bb.GetWidth()), mm(bb.GetHeight())))
+
+        R = radius or min(60.0, max(self.bb[2] - self.bb[0], self.bb[3] - self.bb[1]))
         step = 0.5
         n = int(R / step)
         offs = sorted(
@@ -626,9 +647,10 @@ def route_new(board, cu, outline, items, jobs, rules, grid=None, budget_s=120.0)
     win = None
     for j in jobs:
         for ref, num in j["pads"]:
-            p = pad_of(ref, num)
-            if p:
-                win = _union(win, _box(p.GetBoundingBox()))
+            fp = fps.get(ref)
+            for p in (fp.Pads() if fp else []):
+                if p.GetNumber() == num:  # every copy of the pad
+                    win = _union(win, _box(p.GetBoundingBox()))
     if win is None:
         return [], None, {"tracks": 0, "vias": 0}
     news = {(r, n) for j in jobs for r, n in j["pads"]}
@@ -654,7 +676,8 @@ def route_new(board, cu, outline, items, jobs, rules, grid=None, budget_s=120.0)
     win = (max(win[0], bb[0] - 0.5), max(win[1], bb[1] - 0.5), min(win[2], bb[2] + 0.5), min(win[3], bb[3] + 0.5))
     W, H = win[2] - win[0], win[3] - win[1]
     if grid is None:
-        grid = 0.1 if W * H / 0.01 <= 160000 else 0.15 if W * H / 0.0225 <= 260000 else 0.2
+        fine = rules["clearance"] < 0.18 or rules["track"] < 0.2  # dense boards need the fine grid to get anywhere
+        grid = 0.1 if fine and W * H / 0.01 <= 160000 else 0.15 if fine and W * H / 0.0225 <= 260000 else 0.2
     ox, oy = win[0], win[1]
 
     def loc(x, y):
@@ -800,46 +823,68 @@ def route_new(board, cu, outline, items, jobs, rules, grid=None, budget_s=120.0)
                 ix, iy = R.nearest(v["x"], v["y"])
                 for L in (0, 1):
                     targets.setdefault((L, ix, iy), ("via", v))
-        zone_cells(board, R, net, outer, lid, ox, oy, win, track, via_d, targets)
+        stitch = {}
+        zone_cells(board, R, net, outer, lid, ox, oy, win, track, via_d, targets, stitch)
         done = set()
-        pending = [rn for rn in j["pads"]]
+        # every copy of a pad: a 6 mm switch has two pads "1" and two pads "2", and each needs its own copper
+        pending = []
+        for rn in j["pads"]:
+            inst = [q for q in pads if (q["ref"], q["num"]) == rn]
+            if not inst:
+                results.append({"net": net, "pin": f"{rn[0]}.{rn[1]}", "ok": False, "why": "pad outside the routing window"})
+            for k, q in enumerate(inst):
+                pending.append((rn, q, f"{rn[0]}.{rn[1]}" + (f"#{k + 1}" if len(inst) > 1 else "")))
         existing = any(it["net"] == net and (it.get("ref"), it.get("num")) not in newset for it in items) or any(
             z.GetNetname() == net and not z.GetIsRuleArea() for z in board.Zones())
         if not targets and existing:
-            for rn in pending:
-                results.append({"net": net, "pin": f"{rn[0]}.{rn[1]}", "ok": False,
+            for rn, q, pin in pending:
+                results.append({"net": net, "pin": pin, "ok": False,
                                 "why": "no copper of the net within reach on an outer layer"})
             pending = []
         if not targets and pending:  # a net made only of new pads: grow it from its first pad
-            first = pending.pop(0)
-            p = next((q for q in pads if (q["ref"], q["num"]) == first), None)
-            if p:
-                ix, iy = R.nearest(p["x"], p["y"])
-                for L in p["layers"]:
-                    targets[(LAYERS.index(L), ix, iy)] = ("pad", p)
-                results.append({"net": net, "pin": f"{first[0]}.{first[1]}", "ok": True, "how": "first pad"})
+            rn, p, pin = pending.pop(0)
+            ix, iy = R.nearest(p["x"], p["y"])
+            for L in p["layers"]:
+                targets[(LAYERS.index(L), ix, iy)] = ("pad", p)
+            results.append({"net": net, "pin": pin, "ok": True, "how": "first pad"})
         while pending:
-            rn = pending.pop(0)
-            p = next((q for q in pads if (q["ref"], q["num"]) == rn), None)
-            pin = f"{rn[0]}.{rn[1]}"
-            if p is None:
-                results.append({"net": net, "pin": pin, "ok": False, "why": "pad outside the routing window"})
-                continue
+            rn, p, pin = pending.pop(0)
             ix, iy = R.nearest(p["x"], p["y"])
             src = {(LAYERS.index(L), ix, iy) for L in p["layers"]}
             hit = [s for s in src if s in targets]
-            if pad_in_zone(board, net, rn, lid):
-                results.append({"net": net, "pin": pin, "ok": True, "how": "pour"})
-                for s in src:
-                    targets[s] = ("pad", p)
-                continue
-            if hit:
+            backup = False
+            if pad_in_zone(board, net, rn, lid, (p["x"] + ox, p["y"] + oy)):
+                how = "pour"
+                near = {c: v for c, v in stitch.items() if len(p["layers"]) == 1 and c[0] == LAYERS.index(p["layers"][0])
+                        and math.hypot(c[1] - ix, c[2] - iy) * R.g <= 3.0}
+                if near:
+                    path = R._search(nid, src, set(near), max_expand=30000)
+                    if path:
+                        R._commit(net, path, p, None, track)
+                        cx, cy = R.cell_xy(path[-1][1], path[-1][2])
+                        R._mark_via(nid, cx, cy, via_d)
+                        R.vias.append({"net": net, "x": round(cx, 4), "y": round(cy, 4), "d": via_d, "drill": via_drill})
+                        how = "pour + stitching via"
+                path = None
+                if how == "pour":
+                    # the pour may not reach the pad once it is refilled around the new part (a starved thermal, a
+                    # new island): a short track to other copper of the net as well, when there is one
+                    alt = {c for c, v in targets.items() if v[0] != "zone"}
+                    path = R._search(nid, src, alt, max_expand=80000) if alt else None
+                if path is None:
+                    results.append({"net": net, "pin": pin, "ok": True, "how": how})
+                    for s_ in src:
+                        targets[s_] = ("pad", p)
+                    continue
+                backup = True
+            elif hit:
                 results.append({"net": net, "pin": pin, "ok": True, "how": "touching"})
                 continue
-            if time.time() - t0 > budget_s:
+            elif time.time() - t0 > budget_s:
                 results.append({"net": net, "pin": pin, "ok": False, "why": "routing time ran out"})
                 continue
-            path = R._search(nid, src, set(targets), max_expand=600000)
+            else:
+                path = R._search(nid, src, set(targets), max_expand=600000)
             if path is None:
                 results.append({"net": net, "pin": pin, "ok": False,
                                 "why": "no free way through" if not R.capped else "search limit reached"})
@@ -870,7 +915,8 @@ def route_new(board, cu, outline, items, jobs, rules, grid=None, budget_s=120.0)
                             targets.setdefault((L, ix2, iy2), ("own", None))
             for s in src:
                 targets[s] = ("pad", p)
-            results.append({"net": net, "pin": pin, "ok": True, "how": kind, "tracks": len(new_t), "vias": len(new_v),
+            results.append({"net": net, "pin": pin, "ok": True, "how": ("pour + " if backup else "") + kind,
+                            "tracks": len(new_t), "vias": len(new_v),
                             "length_mm": round(sum(math.hypot(b[0] - a[0], b[1] - a[1])
                                                    for t in new_t for a, b in zip(t["pts"], t["pts"][1:])), 2)})
             done.add(rn)
@@ -903,10 +949,13 @@ def route_new(board, cu, outline, items, jobs, rules, grid=None, budget_s=120.0)
                           "window_mm": [round(W, 1), round(H, 1)]}
 
 
-def pad_in_zone(board, net, rn, lid):
-    """The new pad sits inside an existing pour of its own net on one of its layers: the refill joins it."""
+def pad_in_zone(board, net, rn, lid, at):
+    """The new pad (the copy at board point `at`) sits inside an existing pour of its own net on one of its layers:
+    the refill joins it."""
     fp = board.FindFootprintByReference(rn[0])
-    pad = next((p for p in fp.Pads() if p.GetNumber() == rn[1]), None) if fp else None
+    pads = [p for p in fp.Pads() if p.GetNumber() == rn[1]] if fp else []
+    pad = min(pads, key=lambda p: (mm(p.GetPosition().x) - at[0]) ** 2 + (mm(p.GetPosition().y) - at[1]) ** 2,
+              default=None)
     if pad is None:
         return False
     pos = pad.GetPosition()
@@ -920,7 +969,7 @@ def pad_in_zone(board, net, rn, lid):
     return False
 
 
-def zone_cells(board, R, net, outer, lid, ox, oy, win, track, via_d, targets):
+def zone_cells(board, R, net, outer, lid, ox, oy, win, track, via_d, targets, stitch=None):
     """Cells where a new track may end on a pour of the net: inside an outer-layer fill, or (with a via) above an
     inner-layer fill."""
     nid = R.net_id[net]
@@ -938,6 +987,7 @@ def zone_cells(board, R, net, outer, lid, ox, oy, win, track, via_d, targets):
             name = board.GetLayerName(L)
             inner = name not in outer
             m = (via_d / 2 + 0.15) if inner else (track / 2 + 0.1)
+            mv = via_d / 2 + 0.15
             x0, y0 = max(zb[0], win[0]) - ox, max(zb[1], win[1]) - oy
             x1, y1 = min(zb[2], win[2]) - ox, min(zb[3], win[3]) - oy
             step = 2 if R.g < 0.15 else 1  # every other cell on a fine grid is plenty of targets
@@ -958,6 +1008,12 @@ def zone_cells(board, R, net, outer, lid, ox, oy, win, track, via_d, targets):
                                 targets.setdefault((Lr, ix, iy), ("via-zone", name))
                     else:
                         targets.setdefault((Ls[0], ix, iy), ("zone", name))
+                        # a via here lands in this pour: stitching for a new pad that sits in the pour of the
+                        # other outer layer, so a refill that splits that pour still leaves it joined
+                        other = 1 - Ls[0]
+                        if stitch is not None and mask[other][R.idx(ix, iy)] and R.via_ok(nid, ix, iy) and all(
+                                fl.Contains(V(X + dx, Y + dy)) for dx, dy in ((mv, 0), (-mv, 0), (0, mv), (0, -mv))):
+                            stitch[(other, ix, iy)] = ("via-zone", name)
 
 
 # ---------------------------------------------------------------- apply
@@ -1037,6 +1093,7 @@ def apply(pcb_path, job_path, result_path):
     items = copper_items(board, cu_names)
     placer = Placer(board, outline, cu, rules, items)
     placed_at = {}
+    kept_alive = []
     for a in job.get("add", []):
         nets = {k: v for k, v in (a.get("pads") or {}).items() if v}
 
@@ -1060,35 +1117,46 @@ def apply(pcb_path, job_path, result_path):
                 anchor = [(c[0] + c[2]) / 2, (c[1] + c[3]) / 2]
         # a part on a net made only of new parts (the resistor of an added LED) goes next to its partner
         fresh = set(job.get("new_nets") or [])
+        partner_side = None
         for other, (px, py) in placed_at.items():
             theirs = set((next(x for x in job["add"] if x["ref"] == other).get("pads") or {}).values())
             if set(nets.values()) & theirs & fresh:
                 anchor = [px, py]
+                partner_side = res["placed"][other]["side"]
                 break
         bb = f0["board"]["bbox"]
         if not anchor:
             anchor = [(bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2]
         toward = a.get("toward")
-        sides = ("top", "bottom") if a.get("side") != "bottom" else ("bottom", "top")
+        side = partner_side or a.get("side")  # next to its partner means on the same side as it
+        sides = ("top", "bottom") if side != "bottom" else ("bottom", "top")
         # the planned footprint first, then the same symbol in smaller footprints (same pads, same meaning)
         alts = []
         for c in a.get("alternatives") or []:
-            try:
-                cb, _ = local_shape(load_fp(c["fp_root"], c["footprint"]), cu)
-            except Exception:
-                continue
-            alts.append(((cb[2] - cb[0]) * (cb[3] - cb[1]), c))
+            area = mod_area(c["fp_root"], c["footprint"])
+            if area:
+                alts.append((area, c))
         cands = [a] + [c for _, c in sorted(alts, key=lambda t: t[0])][:6]
-        got = fp = None
+        # the planned footprint unless it lands far from where it belongs and a smaller one sits closer
+        best = None  # (distance, got, fp, candidate)
         for c in cands:
-            fp = make(c)
+            f = make(c)
+            board.Add(f)
+            g = placer.place(f, anchor, nets, toward=toward, sides=sides)
+            board.Remove(f)
+            kept_alive.append(f)  # a removed footprint freed here corrupts pcbnew's SWIG state for later calls
+            if g:
+                d = math.hypot(g["x"] - anchor[0], g["y"] - anchor[1])
+                if best is None or d < best[0] - 2.0:
+                    best = (d, g, f, c)
+                if best[0] <= 8.0:
+                    break
+        got = fp = None
+        if best:
+            _, got, fp, c = best
             board.Add(fp)
-            got = placer.place(fp, anchor, nets, toward=toward, sides=sides)
-            if got:
-                if c is not a:
-                    got["swapped_to"] = c["footprint"]
-                break
-            board.Remove(fp)
+            if c is not a:
+                got["swapped_to"] = c["footprint"]
         if not got:
             res["not_placed"].append(a["ref"])
             continue

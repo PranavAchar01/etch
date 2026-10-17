@@ -87,6 +87,16 @@ class Validate(unittest.TestCase):
         self.assertEqual(r["new_nets"], {"LED_A": ["D20.2", "R20.2"]})
         self.assertEqual(r["assign"], [])
 
+    def test_near_defaults_to_the_part_it_joins_and_leds_need_a_resistor(self):
+        p = plan(add=[add("D20", "led_green_0603"), add("R20", "resistor_0603")],
+                 connect=[con("R20.1", "/GPIO12"), con("R20.2", "LED_A"), con("D20.2", "LED_A"), con("D20.1", "GND")])
+        r, errs = ie.validate(p, FACTS, CAT)
+        self.assertEqual(errs, [])
+        self.assertEqual({a["ref"]: a["near"] for a in r["add"]}, {"D20": "", "R20": "J1"})  # the header, not U1
+        p = plan(add=[add("D20", "led_green_0603")], connect=[con("D20.2", "/GPIO12"), con("D20.1", "GND")])
+        _, errs = ie.validate(p, FACTS, CAT)
+        self.assertTrue(any("series resistor" in e for e in errs), errs)
+
     def test_to_an_existing_pin_uses_its_net(self):
         p = plan(add=[add("SW1", "tact_smd_tl3342")], connect=[con("SW1.1", to="R1.1"), con("SW1.2", "GND")])
         r, errs = ie.validate(p, FACTS, CAT)

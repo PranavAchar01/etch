@@ -1275,6 +1275,10 @@ class H(BaseHTTPRequestHandler):
                         },
                         400,
                     )
+                if mode == "modify" and explore.edited_in_place(base):
+                    # an imported board Etch edited in place cannot be re-placed from its catalog: edit it in place again
+                    args = ["uv", "run", "--quiet", "--project", "engine", "--with", "openai", "python", "-m",
+                            "agent.import_edit", text, "--events"]
                 args += ["--base", str(base)]
             return self.start_build(ip, args, mode, text)
         if self.path in EXPLORE_POST:

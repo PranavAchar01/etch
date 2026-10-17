@@ -60,7 +60,7 @@ NET_RE = re.compile(r"^[A-Za-z0-9_+/\\{}()~.-]{1,60}$")
 POWER_RE = re.compile(r"(^|/)(GND\w*|AGND|DGND|VSS|VCC\w*|VDD\w*|VBUS|VIN|VBAT\w*|\+?\d+V\d*\w*|\+?3V3\w*|\+?3\.3V\w*|\+?5V\w*)$", re.I)
 FREE_RE = re.compile(r"^unconnected-\(")
 # nets a status LED or a buzzer must never hang on: data lines, clocks, RF, memory buses
-SENSITIVE_RE = re.compile(r"USB|(^|[/_])D[+-]$|(^|[/_])D[PM]$|XTAL|XIN|XOUT|OSC|CLK|ANT|(^|[/_])RF|ETH|EMAC|RMII|MDI|"
+SENSITIVE_RE = re.compile(r"USB|(^|[/_])CC\d|SBU|(^|[/_])D[+-]$|(^|[/_])D[PM]$|XTAL|XIN|XOUT|OSC|CLK|ANT|(^|[/_])RF|ETH|EMAC|RMII|MDI|"
                           r"(^|[/_])[TR]X?D?[+-]$|(^|[/_])[TR]D[+-]$|SDIO|SD_|QSPI|PSRAM|FLASH|SPICS|CS0|HS2|BOOT|STRAP", re.I)
 
 MASKS = {"green": "Green", "red": "Red", "blue": "Blue", "black": "Black", "white": "White", "yellow": "Yellow",
@@ -90,7 +90,7 @@ def catalog() -> dict[str, dict[str, Any]]:
         out[p["key"]] = {
             "key": p["key"], "lib_id": p["lib_id"], "footprint": p["footprint"], "family": p.get("category", ""),
             "name": p.get("name", ""), "value": p.get("value") or "", "pins": [str(x) for x in p["pins"]],
-            "model": p.get("model"), "source": p.get("source", "index"),
+            "model": p.get("model"), "source": p.get("source", "index"), "curated": True,
         }
     if KICAD_CATALOG_PATH.exists():
         for p in read_index(KICAD_CATALOG_PATH).get("pieces", []):
@@ -124,7 +124,7 @@ def catalog_text(cat: dict[str, dict], request: str, limit: int = 60) -> str:
     fams = {SYNONYMS.get(w, w) for w in words}
     rows, extra = [], []
     for e in cat.values():
-        if e["source"] != "kicad-lib":
+        if e.get("curated"):
             rows.append(e)
         elif any(f.lower() in e["family"].lower() or f in e["name"].lower() for f in fams):
             extra.append(e)
@@ -141,6 +141,8 @@ def alternatives(e: dict[str, Any], cat: dict[str, dict]) -> list[dict[str, Any]
     for o in cat.values():
         if o["key"] != e["key"] and o["lib_id"] == e["lib_id"] and sorted(o["pins"]) == sorted(e["pins"]) \
                 and o["footprint"] != e["footprint"] and o.get("model") and Path(o["model"]).is_file():
+            if any(x["footprint"] == o["footprint"] for x in out):
+                continue
             lib = o["footprint"].split(":")[0]
             out.append({"footprint": o["footprint"], "fp_root": str(footprint_root(lib)), "model": o["model"],
                         "key": o["key"]})
@@ -204,14 +206,17 @@ def board_text(facts: dict[str, Any], title: str, ref: str | None = None, limit:
         for q in pads:
             if is_free(q["net"], members) and q["layers"]:
                 free.append(f"{p['ref']}.{q['num']}" + (f" [{q['fn']}]" if q["fn"] else ""))
-    for n, m in members.items():  # a signal that only goes to a header: a GPIO that is free to use
+    conn = {r for r, p in parts.items() if re.match(r"^(J|P|CON|EXT|UEXT|H)\w*\d", r)
+            or re.search(r"pin_?header|pinheader|conn|header|castell|socket", p["fpid"], re.I)}
+    for n, m in members.items():  # a GPIO that only goes to a header pin: free to use
         refs = {x.split(".")[0] for x in m}
-        if 2 <= len(m) <= 3 and not POWER_RE.search(n) and any(re.match(r"^(J|P|CON|EXT|UEXT|H)\w*\d", r) for r in refs):
+        if 2 <= len(m) <= 3 and not POWER_RE.search(n) and not SENSITIVE_RE.search(n) and (
+                refs & conn or re.search(r"(^|/)(GPIO|IO|P[A-K])_?\d+$", n, re.I)):
             gpio.append(f"{n} ({', '.join(m)})")
     if free:
         lines.append("Free pins (no net yet, safe to wire to): " + ", ".join(free[:80]))
     if gpio:
-        lines.append("Signal nets that only reach a connector (free to use): " + "; ".join(sorted(gpio)[:40]))
+        lines.append("GPIO nets that only reach a header or connector pin (free to use): " + "; ".join(sorted(gpio)[:40]))
     lines += ["", "Footprints (ref | value | footprint | side, x, y mm | pad=net, [pin function]):"]
     order = sorted(parts, key=_ref_key)
     if ref and ref in parts:
@@ -534,6 +539,16 @@ def validate(plan: dict[str, Any], facts: dict[str, Any], cat: dict[str, dict],
                     continue
                 assign[p] = net
     for r, a in add.items():
+        if not a["near"]:  # place it next to the part it joins (its signal, not GND or a rail)
+            near = [m.split(".")[0] for n in a["pads"].values() if n in members and not POWER_RE.search(n)
+                    and len(members[n]) <= 8 for m in members[n] if m not in gone]
+            a["near"] = min(near, key=lambda x: (not re.match(r"^(J|P|CON|EXT|UEXT|H)\w*\d", x), _ref_key(x)),
+                            default="")
+        fam = (a["entry"]["family"] + " " + a["entry"]["lib_id"]).lower()
+        if "led" in fam and "ws2812" not in fam and "rgb" not in a["entry"]["lib_id"].lower():
+            if all(n in members or n in nets for n in a["pads"].values()) and len(a["pads"]) == 2:
+                errs.append(f"{r} is an LED wired straight between existing nets; put a series resistor (330 to 1k) "
+                            "between it and the supply or GPIO, on a new net")
         missing = [p for p in a["entry"]["pins"] if p not in a["pads"]]
         if missing and len(a["entry"]["pins"]) <= 4:
             errs.append(f"{r} pad{'s' if len(missing) > 1 else ''} {', '.join(missing)} not connected to anything")
@@ -1007,7 +1022,7 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
                  "fp_root": str(footprint_root(a["entry"]["footprint"].split(":")[0])),
                  "model": a["entry"]["model"] if a["entry"].get("model") and Path(a["entry"]["model"]).is_file() else None,
                  "near": a["near"] or None, "pads": a["pads"], "alternatives": alternatives(a["entry"], cat)}
-                for a in resolved["add"]],
+                for a in sorted(resolved["add"], key=lambda a: not a["near"])],  # anchored parts first, partners next to them
         "assign": resolved["assign"], "remove": resolved["remove"], "values": resolved["values"],
         "new_nets": sorted(resolved["new_nets"]), "route": bool(resolved["add"] or resolved["assign"]),
         "refill": bool(resolved["add"] or resolved["assign"] or resolved["remove"]),
@@ -1021,8 +1036,8 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
                 sw = (res.get("placed", {}).get(a["ref"]) or {}).get("swapped_to")
                 alt = next((o for o in cat.values() if sw and o["footprint"] == sw and o["lib_id"] == a["entry"]["lib_id"]), None)
                 if alt:
-                    stream.emit("lead", "say", text=f"{a['ref']} did not fit as {a['entry']['footprint'].split(':')[-1]}, "
-                                                    f"so it is the smaller {sw.split(':')[-1]}.")
+                    stream.emit("lead", "say", text=f"{a['ref']} had no room close by as {a['entry']['footprint'].split(':')[-1]}, "
+                                                    f"so it is {sw.split(':')[-1]}, which fits next to the part it joins.")
                     a["entry"], a["key"] = alt, alt["key"]
         else:
             res = {"placed": {}, "not_placed": [], "routes": [], "new_tracks": 0, "new_vias": 0, "seconds": {},

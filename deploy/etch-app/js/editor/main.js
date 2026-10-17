@@ -5,6 +5,10 @@
 // and Etch builds (live-*, through the backend); ?mock=1 runs everything without a backend. board.html?new=1 is a new
 // board: an empty workplane under a start screen (new-board.js); what the person asks for becomes a design build
 // (bridge.design) that streams in the dock and loads in place as board.html?id=live-<ms> when it is done.
+// While any build runs (design or change) the progress shown on the stage is the render loader (Etch's eyes + the
+// dock's pixel loader), labelled from the job's real stage, until the real board is loaded. Behind it, on a new
+// board, the start screen's real KiCad parts keep drifting as b-roll (start-backdrop.js). No board is invented while
+// it builds: the animated assembly (build-anim.js) and the viewer's build preview are off behind BUILD_ANIM.
 import { Q, $, h, esc, LOGO, carry, page, toast, slugOf, isLive, boardFiles, cachedFetch, registerSW, keyBackdrop, WORLD } from "../common.js";
 import { createBoardViewer, MASKS, SILKS, FINISHES } from "../board-viewer.js";
 import * as etch from "../etch-api.js";
@@ -19,22 +23,21 @@ import { createBoardList } from "./board-list.js";
 import { createDrop } from "./drop.js";
 import { createNewBoardHero } from "./new-board.js";
 import { createStartBackdrop } from "./start-backdrop.js";
+import * as mine from "../my-boards.js";
+import { saveJob, readJob, clearJob, mountJobPill, jobHref, jobBoardId, DEMO } from "../ui/job-pill.js";
 import { createRenderLoader } from "./render-loader.js";
-import * as myBoards from "../my-boards.js";
 import { bindLiquid, liquidTabs, wobble } from "../ui/goo.js";
 
 registerSW();
 // the API client, with `authed` for the backend call (named `backend` since the access code went away)
 const api = { ...etch, authed: etch.backend || etch.authed, get status() { return etch.status; } };
 const ID = Q.get("id") || "";
-const NEW = !ID && Q.get("new") === "1";
+// ?resume=1: pick up a build that was running when the page was left (js/ui/job-pill.js keeps it)
+const RESUME = Q.get("resume") === "1" ? readJob() : null;
+const NEW = !ID && (Q.get("new") === "1" || !!RESUME?.design);
 const MOBILE = matchMedia("(max-width: 768px)");
 const APP_ROOT = new URL("../../", import.meta.url).href;
-// on phones a running build stays in the dock's pill (its step bubbles), so the workplane stays in view
-const expandDock = () => { if (!MOBILE.matches) dock?.expand(true); };
 const board = { id: ID, kind: NEW ? "new" : isLive(ID) ? "live" : "gh", live: isLive(ID), meta: {}, parts: {}, files: null };
-// ?new=1&mock=1: the scripted design build ends on this library board, so the whole flow can be shown without the engine
-const DEMO = "gh:OLIMEX/ESP32-POE/HARDWARE/ESP32-PoE-hardware-revision-M2";
 
 // ---------- poster first: the prerendered still, keyed onto the stage, before anything else ----------
 const boot = window.__boot || {};
@@ -133,13 +136,13 @@ const actions = {
   pick,
   changeBlock,
   ask(refs) {
-    dock?.expand(true);
+    dock?.expand(true, { force: true });
     if (refs.length === 1) bridge?.ask(`What does ${refs[0]} do on this board?`, { ref: refs[0] });
     else bridge?.ask(`What do ${refs.join(", ")} do together on this board?`, { ref: refs[0] });
   },
   async change(refs) {
     if (!dock || !bridge) return;
-    dock.expand(true);
+    dock.expand(true, { force: true });
     const r = refs[0];
     const what = refs.length === 1 ? `${r}${board.parts[r]?.value ? ` (${board.parts[r].value})` : ""}` : refs.join(", ");
     const ans = await dock.ask({ id: "chg-" + Date.now(), question: `What should Etch change about ${what}?`, options: ["Swap it for an equivalent part", "Move it closer to the board edge", "Remove it"], multi: false });
@@ -330,9 +333,11 @@ function blockedDrop() { const why = changeBlock(); if (!why) return false; emot
 
 // ---------- credits (required by the boards' licences) ----------
 function showMeta(m) {
-  const title = m.title || ID || "Board";
+  const title = mine.get(board.id)?.title || m.title || board.id || ID || "Board";
+  board.title = title;
   $("crTitle").textContent = title;
   document.title = `${title} · Etch`;
+  paintSaved();
   const c = $("credits"); c.textContent = "";
   if (m.owner && m.repo) {
     const href = (m.url || `https://github.com/${m.owner}/${m.repo}`) + (m.commit ? `/tree/${m.commit}` : "");
@@ -391,19 +396,22 @@ const reloadChange = async ({ run } = {}) => {
         api.authed(`/etch/layers?id=${q}`).then((r) => (r.ok ? r.json() : null)).catch(() => null)]);
       board.parts = parts.parts || {};
       await viewer.load(glb, { parts: board.parts, meta: board.meta, layers, keepView: true });
+      finishBuildAnim();
       board.id = run; board.kind = "live"; board.live = true;
-      myBoards.retitle(run, board.meta?.title);
+      mine.retitle(run, board.meta?.title);
       history.replaceState(null, "", page("board") + carry({ id: run }));
     } else if (board.files) {
       // demo: the same board again, so the swap in place is visible
       const glb = await cachedFetch(board.files.glb).then((r) => r.arrayBuffer());
       await viewer.load(glb, { parts: board.parts, meta: board.meta, keepView: true });
+      finishBuildAnim();
     }
     api.setBoard(board.id, board.parts, board.meta);
     renderSettings(); list?.render(); setSel(sel);
+    buildLoader = false;
     rl.hide();
     arrived();
-  } catch (e) { rl.fail("Couldn't render the new version."); toast("Couldn't load the new version: " + e.message); }
+  } catch (e) { buildLoader = false; rl.fail("Couldn't render the new version."); toast("Couldn't load the new version: " + e.message); }
 };
 
 // ---------- a new board: the design build's run, loaded in place (render:done first, then lead:done ok) ----------
@@ -435,12 +443,13 @@ async function loadDesign({ run, done = false } = {}) {
     }
     await viewer.load(glb, { parts, meta, layers, keepView: true });
     viewer.reset(); // ease from the empty workplane onto the new board
+    finishBuildAnim(); // the build animation hands over to the real board
     rl.hide();
     Object.assign(board, { id, kind: mock ? "gh" : "live", live: !mock, meta, parts, building: false });
     if (!mock) board.files = null;
     api.setBoard(id, parts, meta);
     showMeta(meta);
-    myBoards.retitle(id, meta.title);
+    mine.retitle(id, meta.title);
     history.replaceState(null, "", page("board") + carry({ id }));
     if (!list) list = createBoardList($("paneBoard"), { board, viewer, actions });
     list.render(); renderSettings(); syncTools(); bindLiquid(document);
@@ -449,8 +458,11 @@ async function loadDesign({ run, done = false } = {}) {
     backdrop?.remove(); backdrop = null;
     arrived();
     if (mock) remember(id);
+    // Etch's build is kept in My boards straight away, named from what was asked (rename it in the title)
+    if (board.prompt) { const t = mine.nameFrom(board.prompt); saveBoard({ quiet: true, title: t }); showMeta(board.meta); toast(`Saved as “${t}” in My boards`); }
     loadedRun = key;
   } catch (e) {
+    buildLoader = false;
     rl.fail("Couldn't render your board. Try opening it again.");
     toast("Couldn't load the new board: " + e.message);
     dock?.setState("confused"); dock?.say("The board is built, but I couldn't load it here. Try opening it again.");
@@ -458,20 +470,83 @@ async function loadDesign({ run, done = false } = {}) {
   void done;
 }
 
+// ---------- the build animation: js/editor/build-anim.js (loaded the first time a build starts; optional) ----------
+// OFF (Pranav 10-17: "do not hardcode the animation"): it assembles a board from estimated sizes and planned traces,
+// not the real design. true turns it (and the viewer's build preview fallback) back on; with false a build shows the
+// render loader over the start screen's drifting parts instead (buildLoader below).
+const BUILD_ANIM = false;
+// hooks: createBuildAnim({ viewer, stage, board }) -> { start({ mode, board }), event(ev), finish({ glbReady }) }.
+// finish may be called twice (render:done after the GLB is loaded, then lead:done). Without the module the viewer's
+// own preview (viewer.build) draws instead.
+let buildAnim = null, buildAnimTried = null;
+function loadBuildAnim() {
+  if (!buildAnimTried) buildAnimTried = import("./build-anim.js").then((m) => {
+    const make = m.createBuildAnim || m.default;
+    buildAnim = typeof make === "function" ? make({ viewer, stage: $("stage"), board }) : m.start || m.event ? m : null;
+  }).catch(() => { buildAnim = null; });
+  return buildAnimTried;
+}
+async function startBuildAnim(mode) {
+  if (!BUILD_ANIM) return;
+  await loadBuildAnim();
+  if (buildAnim) { try { buildAnim.start?.({ mode, board }); } catch (e) { console.warn("build-anim:", e); } }
+  else viewer.build.start({ onBoard: mode === "change" });
+}
+// render:done: the new GLB is on screen
+function finishBuildAnim() {
+  buildLoader = false;
+  if (!BUILD_ANIM) return;
+  if (buildAnim) { try { buildAnim.finish?.({ glbReady: true }); } catch (e) { console.warn("build-anim:", e); } }
+  else viewer.build.finish();
+}
+
+// the build's loader: up from lead:start until the real board is in (finishBuildAnim) or the build ends without one
+let buildLoader = false;
+function buildLoaderOn(text) {
+  if (BUILD_ANIM) return;
+  if (!buildLoader) rl.show(text); else rl.label(text);
+  buildLoader = true;
+  backdrop?.building(true);
+}
+function buildLoaderFail(text = "The build stopped without a board.") {
+  if (BUILD_ANIM || !buildLoader) return;
+  buildLoader = false;
+  rl.fail(text);
+  backdrop?.building(false);
+}
+
 let hero = null, lastAsk = "";
+// a question or chat typed into a new board's box is never a board description (prod 10-17: "done picking parts?"
+// typed during a build became job ygA7cMfan1ojs9QZ). While a build runs, any text gets the build's status; after
+// one, a status question gets how it ended. The server refuses chat too (agent/prefilter.py is_chat).
+const STATUS_Q = /^\W*(?:(?:are|r)\s+(?:you|u)\s+(?:done|finished|there|stuck|working|still)|(?:is|did)\s+(?:it|this|that|etch|the\s+(?:board|build|job))\s+(?:done|ready|finished|stuck|working|still|taking|broken|frozen|hung|fail|crash)|(?:all\s+)?(?:done|finished)\s+(?:yet|now|already|picking|building|routing|choosing|thinking|with)|how\s+(?:long|much\s+longer|is\s+it\s+going|far\s+along)|how'?s\s+it\s+going|what'?s?\s+(?:is\s+)?(?:taking|happening|going\s+on|the\s+(?:status|hold\s*-?\s*up|progress|eta))|why\s+is\s+(?:it|this|that)\s+(?:taking|so\s+slow|stuck|still)|any\s+(?:status|updates?|progress|news)|still\s+(?:working|building|going|there|picking|loading|thinking))\b[^\n]{0,48}$|^\W*(?:hello|hi|hey|yo|thanks|thank\s+you|thx|ty|ok(?:ay)?|cool|nice|great|lol|hm+|wow|done|finished|ready|status|update|progress|eta|you\s+there)(?:\s+(?:etch|there|again|so\s+much|yet|now))?\W*$/i;
+const BUILD_VERB = /\b(make|build|create|design|draw|want|need|add|give|wire|put|use|turn|light|blink)s?\b/i;
+let lastSay = "", lastEnd = "";
+function isChat(text) { const t = String(text || "").trim(); return t.split(/\s+/).length <= 12 && !BUILD_VERB.test(t) && STATUS_Q.test(t); }
+function statusReply(text) {
+  if (board.building) {
+    dock.say(lastSay ? `Still building. Latest: ${lastSay}` : "Still building your board. I'll show each step here as it happens.");
+    return true;
+  }
+  if (!isChat(text)) return false;
+  dock.say(lastEnd || "Nothing is building right now. Tell me what your board should do and I'll start one.");
+  return true;
+}
 function startDesign(text) {
   if (board.building) { dock.say("I'm still building your board. Give me a minute."); return; }
   board.building = true;
-  backdrop?.building(true);
+  board.prompt = text;
   if (hero?.open) hero.collapse();
   document.body.classList.remove("nb-on");
   viewer.lookFrom([0, 1, 0.18], { fitBox: true }); // the camera eases in onto the workplane, still from above
-  expandDock();
   dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: text, status: "done" });
   $("crTitle").textContent = "New board";
   // no board came back (checks failed, error, build lost): stop the backdrop's building look too
-  const failed = () => { board.building = false; backdrop?.building(false); };
-  bridge.design(text).then((r) => { if (!r || !r.ok) failed(); }).catch(failed);
+  const failed = () => { board.building = false; backdrop?.building(false); buildLoaderFail(); };
+  bridge.design(text).then((r) => {
+    if (!r || !r.ok) failed();
+    if (!r) lastEnd = "I lost track of that build, so it did not finish. Tell me what your board should do and I'll start a new one.";
+  }).catch(failed);
 }
 // the hero's text goes through the dock's own composer, so it shows up there as the person's turn
 function sendViaDock(text) {
@@ -507,10 +582,11 @@ function suggestions(parts = board.parts, meta = board.meta) {
   return out;
 }
 let askingChange = false;
-async function askChange() {
+// clicked: the person picked a board just now, so the dock may open for the question; on a page load it stays a pill
+async function askChange({ clicked = false } = {}) {
   if (!dock || !bridge || askingChange) return;
   askingChange = true;
-  dock.expand(true);
+  if (clicked) dock.expand(true, { force: true });
   dock.say("What should we change?");
   const ans = await dock.ask({ id: "remix-" + Date.now(), question: "What should we change?", options: suggestions(), multi: false }).catch(() => null);
   askingChange = false;
@@ -524,7 +600,6 @@ async function askChange() {
 async function remix(b) {
   document.body.classList.remove("nb-on");
   Object.assign(board, { id: b.id, kind: "gh", live: false, local: false, building: false, meta: {}, parts: {} });
-  expandDock();
   const steps = bridge.onLoad([
     { id: "board", title: `Opening ${b.title || "the board"}` },
     { id: "parts", title: "Reading parts.json" },
@@ -549,7 +624,26 @@ async function remix(b) {
   remember(b.id);
   if (!list) list = createBoardList($("paneBoard"), { board, viewer, actions });
   list.render(); renderSettings(); syncTools(); bindLiquid(document);
-  askChange();
+  askChange({ clicked: true });
+}
+
+// a design build that was running when the page was left: the empty workplane, then the build replayed and followed
+function resumeNew(st) {
+  $("crTitle").textContent = st.title || "New board";
+  document.title = `${st.title || "New board"} · Etch`;
+  $("credits").textContent = "";
+  hidePoster();
+  viewer.empty();
+  board.meta = { title: st.title || "New board" };
+  board.building = true; board.prompt = st.text || "";
+  renderMenus(); renderSettings(); syncTools();
+  document.body.classList.add("ready");
+  viewer.lookFrom([0, 1, 0.18], { fitBox: true });
+  dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: st.text || "", status: "done" });
+  // the start screen's parts drift behind the build's loader here too
+  if (!BUILD_ANIM && !backdrop) { backdrop = createStartBackdrop($("stage")); backdrop.attach(viewer); backdrop.building(true); }
+  const failed = () => { board.building = false; backdrop?.building(false); buildLoaderFail(); };
+  bridge.resume(st).then((r) => { if (!r || !r.ok) failed(); }).catch(failed);
 }
 
 let backdrop = null;
@@ -570,13 +664,18 @@ async function startNew() {
   hero = createNewBoardHero($("stage"), {
     initial: Q.get("from") === "library" ? "library" : "scratch",
     recent: recent(),
+    mine: mine.list(),
+    mineHref: (b) => page("board") + carry({ id: b.id, ...(/^gh:/.test(b.id) ? { remix: 1 } : {}) }),
     boardHref: (b) => page("board") + carry({ id: b.id, remix: 1 }),
     target: dockPill,
     onSubmit: (t) => { sendViaDock(t); dock.nudge?.(); },
-    onMic: () => { document.body.classList.remove("nb-on"); viewer.lookFrom([0, 1, 0.18], { fitBox: true }); dock.expand(true); dock.nudge?.(); dock.listen(); },
+    onMic: () => { document.body.classList.remove("nb-on"); viewer.lookFrom([0, 1, 0.18], { fitBox: true }); dock.nudge?.(); dock.listen(); },
     onPick: (b) => { dock.nudge?.(); remix(b); },
   });
   bindLiquid(document);
+  // a build left running elsewhere shows as the pill at the bottom (Return / Open)
+  mountJobPill({ job: api.job, open: (st, done) => jobHref(st, done, page, carry),
+    onReady: (st) => { const id = jobBoardId(st); if (st.design && id) mine.save({ id, title: st.title, thumb: mine.thumbFor(id, apiBase), owner: st.mock ? "" : "Etch build", prompt: st.text }); } });
   // the panel asks the question itself; the dock only says it once the panel has gone into it (startDesign)
 }
 
@@ -585,7 +684,7 @@ async function main() {
   if (ID) rl.show();
   await api.init();
   if (!api.status.mock) {
-    const cfg = Q.get("api") ? {} : await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).catch(() => ({}));
+    const cfg = Q.get("api") ? {} : await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).then((c) => (c.config_url ? fetch(c.config_url, { cache: "no-store" }).then((r) => r.json()) : c)).catch(() => ({}));
     apiBase = String(Q.get("api") || cfg.api || "").replace(/\/$/, "");
   }
   createPartsPanel($("paneParts"), { apiBase, onDragStart: (p, e) => ghostDrop.start(p, e), onDragEnd: (p, e) => ghostDrop.end(p, e) });
@@ -595,7 +694,7 @@ async function main() {
   dock = createDock(document.body, {
     onSend(text, { via } = {}) {
       const ref = sel.length === 1 ? sel[0] : null;
-      if (board.kind === "new") startDesign(text);
+      if (board.kind === "new") { if (!statusReply(text)) startDesign(text); }
       else if (CHANGE.test(text)) { if (blockedDrop()) return; bridge.change(text, { ref }); }
       else bridge.ask(text, { ref });
       void via;
@@ -618,23 +717,61 @@ async function main() {
       clearTimeout(main.markT); if (list2.length) main.markT = setTimeout(() => viewer.mark([]), 4000);
     },
     select(ref) { if (ref) setSel([ref], { focus: true }); },
-    // a new board taking shape on the empty workplane until its GLB arrives
+    // until the GLB arrives: the render loader with the job's stage over the drifting start kit (BUILD_ANIM false);
+    // with BUILD_ANIM, the board taking shape in 3D: js/editor/build-anim.js when it is there (buildAnim.start /
+    // event / finish), else the viewer's own simple preview (viewer.build, js/build-preview.js)
+    // a started build is remembered, so leaving the page and coming back (or the pill on Explore) can follow it
+    onJob(info) {
+      clearJob();
+      saveJob({ ...info, startedAt: Date.now(), title: info.design ? mine.nameFrom(info.text) : board.title || "your board", board: info.design ? "" : board.id });
+    },
+    onJobEnd() { clearJob(); },
+    onStage(text) { if (buildLoader) rl.label(text); },
+    onLost() { buildLoaderFail("Lost track of this build."); },
     onEvent(ev) {
       const k = `${ev.agent}:${ev.type}`;
+      if (ev.run && /^live-\d+$/.test(ev.run)) { const j = readJob(); if (j && j.run !== ev.run && !j.mock) saveJob({ run: ev.run }); }
       if (k === "lead:error" || (k === "lead:done" && !ev.ok)) emote("wince");
       // My boards (Explore): every board this browser builds or changes; the mock's runs open as the demo board
+      if (k === "lead:say" && ev.text) lastSay = ev.text;
+      if (k === "lead:start") lastEnd = "";
+      else if (k === "lead:done") lastEnd = ev.ok ? "That build finished. Your board is here." : "That build stopped without a board. Tell me what your board should do and I'll start a new one.";
+      else if (k === "lead:error" || k === "lead:cancelled") lastEnd = "That build stopped without a board. Tell me what your board should do and I'll start a new one.";
       if (k === "lead:start") lastAsk = ev.ask || "";
       else if (k === "lead:done" && ev.ok) {
         const id = !api.status.mock && isLive(ev.run) ? ev.run : board.kind === "new" ? DEMO : board.id;
-        myBoards.record({ run: id, title: board.id === id ? board.meta?.title : "", prompt: lastAsk });
+        mine.record({ run: id, title: board.id === id ? board.meta?.title : "", prompt: lastAsk });
       }
-      if (!backdrop) return;
-      if (k === "lead:start") backdrop.building(true);
-      else if (k === "picker:pick") backdrop.parts(ev.parts || []);
-      else if (k === "pieces:confirm") backdrop.parts((ev.parts || []).flatMap((p) => p.refs || []));
-      else if (k === "assembly:built" && ev.board) backdrop.size(ev.board);
+      if (!BUILD_ANIM) {
+        const isNew = board.kind === "new" || viewer.isEmpty;
+        if (k === "lead:queued") buildLoaderOn(`Waiting in line · ${ev.position} ahead`);
+        else if (k === "lead:start") buildLoaderOn(isNew ? "Starting the build" : "Starting the change");
+        else if (k === "picker:pick" && Array.isArray(ev.parts)) backdrop?.parts(ev.parts); // the real picks join the drifting kit
+        else if (k === "lead:error" || k === "lead:cancelled" || (k === "lead:done" && !ev.ok)) buildLoaderFail(k === "lead:cancelled" ? "Build cancelled." : undefined);
+        return;
+      }
+      if (k === "lead:start") {
+        if (backdrop) { backdrop.remove(); backdrop = null; }
+        startBuildAnim(board.kind === "new" || viewer.isEmpty ? "design" : "change");
+      }
+      if (buildAnim) {
+        try {
+          buildAnim.event?.(ev);
+          if (k === "lead:done" || k === "lead:error" || k === "lead:cancelled") buildAnim.finish?.({ glbReady: k === "lead:done" && !!ev.ok });
+        } catch (e) { console.warn("build-anim:", e); }
+        return;
+      }
+      const vb = viewer.build;
+      if (k === "picker:pick") {
+        const list = Array.isArray(ev.parts) ? ev.parts : [];
+        vb.parts(vb.active && board.kind !== "new" && !viewer.isEmpty ? list.filter((p) => p.group === "added" || p.group === "changed" || !board.parts[p.ref]) : list);
+      } else if (k === "assembly:iteration" && ev.phase === "place-route-check") vb.phase("route");
+      else if (k === "assembly:gate") vb.phase("check");
+      else if (k === "assembly:built" && ev.board) { vb.size(ev.board); vb.phase("built"); }
+      else if (k === "lead:error" || k === "lead:cancelled" || (k === "lead:done" && !ev.ok)) vb.cancel();
     },
   });
+  if (NEW && RESUME?.design) { resumeNew(RESUME); return; }
   if (NEW) { await startNew(); return; }
   const steps = bridge.onLoad([
     { id: "board", title: "Opening the board" },
@@ -671,10 +808,69 @@ async function main() {
   if (Q.get("sel")) setSel(Q.get("sel").split(","), { focus: true });
   if (!board.live) remember(ID);
   if (Q.get("remix") === "1") askChange();
+  if (RESUME && RESUME.board === ID) bridge.resume(RESUME);
 }
 
 // change requests (typed or spoken) start the change flow; everything else is a question
 const CHANGE = /^(please\s+|can you\s+|could you\s+|etch,?\s+)*(change|make|turn|swap|replace|add|remove|delete|move|rotate|use|switch|recolou?r|paint|shrink|enlarge|widen|route|duplicate)\b/i;
+
+// ---------- rename + save to My boards (this browser only, js/my-boards.js) ----------
+const canSave = () => !!board.id && board.kind !== "new" && !board.local;
+function paintSaved() {
+  const el = $("savedDot"); if (!el) return;
+  $("saveB").disabled = !canSave();
+  if (!canSave()) { el.textContent = ""; el.className = "sv"; return; }
+  const s = mine.get(board.id), ok = !!s && s.title === board.title;
+  el.className = "sv " + (ok ? "saved" : "unsaved");
+  el.textContent = ok ? "Saved" : "Not saved";
+  el.title = ok ? "In My boards, in this browser" : "Save it to My boards with Ctrl+S";
+}
+function saveBoard({ quiet = false, title = board.title } = {}) {
+  if (!canSave()) { if (!quiet) toast("Nothing to save yet."); return false; }
+  const m = board.meta || {};
+  const ok = mine.save({ id: board.id, title: title || m.title || board.id, thumb: mine.thumbFor(board.id, apiBase), owner: m.owner || (board.live ? "Etch build" : ""), repo: m.repo || "", category: m.category || "", license: m.license || "", prompt: board.prompt || undefined });
+  if (ok) { board.title = title; paintSaved(); if (!quiet) { toast("Saved to My boards"); emote("nod"); } }
+  else if (!quiet) toast("This browser won't keep it (storage is full or off).");
+  return ok;
+}
+$("saveB").onclick = () => { saveBoard(); wobble($("saveB")); };
+let renameFrom = null;
+function startRename() {
+  if (!canSave() || renameFrom != null) return;
+  const t = $("crTitle");
+  renameFrom = t.textContent;
+  t.contentEditable = "true"; t.spellcheck = false;
+  t.focus();
+  const r = document.createRange(); r.selectNodeContents(t); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r);
+}
+function endRename(keep) {
+  const t = $("crTitle"); if (renameFrom == null) return;
+  const v = t.textContent.replace(/\s+/g, " ").trim().slice(0, 80);
+  const before = renameFrom; renameFrom = null; // first: turning contentEditable off blurs, and blur ends a rename too
+  t.contentEditable = "false";
+  if (!keep || !v || v === before) { t.textContent = before; return; }
+  t.textContent = v; board.title = v; document.title = `${v} · Etch`;
+  if (mine.get(board.id)) saveBoard({ quiet: true, title: v }); // already in My boards: the new name is kept at once
+  paintSaved();
+  toast(mine.get(board.id) ? "Renamed" : "Renamed. Save to keep it.");
+}
+$("crTitle").addEventListener("click", startRename);
+$("crTitle").addEventListener("keydown", (e) => {
+  if (renameFrom == null) return;
+  if (e.key === "Enter") { e.preventDefault(); endRename(true); $("crTitle").blur(); }
+  else if (e.key === "Escape") { e.preventDefault(); endRename(false); $("crTitle").blur(); }
+  e.stopPropagation();
+});
+$("crTitle").addEventListener("blur", () => endRename(true));
+$("crTitle").addEventListener("paste", (e) => { if (renameFrom == null) return; e.preventDefault(); document.execCommand("insertText", false, (e.clipboardData?.getData("text/plain") || "").replace(/\s+/g, " ")); });
+mine.onChange(() => paintSaved());
+paintSaved();
+// capture phase, registered before the dock's own keys: Esc while renaming cancels instead of blurring (which saves)
+addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); if (renameFrom != null) endRename(true); saveBoard(); }
+  else if (renameFrom != null && e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); endRename(false); $("crTitle").blur(); }
+  else if (renameFrom != null && e.key === "Enter") { e.preventDefault(); e.stopImmediatePropagation(); endRename(true); $("crTitle").blur(); }
+}, true);
 
 // ---------- keyboard ----------
 const typing = () => { const a = document.activeElement; return a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT" || a.isContentEditable); };

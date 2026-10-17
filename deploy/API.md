@@ -16,7 +16,7 @@ the event) in the same commit.
 | --- | --- |
 | Base URL | `config.json` → `api` (the Cloudflare tunnel URL in production). `?api=http://127.0.0.1:3439` overrides it; `./run.sh` opens the page that way. |
 | Port | 3439 (`ETCH_PUBLIC_PORT`). Speech-to-text runs separately on 3421 and is reached only through `/etch/stt`. |
-| CORS | Allowed origins: `https://etch-app*.vercel.app`, `http://localhost:*`, `http://127.0.0.1:*` (`ETCH_ORIGINS` overrides). A new deploy URL outside that pattern gets CORS errors. |
+| CORS | Allowed origins: `https://etch.chat`, `https://www.etch.chat`, `https://etch-app*.vercel.app`, `http://localhost:*`, `http://127.0.0.1:*` (`ETCH_ORIGINS` overrides). A new deploy URL outside that pattern gets CORS errors. |
 | Auth | Header `X-Etch-Code: <access code>` on every route except `/etch/health`, `/etch/thumb`, `/etch/piece/*` and `/etch/files/*`. The page asks for the code once and keeps it in `localStorage["etch-code"]`. |
 | Errors | JSON `{"error": "..."}` with a 4xx/5xx status. `401 {"error": "code"}` means a missing or wrong code: show the code prompt. Most other `error` strings are written to be shown to the user as is. |
 | Polling, not SSE | Cloudflare quick tunnels don't carry SSE, so build progress is polled from `/etch/job`. |
