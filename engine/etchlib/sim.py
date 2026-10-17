@@ -445,6 +445,7 @@ def netlist(
             lines.append(f"R{p.ref}b {nodes[1]} {nodes[2]} {{{_val(total)}*{1 - pos:.3f}+1}}")
         elif pre in ("R", "C"):
             val = sets.get(p.ref, p.value)
+            val = _ASSUMED.get(pre, val) if _no_value(p, val) else val
             try:
                 _val(val)
             except ValueError:
@@ -562,6 +563,25 @@ def _run_one(spec: Spec, out_dir: Path, scen: dict[str, Any], t_stop: float, ste
     }
 
 
+_ASSUMED = {"R": "10k", "C": "100n"}
+
+
+def _no_value(p: Any, val: Any) -> bool:
+    """A resistor or capacitor the design left without a value: the spec then carries the library name
+    ("R / R_Axial_DIN0204...", live-1792276584059 nixie R1), which used to fail the whole simulation."""
+    v = str(val or "").strip()
+    return not v or " / " in v or v.split(":")[-1] in (str(p.lib_id).split(":")[-1], "R", "C", "C_Polarized")
+
+
+def assumed_values(spec: Spec) -> dict[str, str]:
+    """Resistors and capacitors simulated at a typical value because the design gave none."""
+    return {
+        p.ref: f"no value given, simulated as {_ASSUMED[p.spice['prefix']]}"
+        for p in spec.parts
+        if p.spice and p.spice.get("prefix") in _ASSUMED and not p.spice.get("role") and _no_value(p, p.value)
+    }
+
+
 def not_modelled(spec: Spec) -> dict[str, str]:
     """Parts the index has no SPICE card for, and how the simulation stands in for each (fallback_spice)."""
     return {p.ref: fallback_spice(p)[1] for p in spec.parts if not p.spice}
@@ -616,7 +636,7 @@ def supply_budget(spec: Spec, scen: dict[str, Any] | None = None) -> dict[str, A
         elif pre == "D" and str(led_model(str(s.get("model", "")), p.value)).startswith("LED"):
             terms.append((p.ref, LED_ABS_MAX_MA, "LED absolute maximum (datasheet)"))
         elif pre in ("R", "P") and role is None:
-            r = ohms(sets.get(p.ref, p.value))
+            r = ohms(sets.get(p.ref, _ASSUMED["R"] if pre == "R" and _no_value(p, p.value) else p.value))
             if r:
                 terms.append((p.ref, v / r * 1e3, f"{r:g} ohm with the supply across it"))
     total = sum(t[1] for t in terms)
@@ -632,7 +652,7 @@ def simulate(spec: Spec, out_dir: Path, t_stop: float | None = None, step: float
     t_stop = float(t_stop or cfg.get("t_stop", 6.0))
     scs = scenarios(spec)
     t0 = time.time()
-    stand_in = not_modelled(spec)
+    stand_in = {**not_modelled(spec), **assumed_values(spec)}
     try:
         netlist(spec, t_stop, step, scs[0])  # mapping errors surface before any process starts
         with cf.ThreadPoolExecutor(max_workers=max(1, len(scs))) as ex:
