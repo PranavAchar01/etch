@@ -13,8 +13,9 @@
    "category": "computing",
    "stars": 3041,
    "url": "https://github.com/KiCad/kicad-source-mirror/tree/65a2918b01dfbc413a95e80898d6db4b1743504f",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "failed",
+   "unresolved_models": 0,
+   "error": "no footprints"
   },
   {
    "id": "gh:KiCad/kicad-source-mirror/demos/video",
@@ -28,8 +29,16 @@
    "category": "computing",
    "stars": 3041,
    "url": "https://github.com/KiCad/kicad-source-mirror/tree/65a2918b01dfbc413a95e80898d6db4b1743504f",
-   "status": "queued",
-   "unresolved_models": 5
+   "status": "rendered",
+   "unresolved_models": 5,
+   "identical": false,
+   "models": {
+    "total": 175,
+    "resolved": 165,
+    "missing": 10
+   },
+   "glb_bytes": 6508096,
+   "bytes": 6597131
   },
   {
    "id": "gh:KiCad/kicad-source-mirror/demos/tiny_tapeout",
@@ -43,8 +52,16 @@
    "category": "computing",
    "stars": 3041,
    "url": "https://github.com/KiCad/kicad-source-mirror/tree/65a2918b01dfbc413a95e80898d6db4b1743504f",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "rendered",
+   "unresolved_models": 1,
+   "identical": false,
+   "models": {
+    "total": 130,
+    "resolved": 127,
+    "missing": 3
+   },
+   "glb_bytes": 3601424,
+   "bytes": 3666049
   },
   {
    "id": "gh:freerouting/freerouting/fixtures/Issue742-tastexx-pcb",
@@ -58,8 +75,16 @@
    "category": "everything-else",
    "stars": 2111,
    "url": "https://github.com/freerouting/freerouting/tree/5aa1b24dc8e5af7f950c551c1e53de9077a84cd5",
-   "status": "queued",
-   "unresolved_models": 5
+   "status": "rendered",
+   "unresolved_models": 5,
+   "identical": false,
+   "models": {
+    "total": 5,
+    "resolved": 0,
+    "missing": 5
+   },
+   "glb_bytes": 130296,
+   "bytes": 142166
   },
   {
    "id": "gh:freerouting/freerouting/fixtures/Issue718-Allow_Net-Ties",
@@ -4198,7 +4223,7 @@
    "category": "dev-boards",
    "stars": 34,
    "url": "https://github.com/kazkojima/esp32-phy/tree/3ba6b004d38aac7a3eaba2ac62df26bf4e1f1c5d",
-   "status": "rendered",
+   "status": "queued",
    "unresolved_models": 9
   },
   {
@@ -4243,7 +4268,7 @@
    "category": "lighting",
    "stars": 1,
    "url": "https://github.com/HeyPCB/moon-light/tree/91365bd1806934f3080edb40a07849537ada176b",
-   "status": "rendered",
+   "status": "queued",
    "unresolved_models": 0
   },
   {
@@ -4288,7 +4313,7 @@
    "category": "robotics",
    "stars": 0,
    "url": "https://github.com/HeyPCB/whisker/tree/6d604528bce0c5a0815f07460dd50ae280726756",
-   "status": "rendered",
+   "status": "queued",
    "unresolved_models": 0
   },
   {
