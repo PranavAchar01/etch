@@ -81,6 +81,8 @@ class PickTimeout(RuntimeError):
 
 BATCH = 24
 MAX_ITERS = 3  # picker path only; worst case stays under a minute
+# web sourcing (You.com, LCSC, GitHub) per run, all calls together: the badge ask spent 160 s on one name (10-17)
+SOURCING_BUDGET_S = 20.0
 
 TOP = ("LED", "RGB LED", "buzzer", "light sensor", "push button")
 MID = ("resistor", "trimmer potentiometer")
@@ -892,6 +894,7 @@ def assemble(
         _normalize_pins(design, kept)
         if powered := _fix_power_pins(design, kept):  # before _auto_mcu: a lonely Vin is not a GPIO
             stream.emit("assembly", "repair", iteration=it, kind="power pins", joined=powered)
+        _normalize_firmware(design)
         if joined := _merge_lonely(
             design, kept
         ):  # before _auto_mcu: a split name is not a reason to add a Pico
@@ -1618,6 +1621,36 @@ def _board_supply(
     return next(
         (n for n in sorted(nets) if n.upper() in _SUPPLY_5V + _SUPPLY_3V3), None
     )
+def _normalize_firmware(design: dict[str, Any]) -> None:
+    """firmware.commands as a list of {"input": "1", "high": ["NET", ...]}, whatever shape the picker wrote:
+    {"1": ["LED_R"]}, ["1", "2"], high as one string, or the bare command list as the firmware. Everything
+    downstream calls c.get("high") (badge ask 10-17, job 1UPoHr6_p3s4Wd_A: a dict of commands stopped the
+    run with "'str' object has no attribute 'get'")."""
+    fw = design.get("firmware")
+    if fw is None:
+        return
+    if isinstance(fw, list):
+        fw = {"commands": fw}
+    if not isinstance(fw, dict):
+        design["firmware"] = {}
+        return
+    cmds = fw.get("commands")
+    if isinstance(cmds, dict):
+        cmds = [
+            {"input": k, "high": v.get("high", []) if isinstance(v, dict) else v}
+            for k, v in cmds.items()
+        ]
+    rows = []
+    for c in cmds if isinstance(cmds, list) else []:
+        if isinstance(c, (str, int)):
+            c = {"input": str(c), "high": []}
+        if not isinstance(c, dict):
+            continue
+        high = c.get("high")
+        if isinstance(high, str):
+            high = [high]
+        rows.append({**c, "high": [str(n) for n in high or [] if n]})
+    design["firmware"] = {**fw, "commands": rows} if "commands" in fw else fw
 
 
 # piece family from its library category (the index mixes "LED"/"led", "BJT transistor"/"transistor", ...)
@@ -2828,6 +2861,7 @@ _TWIN_FAMILY = (
     (r"^(D|D_SMALL|DIODE|D_SMALLSIGNAL|1N4148\w*)$", ("1N4148", "D", "1N4001")),
     (r"^(SW_PUSH\w*|BUTTON\w*|PUSHBUTTON\w*|SW_TACTILE\w*)$", ("SW_Push",)),
     (r"^BUZZER\w*$", ("Buzzer",)),
+    (r"^D_REF$", ("LED", "1N4148", "D")),  # "D3" as a piece name: Etch's D refs are mostly LEDs
     (r"^(R|R_SMALL|R_US|RESISTOR)$", ("R",)),
     (r"^(C|C_SMALL|CAPACITOR)$", ("C",)),
     (
@@ -2836,6 +2870,30 @@ _TWIN_FAMILY = (
     ),
 )
 _HEADER = re.compile(r"(?:CONN|PINHEADER|PINSOCKET)_0?(\d+)X0?(\d+)", re.I)
+# a reference designator used as a piece name ("RV1", "R3", "C2"; badge ask 10-17, job 1UPoHr6_p3s4Wd_A: "RV1"
+# spent 160 s in web sourcing) -> the generic word for its family, resolved locally like "R" or "Buzzer"
+_REF_PREFIX = (
+    (r"^(RV|VR|POT)\d+$", "RV"),
+    (r"^R\d+$", "R"),
+    (r"^C\d+$", "C"),
+    (r"^(D|LED)\d+$", "D_REF"),
+    (r"^(SW|BTN)\d+$", "SW_PUSH"),
+    (r"^(BZ|LS)\d+$", "BUZZER"),
+    (r"^USB\d*$", "USB_C"),
+    (r"^(J|P|CN)\d+$", "CONN"),
+)
+
+
+def _ref_word(sym: str) -> str | None:
+    """ "RV1" -> "RV", "R3" -> "R", "J2" -> "CONN"; None when the name is not a reference designator."""
+    up = str(sym).upper()
+    return next((w for pat, w in _REF_PREFIX if re.match(pat, up)), None)
+
+
+def _generic_name(sym: str) -> bool:
+    """A reference designator or a family word ("potentiometer", "LED"): never a part to search the web for."""
+    up = str(sym).upper()
+    return bool(_ref_word(up)) or any(re.match(pat, up) for pat, _ in _TWIN_FAMILY)
 
 
 def _twin_rank(c: dict[str, Any], foot: str) -> tuple:
@@ -2867,6 +2925,8 @@ def _twin_piece(
 
     cat = [c for c in kicad_catalog.load()["pieces"] if c.get("spice")]
     pools = (kept, cat)
+    if word := _ref_word(sym):
+        sym = f"Conn_01x{max(2, len(used))}" if word == "CONN" else word
     up = sym.upper()
     for pool in pools:  # same symbol, closest footprint
         same = [c for c in pool if _sym_foot(c["key"])[0].upper() == up and fits(c)]
@@ -2936,6 +2996,11 @@ def _resolve_unknown(
     todo: dict[str, list[dict[str, Any]]] = {}
     for part in unknown:
         pc = str(part.get("piece", ""))
+        # a misspelt library prefix ("kicid:R@...", "kicd:Device:LED@..."): the same key with "kicad:"
+        if (fix := re.sub(r"^k\w{1,5}:", "kicad:", pc)) != pc and fix in keys:
+            part["piece"] = fix
+            stream.emit("assembly", "repair", kind="pieces", joined=[f"{pc} -> {fix}"])
+            continue
         name = pc.split(":")[-1].split("@")[0]
         foot = pc.split("@")[-1] if "@" in pc else ""
         if twin := _twin_piece(pc, part.get("pins"), kept):
@@ -2962,7 +3027,7 @@ def _resolve_unknown(
                     provenance={"route": "KiCad library (missed by the classifier)"},
                     seconds=0.0,
                 )
-        elif name and name not in tried:
+        elif name and name not in tried and not _generic_name(name):
             todo.setdefault(name, []).append(part)
     for name in list(todo)[:2]:
         tried.add(name)
@@ -2986,6 +3051,10 @@ def source_missing(
     from . import parts_live
 
     got = []
+    # one budget per run (the stream is the run), shared by the picker's missing list and every repair
+    if not hasattr(stream, "sourcing_deadline"):
+        stream.sourcing_deadline = time.time() + SOURCING_BUDGET_S
+    deadline = stream.sourcing_deadline
     for m in missing[:2]:
         t0 = time.time()
         stream.emit("sourcing", "start", what=m.get("what"), search=m.get("search"))
@@ -3003,14 +3072,16 @@ def source_missing(
                 seconds=round(time.time() - t0, 2),
             )
             continue
-        res = parts_live.find_part(str(m.get("search") or m.get("what")), stream)
+        res = parts_live.find_part(
+            str(m.get("search") or m.get("what")), stream, deadline=deadline
+        )
         if res.get("status") not in ("found", "ok") and m.get("what"):
             res = parts_live.find_part(
-                f"{m.get('what')} through-hole", stream
+                f"{m.get('what')} through-hole", stream, deadline=deadline
             )  # second try: the plain name
         if res.get("status") not in ("found", "ok") and m.get("what"):
             res = parts_live.find_part(
-                re.sub(r"\(.*?\)", "", str(m["what"])).strip(), stream
+                re.sub(r"\(.*?\)", "", str(m["what"])).strip(), stream, deadline=deadline
             )  # third: no notes
         part = res.get("part") or {}
         pins = part.get("pins") or []

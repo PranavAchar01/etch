@@ -866,7 +866,10 @@ def scout_pick(
     return out
 
 
-def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[str, Any]:
+def find_part(
+    query: str, stream: Stream, allow_network: bool = True, deadline: float | None = None
+) -> dict[str, Any]:
+    """deadline (time.time() value): no network tier starts after it; the run's sourcing budget (agent/live.py)."""
     t0 = time.time()
     tiers: list[dict[str, Any]] = []
     query = query.strip()[:200]
@@ -912,6 +915,9 @@ def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[st
     if not allow_network:
         return done({"status": "not_found"})
 
+    if deadline is not None and time.time() > deadline:
+        tiers.append({"tier": "budget", "why": "sourcing time budget used up"})
+        return done({"status": "not_found"})
     # tier 2a: You.com (when keyed): identify the exact part on distributor / maker pages, then its vendor library
     if not lcsc_in_query and config.you_key():
         try:
@@ -920,6 +926,9 @@ def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[st
         except Exception as e:  # network, quota or API shape change: the free tiers below still run
             tiers.append({"tier": "you.com", "error": str(e)[:200]})
 
+    if deadline is not None and time.time() > deadline:
+        tiers.append({"tier": "budget", "why": "sourcing time budget used up"})
+        return done({"status": "not_found"})
     # tier 2: LCSC
     lcsc = lcsc_in_query.group(0) if lcsc_in_query else None
     picked: dict[str, Any] = {}
@@ -947,6 +956,9 @@ def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[st
             Exception
         ) as e:  # network or API shape change: fall through to the next tier
             tiers.append({"tier": "lcsc_search", "error": str(e)[:200]})
+    if deadline is not None and time.time() > deadline:
+        tiers.append({"tier": "budget", "why": "sourcing time budget used up"})
+        return done({"status": "not_found"})
     if lcsc:
         try:
             res = easyeda_fetch(
@@ -973,6 +985,9 @@ def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[st
         except Exception as e:
             tiers.append({"tier": "easyeda2kicad", "lcsc": lcsc, "error": str(e)[:200]})
 
+    if deadline is not None and time.time() > deadline:
+        tiers.append({"tier": "budget", "why": "sourcing time budget used up"})
+        return done({"status": "not_found"})
     # tier 3: GitHub
     try:
         res = github_fetch(query, stream)
@@ -982,6 +997,9 @@ def find_part(query: str, stream: Stream, allow_network: bool = True) -> dict[st
     except Exception as e:
         tiers.append({"tier": "github", "error": str(e)[:200]})
 
+    if deadline is not None and time.time() > deadline:
+        tiers.append({"tier": "budget", "why": "sourcing time budget used up"})
+        return done({"status": "not_found"})
     # tier 4: web search (You.com if keyed, else open-source SearXNG), then retry LCSC with the leads
     route = "web"
     try:
