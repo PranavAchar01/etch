@@ -3769,6 +3769,9 @@ def main(argv: list[str]) -> None:
         return
     out = eng.new_run_dir("live")
     st = Stream(out.name, log=out / "run.jsonl", echo=x.events)
+    from .watchdog import Watchdog
+
+    dog = Watchdog(st, out, x.text).start()  # stage and run caps with an honest message (prod zM-s8mWOeq3rjtE3)
     if x.mode == "design":
         r = design(x.text, out, st, code=x.code, do_render=not x.no_render)
     else:
@@ -3780,6 +3783,7 @@ def main(argv: list[str]) -> None:
             code=x.code,
             do_render=not x.no_render,
         )
+    dog.stop()
     if not x.events:
         print(
             json.dumps(
