@@ -133,7 +133,7 @@ export function createBoardViewer(host) {
   let rulers = [], wp = { x0: -0.05, z0: -0.05, x1: 0.05, z1: 0.05, ox: 0, oz: 0 };
   function buildFloor() {
     // the board's own corner (KiCad's top-left) is 0 mm; the plane reaches 20 mm past the board, in whole 10 mm steps
-    const r = boardWorldRect();
+    const r = boardWorldRect() || emptyRect;
     const ox = r ? r.x0 : -0.03, oz = r ? r.z0 : -0.03, w = r ? r.x1 - r.x0 : 0.06, d = r ? r.z1 - r.z0 : 0.06;
     const pad = 0.02, step = 0.01;
     const x0 = ox - pad, z0 = oz - pad, x1 = ox + Math.ceil((w + pad) / step) * step, z1 = oz + Math.ceil((d + pad) / step) * step;
@@ -295,6 +295,7 @@ export function createBoardViewer(host) {
   async function load(buf, { parts: partInfo = {}, meta = {}, layers = null, keepView = false } = {}) {
     const gltf = await gltfLoader().parseAsync(buf, "");
     const root = gltf.scene;
+    emptyRect = null;
     glbRoot.clear(); parts = {}; pickables = []; boardMeshes = []; hovered = null;
     const keepSel = keepView ? new Set(selected) : new Set();
     selected = new Set(); marked = new Set(); outlines.clear();
@@ -356,6 +357,28 @@ export function createBoardViewer(host) {
     return { parts: Object.keys(parts), look: { ...look } };
   }
 
+  // no board yet (a new board before Etch has built it): just a w x d mm workplane, the camera set back by `back` so
+  // reset() can ease it in once there is something to show
+  let emptyRect = null;
+  function empty({ w = 90, d = 64, back = 1.7 } = {}) {
+    glbRoot.clear(); parts = {}; pickables = []; boardMeshes = []; hovered = null;
+    selected = new Set(); marked = new Set(); outlines.clear();
+    for (const k of Object.keys(boardMats)) boardMats[k] = [];
+    info = { parts: {}, meta: {} };
+    boardLocal = null; boardTop = 0;
+    emptyRect = { x0: -w / 2000, z0: -d / 2000, x1: w / 2000, z1: d / 2000 };
+    shadow.scale.set(1e-6, 1e-6, 1);
+    model = { size: new THREE.Vector3(w / 1000, 0.002, d / 1000), span: Math.max(w, d) / 1000, empty: true };
+    extent = Math.max(0.08, Math.ceil((model.span * 0.75) / 0.02) * 0.02);
+    buildFloor();
+    frameHome();
+    const off = persp.position.clone().sub(ctl.target).multiplyScalar(back);
+    persp.position.copy(ctl.target).add(off); ortho.position.copy(persp.position);
+    ctl.maxDistance = Math.max(ctl.maxDistance, off.length() * 1.5);
+    clip(); ctl.update();
+    dirty = true;
+  }
+
   // copper pours from /etch/layers (live-* boards): flat copper just under the tracks' top face
   function addPours(root, pours) {
     const b = new THREE.Box3();
@@ -414,6 +437,7 @@ export function createBoardViewer(host) {
   function visBox(refs) {
     const box = new THREE.Box3();
     if (refs && refs.length) { for (const r of refs) { const b = partBox(r); if (b) box.union(b); } }
+    else if (model?.empty && emptyRect) { box.set(new THREE.Vector3(emptyRect.x0, 0, emptyRect.z0), new THREE.Vector3(emptyRect.x1, 0.002, emptyRect.z1)); }
     else if (model) { box.setFromObject(glbRoot); }
     if (box.isEmpty()) box.set(new THREE.Vector3(-0.03, 0, -0.03), new THREE.Vector3(0.03, 0.002, 0.03));
     return box;
@@ -694,7 +718,7 @@ export function createBoardViewer(host) {
   requestAnimationFrame(tick);
 
   return {
-    load, reset, view, lookFrom, fitView, zoomBy, focus, setOrtho, select, mark, setHover, project, partAnchor, partBox,
+    load, empty, reset, view, lookFrom, fitView, zoomBy, focus, setOrtho, select, mark, setHover, project, partAnchor, partBox,
     setHidden, isolate, worldToScreen, pickBoard, mmToScreen, boardRect,
     refAt: (x, y) => hit(x, y)?.object.userData.ref || null, // client coords -> refdes under them
     setMask, setSilk, setFinish, setFloor,
@@ -710,6 +734,7 @@ export function createBoardViewer(host) {
     get isolated() { return isolated ? [...isolated] : null; },
     get moving() { return !!anim; },
     get floor() { return floorOn; },
+    get isEmpty() { return !!model?.empty; },
     get workplane() { return { ...wp }; },
     controls: ctl,
     canvas: cv,

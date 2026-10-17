@@ -2,8 +2,10 @@
 // tools, Import / Export / Share), view cube + camera buttons, selection with outlines / handles / guides, an
 // inspector card, hide / isolate, snap grid + board colours, a right panel with Etch's KiCad parts (drag one onto the
 // board to ask Etch to add it) and this board's parts. Works for imported boards (gh:, static files under world/)
-// and Etch builds (live-*, through the backend); ?mock=1 runs everything without a backend.
-import { Q, $, h, esc, LOGO, carry, page, toast, slugOf, isLive, boardFiles, cachedFetch, registerSW, keyBackdrop } from "../common.js";
+// and Etch builds (live-*, through the backend); ?mock=1 runs everything without a backend. board.html?new=1 is a new
+// board: an empty workplane under a start screen (new-board.js); what the person asks for becomes a design build
+// (bridge.design) that streams in the dock and loads in place as board.html?id=live-<ms> when it is done.
+import { Q, $, h, esc, LOGO, carry, page, toast, slugOf, isLive, boardFiles, cachedFetch, registerSW, keyBackdrop, WORLD } from "../common.js";
 import { createBoardViewer, MASKS, SILKS, FINISHES } from "../board-viewer.js";
 import * as etch from "../etch-api.js";
 import { ic } from "./icons.js";
@@ -15,14 +17,19 @@ import { createSelectionOverlay } from "./selection.js";
 import { createInspector } from "./inspector.js";
 import { createBoardList } from "./board-list.js";
 import { createDrop } from "./drop.js";
+import { createNewBoardHero } from "./new-board.js";
+import { createStartBackdrop } from "./start-backdrop.js";
 import { bindLiquid, liquidTabs, wobble } from "../ui/goo.js";
 
 registerSW();
 // the API client, with `authed` for the backend call (named `backend` since the access code went away)
 const api = { ...etch, authed: etch.backend || etch.authed, get status() { return etch.status; } };
 const ID = Q.get("id") || "";
+const NEW = !ID && Q.get("new") === "1";
 const MOBILE = matchMedia("(max-width: 768px)");
-const board = { id: ID, kind: isLive(ID) ? "live" : "gh", live: isLive(ID), meta: {}, parts: {}, files: null };
+const board = { id: ID, kind: NEW ? "new" : isLive(ID) ? "live" : "gh", live: isLive(ID), meta: {}, parts: {}, files: null };
+// ?new=1&mock=1: the scripted design build ends on this library board, so the whole flow can be shown without the engine
+const DEMO = "gh:OLIMEX/ESP32-POE/HARDWARE/ESP32-PoE-hardware-revision-M2";
 
 // ---------- poster first: the prerendered still, keyed onto the stage, before anything else ----------
 const boot = window.__boot || {};
@@ -47,6 +54,7 @@ function hidePoster() {
 
 // ---------- static chrome ----------
 $("logo").innerHTML = LOGO;
+if (NEW) { $("crTitle").textContent = "New board"; document.title = "New board · Etch"; }
 $("homeL").href = page("index") + carry();
 $("exL").href = page("explore") + carry();
 for (const [id, name] of [["copyB", "copy"], ["pasteB", "paste"], ["dupB", "dup"], ["delB", "del"], ["undoB", "undo"], ["redoB", "redo"], ["showAllB", "showAll"], ["panelT", "panel"], ["rpChev", "chev"]]) $(id).innerHTML = ic(name);
@@ -86,8 +94,12 @@ function setSel(refs, { focus = false } = {}) {
   if (focus && sel.length === 1) viewer.focus(sel[0]);
   if (sel.length === 1) list?.reveal(sel[0]);
 }
+// the mascot reacts to what happens on the board (dock.emote lands with the dock; until then this does nothing)
+const emote = (k) => { try { dock?.emote?.(k); } catch (e) { /* the dock's own business */ } };
+const arrived = () => { emote("surprise"); setTimeout(() => emote("hop"), 520); };
 function pick(ref, { add = false, focus = false } = {}) {
   if (!ref) { if (!add) setSel([]); return; }
+  emote("delight");
   if (add) setSel(sel.includes(ref) ? sel.filter((r) => r !== ref) : [...sel, ref]);
   else setSel([ref], { focus });
 }
@@ -100,12 +112,14 @@ const actions = {
     const before = refs.map((r) => viewer.hidden.has(r));
     record(`${on ? "hide" : "show"} ${refs.join(", ")}`, () => refs.forEach((r) => viewer.setHidden(r, on)), () => refs.forEach((r, i) => viewer.setHidden(r, before[i])));
     list?.sync(); inspector.render(); syncTools();
+    emote("nod");
   },
   isolate(refs) {
     const before = viewer.isolated;
     record(refs ? `isolate ${refs.join(", ")}` : "show all", () => viewer.isolate(refs), () => viewer.isolate(before));
     inspector.render(); syncTools();
     if (refs) viewer.fitView(refs);
+    emote("nod");
   },
   clear: () => setSel([]),
   select: (refs) => setSel(refs, { focus: true }),
@@ -134,6 +148,7 @@ let list = null, dock = null, bridge = null;
 
 // a board whose licence doesn't allow copies can't be changed (the backend's own 403 wording)
 function changeBlock() {
+  if (board.kind === "new") return board.building ? "Etch is still building this board." : "Describe the board first, then Etch can change it.";
   if (board.local) return "A board opened from a file can't be changed by Etch.";
   return board.meta.copyable === false ? "This board's licence does not allow copying it, so Etch cannot change it." : "";
 }
@@ -141,7 +156,7 @@ function changeBlock() {
 // ---------- edit tools: copy / paste / duplicate / delete go to the agent as change requests ----------
 let clip = [];
 const partLabel = (r) => { const p = board.parts[r] || {}; return `${r}${p.value ? ` (${p.value})` : ""}`; };
-function blocked() { const why = changeBlock(); if (why) { toast(why); dock?.say(why); return true; } if (sel.some((r) => locked.has(r))) { toast("Unlock the part first."); return true; } return false; }
+function blocked() { const why = changeBlock(); if (why) { emote("wince"); toast(why); dock?.say(why); return true; } if (sel.some((r) => locked.has(r))) { toast("Unlock the part first."); return true; } return false; }
 $("copyB").onclick = () => { if (!sel.length) return; clip = [...sel]; toast(`Copied ${clip.join(", ")}`); syncTools(); };
 $("pasteB").onclick = () => { if (!clip.length || blocked()) return; bridge?.change(`add another ${clip.map(partLabel).join(", ")} next to the original`, { ref: clip[0] }); };
 $("dupB").onclick = () => { if (!sel.length || blocked()) return; bridge?.change(`duplicate ${sel.map(partLabel).join(", ")}`, { ref: sel[0] }); };
@@ -279,8 +294,10 @@ $("glbFile").addEventListener("change", async (e) => {
 // ---------- hover tag ----------
 let mouse = { x: 0, y: 0 };
 $("stage").addEventListener("pointermove", (e) => { mouse = { x: e.clientX, y: e.clientY }; });
+let lastHover = performance.now();
 viewer.on("hover", (ref) => {
   const t = $("htag");
+  if (ref) { if (performance.now() - lastHover > 6000) emote("nod"); lastHover = performance.now(); }
   if (!ref || ghostDrop.active) { t.classList.remove("show"); return; }
   const p = board.parts[ref] || {}, r = $("stage").getBoundingClientRect();
   t.innerHTML = `<b>${esc(ref)}</b>${p.value ? ` ${esc(p.value)}` : ""}`;
@@ -295,12 +312,13 @@ const ghostDrop = createDrop({
   imgUrl: (p) => (p.img && apiBase ? `${apiBase}/etch/piece/${p.img}.png` : ""),
   onDrop(part, l) {
     if (blockedDrop()) return;
+    emote("delight");
     const x = l.mm[0].toFixed(snap() < 1 ? 2 : 1), y = l.mm[1].toFixed(snap() < 1 ? 2 : 1);
     const name = part.value ? `${part.name} (${part.value})` : part.name;
     bridge?.change(`add ${name} here (${x}, ${y} mm from the board's top-left corner)`, { at: { x: +x, y: +y, mm: l.mm, abs: l.abs } });
   },
 });
-function blockedDrop() { const why = changeBlock(); if (!why) return false; dock?.setState("confused"); dock?.say(why); toast(why); return true; }
+function blockedDrop() { const why = changeBlock(); if (!why) return false; emote("wince"); dock?.setState("confused"); dock?.say(why); toast(why); return true; }
 
 // ---------- credits (required by the boards' licences) ----------
 function showMeta(m) {
@@ -322,7 +340,7 @@ function fail(title, html) {
 }
 
 // ---------- load ----------
-async function fetchBoard(steps) {
+async function fetchBoard(steps, id = ID) {
   if (board.live) {
     await api.init();
     if (!api.hasBackend()) throw Object.assign(new Error("This Etch build needs the Etch engine. Open it from the Etch app, or add <code>?api=</code>."), { html: true });
@@ -337,10 +355,11 @@ async function fetchBoard(steps) {
     steps.done("glb", `${(glb.byteLength / 1048576).toFixed(1)} MB`);
     return { glb, meta, parts: parts.parts || {}, layers: await lr };
   }
-  const f = board.files = boardFiles(slugOf(ID));
-  const mp = boot.meta || cachedFetch(f.meta).then((r) => { if (!r.ok) throw new Error("missing"); return r.json(); });
-  const pp = boot.parts || cachedFetch(f.parts).then((r) => (r.ok ? r.json() : {}));
-  const gp = boot.glb || cachedFetch(f.glb).then((r) => { if (!r.ok) throw new Error("missing"); return r.arrayBuffer(); });
+    const b0 = id === ID ? boot : {};
+  const f = board.files = boardFiles(slugOf(id));
+  const mp = b0.meta || cachedFetch(f.meta).then((r) => { if (!r.ok) throw new Error("missing"); return r.json(); });
+  const pp = b0.parts || cachedFetch(f.parts).then((r) => (r.ok ? r.json() : {}));
+  const gp = b0.glb || cachedFetch(f.glb).then((r) => { if (!r.ok) throw new Error("missing"); return r.arrayBuffer(); });
   const meta = await mp;
   showMeta(meta); steps.done("board", meta.title);
   const parts = await pp.catch(() => ({}));
@@ -352,7 +371,8 @@ async function fetchBoard(steps) {
 }
 
 // render:done from a change: load the new run's board in place, keeping the camera and selection
-viewer.reload = async ({ run } = {}) => {
+viewer.reload = (o = {}) => (o.design ? loadDesign(o) : reloadChange(o));
+const reloadChange = async ({ run } = {}) => {
   try {
     if (run && /^live-\d+$/.test(run) && api.hasBackend() && !api.status.mock) {
       const q = encodeURIComponent(run);
@@ -371,11 +391,179 @@ viewer.reload = async ({ run } = {}) => {
     }
     api.setBoard(board.id, board.parts, board.meta);
     renderSettings(); list?.render(); setSel(sel);
+    arrived();
   } catch (e) { toast("Couldn't load the new version: " + e.message); }
 };
 
+// ---------- a new board: the design build's run, loaded in place (render:done first, then lead:done ok) ----------
+let loadedRun = null, loadingRun = null;
+async function loadDesign({ run, done = false } = {}) {
+  const mock = api.status.mock || !api.hasBackend() || !/^live-\d+$/.test(String(run || ""));
+  const key = mock ? "mock:" + run : run;
+  if (loadedRun === key || loadingRun === key) return;
+  loadingRun = key;
+  try {
+    let glb, parts, meta, layers = null, id;
+    if (mock) {
+      id = DEMO;
+      const f = board.files = boardFiles(slugOf(DEMO));
+      [meta, parts, glb] = await Promise.all([
+        cachedFetch(f.meta).then((r) => { if (!r.ok) throw new Error(`demo board: error ${r.status}`); return r.json(); }),
+        cachedFetch(f.parts).then((r) => (r.ok ? r.json() : {})).then((j) => j.parts || j || {}).catch(() => ({})),
+        cachedFetch(f.glb).then((r) => { if (!r.ok) throw new Error(`demo board: error ${r.status}`); return r.arrayBuffer(); })]);
+    } else {
+      id = run;
+      const q = encodeURIComponent(run);
+      const [g, p, l] = await Promise.all([
+        api.authed(`/etch/glb?id=${q}`).then((r) => { if (!r.ok) throw new Error(`3D model: error ${r.status}`); return r.arrayBuffer(); }),
+        api.authed(`/etch/parts?id=${q}`).then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
+        api.authed(`/etch/layers?id=${q}`).then((r) => (r.ok ? r.json() : null)).catch(() => null)]);
+      glb = g; layers = l; parts = p.parts || {};
+      meta = { id: run, title: p.title || p.name || `Etch build ${run.replace("live-", "#")}`, board: {}, copyable: true };
+    }
+    await viewer.load(glb, { parts, meta, layers, keepView: true });
+    viewer.reset(); // ease from the empty workplane onto the new board
+    Object.assign(board, { id, kind: mock ? "gh" : "live", live: !mock, meta, parts, building: false });
+    if (!mock) board.files = null;
+    api.setBoard(id, parts, meta);
+    showMeta(meta);
+    history.replaceState(null, "", page("board") + carry({ id }));
+    if (!list) list = createBoardList($("paneBoard"), { board, viewer, actions });
+    list.render(); renderSettings(); syncTools(); bindLiquid(document);
+    document.body.classList.add("ready");
+    dock?.nudge?.();
+    backdrop?.remove(); backdrop = null;
+    arrived();
+    if (mock) remember(id);
+    loadedRun = key;
+  } catch (e) {
+    toast("Couldn't load the new board: " + e.message);
+    dock?.setState("confused"); dock?.say("The board is built, but I couldn't load it here. Try opening it again.");
+  } finally { loadingRun = null; }
+  void done;
+}
+
+let hero = null;
+function startDesign(text) {
+  if (board.building) { dock.say("I'm still building your board. Give me a minute."); return; }
+  board.building = true;
+  backdrop?.building(true);
+  if (hero?.open) hero.collapse();
+  document.body.classList.remove("nb-on");
+  viewer.reset(); // the camera eases in onto the workplane
+  dock.expand(true);
+  dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: text, status: "done" });
+  $("crTitle").textContent = "New board";
+  bridge.design(text).then((r) => { if (!r || !r.ok) board.building = false; }).catch(() => { board.building = false; });
+}
+// the hero's text goes through the dock's own composer, so it shows up there as the person's turn
+function sendViaDock(text) {
+  const f = dock.el?.querySelector("form"), i = f?.querySelector("input, textarea");
+  if (f && i && f.requestSubmit) { i.value = text; f.requestSubmit(); }
+  else startDesign(text);
+}
+function dockPill() {
+  const p = dock?.el?.querySelector(".ag-pill") || dock?.el;
+  const r = p?.getBoundingClientRect();
+  return r && r.width ? r : null;
+}
+
+// boards opened here lately, newest first (the start screen's "Recently opened")
+const RECENT = "etch-recent";
+function recent() { try { return JSON.parse(localStorage.getItem(RECENT) || "[]").filter((x) => typeof x === "string"); } catch (e) { return []; } }
+function remember(id) {
+  if (!/^gh:/.test(String(id))) return;
+  try { localStorage.setItem(RECENT, JSON.stringify([id, ...recent().filter((x) => x !== id)].slice(0, 8))); } catch (e) { /* not kept */ }
+}
+
+// three changes worth suggesting for a board, from what is on it
+function suggestions(parts = board.parts, meta = board.meta) {
+  const vals = Object.values(parts || {}).map((p) => `${p.ref || ""} ${p.value || ""} ${p.footprint || ""}`.toLowerCase());
+  const has = (re) => vals.some((v) => re.test(v));
+  const out = [];
+  out.push(has(/\bled|^d\d|^led/) ? "Add a buzzer" : "Add a status LED");
+  if (has(/usb.?c|type.?c/)) out.push("Add a reset button");
+  else if (has(/usb|micro.?b|mini.?b/)) out.push("Swap the USB port to USB-C");
+  else out.push("Add a USB-C port for power");
+  const sz = meta?.size_mm || meta?.board?.size_mm;
+  out.push(sz && Math.max(sz[0], sz[1]) < 40 ? "Add mounting holes" : "Make the board smaller");
+  return out;
+}
+let askingChange = false;
+async function askChange() {
+  if (!dock || !bridge || askingChange) return;
+  askingChange = true;
+  dock.expand(true);
+  dock.say("What should we change?");
+  const ans = await dock.ask({ id: "remix-" + Date.now(), question: "What should we change?", options: suggestions(), multi: false }).catch(() => null);
+  askingChange = false;
+  const pickd = Array.isArray(ans) ? ans[0] : ans && typeof ans === "object" ? ans.label || ans.id : ans;
+  if (!pickd) return;
+  if (blockedDrop()) return;
+  bridge.change(String(pickd), {});
+}
+
+// "Start from an existing board": load it in place, as board.html?id=<id>&remix=1, then ask what to change
+async function remix(b) {
+  document.body.classList.remove("nb-on");
+  Object.assign(board, { id: b.id, kind: "gh", live: false, local: false, building: false, meta: {}, parts: {} });
+  dock.expand(true);
+  const steps = bridge.onLoad([
+    { id: "board", title: `Opening ${b.title || "the board"}` },
+    { id: "parts", title: "Reading parts.json" },
+    { id: "glb", title: "Loading the 3D board" },
+    { id: "render", title: "Rendering in 3D" },
+  ]);
+  try {
+    const data = await fetchBoard(steps, b.id);
+    board.meta = { ...data.meta, size_mm: data.meta.size_mm || b.size_mm }; board.parts = data.parts;
+    await viewer.load(data.glb, { parts: board.parts, meta: board.meta, keepView: true });
+    viewer.reset();
+    steps.done("render", `${Object.keys(viewer.parts).length} with 3D bodies`);
+  } catch (e) {
+    steps.fail("glb", e.message);
+    toast("Couldn't open that board: " + e.message);
+    return;
+  }
+  backdrop?.remove(); backdrop = null;
+  api.setBoard(b.id, board.parts, board.meta);
+  showMeta(board.meta);
+  history.replaceState(null, "", page("board") + carry({ id: b.id, remix: 1 }));
+  remember(b.id);
+  if (!list) list = createBoardList($("paneBoard"), { board, viewer, actions });
+  list.render(); renderSettings(); syncTools(); bindLiquid(document);
+  askChange();
+}
+
+let backdrop = null;
+async function startNew() {
+  $("crTitle").textContent = "New board";
+  document.title = "New board · Etch";
+  $("credits").textContent = "";
+  hidePoster();
+  viewer.empty();
+  board.meta = { title: "New board" };
+  renderMenus(); renderSettings(); syncTools();
+  document.body.classList.add("ready", "nb-on");
+  // a few well-known library boards rest at the edges of the empty workplane
+  const idx = await cachedFetch(WORLD + "index.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+  const picks = (idx.boards || []).slice().sort((a, b) => (b.stars || 0) - (a.stars || 0)).filter((x, i) => i % 3 === 0).slice(0, 5);
+  backdrop = createStartBackdrop($("stage"), { boards: picks });
+  hero = createNewBoardHero($("stage"), {
+    initial: Q.get("from") === "library" ? "library" : "scratch",
+    recent: recent(),
+    boardHref: (b) => page("board") + carry({ id: b.id, remix: 1 }),
+    target: dockPill,
+    onSubmit: (t) => { sendViaDock(t); dock.nudge?.(); },
+    onMic: () => { document.body.classList.remove("nb-on"); viewer.reset(); dock.expand(true); dock.nudge?.(); dock.listen(); },
+    onPick: (b) => { dock.nudge?.(); remix(b); },
+  });
+  bindLiquid(document);
+  // the panel asks the question itself; the dock only says it once the panel has gone into it (startDesign)
+}
+
 async function main() {
-  if (!ID) { fail("No board chosen", `Pick one in <a href="${page("explore") + carry()}">Explore</a>.`); return; }
+  if (!ID && !NEW) { fail("No board chosen", `Pick one in <a href="${page("explore") + carry()}">Explore</a>, or <a href="${page("board") + carry({ new: 1 })}">build a new one</a>.`); return; }
   await api.init();
   if (!api.status.mock) {
     const cfg = Q.get("api") ? {} : await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).catch(() => ({}));
@@ -388,7 +576,8 @@ async function main() {
   dock = createDock(document.body, {
     onSend(text, { via } = {}) {
       const ref = sel.length === 1 ? sel[0] : null;
-      if (CHANGE.test(text)) { if (blockedDrop()) return; bridge.change(text, { ref }); }
+      if (board.kind === "new") startDesign(text);
+      else if (CHANGE.test(text)) { if (blockedDrop()) return; bridge.change(text, { ref }); }
       else bridge.ask(text, { ref });
       void via;
     },
@@ -410,7 +599,18 @@ async function main() {
       clearTimeout(main.markT); if (list2.length) main.markT = setTimeout(() => viewer.mark([]), 4000);
     },
     select(ref) { if (ref) setSel([ref], { focus: true }); },
+    // a new board taking shape on the empty workplane until its GLB arrives
+    onEvent(ev) {
+      const k = `${ev.agent}:${ev.type}`;
+      if (k === "lead:error" || (k === "lead:done" && !ev.ok)) emote("wince");
+      if (!backdrop) return;
+      if (k === "lead:start") backdrop.building(true);
+      else if (k === "picker:pick") backdrop.parts(ev.parts || []);
+      else if (k === "pieces:confirm") backdrop.parts((ev.parts || []).flatMap((p) => p.refs || []));
+      else if (k === "assembly:built" && ev.board) backdrop.size(ev.board);
+    },
   });
+  if (NEW) { await startNew(); return; }
   const steps = bridge.onLoad([
     { id: "board", title: "Opening the board" },
     { id: "parts", title: "Reading parts.json" },
@@ -442,6 +642,8 @@ async function main() {
   bindLiquid(document);
   document.body.classList.add("ready");
   if (Q.get("sel")) setSel(Q.get("sel").split(","), { focus: true });
+  if (!board.live) remember(ID);
+  if (Q.get("remix") === "1") askChange();
 }
 
 // change requests (typed or spoken) start the change flow; everything else is a question
