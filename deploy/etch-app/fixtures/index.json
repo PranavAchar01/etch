@@ -1,0 +1,96 @@
+{
+ "generated": "2026-10-17T18:00:00Z",
+ "count": 1,
+ "categories": [
+  {
+   "id": "keyboards",
+   "label": "Keyboards",
+   "count": 0
+  },
+  {
+   "id": "iot",
+   "label": "IoT",
+   "count": 0
+  },
+  {
+   "id": "computing",
+   "label": "Computing",
+   "count": 0
+  },
+  {
+   "id": "dev-boards",
+   "label": "Dev boards",
+   "count": 1
+  },
+  {
+   "id": "audio",
+   "label": "Audio",
+   "count": 0
+  },
+  {
+   "id": "robotics",
+   "label": "Robotics",
+   "count": 0
+  },
+  {
+   "id": "tools",
+   "label": "Tools",
+   "count": 0
+  },
+  {
+   "id": "rf",
+   "label": "RF",
+   "count": 0
+  },
+  {
+   "id": "retro",
+   "label": "Retro",
+   "count": 0
+  },
+  {
+   "id": "lighting",
+   "label": "Lighting",
+   "count": 0
+  },
+  {
+   "id": "displays",
+   "label": "Displays",
+   "count": 0
+  },
+  {
+   "id": "power",
+   "label": "Power",
+   "count": 0
+  },
+  {
+   "id": "wearables",
+   "label": "Wearables",
+   "count": 0
+  },
+  {
+   "id": "everything-else",
+   "label": "Everything else",
+   "count": 0
+  }
+ ],
+ "boards": [
+  {
+   "id": "gh:etch-fixtures/devkit-s3",
+   "slug": "etch-fixtures__devkit-s3",
+   "title": "ESP32-S3 DevKit (fixture)",
+   "owner": "etch-fixtures",
+   "repo": "devkit-s3",
+   "category": "dev-boards",
+   "stars": 128,
+   "license": "MIT",
+   "copyable": true,
+   "layers": 2,
+   "size_mm": [
+    60.0,
+    32.0
+   ],
+   "parts": 6,
+   "glb_bytes": 41956
+  }
+ ]
+}

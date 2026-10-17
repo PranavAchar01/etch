@@ -1,0 +1,82 @@
+{
+ "parts": {
+  "U6": {
+   "ref": "U6",
+   "value": "ESP32-S3-WROOM-1",
+   "footprint": "RF_Module:ESP32-S3-WROOM-1",
+   "description": "Wi-Fi + Bluetooth LE module with 8 MB flash",
+   "pos_mm": [
+    38,
+    16
+   ],
+   "side": "top",
+   "rot": 0,
+   "node": "U6"
+  },
+  "J1": {
+   "ref": "J1",
+   "value": "Pin socket 2x20",
+   "footprint": "Connector_PinSocket_2.54mm:PinSocket_2x20_P2.54mm_Vertical",
+   "description": "40-pin female header for the expansion shield",
+   "pos_mm": [
+    14,
+    16
+   ],
+   "side": "top",
+   "rot": 0,
+   "node": "J1"
+  },
+  "USB-UART1": {
+   "ref": "USB-UART1",
+   "value": "CH340C",
+   "footprint": "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm",
+   "description": "USB to serial bridge for flashing and logs",
+   "pos_mm": [
+    54,
+    7
+   ],
+   "side": "top",
+   "rot": 0,
+   "node": "USB-UART1"
+  },
+  "C12": {
+   "ref": "C12",
+   "value": "10uF",
+   "footprint": "Capacitor_SMD:C_0805_2012Metric",
+   "description": "Bulk decoupling on the 3V3 rail",
+   "pos_mm": [
+    54,
+    22
+   ],
+   "side": "top",
+   "rot": 0,
+   "node": "C12"
+  },
+  "SW_BOOT1": {
+   "ref": "SW_BOOT1",
+   "value": "TS-1187A",
+   "footprint": "Button_Switch_SMD:SW_SPST_TS-1187A",
+   "description": "BOOT button: hold while resetting to enter the ROM bootloader",
+   "pos_mm": [
+    26,
+    4
+   ],
+   "side": "top",
+   "rot": 0,
+   "node": "SW_BOOT1"
+  },
+  "R12": {
+   "ref": "R12",
+   "value": "10k",
+   "footprint": "Resistor_SMD:R_0603_1608Metric",
+   "description": "Pull-up on EN",
+   "pos_mm": [
+    26,
+    27
+   ],
+   "side": "top",
+   "rot": 0,
+   "node": "R12"
+  }
+ }
+}
