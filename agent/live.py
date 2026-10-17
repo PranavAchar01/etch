@@ -51,7 +51,7 @@ from . import (
 from . import engine_api as eng
 from .events import Stream
 
-PICKER_MODEL = config.MODEL  # ETCH_MODEL; one model, one attempt, no fallback
+PICKER_MODEL = config.MODEL  # ETCH_MODEL; one attempt per provider, OpenAI fallback in llm.chat
 PICKER_EFFORT = "minimal"
 PICKER_TIMEOUT = 40
 BATCH = 24
@@ -698,6 +698,7 @@ def assemble(
         if added := _auto_mcu(design, kept, ask):
             keys.add(added["piece"])
             stream.emit("lead", "say", text=added["say"])
+        _wire_named_gpio(design, kept)
         firmware.tie_grounds(design, kept)
         _drop_lonely_gpio(design, kept)
         stand_ins = _led_stand_ins(design, kept, keys)  # before _fix_refs renames D1 on a capacitor to C1
@@ -1078,6 +1079,35 @@ def _wiring_lint(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str
                 f"{' and '.join(refs)} are in parallel across {a} and {b}; each resistor in the pattern has its own pair of nets"
             )
     return issues
+
+
+def _wire_named_gpio(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
+    """The picker often names a net after the MCU pin it means (GPIO15, GP16) or drives it from the firmware, yet
+    leaves it off the MCU's own pins, so the net ends on one resistor pin and the iteration fails as lonely (QA
+    10-17, live-1792256372437: U1 had only GND and VCC, GPIO15/16/17 only on R1/R2/R3 pin 1, three tries in a row).
+    Put each such net on the module pin of that name, or on the next free GPIO pin."""
+    mp = firmware.mcu_part(design, kept)
+    if not mp:
+        return
+    part, piece = mp
+    names = {str(k): str(v) for k, v in (piece.get("pins") or {}).items()}
+    pins = part.setdefault("pins", {})
+    driven = {
+        str(n)
+        for c in (design.get("firmware") or {}).get("commands") or []
+        for n in c.get("high") or []
+    }
+    for net in _lonely_nets(design):
+        if net in pins.values():
+            continue
+        m = re.fullmatch(r"(?:GPIO|GP|IO|D)_?(\d+)", net.upper())
+        if not m and net not in driven:
+            continue
+        want = f"GPIO{int(m.group(1))}" if m else None
+        free = [n for n in names if n not in pins and names[n].upper().startswith("GPIO")]
+        hit = [n for n in free if want and re.fullmatch(want + r"(_.*)?", names[n].upper())]
+        if hit or free:
+            pins[(hit or free)[0]] = net
 
 
 def _drop_lonely_gpio(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:

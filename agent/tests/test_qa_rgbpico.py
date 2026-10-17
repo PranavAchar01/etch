@@ -258,3 +258,21 @@ def test_default_commands_skip_sensor_only_boards(cat):
     d = copy.deepcopy(PICO_RGB)
     d["parts"] = [p for p in d["parts"] if not p["ref"].startswith(("D", "R"))]
     assert firmware.default_commands(d, _kept(d, cat)) is None
+
+
+# (5) the picker named the nets GPIO15/16/17 and drove them from firmware but left them off the Pico
+# (verification build live-1792256372437 failed all three tries as lonely nets)
+
+
+def test_named_gpio_nets_go_onto_the_pico_pins(cat):
+    d = copy.deepcopy(PICO_RGB)
+    d["parts"][0]["pins"] = {"3": "GND", "38": "GND", "40": "VCC"}
+    d["firmware"] = {"commands": [{"input": "r", "high": ["GPIO15"]}, {"input": "x", "high": ["LED_X"]}]}
+    d["parts"].append({"ref": "R4", "piece": RES, "value": "100", "pins": {"1": "LED_X", "2": "LED_R_A"}, "group": "output"})
+    kept = _kept(d, cat)
+    live._wire_named_gpio(d, kept)
+    live._drop_lonely_gpio(d, kept)
+    pins = d["parts"][0]["pins"]
+    assert pins["20"] == "GPIO15" and pins["21"] == "GPIO16" and pins["22"] == "GPIO17"
+    assert pins["1"] == "LED_X"  # driven by the firmware, no pin number in its name: next free GPIO
+    assert live._lonely_nets(d) == []
