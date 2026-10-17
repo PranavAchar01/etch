@@ -442,6 +442,8 @@ PICK_RULES = """Rules (code checks every one):
   Each anode gets its OWN series resistor from its GPIO net (3.3 V drive): red 150, green 68, blue 33.
   Value "RGB". Wire all three colours to GPIO pins even if the ask uses two, so the board can show any colour.
 - Net names are UPPER_SNAKE (VCC, GND, Q1_B, BUZ_N). The SAME name on every pin of a net; every net touches 2+ pins.
+- A net above 50 V (a boost converter's output, a nixie anode) is named with an HV prefix (HV_OUT, HV_ANODE):
+  it gets high-voltage clearance on the board.
 - pins maps the piece's pin NUMBERS (as listed, "1", "2", ...) to net names. Use pin names from the list to wire correctly:
   BJT C/B/E, LED A (anode, toward +) and K, diode A and K, electrolytic pin 1 is +.
 - Every LED gets a series resistor. LED value is its colour: RED, GREEN, YELLOW, BLUE or WHITE.
@@ -627,8 +629,16 @@ def auto_layout(parts: list[dict[str, Any]], groups: list[str]) -> list[dict[str
     for g in order:
         ps = by_group[g]
         if g == "power":
+            # one part per row, as the prompt asks ("power holds only the power input"); a picker that puts a
+            # whole boost converter in power gets rows of three, not a 60 mm column (live-1792273685866: nine
+            # power parts made a 122 x 64 mm board and 107 s of routing)
+            per = 1 if len(ps) <= 3 else 3
             blocks.append(
-                {"name": "power", "valign": "center", "rows": [[p["ref"]] for p in ps]}
+                {
+                    "name": "power",
+                    "valign": "center",
+                    "rows": [[p["ref"] for p in ps[k : k + per]] for k in range(0, len(ps), per)],
+                }
             )
             continue
         tiers = [[], [], []]
@@ -661,7 +671,10 @@ def _rot(key: str, group: str) -> int:
     return 0
 
 
-def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
+def to_spec(
+    design: dict[str, Any], code: str, hv: tuple[float, list[str]] | None = None
+) -> dict[str, Any]:
+    """hv: (volts, nets) of a high-voltage board; those nets get IPC-2221B clearance in routing and DRC."""
     idx = load_index()
     if missing := {p["piece"] for p in design["parts"] if p["piece"] not in idx}:
         # pieces from the full library (not the curated catalog): make them known to the engine's index
@@ -764,6 +777,11 @@ def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
             "edge_clearance": 0.5,
             "power_nets": power_nets,
             "power_track": 0.6,
+            **(
+                {"hv_nets": hv[1], "hv_clearance": hv_clearance(hv[0]), "hv_volts": hv[0]}
+                if hv and hv[1]
+                else {}
+            ),
             # a recipe with fine-pitch parts (ESP32 boards: 0.5 mm USB-C pads) narrows track and clearance
             **{
                 k: float(v)
@@ -872,6 +890,8 @@ def assemble(
         ]:
             _resolve_unknown(stream, unknown, kept, keys, tried)
         _normalize_pins(design, kept)
+        if powered := _fix_power_pins(design, kept):  # before _auto_mcu: a lonely Vin is not a GPIO
+            stream.emit("assembly", "repair", iteration=it, kind="power pins", joined=powered)
         if joined := _merge_lonely(
             design, kept
         ):  # before _auto_mcu: a split name is not a reason to add a Pico
@@ -978,7 +998,7 @@ def assemble(
                     ok=True,
                     value=f"{len(fw_rep['tests'])} key tests pass",
                 )
-            spec = to_spec(design, code)
+            spec = to_spec(design, code, _hv_nets(design, kept, ask))
             spec_path.write_text(yaml.safe_dump(spec, sort_keys=False, width=110))
             err = eng.validate(spec_path)
         stream.emit(
@@ -1448,6 +1468,152 @@ def _normalize_pins(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
             else:
                 fixed[k] = net  # left as is: the spec gate names it
         part["pins"] = fixed
+
+
+# IPC-2221B table 6-1, column B2 (external conductors, uncoated, sea level to 3050 m): minimum spacing in mm
+_IPC2221_B2 = ((15, 0.1), (30, 0.1), (50, 0.6), (100, 0.6), (150, 0.6), (170, 1.25), (250, 1.25), (300, 1.25), (500, 2.5))
+_HV_WORDS = re.compile(r"high[\s-]?voltage|\bhv\b|nixie|\bvfd\b|geiger|mains", re.I)
+_VOLTS = re.compile(r"(\d+(?:\.\d+)?)\s*v(?:olts?|ac|dc)?\b", re.I)
+_HV_NET = re.compile(r"(?:^|_)(?:HV|VHV|HIGH_?V\w*)(?:_|\d|$)|(?:^|_)ANODE", re.I)
+_NET_VOLTS = re.compile(r"(?:^|_|\+)(\d{2,4})V(?:_|$)", re.I)
+_INDUCTANCE = re.compile(r"\s*\d+(?:\.\d+)?\s*[unmµ]?H\s*", re.I)
+
+
+def hv_clearance(volts: float) -> float:
+    """Minimum conductor spacing (mm) for a voltage, IPC-2221B B2; above 500 V, 0.005 mm per volt more."""
+    for v, mm in _IPC2221_B2:
+        if volts <= v:
+            return mm
+    return round(2.5 + 0.005 * (volts - 500), 2)
+
+
+def _hv_nets(
+    design: dict[str, Any], kept: list[dict[str, Any]], ask: str
+) -> tuple[float, list[str]]:
+    """(volts, nets) of a high-voltage board, (0, []) otherwise. Volts: the largest voltage in the ask when it is
+    50 V or more, else 170 V when the ask says high voltage / nixie / VFD. Nets: those named HV... / ...ANODE /
+    a number of 50 V or more ("170V"), and in a high-voltage ask both ends of a diode that meets an inductor (a
+    boost converter's switch node and output; live-1792273685866 named them SW_C and DCOUT)."""
+    nets = {str(n) for p in design.get("parts", []) for n in (p.get("pins") or {}).values()}
+    named = {n for n in nets if (m := _NET_VOLTS.search(n)) and float(m.group(1)) >= 50}
+    asked = [float(v) for v in _VOLTS.findall(ask or "")]
+    volts = max([v for v in asked if v >= 50] + [float(_NET_VOLTS.search(n).group(1)) for n in named], default=0.0)
+    if not volts and _HV_WORDS.search(ask or ""):
+        volts = 170.0
+    if not volts:
+        return 0.0, []
+    hv = named | {n for n in nets if _HV_NET.search(n)}
+    by_key = _cat() | {p["key"]: p for p in kept}
+    fam = {p.get("ref"): str((by_key.get(p.get("piece")) or {}).get("family", "")).lower() for p in design.get("parts", [])}
+    coil_nets = {
+        str(n)
+        for p in design.get("parts", [])
+        if "inductor" in fam[p.get("ref")] or _INDUCTANCE.fullmatch(str(p.get("value") or ""))
+        for n in (p.get("pins") or {}).values()
+    }
+    for p in design.get("parts", []):
+        ends = {str(n) for n in (p.get("pins") or {}).values()}
+        if "diode" in fam[p.get("ref")] and "led" not in fam[p.get("ref")] and ends & coil_nets:
+            hv |= ends
+    low = {n for n in nets if n.upper() in _GND_ALIASES + _SUPPLY_5V + _SUPPLY_3V3}
+    supply = _board_supply(design, by_key)
+    return volts, sorted(hv - low - {supply})
+
+
+_NC_NETS = re.compile(
+    r"(?:N/?C|NO_?CONNECT|NOT_?CONNECTED|DNC|UNUSED|FLOAT(?:ING)?)\d*", re.I
+)
+_GND_PIN_NAMES = ("GND", "VSS", "DGND", "PGND", "0V", "GROUND")
+_SUPPLY_PIN = re.compile(r"V(?:IN|I|CC\d?|DD|S|\+|SUP|SUPPLY|BAT)|\+?V\+?", re.I)
+
+
+def _fix_power_pins(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """Wire the power pins of every chip the way its datasheet means, before anything treats them as signals
+    (live-1792273685866, a nixie driver: ERC failed 3 on every try):
+    - a pin on a net named NC / N/C / DNC is left unconnected (the picker writes "NC" as a net, which then joins
+      every unused input of a 4001 to a connector pin and fails ERC "input pin not driven");
+    - a chip's ground pin (GND, VSS, ...) on a ground-alias net (VSS, 0V, DGND) joins GND: the 4001's VSS sat on
+      its own "VSS" net, pulled to GND through a 10k, and ERC said "power pin not driven";
+    - a chip's supply-input pin (Vin, VCC, VDD, V+) alone on its net is fed from the board's supply: the
+      MC34063's Vin sat alone on "VIN", which the auto-added Pico then drove from a GPIO.
+    A two-pin part left with both pins on one net is dropped (the 10k "pull-down" from VSS to GND)."""
+    by_key = _cat() | {p["key"]: p for p in kept}
+    parts = design.get("parts", [])
+    did: list[str] = []
+    for part in parts:
+        pins = part.get("pins")
+        if isinstance(pins, dict):
+            for num in [
+                n for n, net in pins.items() if _NC_NETS.fullmatch(str(net).strip())
+            ]:
+                del pins[num]
+    mcu = firmware.mcu_part(design, kept)
+    mcu_part = mcu[0] if mcu else None
+    # ground-alias nets that a chip's ground pin sits on become GND
+    rename: dict[str, str] = {}
+    for part in parts:
+        if part is mcu_part:
+            continue  # the module's own AGND / GND pins: firmware.tie_grounds
+        names = (by_key.get(part.get("piece")) or {}).get("pins") or {}
+        for num, net in (part.get("pins") or {}).items():
+            pname = str(names.get(str(num), "")).upper()
+            if (
+                pname in _GND_PIN_NAMES
+                and str(net).upper() != "GND"
+                and str(net).upper() in _GND_ALIASES
+            ):
+                rename[str(net)] = "GND"
+    # supply-input pins alone on their net take the board's supply
+    count: dict[str, int] = {}
+    for part in parts:
+        for net in (part.get("pins") or {}).values():
+            count[str(net)] = count.get(str(net), 0) + 1
+    supply = _board_supply(design, by_key)
+    if supply:
+        for part in parts:
+            if part is mcu_part:
+                continue
+            names = (by_key.get(part.get("piece")) or {}).get("pins") or {}
+            for num, net in (part.get("pins") or {}).items():
+                pname = str(names.get(str(num), ""))
+                if (
+                    _SUPPLY_PIN.fullmatch(pname)
+                    and count.get(str(net)) == 1
+                    and str(net) != supply
+                ):
+                    rename[str(net)] = supply
+    for part in parts:
+        pins = part.get("pins") or {}
+        for num, net in list(pins.items()):
+            if str(net) in rename:
+                pins[num] = rename[str(net)]
+    did += [f"{a} -> {b}" for a, b in sorted(rename.items())]
+    keep = []
+    for part in parts:
+        nets = list((part.get("pins") or {}).values())
+        if len(nets) == 2 and nets[0] == nets[1] and str(nets[0]) in rename.values():
+            did.append(f"dropped {part.get('ref')} (both pins on {nets[0]})")
+            continue
+        keep.append(part)
+    design["parts"] = keep
+    return did
+
+
+def _board_supply(
+    design: dict[str, Any], by_key: dict[str, dict[str, Any]]
+) -> str | None:
+    """The board's main supply net: pin 1 of its power-in connector or battery, else the first 5 V / 3.3 V net."""
+    for part in design.get("parts", []):
+        if (by_key.get(part.get("piece")) or {}).get("family") in _POWER_IN:
+            net = (part.get("pins") or {}).get("1")
+            if net and str(net).upper() not in _GND_ALIASES:
+                return str(net)
+    nets = {
+        str(n) for p in design.get("parts", []) for n in (p.get("pins") or {}).values()
+    }
+    return next(
+        (n for n in sorted(nets) if n.upper() in _SUPPLY_5V + _SUPPLY_3V3), None
+    )
 
 
 # piece family from its library category (the index mixes "LED"/"led", "BJT transistor"/"transistor", ...)
