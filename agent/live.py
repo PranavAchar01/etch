@@ -851,12 +851,15 @@ def assemble(
         ]:
             _resolve_unknown(stream, unknown, kept, keys, tried)
         _normalize_pins(design, kept)
+        _normalize_firmware(design)
         if joined := _merge_lonely(
             design, kept
         ):  # before _auto_mcu: a split name is not a reason to add a Pico
             stream.emit("assembly", "repair", iteration=it, kind="nets", joined=joined)
         if radio := _radio_fix(design, kept, ask):
-            keys.update(str(p["piece"]) for p in design.get("parts", []) if p.get("piece"))
+            keys.update(
+                str(p["piece"]) for p in design.get("parts", []) if p.get("piece")
+            )
             stream.emit("lead", "say", text="Radio: " + "; ".join(radio) + ".")
         if added := _auto_mcu(design, kept, ask):
             keys.add(added["piece"])
@@ -1419,6 +1422,38 @@ def _normalize_pins(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
         part["pins"] = fixed
 
 
+def _normalize_firmware(design: dict[str, Any]) -> None:
+    """firmware.commands as a list of {"input": "1", "high": ["NET", ...]}, whatever shape the picker wrote:
+    {"1": ["LED_R"]}, ["1", "2"], high as one string, or the bare command list as the firmware. Everything
+    downstream calls c.get("high") (badge ask 10-17, job 1UPoHr6_p3s4Wd_A: a dict of commands stopped the
+    run with "'str' object has no attribute 'get'")."""
+    fw = design.get("firmware")
+    if fw is None:
+        return
+    if isinstance(fw, list):
+        fw = {"commands": fw}
+    if not isinstance(fw, dict):
+        design["firmware"] = {}
+        return
+    cmds = fw.get("commands")
+    if isinstance(cmds, dict):
+        cmds = [
+            {"input": k, "high": v.get("high", []) if isinstance(v, dict) else v}
+            for k, v in cmds.items()
+        ]
+    rows = []
+    for c in cmds if isinstance(cmds, list) else []:
+        if isinstance(c, (str, int)):
+            c = {"input": str(c), "high": []}
+        if not isinstance(c, dict):
+            continue
+        high = c.get("high")
+        if isinstance(high, str):
+            high = [high]
+        rows.append({**c, "high": [str(n) for n in high or [] if n]})
+    design["firmware"] = {**fw, "commands": rows} if "commands" in fw else fw
+
+
 # piece family from its library category (the index mixes "LED"/"led", "BJT transistor"/"transistor", ...)
 _FAMILY_WORDS = (
     ("C", ("capacitor",)),
@@ -1744,10 +1779,10 @@ def _radio_fix(
     for part in design.get("parts", []):
         key = str(part.get("piece", ""))
         nets = [str(n) for n in (part.get("pins") or {}).values()]
-        if re.search(r"antenna|:ANT", key, re.I) and all(
-            n in lonely for n in nets
-        ):
-            did.append(f"dropped {part.get('ref')}, the antenna on the module does that job")
+        if re.search(r"antenna|:ANT", key, re.I) and all(n in lonely for n in nets):
+            did.append(
+                f"dropped {part.get('ref')}, the antenna on the module does that job"
+            )
             continue
         keep.append(part)
     design["parts"] = keep
@@ -1758,7 +1793,9 @@ def _radio_fix(
                 part["piece"] = PICO_W_KEY
                 if cat[PICO_W_KEY] not in kept:
                     kept.append(cat[PICO_W_KEY])
-                did.append(f"{part.get('ref')} is a Pico W so the board has Bluetooth and Wi-Fi")
+                did.append(
+                    f"{part.get('ref')} is a Pico W so the board has Bluetooth and Wi-Fi"
+                )
     return did
 
 
@@ -1778,13 +1815,7 @@ def _auto_mcu(
     if not lonely:
         return None
     cat = _cat()
-    key = (
-        PICO_W_KEY
-        if re.search(
-            _WIRELESS, ask.lower()
-        )
-        else PICO_KEY
-    )
+    key = PICO_W_KEY if re.search(_WIRELESS, ask.lower()) else PICO_KEY
     if key not in cat:
         return None
     by_key = {p["key"]: p for p in kept} | cat
