@@ -82,7 +82,7 @@ function newPart(text, parts) {
 // a new board from a description: the parts a small powered board with a microcontroller would pick
 const DESIGN_PARTS = [["U1", "ESP32-WROOM-32E", "controller"], ["J1", "USB-C receptacle", "power"], ["U2", "AP2112K-3.3", "power"],
   ["C1", "10 µF", "power"], ["C2", "100 nF", "controller"], ["R1", "10 kΩ", "controller"], ["D1", "LED 0603", "status"], ["R2", "1 kΩ", "status"], ["SW1", "Tactile switch", "controller"]];
-function simulate({ text, ref, board, design = false }) {
+function simulate({ text, ref, board, design = false, startedAt = 0 }) {
   const parts = board?.parts || {};
   const adding = !design && /^(add|put|place|include)\b/i.test(String(text).trim());
   const add = adding ? newPart(text, parts) : { ref: ref || Object.keys(parts)[0] || "U1", name: (ref && parts[ref]?.value) || "Part" };
@@ -127,9 +127,12 @@ function simulate({ text, ref, board, design = false }) {
   at(1.0, "render", "done", { frames: `/engine/out/${run}/frames.json`, count: 48, quality: "preview", seconds: 1.0, lock_wait_s: 0 }, "finishing");
   at(0.2, "lead", "say", { text: design ? "Done. Your board is built and every check passes after one repair." : `Done. ${add.ref} is ${adding ? "on the board" : "changed"} and every check passes after one repair.` });
   at(0.1, "lead", "done", { ok: true, iterations: 2, timings: { total_s: Math.round(t * 10) / 10 }, classifier: "kicad", route: "modify", board: `/engine/out/${run}` }, "done");
-  const t0 = performance.now();
+  // startedAt (epoch ms): a build resumed after the page was left picks up where the clock says it is
+  const t0 = performance.now() - (startedAt ? Math.max(0, Date.now() - startedAt) : 0);
   return {
     id: "mock-" + run,
+    duration: t,
+    stages: E.filter((x) => x.stage).map((x) => [x.ev.t, x.stage]),
     poll(since) {
       const el = (performance.now() - t0) / 1000;
       let n = since; while (n < E.length && E[n].ev.t <= el) n++;
@@ -140,7 +143,7 @@ function simulate({ text, ref, board, design = false }) {
   };
 }
 
-export function createAgentBridge({ dock, api, board, viewer = null, highlight = () => {}, select = () => {}, onEvent = () => {} } = {}) {
+export function createAgentBridge({ dock, api, board, viewer = null, highlight = () => {}, select = () => {}, onEvent = () => {}, onJob = () => {}, onJobEnd = () => {} } = {}) {
   if (!dock) throw new Error("createAgentBridge needs a dock");
   const timers = new Set();
   let disposed = false, jobGen = 0, askGen = 0;
@@ -314,6 +317,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     }
     stop();
     dock.step({ id: sid, kind: "tool", title, detail: `job ${j.job}`, status: "done" });
+    jobStarted(j, sim, { text, ref, design: false });
     return follow(j.job, sim, gen, { text, ref, at });
   }
 
@@ -336,7 +340,23 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
       await sleep(400);
     }
     map.end();
-    return last ? { ...last, job: jobId, request: req } : null;
+    const out = last ? { ...last, job: jobId, request: req } : null;
+    if (!disposed && gen === jobGen) { try { onJobEnd(out); } catch (e) { /* the page's own business */ } }
+    return out;
+  }
+  // a build was started: the page keeps { job, token, mock clock } so it can be followed again after leaving
+  function jobStarted(j, sim, req) {
+    try { onJob({ job: j.job, token: j.token || "", mock: !!sim, duration: sim?.duration || 0, stages: sim?.stages || [], ...req }); } catch (e) { /* not kept */ }
+  }
+  // resume({ job, mock, startedAt, text, ref, design }): follow a build started before the page was left; its events
+  // replay from the start (since=0), so the dock shows every step again
+  function resume(stt = {}) {
+    const gen = ++jobGen;
+    busy();
+    dock.setState("working");
+    dock.setStatus("Picking the build back up");
+    const sim = stt.mock || String(stt.job || "").startsWith("mock-") ? simulate({ text: stt.text || "", ref: stt.ref || null, board, design: !!stt.design, startedAt: stt.startedAt }) : null;
+    return follow(sim ? sim.id : stt.job, sim, gen, { text: stt.text || "", ref: stt.ref || null, design: !!stt.design });
   }
 
   // one build event -> dock calls (API.md "Build events")
@@ -474,6 +494,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     }
     stop();
     dock.step({ id: sid, kind: "tool", title, detail: `job ${j.job}`, status: "done" });
+    jobStarted(j, sim, { text, design: true });
     return follow(j.job, sim, gen, { text, design: true });
   }
 
@@ -520,5 +541,5 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     try { dock.loader(false); } catch (e) { /* dock already gone */ }
   }
 
-  return { ask, change, design, onLoad, dispose };
+  return { ask, change, design, resume, onLoad, dispose };
 }

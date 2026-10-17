@@ -7,7 +7,7 @@ const BOARDS = "etch-boards-v1";
 const PARTS = "etch-parts-v1"; // the parts panel's static renders (parts/*.webp)
 const SHELL_FILES = [
   "css/explore.css", "css/editor.css", "css/agent.css", "css/new-board.css", "js/common.js", "js/explore.js", "js/editor/main.js", "js/editor/viewcube.js", "js/editor/parts-panel.js", "js/editor/agent-bridge.js", "js/editor/selection.js", "js/editor/inspector.js", "js/editor/board-list.js", "js/editor/drop.js", "js/editor/icons.js", "js/editor/kinds.js", "js/editor/dock-loader.js", "js/editor/dock-stub.js", "js/editor/new-board.js", "js/editor/start-backdrop.js",
-  "js/ui/dock.js", "js/ui/eyes.js", "js/ui/goo.js", "js/ui/spring.js", "js/ui/trace.js", "js/ui/voice-adapter.js", "js/board-viewer.js", "js/build-preview.js", "js/my-boards.js", "js/etch-api.js", "js/mock-api.js", "js/voice.js", "js/mascot.js",
+  "js/ui/dock.js", "js/ui/eyes.js", "js/ui/goo.js", "js/ui/spring.js", "js/ui/trace.js", "js/ui/voice-adapter.js", "js/ui/job-pill.js", "js/board-viewer.js", "js/build-preview.js", "js/my-boards.js", "js/etch-api.js", "js/mock-api.js", "js/voice.js", "js/mascot.js",
   "vendor/three/build/three.module.min.js", "vendor/three/examples/jsm/loaders/GLTFLoader.js", "vendor/three/examples/jsm/controls/OrbitControls.js",
   "vendor/three/examples/jsm/environments/RoomEnvironment.js", "vendor/three/examples/jsm/utils/BufferGeometryUtils.js", "vendor/three/examples/jsm/libs/meshopt_decoder.module.js",
 ];

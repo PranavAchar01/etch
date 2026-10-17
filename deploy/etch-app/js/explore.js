@@ -6,6 +6,8 @@ import { Q, $, h, esc, icon, LOGO, carry, page, fmtStars, prefetchBoard, cachedF
 import { spring, reducedMotion } from "./ui/spring.js";
 import { gooFilter } from "./ui/goo.js";
 import * as mine from "./my-boards.js";
+import * as etch from "./etch-api.js";
+import { mountJobPill, jobHref, jobBoardId } from "./ui/job-pill.js";
 
 registerSW();
 $("logo").innerHTML = LOGO;
@@ -480,3 +482,8 @@ function renderMine() {
 }
 renderMine();
 mine.onChange(renderMine);
+
+// a build left running in the editor: the pill at the bottom follows it and goes back to it
+// a finished design build goes into My boards, named from what was asked
+mountJobPill({ job: etch.job, open: (st, done) => jobHref(st, done, page, carry),
+  onReady: (st) => { const id = jobBoardId(st); if (st.design && id) mine.save({ id, title: st.title, thumb: mine.thumbFor(id, apiBase), owner: st.mock ? "" : "Etch build", prompt: st.text }); } });

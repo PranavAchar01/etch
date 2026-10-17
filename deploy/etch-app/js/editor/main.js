@@ -20,18 +20,19 @@ import { createDrop } from "./drop.js";
 import { createNewBoardHero } from "./new-board.js";
 import { createStartBackdrop } from "./start-backdrop.js";
 import * as mine from "../my-boards.js";
+import { saveJob, readJob, clearJob, mountJobPill, jobHref, jobBoardId, DEMO } from "../ui/job-pill.js";
 import { bindLiquid, liquidTabs, wobble } from "../ui/goo.js";
 
 registerSW();
 // the API client, with `authed` for the backend call (named `backend` since the access code went away)
 const api = { ...etch, authed: etch.backend || etch.authed, get status() { return etch.status; } };
 const ID = Q.get("id") || "";
-const NEW = !ID && Q.get("new") === "1";
+// ?resume=1: pick up a build that was running when the page was left (js/ui/job-pill.js keeps it)
+const RESUME = Q.get("resume") === "1" ? readJob() : null;
+const NEW = !ID && (Q.get("new") === "1" || !!RESUME?.design);
 const MOBILE = matchMedia("(max-width: 768px)");
 const APP_ROOT = new URL("../../", import.meta.url).href;
 const board = { id: ID, kind: NEW ? "new" : isLive(ID) ? "live" : "gh", live: isLive(ID), meta: {}, parts: {}, files: null };
-// ?new=1&mock=1: the scripted design build ends on this library board, so the whole flow can be shown without the engine
-const DEMO = "gh:OLIMEX/ESP32-POE/HARDWARE/ESP32-PoE-hardware-revision-M2";
 
 // ---------- poster first: the prerendered still, keyed onto the stage, before anything else ----------
 const boot = window.__boot || {};
@@ -567,6 +568,22 @@ async function remix(b) {
   askChange({ clicked: true });
 }
 
+// a design build that was running when the page was left: the empty workplane, then the build replayed and followed
+function resumeNew(st) {
+  $("crTitle").textContent = st.title || "New board";
+  document.title = `${st.title || "New board"} · Etch`;
+  $("credits").textContent = "";
+  hidePoster();
+  viewer.empty();
+  board.meta = { title: st.title || "New board" };
+  board.building = true; board.prompt = st.text || "";
+  renderMenus(); renderSettings(); syncTools();
+  document.body.classList.add("ready");
+  viewer.lookFrom([0, 1, 0.18], { fitBox: true });
+  dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: st.text || "", status: "done" });
+  bridge.resume(st).then((r) => { if (!r || !r.ok) board.building = false; }).catch(() => { board.building = false; });
+}
+
 let backdrop = null;
 async function startNew() {
   $("crTitle").textContent = "New board";
@@ -594,6 +611,9 @@ async function startNew() {
     onPick: (b) => { dock.nudge?.(); remix(b); },
   });
   bindLiquid(document);
+  // a build left running elsewhere shows as the pill at the bottom (Return / Open)
+  mountJobPill({ job: api.job, open: (st, done) => jobHref(st, done, page, carry),
+    onReady: (st) => { const id = jobBoardId(st); if (st.design && id) mine.save({ id, title: st.title, thumb: mine.thumbFor(id, apiBase), owner: st.mock ? "" : "Etch build", prompt: st.text }); } });
   // the panel asks the question itself; the dock only says it once the panel has gone into it (startDesign)
 }
 
@@ -636,8 +656,15 @@ async function main() {
     select(ref) { if (ref) setSel([ref], { focus: true }); },
     // the board taking shape in 3D until the GLB arrives: js/editor/build-anim.js when it is there (buildAnim.start /
     // event / finish), else the viewer's own simple preview (viewer.build, js/build-preview.js)
+    // a started build is remembered, so leaving the page and coming back (or the pill on Explore) can follow it
+    onJob(info) {
+      clearJob();
+      saveJob({ ...info, startedAt: Date.now(), title: info.design ? mine.nameFrom(info.text) : board.title || "your board", board: info.design ? "" : board.id });
+    },
+    onJobEnd() { clearJob(); },
     onEvent(ev) {
       const k = `${ev.agent}:${ev.type}`;
+      if (ev.run && /^live-\d+$/.test(ev.run)) { const j = readJob(); if (j && j.run !== ev.run && !j.mock) saveJob({ run: ev.run }); }
       if (k === "lead:error" || (k === "lead:done" && !ev.ok)) emote("wince");
       if (k === "lead:start") {
         if (backdrop) { backdrop.remove(); backdrop = null; }
@@ -660,6 +687,7 @@ async function main() {
       else if (k === "lead:error" || k === "lead:cancelled" || (k === "lead:done" && !ev.ok)) vb.cancel();
     },
   });
+  if (NEW && RESUME?.design) { resumeNew(RESUME); return; }
   if (NEW) { await startNew(); return; }
   const steps = bridge.onLoad([
     { id: "board", title: "Opening the board" },
@@ -694,6 +722,7 @@ async function main() {
   if (Q.get("sel")) setSel(Q.get("sel").split(","), { focus: true });
   if (!board.live) remember(ID);
   if (Q.get("remix") === "1") askChange();
+  if (RESUME && RESUME.board === ID) bridge.resume(RESUME);
 }
 
 // change requests (typed or spoken) start the change flow; everything else is a question
