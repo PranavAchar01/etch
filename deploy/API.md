@@ -1,12 +1,13 @@
 # Etch backend API
 
 What `deploy/etch_public.py` serves today, and how the page (`deploy/etch-app/app.js`) uses each route. UI changes
-should line up with this file. The board view routes (`/etch/ask`, `/etch/comments*`, `/etch/change`) are written in
-`deploy/explore_api.py`, which `etch_public.py` hands those paths to; they are listed under "Board view" below and
-designed in [EXPLORE_API.md](EXPLORE_API.md) (with the static `world/` library).
+should line up with this file. The board view routes (`/etch/ask`, `/etch/comments*`, `/etch/change`) are handled in
+`etch_public.py`, with board loading, the model call, the comment store and board copying in `deploy/explore.py`; they
+are listed under "Board view" below and designed in [EXPLORE_API.md](EXPLORE_API.md) (with the static `world/`
+library).
 
-If you change a route, an event or a field here, change `etch_public.py` (or `explore_api.py`, or the engine that
-emits the event) in the same commit.
+If you change a route, an event or a field here, change `etch_public.py` (or `explore.py`, or the engine that emits
+the event) in the same commit.
 
 ## Basics
 
@@ -31,8 +32,10 @@ emits the event) in the same commit.
 | Speech-to-text | 60 requests per IP per 10 min, 45 s of audio per request | 429 / 413 |
 | Text-to-speech | 120 requests per IP per 10 min, plus a daily spend guard | 429 / 503 |
 | Wrong access codes | 10 per IP per 10 min | 429 on `/etch/auth` |
-| Questions (`/etch/ask`, new comments, replies) | 60 per IP per 10 min, 1500 per day overall (`ETCH_ASKS_PER_IP_10MIN`, `ETCH_ASKS_PER_DAY`), plus the OpenAI budget guard | 429 / 503 |
-| Comments | 300 per board, 60 messages per thread, 400 characters per message | 409 / cut |
+| Questions (`/etch/ask`, new comments, replies) | 40 per IP per 10 min (`ETCH_ASKS_PER_IP_10MIN`), plus the OpenAI budget guard | 429 / 503 |
+| Question and comment text | 400 characters (not cut: longer text is refused) | 400 "Keep it under 400 characters." |
+| Comments | 300 per board, 40 messages per thread (20 questions and their answers) | 409 |
+| Changing a board (`/etch/change`) | Same as builds; imported boards up to 40 parts | 429 / 422 |
 
 ## Ids
 
@@ -181,64 +184,138 @@ simulation.
 
 `POST /etch/tts` `{"text": "…"}` (400 chars max) → `audio/mpeg`. The page uses it for Etch's spoken replies.
 
-### Board view (`deploy/explore_api.py`)
+### Board view (`deploy/explore.py`)
 
-`board` is either id kind from [EXPLORE_API.md](EXPLORE_API.md): `gh:<owner>/<repo>[/<subdir>]` (an imported board,
-read from `etch-app/world/boards/<slug>/`) or `live-<ms>` (a build with a `design.json`). A bad id is `400` "That board
-id is not valid."; an unknown board `404` "I don't know that board."; a `ref` that is not on the board `400` "That
-part isn't on this board.". Every answer comes from `agent/llm.py` `call_json` with `ETCH_SUB_MODEL`, so it is
-metered and stops at the OpenAI budget.
+The routes are in `etch_public.py`; loading boards, the model call, the comment store and copying an imported board
+live in `deploy/explore.py`. All need `X-Etch-Code` like the other routes. POST bodies are JSON objects of at most
+8 KB; a body that isn't a JSON object is `400` "bad request" (a larger body is not read, so the request fails as if
+it were empty).
 
-`POST /etch/ask` — a question about the board, or one part of it
+**Board ids.** `board` is either id kind from [EXPLORE_API.md](EXPLORE_API.md). The id is never used to build a path.
+
+| Id | Resolves to |
+| --- | --- |
+| `gh:<owner>/<repo>[/<subdir>]` | The row with exactly that `id` in `etch-app/world/index.json`. Its `slug` names the folder `world/boards/<slug>/`, whose `meta.json` must carry the same `id`. Parts come from that folder's `parts.json`. Pin nets come from `library/cache/src/<slug>/board.kicad_pcb` when it is on hand. |
+| `live-<ms>` | `engine/out/<run>/`, which must have a `design.json`. Parts and pin nets come from it, part names and reasons from `view/parts.json`. |
+
+Anything else (a malformed id, a `gh:` id not in the index, a run with no `design.json`) is `404` "no such board".
+A `ref`, where one is taken, is optional; if given it must be a refdes in the board's parts, otherwise `400` "That
+part is not on this board.".
+
+**Text.** `question` and comment `text` have control characters stripped and are trimmed, not cut. Empty is `400`
+"Type a question first."; over 400 characters is `400` "Keep it under 400 characters.".
+
+**Answers.** Every answer is one chat completion on the engine's endpoint and `ETCH_MODEL` (`agent/config.py`). It
+checks the OpenAI budget first (`agent/llm.py` `guard`) and, on api.openai.com, is metered in `qa/openai-meter.jsonl`
+under the name `explore`. The model gets the board as quoted data (up to 30,000 characters: title, licence or what the
+build was asked for, then every part with value, footprint, description and pin nets; with a `ref`, that part first
+with every pin, then the parts that share a net with it, skipping nets with more than 12 parts), plus the last 6
+messages of the thread. Model errors:
+
+| Status | `error` |
+| --- | --- |
+| 503 | "Etch has used up its answers for tonight." (the budget guard) |
+| 503 | "Etch could not answer right now. Try again in a minute." (any other failure, or an empty answer) |
+
+Questions are limited to 40 per IP per 10 min, shared by `/etch/ask`, new comments and replies: `429` "Too many
+questions. Wait a few minutes, then ask again.". The limit is checked after the body is validated, so a refused
+request does not use one up.
+
+#### `POST /etch/ask` — a question about the board, or one part of it
 
 ```json
-{ "board": "gh:FPGAwars/icezum", "ref": "U1", "question": "What does this part do?", "thread": "c_8f2a1b3c" }
+{ "board": "gh:OLIMEX/ESP32-POE", "ref": "U6", "question": "What does this part do?", "thread": "c_8f2a1b3c4d5e" }
 ```
 
-`ref` and `thread` are optional. `ref` puts that part first in the model's context with its nets and nearest parts;
-`thread` (a comment id on the same board) sends that thread's last messages along. `question` is cut to 400
-characters. →
+`ref` and `thread` are optional. `thread` is a comment id: if it is a comment on the same board, its messages are
+sent as history and its `ref` is used when the body has none. Any other `thread` is ignored. →
 
 ```json
-{ "ok": true, "answer": "**U1 is the FPGA**, the chip …", "mentions": ["U1", "U3"],
-  "thoughts": ["Finding U1 on the board", "Following its nets"], "seconds": 4.2 }
+{ "ok": true, "answer": "**U6 is the ESP32 module**, the board's main controller …", "mentions": ["U6", "J2"],
+  "thoughts": ["Reading U6's connections", "Following its nets"], "seconds": 4.2 }
 ```
 
-`answer` is 2-4 sentences of Markdown (bold and inline code only). `mentions`: refdes on this board the answer
-talks about. `thoughts`: 2-3 short step titles. Errors: `400` "Ask me something about this board." (no question),
-`429` "That is a lot of questions…", `503` "Etch has used up its question budget for now…" or "Etch can't answer
-right now…", `502` "Etch could not put an answer together…".
+`answer`: Markdown with bold and inline code only (other markup is stripped), at most 4000 characters. `mentions`:
+up to 20 refdes on this board, the ones the model listed plus any it names in the answer. `thoughts`: 1 to 4 short
+step titles (at most 60 characters each). `seconds`: how long the answer took.
 
-`GET /etch/comments?board=<id>` → `{"ok": true, "comments": [comment, …]}` (oldest first; `[]` for a board with
-none). A comment:
+Errors: `400` bad body, ref or question; `404` "no such board"; `429`; `503`.
+
+#### Comments
+
+A comment is a thread pinned to a part:
 
 ```json
-{ "id": "c_8f2a1b3c", "board": "gh:FPGAwars/icezum", "n": 1, "ref": "U1", "anchor": [0.0123, 0.0016, 0.0081],
+{ "id": "c_8f2a1b3c4d5e", "board": "gh:OLIMEX/ESP32-POE", "n": 1, "ref": "U6", "anchor": [0.0123, 0.0016, 0.0081],
   "author": "You", "created": 1792256901,
   "messages": [
     { "role": "user", "text": "What does this part do?", "at": 1792256901 },
-    { "role": "assistant", "text": "**U1 is the FPGA** …", "at": 1792256905,
-      "thoughts": ["…"], "seconds": 4.2, "mentions": ["U1"] } ] }
+    { "role": "assistant", "text": "**U6 is the ESP32 module** …", "at": 1792256905,
+      "mentions": ["U6"], "thoughts": ["…"], "seconds": 4.2 } ] }
 ```
 
-`n` is the pin number: one more than the highest on the board. `anchor` is the clicked point in GLB metres.
+| Field | |
+| --- | --- |
+| `id` | `c_` and 12 hex characters. |
+| `n` | The pin number. It counts up per board and is never reused, even after a delete. |
+| `ref` | The part, or `null`. |
+| `anchor` | The clicked point `[x, y, z]` in GLB metres (rounded to 6 decimals), or `null`. |
+| `author` | Always `"You"`. |
+| `created`, `at` | Unix seconds (whole). |
+| `messages` | Alternating user and assistant messages. Assistant ones also carry `mentions`, `thoughts` and `seconds` from the answer. |
 
-| Route | Body | → |
-| --- | --- | --- |
-| `POST /etch/comments` | `{board, ref, anchor: [x, y, z], text}` | `{ok, comment}` with the question and its answer. `400` no or unknown `ref`, `anchor` not three finite numbers, empty `text`; `409` the board has 300 comments. Same limits and model errors as `/etch/ask`. |
-| `POST /etch/comments/reply` | `{id, text, board?}` | `{ok, comment}` with the reply and its answer appended. `404` "That comment is gone." |
-| `POST /etch/comments/delete` | `{id, board?}` | `{ok}`, also when it was already gone. |
+Comments are stored in one SQLite file, `engine/out/explore/comments.sqlite3` (`ETCH_EXPLORE_DB` overrides). It holds
+the comments and, per board, the last pin number given out.
 
-`board` on reply/delete is optional (it skips looking the id up across boards). Comments are stored per board in
-`engine/out/comments/<gh__slug | live-…>.json`.
+| Route | Body | → | Errors |
+| --- | --- | --- | --- |
+| `GET /etch/comments?board=<id>` | | `{ok, comments: [comment, …]}`, ordered by `n`; `[]` for a board with none | `404` "no such board" |
+| `POST /etch/comments` | `{board, ref?, anchor?, text}` | `{ok, comment}`: the new thread with the question and its answer | `400` bad `ref`, bad `text`, or `anchor` not `null` or three finite numbers each within ±10: "That spot on the board is not valid."; `409` "This board has as many comments as it can hold." (300); `429`; `503` |
+| `POST /etch/comments/reply` | `{id, text}` | `{ok, comment}` with the question and its answer appended | `404` "That comment is gone."; `400` bad `text`; `409` "This thread is full. Start a new comment." (40 messages); `429`; `503` |
+| `POST /etch/comments/delete` | `{id}` | `{ok: true}` | `404` "That comment is gone." (also when it was already deleted) |
 
-`POST /etch/change` `{board, ref?, text}` — ask Etch to change a board
+A new comment or reply is answered first and saved only when the answer comes back, so a `429` or `503` saves nothing.
+A reply is answered with the whole thread as history and the comment's `ref` (dropped if the part is no longer on the
+board). Other fields in the body (such as `board` on reply or delete) are ignored. Anyone with the access code can
+delete any comment.
 
-For a `live-*` board this is exactly `POST /etch/live` `{mode: "modify", text, base: "/engine/out/<run>"}` (same
-checks, limits, queue and errors), with `ref` put in front of the text ("D1: make it blue") when the text does not
-name it already → `200 {"ok": true, "job", "token"}`; follow it with `/etch/job`. For an imported `gh:` board:
-`403` "This board's licence doesn't allow modified copies." when it isn't `copyable`, otherwise `501` "Changing
-imported boards isn't available yet." (the page falls back to its demo flow on 501).
+#### `POST /etch/change` — ask Etch to change a board
+
+```json
+{ "board": "live-1792256382082", "ref": "D1", "text": "make it blue" }
+```
+
+`ref` is optional. `text` has its whitespace collapsed and is cut to 400 characters; empty is `400` "Tell me what to
+change.". With a `ref` the request becomes "D1: make it blue" (cut to 400 again). → `200 {"ok": true, "job", "token"}`;
+follow it with `/etch/job`.
+
+For a `live-*` board this is a modify run on that build, the same as `POST /etch/live` `{mode: "modify", text, base}`,
+with the same queue and build limits (`429` "I am busy with other builds. Try again in a minute." or "That is all the
+builds I can do for now. Try again later.").
+
+For an imported `gh:` board Etch first turns it into its own design, then copies it into a new `live-*` run and
+changes that run:
+
+1. The board must be `copyable` (its licence is on the allow-list).
+2. Its KiCad files must be on hand in `library/cache/src/<slug>/` (`board.kicad_pcb` and a `sch/` folder).
+3. Every electrical part (a footprint with pads; refs starting with `#` or containing `*` are skipped) must be a
+   piece in Etch's KiCad catalog, `engine/parts/kicad_catalog.json`, with the key `kicad:<symbol lib_id>@<footprint>`.
+   Nothing is substituted. Pin nets come from the `.kicad_pcb`; a single power rail becomes `VCC`, ground nets
+   become `GND`, and the supply voltage is read from the rail name (5.0 V if there is none).
+4. At most 40 such parts.
+
+| Status | `error` |
+| --- | --- |
+| 403 | "This board's licence does not allow copying it, so Etch cannot change it." |
+| 409 | "Etch does not have this board's design files on hand, so it cannot change it yet." |
+| 422 | "This board has N parts. Etch can change boards with up to 40 parts for now." |
+| 422 | "Etch can only change boards built from parts in its own library. N of M parts here are not (R1, U2, … and more)." |
+| 422 | "This board has no parts Etch can work with." |
+| 429 | The build queue and limits, checked before anything is copied. |
+
+The copy is a new `engine/out/live-<ms>/` with the `design.json` and an `imported.json` (`board`, `url`, `commit`,
+`pcb_path`, `license`, `license_url`, `author_url`, `copied`). It has no `run.jsonl`, so it is not a card in
+`/etch/builds`; the modify run on it is.
 
 ## Build events
 

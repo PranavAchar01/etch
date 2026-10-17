@@ -4,10 +4,12 @@
 
 Per board:
   1. kicad-cli pcb export glb (library STEP models, copper, mask, silk; nodes named by refdes)
-  2. gltf-transform optimize: meshopt + quantisation + light simplification, with the scene graph kept
-     (no flatten/join/instancing), so every footprint stays its own named node
+  2. gltf-transform optimize: dedup + meshopt + quantisation, no simplification (PLAN.md rule 2), with the
+     scene graph kept (no flatten/join/instancing), so every footprint stays its own named node
   3. kicad-cli pcb render (raytraced, perspective, 3/4 view) -> 1280x800 PNG -> 640x400 WebP
   4. parts.json from the .kicad_pcb (+ schematic descriptions), positions measured in the GLB frame
+  5. meta.json records models {total, resolved, missing: [{ref, path}]}; identical is true only when no model
+     is missing (PLAN.md rule 4)
 Failures are logged to library/cache/render_log.json and the board is skipped.
 """
 
@@ -17,6 +19,7 @@ import argparse
 import concurrent.futures as cf
 import datetime as dt
 import os
+import re
 import shutil
 import statistics
 import subprocess
@@ -25,7 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from common import LIB_DIR, BOARDS_JSON, RENDER_LOG, SRC, WORK, WORLD, kicad_cli, load_json, log, save_json
-from pcbinfo import board_info, glb_bounds, glb_nodes
+from pcbinfo import board_info, footprint_models, glb_bounds, glb_nodes
 
 GLB_FLAGS = [
     "--subst-models",
@@ -38,8 +41,8 @@ GLB_FLAGS = [
 NODE_DIR = LIB_DIR / "cache" / "node"
 NODE_LIBS = ["@gltf-transform/core@4.5.1", "@gltf-transform/functions@4.5.1", "@gltf-transform/extensions@4.5.1",
              "meshoptimizer@0.22.0"]
-TARGET_BYTES = 1_500_000
-MAX_BYTES = 4_000_000
+MAX_BYTES = 20_000_000  # --max-glb-mb: a board still bigger after lossless compression is skipped, not simplified
+EXPORTABLE = (".step", ".stp", ".stpz", ".igs", ".iges")  # what the GLB (OCC) export can load
 RENDER_W, RENDER_H = 1280, 800
 
 
@@ -76,21 +79,56 @@ def ensure_node_libs() -> None:
     subprocess.run(["npm", "install", "--silent", *NODE_LIBS], cwd=NODE_DIR, check=True)
 
 
-def optimize(raw: Path, out: Path) -> tuple[bool, str]:
-    """library/optimize.mjs (join prims per material, simplify, quantize, meshopt); simplify harder until
-    under TARGET_BYTES, give up above MAX_BYTES."""
-    last = ""
-    for err in ("0.0002", "0.001", "0.004"):
-        out.unlink(missing_ok=True)
-        p = run(["node", str(LIB_DIR / "optimize.mjs"), str(raw), str(out), err], timeout=900)
-        if p.returncode != 0 or not out.exists():
-            last = (p.stderr or p.stdout)[-300:]
+def optimize(raw: Path, out: Path, max_bytes: int = MAX_BYTES) -> tuple[bool, str]:
+    """library/optimize.mjs (dedup, join prims per material, weld, quantize, meshopt). One lossless pass:
+    a board over max_bytes afterwards is reported, never simplified to fit."""
+    out.unlink(missing_ok=True)
+    p = run(["node", str(LIB_DIR / "optimize.mjs"), str(raw), str(out)], timeout=900)
+    if p.returncode != 0 or not out.exists():
+        return False, (p.stderr or p.stdout)[-300:]
+    if out.stat().st_size > max_bytes:
+        return False, f"GLB is {out.stat().st_size / 1e6:.1f} MB after lossless compression (cap {max_bytes / 1e6:.0f} MB)"
+    return True, ""
+
+
+def _twin(p: Path) -> Path | None:
+    """The file kicad-cli --subst-models would load: the model itself if STEP/IGES, else a STEP twin."""
+    if p.suffix.lower() in EXPORTABLE and p.is_file():
+        return p
+    for ext in (".step", ".stp", ".STEP", ".STP", ".stpz"):
+        q = p.with_suffix(ext)
+        if q.is_file():
+            return q
+    return None
+
+
+def model_report(pcb: Path, src: Path, env: dict[str, str]) -> dict[str, Any]:
+    """{total, resolved, missing: [{ref, path}]} over every visible footprint model, resolved the way kicad-cli
+    resolves it for the GLB export (variables, ${KIPRJMOD}, project-relative, then the stock library)."""
+    stock = Path(env.get("KICAD10_3DMODEL_DIR", ""))
+    total, resolved, missing = 0, 0, []
+    for m in footprint_models(pcb):
+        if m["hidden"]:
             continue
-        if out.stat().st_size <= TARGET_BYTES:
-            return True, ""
-    if out.exists() and out.stat().st_size <= MAX_BYTES:
-        return True, ""
-    return False, last or f"GLB still {out.stat().st_size / 1e6:.1f} MB after simplification"
+        total += 1
+        raw = m["path"].replace("\\", "/")
+
+        def var(x: re.Match) -> str:
+            name = x.group(1) or x.group(2)
+            return str(src) if name == "KIPRJMOD" else env.get(name, x.group(0))
+
+        path = re.sub(r"\$\{(\w+)\}|\$\((\w+)\)", var, raw)
+        hit = None
+        if "$" not in path:
+            cands = [Path(path)] if Path(path).is_absolute() else [src / path, stock / path]
+            for c in cands:
+                if (hit := _twin(c)):
+                    break
+        if hit:
+            resolved += 1
+        else:
+            missing.append({"ref": m["ref"], "path": m["path"]})
+    return {"total": total, "resolved": resolved, "missing": missing}
 
 
 def thumb(cli: Path, env: dict, pcb: Path, work: Path, out: Path) -> tuple[bool, str]:
@@ -118,7 +156,7 @@ def match_node(ref: str, names: dict[str, list[float]]) -> str | None:
     return None
 
 
-def render_board(b: dict, cli: Path, env: dict, kver: str, force: bool) -> dict[str, Any]:
+def render_board(b: dict, cli: Path, env: dict, kver: str, force: bool, max_bytes: int = MAX_BYTES) -> dict[str, Any]:
     slug = b["slug"]
     src = SRC / slug
     pcb = src / "board.kicad_pcb"
@@ -143,10 +181,11 @@ def render_board(b: dict, cli: Path, env: dict, kver: str, force: bool) -> dict[
     p = run([str(cli), "pcb", "export", "glb", "-f", *GLB_FLAGS, "-o", str(raw), str(pcb)], timeout=900, env=env)
     if p.returncode != 0 or not raw.exists():
         return {"ok": False, "error": "export glb: " + (p.stderr or p.stdout)[-300:].strip()}
-    missing_models = (p.stdout + p.stderr).count("Could not add 3D model")
+    models = model_report(pcb, src, env)
+    cli_missing = (p.stdout + p.stderr).count("Could not add 3D model")
 
     opt = work / "board.glb"
-    ok, msg = optimize(raw, opt)
+    ok, msg = optimize(raw, opt, max_bytes)
     if not ok:
         return {"ok": False, "error": "optimize: " + msg, "raw_bytes": raw.stat().st_size}
 
@@ -203,6 +242,9 @@ def render_board(b: dict, cli: Path, env: dict, kver: str, force: bool) -> dict[
         "board": {"mask": info["mask"], "silk": info["silk"], "finish": info["finish"],
                   "thickness_mm": info["thickness_mm"]},
         "glb_bounds_m": {"min": [round(v, 5) for v in lo], "max": [round(v, 5) for v in hi]},
+        "models": models,
+        # kicad-cli's own count of models it could not load is a second witness: either one blocks identical
+        "identical": not models["missing"] and cli_missing == 0,
         "rendered": now,
         "kicad": kver,
     }
@@ -210,7 +252,8 @@ def render_board(b: dict, cli: Path, env: dict, kver: str, force: bool) -> dict[
     shutil.rmtree(work, ignore_errors=True)
     return {"ok": True, "seconds": round(time.time() - t0, 1), "glb_bytes": meta["glb_bytes"],
             "raw_bytes": raw.stat().st_size if raw.exists() else None, "nodes_matched": len(offs),
-            "parts": len(parts), "missing_models": missing_models}
+            "parts": len(parts), "models_total": models["total"], "models_missing": len(models["missing"]),
+            "cli_missing": cli_missing, "identical": meta["identical"]}
 
 
 def world_bytes() -> int:
@@ -225,6 +268,7 @@ def main() -> None:
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--retry-failed", action="store_true")
     ap.add_argument("--budget-mb", type=float, default=150.0, help="stop when world/ grows past this")
+    ap.add_argument("--max-glb-mb", type=float, default=MAX_BYTES / 1e6, help="skip boards bigger than this after compression")
     args = ap.parse_args()
 
     cli = kicad_cli()
@@ -247,7 +291,7 @@ def main() -> None:
 
         def submit() -> bool:
             for b in todo:
-                running[ex.submit(render_board, b, cli, env, kver, args.force)] = b
+                running[ex.submit(render_board, b, cli, env, kver, args.force, int(args.max_glb_mb * 1e6))] = b
                 return True
             return False
 
