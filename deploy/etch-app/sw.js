@@ -2,10 +2,10 @@
 // answers the library (index.json) and board files (meta, parts, thumb, GLB) stale-while-revalidate from the same
 // Cache Storage that Explore's prefetch fills. Page navigations, config.json, the build app (index.html, app.js,
 // viewer3d.js) and the backend are never touched.
-const SHELL = "etch-shell-v1";
+const SHELL = "etch-shell-v2";
 const BOARDS = "etch-boards-v1";
 const SHELL_FILES = [
-  "css/editor.css", "js/common.js", "js/explore.js", "js/board.js", "js/board-viewer.js", "js/etch-api.js", "js/mock-api.js", "js/voice.js", "js/mascot.js",
+  "css/editor.css", "js/common.js", "js/explore.js", "js/editor/main.js", "js/editor/viewcube.js", "js/editor/parts-panel.js", "js/editor/agent-bridge.js", "js/editor/selection.js", "js/editor/inspector.js", "js/editor/board-list.js", "js/editor/drop.js", "js/editor/icons.js", "js/editor/kinds.js", "js/editor/dock-loader.js", "js/board-viewer.js", "js/etch-api.js", "js/mock-api.js", "js/voice.js", "js/mascot.js",
   "vendor/three/build/three.module.min.js", "vendor/three/examples/jsm/loaders/GLTFLoader.js", "vendor/three/examples/jsm/controls/OrbitControls.js",
   "vendor/three/examples/jsm/environments/RoomEnvironment.js", "vendor/three/examples/jsm/utils/BufferGeometryUtils.js", "vendor/three/examples/jsm/libs/meshopt_decoder.module.js",
 ];
