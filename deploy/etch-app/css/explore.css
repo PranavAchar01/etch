@@ -3,7 +3,7 @@
   --bg: #f5f8fb;
   --ink: #15202b;
   --ink-2: #4a5866;
-  --ink-3: #7c8a97;
+  --ink-3: #5a6672; /* 4.6:1 on the seg track, 5.8:1 on white */
   --line: #dde5ec;
   --card: #ffffff;
   --plane: #e3f2fb;
@@ -12,13 +12,13 @@
   --accent: #1f7ae0;
   --accent-ink: #ffffff;
   --accent-soft: #e5f0fd;
-  --ok: #1d8a52;
+  --ok: #167244; /* 5.3:1 on --ok-soft */
   --ok-soft: #e3f5eb;
   --star: #c98a00;
   --r: 16px;
   --shadow: 0 1px 2px rgba(21, 32, 43, 0.06), 0 2px 8px rgba(21, 32, 43, 0.04);
   --shadow-up: 0 2px 4px rgba(21, 32, 43, 0.06), 0 14px 32px rgba(31, 122, 224, 0.14);
-  --liquid: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --liquid: cubic-bezier(0.34, 1.4, 0.64, 1); /* ~5% overshoot */
   --soft: cubic-bezier(0.22, 1, 0.36, 1);
   --head: "Averia Serif Libre", Georgia, serif;
   --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -26,7 +26,8 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+/* clip, not hidden: hidden on both html and body turns body into a scroller and unsticks the top bar */
+html { -webkit-text-size-adjust: 100%; overflow-x: clip; }
 body {
   margin: 0;
   min-height: 100vh;
@@ -41,7 +42,7 @@ body {
     linear-gradient(90deg, var(--plane-line) 1px, transparent 1px);
   background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
   background-position: -1px -1px;
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
 }
 body.xp { background-attachment: fixed; }
@@ -125,6 +126,7 @@ button { font: inherit; color: inherit; }
   display: flex;
   gap: 6px;
   padding: 14px 32px;
+  min-height: 66px; /* chip height + padding, so the row doesn't grow when the chips arrive */
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
@@ -230,6 +232,8 @@ button { font: inherit; color: inherit; }
   transition: transform 0.45s var(--liquid);
 }
 .s-btn:active { transform: scale(0.85); transition-duration: 0.1s; }
+/* the box clips overflow (for the pour-out), so ring inside */
+.s-btn:focus-visible { outline-offset: -4px; }
 .search input {
   flex: 1;
   min-width: 0;
@@ -263,6 +267,9 @@ button { font: inherit; color: inherit; }
   transition: transform 0.4s var(--liquid);
 }
 .search.has .s-x { transform: scale(1); }
+.s-x { position: relative; }
+.s-x::after { content: ""; position: absolute; inset: -6px; } /* 40px hit area */
+.seg button::after { content: ""; position: absolute; inset: -3px 0; } /* the track's padding clicks too: 40px tall */
 
 /* copyable switch: the knob stretches as it travels */
 .sw {
@@ -443,6 +450,11 @@ button { font: inherit; color: inherit; }
   .sw[aria-checked="true"] .knob { left: 13px; }
   .sw[aria-checked="true"]:active .knob { left: 7px; }
   .seg button { padding: 0 10px; font-size: 13px; }
+  /* tap targets >= 40px */
+  .cats { min-height: 64px; }
+  .cat { height: 40px; border-radius: 20px; }
+  .btn.sm { height: 40px; }
+  .brand { min-height: 40px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

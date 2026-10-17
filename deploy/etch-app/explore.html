@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Averia+Serif+Libre:wght@400;700&family=Figtree:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/explore.css?v=5">
+<link rel="stylesheet" href="css/explore.css?v=6">
 <link rel="modulepreload" href="js/explore.js">
 <link rel="modulepreload" href="js/common.js">
 <script>
@@ -24,7 +24,7 @@
   <a class="brand" id="homeL" href="/"><span id="logo"></span><span>etch</span></a>
   <span class="crumb" aria-hidden="true">/</span><span class="here">Explore</span>
   <span class="grow"></span>
-  <a class="btn ghost sm" id="buildTop" href="/">Build a board</a>
+  <a class="btn ghost sm" id="buildTop" href="board.html?new=1">Build a board</a>
 </header>
 
 <main class="wrap">
@@ -32,13 +32,13 @@
     <h1>Real boards, ready to <em>poke at</em>.</h1>
     <p class="lede">Open-source KiCad projects from GitHub, rendered in 3D. Open one, tap any part and ask Etch what it does.</p>
     <div class="hero-row">
-      <a class="btn primary" id="buildL" href="/"><span id="plusIc"></span>Build a board</a>
+      <a class="btn primary" id="buildL" href="board.html?new=1"><span id="plusIc"></span>Build a board</a>
       <span class="stat" id="stat" aria-live="polite"></span>
     </div>
   </section>
 
   <div class="cats-wrap">
-    <div class="cats" id="cats" role="tablist" aria-label="Categories">
+    <div class="cats" id="cats" role="group" aria-label="Categories">
       <div class="goo" aria-hidden="true"><i class="bridge"></i><i class="blob a"></i><i class="blob b"></i></div>
     </div>
   </div>
@@ -47,7 +47,7 @@
     <div class="count" id="count">Loading boards…</div>
     <div class="tools">
       <div class="search" id="search">
-        <button class="s-btn" id="sBtn" type="button" aria-label="Search boards" aria-controls="q"><span id="sIc"></span></button>
+        <button class="s-btn" id="sBtn" type="button" aria-label="Search boards" aria-controls="q" aria-expanded="false"><span id="sIc"></span></button>
         <input id="q" type="search" placeholder="Title, owner, repo…" autocomplete="off" spellcheck="false" aria-label="Search boards" tabindex="-1">
         <button class="s-x" id="sX" type="button" aria-label="Clear search" tabindex="-1"><span id="xIc"></span></button>
       </div>

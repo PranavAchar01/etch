@@ -11,7 +11,9 @@ $("logo").innerHTML = LOGO;
 $("sIc").innerHTML = icon("search", 18);
 $("xIc").innerHTML = icon("close", 14);
 $("plusIc").innerHTML = icon("plus", 18);
-for (const id of ["homeL", "buildL", "buildTop"]) $(id).href = page("index") + carry();
+// explore is the homepage: the logo comes back here, "Build a board" opens the editor on an empty workplane
+$("homeL").href = (/\.html$/.test(location.pathname) ? "explore.html" : "/") + carry();
+for (const id of ["buildL", "buildTop"]) $(id).href = page("board") + carry({ new: 1 });
 
 const ORDER = ["keyboards", "iot", "computing", "dev-boards", "audio", "robotics", "tools", "rf", "retro", "lighting", "displays", "power", "wearables", "everything-else"];
 const st = { q: Q.get("q") || "", cat: Q.get("cat") || "", sort: Q.get("sort") === "recent" ? "recent" : "popular", copyable: Q.get("copyable") === "1", shown: 0 };
@@ -42,34 +44,44 @@ function filter() {
 const cats = $("cats"), goo = cats.querySelector(".goo"), [bA, bB] = goo.querySelectorAll(".blob"), bridge = goo.querySelector(".bridge");
 goo.style.filter = gooFilter({ id: "xp-goo", blur: 7, alpha: 22, shift: -9 });
 // a neck between the two blobs: thins as they pull apart, so the drop pinches instead of snapping in two
-let want = 0, top = 0;
+let want = 0, top = 0, H = 38;
 function paintBridge() {
-  const l = Math.min(lead.x.value, tail.x.value) + 19, r = Math.max(lead.x.value + lead.w.value, tail.x.value + tail.w.value) - 19;
-  const span = Math.max(0, r - l), stretch = want ? span / Math.max(1, want - 38) : 1;
-  const th = Math.max(10, Math.min(38, 38 / Math.max(1, stretch * 0.9)));
+  const R = H / 2;
+  const l = Math.min(lead.x.value, tail.x.value) + R, r = Math.max(lead.x.value + lead.w.value, tail.x.value + tail.w.value) - R;
+  const span = Math.max(0, r - l), stretch = want ? span / Math.max(1, want - H) : 1;
+  const th = Math.max(10, Math.min(H, H / Math.max(1, stretch * 0.9)));
   bridge.style.width = span + "px";
   bridge.style.height = th + "px";
-  bridge.style.transform = `translate(${l}px, ${top + (38 - th) / 2}px)`;
+  bridge.style.transform = `translate(${l}px, ${top + (H - th) / 2}px)`;
 }
 const paint = (el, x, w) => { if (!w) return; el.style.transform = `translateX(${x.value}px)`; el.style.width = Math.max(0, w.value) + "px"; if (tail) paintBridge(); };
 const mk = (el, k, d) => {
   const o = {};
-  o.x = spring(0, { stiffness: k, damping: d, onUpdate: () => paint(el, o.x, o.w) });
-  o.w = spring(0, { stiffness: k, damping: d, onUpdate: () => paint(el, o.x, o.w) });
+  // precision in px: rest within 0.1 px (the default 0.002 is meant for 0..1 values and keeps the loop alive)
+  o.x = spring(0, { stiffness: k, damping: d, precision: 0.1, onUpdate: () => paint(el, o.x, o.w) });
+  o.w = spring(0, { stiffness: k, damping: d, precision: 0.1, onUpdate: () => paint(el, o.x, o.w) });
   return o;
 };
 let tail = null;
 const lead = mk(bA, 420, 30);
 tail = mk(bB, 190, 21);
-let gooReady = false;
+let gooReady = false, gooOn = null;
 
-function moveGoo(instant) {
+// a new active chip: the drop travels. The same chip moved or resized (counts, fonts, viewport): follow it at once,
+// unless the drop is still travelling, then just retarget so it lands on the new spot.
+function moveGoo() {
   const on = cats.querySelector(".cat.on");
   goo.style.setProperty("--cw", cats.scrollWidth + "px");
-  if (!on) { goo.classList.remove("ready"); return; }
+  if (!on) { goo.classList.remove("ready"); gooOn = null; return; }
   const x = on.offsetLeft, w = on.offsetWidth, y = on.offsetTop;
-  bA.style.top = bB.style.top = y + "px"; bridge.style.top = "0"; top = y; want = w;
-  if (instant || !gooReady) { for (const b of [lead, tail]) { b.x.jump(x); b.w.jump(w); } gooReady = true; goo.classList.add("ready"); return; }
+  if (!w) return; // not laid out (display:none)
+  H = on.offsetHeight;
+  for (const el of [bA, bB]) { el.style.top = y + "px"; el.style.height = H + "px"; el.style.borderRadius = H / 2 + "px"; }
+  bridge.style.top = "0"; top = y; want = w;
+  const travelling = lead.x.moving || tail.x.moving || lead.w.moving || tail.w.moving;
+  const instant = !gooReady || reducedMotion() || (on === gooOn && !travelling);
+  gooOn = on;
+  if (instant) { for (const b of [lead, tail]) { b.x.jump(x); b.w.jump(w); } gooReady = true; goo.classList.add("ready"); return; }
   for (const b of [lead, tail]) { b.x.set(x); b.w.set(w); }
 }
 
@@ -82,28 +94,33 @@ function renderCats() {
   if (chips.length !== items.length) {
     chips.forEach((c) => c.remove());
     chips = items.map(([id]) => {
-      const b = h("button", { class: "cat", type: "button", role: "tab", "data-id": id }, h("span", {}), h("em", {}));
+      const b = h("button", { class: "cat", type: "button", "data-id": id }, h("span", {}), h("em", {}));
       b.addEventListener("click", () => {
         st.cat = st.cat === id && id ? "" : id;
         update();
         b.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "nearest", inline: "nearest" });
       });
       cats.append(b);
+      if (chipRO) chipRO.observe(b);
       return b;
     });
   }
   items.forEach(([id, label, c], i) => {
     const b = chips[i], on = st.cat === id;
     b.classList.toggle("on", on);
-    b.setAttribute("aria-selected", String(on));
+    b.setAttribute("aria-pressed", String(on));
     b.disabled = !!(id && !c && !on);
     b.firstChild.textContent = label;
     b.lastChild.textContent = c.toLocaleString();
+    b.setAttribute("aria-label", `${label}, ${c.toLocaleString()} board${c === 1 ? "" : "s"}`);
   });
-  requestAnimationFrame(() => moveGoo(false));
+  moveGoo();
 }
-addEventListener("resize", () => moveGoo(true));
-if (document.fonts) document.fonts.ready.then(() => moveGoo(true));
+// chip widths change with counts, fonts and the viewport: keep the drop on its chip
+if ("ResizeObserver" in window) new ResizeObserver(() => moveGoo()).observe(cats);
+const chipRO = "ResizeObserver" in window ? new ResizeObserver(() => moveGoo()) : null;
+addEventListener("resize", () => moveGoo());
+if (document.fonts) document.fonts.addEventListener?.("loadingdone", () => { moveGoo(); moveSeg(true); });
 
 // ---- search: an icon that pours out into a field ----
 const sBox = $("search"), qIn = $("q");
@@ -111,7 +128,8 @@ qIn.value = st.q;
 function openSearch(focus = true) {
   sBox.classList.add("open"); qIn.tabIndex = 0; $("sX").tabIndex = 0;
   $("sBtn").setAttribute("aria-expanded", "true");
-  if (focus) setTimeout(() => qIn.focus({ preventScroll: true }), reducedMotion() ? 0 : 60);
+  // focus at once: a delayed focus drops the first keys of a fast typist onto the button
+  if (focus && document.activeElement !== qIn) qIn.focus({ preventScroll: true });
 }
 function closeSearch() {
   if (qIn.value) return;
@@ -125,10 +143,18 @@ $("sBtn").addEventListener("click", () => (sBox.classList.contains("open") && !q
 qIn.addEventListener("blur", () => setTimeout(() => { if (!sBox.contains(document.activeElement)) closeSearch(); }, 120));
 let qt = 0;
 qIn.addEventListener("input", () => { markHas(); clearTimeout(qt); qt = setTimeout(() => { st.q = qIn.value.trim(); update(); }, 90); });
-qIn.addEventListener("keydown", (e) => { if (e.key === "Escape") { qIn.value = ""; markHas(); st.q = ""; update(); qIn.blur(); closeSearch(); } });
-$("sX").addEventListener("click", () => { qIn.value = ""; markHas(); st.q = ""; update(); qIn.focus(); });
+// Escape clears, closes and hands focus back to the search button (never strands it on <body>)
+qIn.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  e.preventDefault(); clearTimeout(qt);
+  const had = !!st.q; qIn.value = ""; markHas(); st.q = "";
+  if (had) update();
+  closeSearch(); $("sBtn").focus();
+});
+$("sX").addEventListener("click", () => { clearTimeout(qt); qIn.value = ""; markHas(); st.q = ""; update(); qIn.focus(); });
 addEventListener("keydown", (e) => {
-  if (e.key === "/" && document.activeElement !== qIn && !/input|textarea/i.test(document.activeElement?.tagName || "")) { e.preventDefault(); openSearch(); }
+  const a = document.activeElement;
+  if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey && a !== qIn && !/input|textarea|select/i.test(a?.tagName || "") && !a?.isContentEditable) { e.preventDefault(); openSearch(false); qIn.focus({ preventScroll: true }); }
 });
 
 // ---- copyable switch ----
@@ -139,25 +165,30 @@ sw.addEventListener("click", () => { st.copyable = !st.copyable; paintSw(); upda
 
 // ---- sort: segmented control, pill on springs (it stretches a little as it moves) ----
 const seg = $("sort"), ind = seg.querySelector(".seg-ind");
-const segX = spring(0, { stiffness: 380, damping: 28, onUpdate: () => paintSeg() });
-const segW = spring(0, { stiffness: 220, damping: 20, onUpdate: () => paintSeg() });
+const segX = spring(0, { stiffness: 380, damping: 28, precision: 0.1, onUpdate: () => paintSeg() });
+const segW = spring(0, { stiffness: 220, damping: 20, precision: 0.1, onUpdate: () => paintSeg() });
 function paintSeg() { ind.style.transform = `translateX(${segX.value}px)`; ind.style.width = segW.value + "px"; }
 function moveSeg(instant) {
   const b = seg.querySelector(`[data-v="${st.sort}"]`);
-  for (const x of seg.querySelectorAll("button")) x.setAttribute("aria-checked", String(x === b));
-  instant ? (segX.jump(b.offsetLeft), segW.jump(b.offsetWidth)) : (segX.set(b.offsetLeft), segW.set(b.offsetWidth));
+  for (const x of seg.querySelectorAll("button")) { x.setAttribute("aria-checked", String(x === b)); x.tabIndex = x === b ? 0 : -1; }
+  if (!b.offsetWidth) return;
+  instant || reducedMotion() ? (segX.jump(b.offsetLeft), segW.jump(b.offsetWidth)) : (segX.set(b.offsetLeft), segW.set(b.offsetWidth));
 }
 seg.addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b || b.dataset.v === st.sort) return;
   st.sort = b.dataset.v; moveSeg(false); update();
 });
 seg.addEventListener("keydown", (e) => {
-  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-  st.sort = st.sort === "popular" ? "recent" : "popular"; moveSeg(false); update();
+  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) return;
+  e.preventDefault();
+  const v = e.key === "Home" ? "popular" : e.key === "End" ? "recent" : st.sort === "popular" ? "recent" : "popular";
+  if (v === st.sort) return;
+  st.sort = v; moveSeg(false); update();
   seg.querySelector(`[data-v="${st.sort}"]`).focus();
 });
 moveSeg(true);
-if (document.fonts) document.fonts.ready.then(() => moveSeg(true));
+// same chip, new size (fonts, viewport): follow at once unless the pill is mid-flight
+if ("ResizeObserver" in window) { const ro = new ResizeObserver(() => moveSeg(!segX.moving && !segW.moving)); for (const b of seg.querySelectorAll("button")) ro.observe(b); }
 
 // ---- cards ----
 // a board's meta.json (small, prefetched anyway) carries the pinned commit; the source arrow links there once known
@@ -188,12 +219,14 @@ function sourceLink(c) {
 // KiCad's stills sit on a lavender gradient: key it out to pure white. The backdrop is flood-filled in from the
 // edges (so board pixels that happen to be lavender stay), its edge feathered, and the lavender un-mixed from the
 // feathered pixels so no tinted fringe is left. Returns a canvas cropped to the board, or null.
+// worked at most 480 px wide (a card shows it at ~240 css px), about 10 ms for a 640x400 still on a slow machine
 function whiteThumb(img) {
-  const w = img.naturalWidth, hh = img.naturalHeight; if (!w || !hh) return null;
+  const k0 = Math.min(1, 480 / (img.naturalWidth || 1));
+  const w = Math.round(img.naturalWidth * k0), hh = Math.round(img.naturalHeight * k0); if (!w || !hh) return null;
   const cv = document.createElement("canvas"); cv.width = w; cv.height = hh;
   const g = cv.getContext("2d", { willReadFrequently: true });
   let d;
-  try { g.drawImage(img, 0, 0); d = g.getImageData(0, 0, w, hh); } catch (e) { return null; }
+  try { g.drawImage(img, 0, 0, w, hh); d = g.getImageData(0, 0, w, hh); } catch (e) { return null; }
   const p = d.data, n = w * hh;
   // backdrop colour per row from the outermost pixels; rows where the board touches an edge keep the last good one
   const bg = new Float32Array(hh * 3);
@@ -287,17 +320,38 @@ function springy(c) {
   c.addEventListener("focusout", (e) => { if (!c.contains(e.relatedTarget)) { lift = 0; go(); } });
 }
 
+// keyed thumbs are kept per board, so a filter / sort re-render reuses them instead of keying again, and new ones
+// are keyed one per idle slice (never inside a busy frame, so the springs keep their frames)
+const keyed = new Map();
+const copyCanvas = (src) => { const c = document.createElement("canvas"); c.width = src.width; c.height = src.height; c.getContext("2d").drawImage(src, 0, 0); c.className = "in"; return c; };
+const kq = []; let kRunning = false;
+const idle = window.requestIdleCallback || ((fn) => setTimeout(() => fn({ timeRemaining: () => 16, didTimeout: true }), 16));
+function keyQueue(img, slug) { kq.push([img, slug]); if (!kRunning) { kRunning = true; idle(keyRun, { timeout: 1500 }); } }
+function keyRun(dl) {
+  let n = 0; // two per slice at most, so input arriving meanwhile is never kept waiting long
+  while (kq.length && n < 2 && (dl.didTimeout || dl.timeRemaining() > 9)) {
+    const [img, slug] = kq.shift();
+    if (!img.isConnected && keyed.has(slug)) continue;
+    let cv = keyed.get(slug);
+    if (!cv) { cv = whiteThumb(img); if (cv) keyed.set(slug, cv); }
+    if (!img.isConnected) continue;
+    if (cv) img.replaceWith(copyCanvas(cv)); else img.classList.add("in");
+    n++;
+    if (dl.didTimeout) break;
+  }
+  if (kq.length) idle(keyRun, { timeout: 1500 }); else kRunning = false;
+}
 const mm = (v) => (Math.round(v * 10) / 10).toString();
 const catLabel = (id) => CATS.find((c) => c.id === id)?.label || (id ? id.replace(/-/g, " ").replace(/^./, (x) => x.toUpperCase()) : "");
 const ARROW = '<svg class="ic" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5 12.5 5.5M7 5.5h5.5V11"/></svg>';
 function card(b, i) {
   const f = boardFiles(b.slug);
-  const img = h("img", { src: f.thumb, alt: "", width: "640", height: "400", loading: "lazy", decoding: "async" });
-  img.addEventListener("load", () => {
-    const go = () => { const cv = whiteThumb(img); if (cv) { cv.className = "in"; img.replaceWith(cv); } else img.classList.add("in"); };
-    (window.requestIdleCallback || ((fn) => setTimeout(fn, 16)))(go, { timeout: 300 });
-  }, { once: true });
-  img.addEventListener("error", () => img.remove(), { once: true });
+  const done = keyed.get(b.slug);
+  const img = done ? copyCanvas(done) : h("img", { src: f.thumb, alt: "", width: "640", height: "400", loading: "lazy", decoding: "async" });
+  if (!done) {
+    img.addEventListener("load", () => keyQueue(img, b.slug), { once: true });
+    img.addEventListener("error", () => img.remove(), { once: true });
+  }
   const lic = b.license || "No licence";
   const specs = [b.parts ? `${b.parts.toLocaleString()} parts` : "No parts", b.layers ? `${b.layers} layers` : "", b.size_mm ? `${mm(b.size_mm[0])} × ${mm(b.size_mm[1])} mm` : ""].filter(Boolean).join(" · ");
   const tip = `${b.title}\n${b.owner}/${b.repo}\n${specs}\nLicence: ${lic}${b.copyable ? " (copying allowed)" : " (view only)"}`;
@@ -327,11 +381,18 @@ function more() {
   st.shown = Math.min(list.length, start + PAGE);
 }
 
-function update() {
-  filter(); renderCats(); syncURL();
+// state, chips, URL and count update at once; the grid is rebuilt on the next frame, so a chip / sort / switch
+// starts moving before the (heavier) card rebuild lands, and fast input coalesces into one rebuild
+let gridPending = 0;
+function renderGrid() {
+  gridPending = 0;
   const g = $("grid");
   if (io) for (const c of g.children) io.unobserve(c);
-  g.textContent = ""; st.shown = 0; more();
+  g.textContent = ""; st.shown = 0; more(); fill();
+}
+function update() {
+  filter(); renderCats(); syncURL();
+  if (!gridPending) gridPending = requestAnimationFrame(() => requestAnimationFrame(renderGrid));
   const label = st.cat ? (CATS.find((c) => c.id === st.cat)?.label || st.cat) : "all categories";
   $("count").innerHTML = `<b>${list.length.toLocaleString()}</b> board${list.length === 1 ? "" : "s"} · ${esc(label)}`;
   const em = $("empty");
@@ -339,7 +400,13 @@ function update() {
   if (!list.length) em.innerHTML = `<b>Nothing here yet</b>${st.q ? `No boards match “${esc(st.q)}”. ` : ""}Try another search${st.copyable ? " or turn off “Copyable only”" : ""}.`;
 }
 
-new IntersectionObserver((es) => { if (es[0].isIntersecting && st.shown < list.length) more(); }, { rootMargin: "800px 0px" }).observe($("more"));
+// the sentinel can stay inside the margin after a page lands (tall screens, a re-render while scrolled down), and
+// IntersectionObserver only reports changes, so keep filling while it is still near
+const sentinel = $("more");
+const near = () => sentinel.getBoundingClientRect().top < innerHeight + 800;
+let filling = 0;
+function fill() { if (filling) return; filling = requestAnimationFrame(() => { filling = 0; if (st.shown < list.length && near()) { more(); fill(); } }); }
+new IntersectionObserver((es) => { if (es[0].isIntersecting) fill(); }, { rootMargin: "800px 0px" }).observe(sentinel);
 
 try {
   const idx = await (window.__index || fetch(WORLD + "index.json").then((r) => r.json()));
