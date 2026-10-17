@@ -356,3 +356,7 @@
   position: absolute; left: 0; bottom: 49px; z-index: 2; padding: 3px 7px; border-radius: 999px; background: var(--ag-accent); color: #fff;
   font: 650 10.5px/1 var(--ag-sans); white-space: nowrap; box-shadow: 0 2px 6px rgba(47, 107, 255, .3); animation: lq-in .3s cubic-bezier(.22, .9, .3, 1) both; pointer-events: none;
 }
+.ag-wave { display: none; align-items: center; gap: 2px; height: 16px; }
+.ag-dock.listening .ag-wave { display: inline-flex; }
+.ag-wave i { width: 3px; height: 16px; border-radius: 2px; background: var(--ag-fail); transform: scaleY(.18); transition: transform .08s linear; }
+@media (prefers-reduced-motion: reduce) { .ag-wave i { transition: none; } }
