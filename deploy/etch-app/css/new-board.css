@@ -117,7 +117,7 @@ body.nb-on .navc, body.nb-on .br, body.nb-on .insp { opacity: 0; pointer-events:
 .sbd-ghost { position: absolute; left: 50%; top: 46%; width: min(560px, 62%); transform: translate(-50%, -50%); overflow: visible; }
 .sbd-outline { fill: rgba(255, 255, 255, .22); stroke: rgba(40, 120, 180, .28); stroke-width: 1.5; stroke-dasharray: 6 5; transition: all .6s var(--ease); }
 .sbd-ticks line { stroke: rgba(40, 120, 180, .3); stroke-width: 1; }
-.sbd-ticks text { font: 500 9px var(--ui); fill: rgba(40, 110, 165, .5); text-anchor: middle; font-variant-numeric: tabular-nums; }
+.sbd-ticks text { font: 500 6.5px var(--ui); fill: rgba(40, 110, 165, .5); text-anchor: middle; font-variant-numeric: tabular-nums; }
 .sbd-ticks > * { animation: sbd-tick 8s ease-in-out infinite; animation-delay: calc(var(--k) * .35s); }
 @keyframes sbd-tick { 0%, 100% { opacity: .45; } 12% { opacity: 1; } 30% { opacity: .45; } }
 .sbd-traces path { fill: none; stroke: rgba(201, 138, 18, .38); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: sbd-route 8s var(--ease) infinite; animation-delay: calc(var(--k) * .45s); }

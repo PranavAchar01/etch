@@ -450,7 +450,7 @@ function startDesign(text) {
   backdrop?.building(true);
   if (hero?.open) hero.collapse();
   document.body.classList.remove("nb-on");
-  viewer.reset(); // the camera eases in onto the workplane
+  viewer.lookFrom([0, 1, 0.18], { fitBox: true }); // the camera eases in onto the workplane, still from above
   dock.expand(true);
   dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: text, status: "done" });
   $("crTitle").textContent = "New board";
@@ -549,13 +549,14 @@ async function startNew() {
   const idx = await cachedFetch(WORLD + "index.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
   const picks = (idx.boards || []).slice().sort((a, b) => (b.stars || 0) - (a.stars || 0)).filter((x, i) => i % 3 === 0).slice(0, 5);
   backdrop = createStartBackdrop($("stage"), { boards: picks });
+  backdrop.attach(viewer);
   hero = createNewBoardHero($("stage"), {
     initial: Q.get("from") === "library" ? "library" : "scratch",
     recent: recent(),
     boardHref: (b) => page("board") + carry({ id: b.id, remix: 1 }),
     target: dockPill,
     onSubmit: (t) => { sendViaDock(t); dock.nudge?.(); },
-    onMic: () => { document.body.classList.remove("nb-on"); viewer.reset(); dock.expand(true); dock.nudge?.(); dock.listen(); },
+    onMic: () => { document.body.classList.remove("nb-on"); viewer.lookFrom([0, 1, 0.18], { fitBox: true }); dock.expand(true); dock.nudge?.(); dock.listen(); },
     onPick: (b) => { dock.nudge?.(); remix(b); },
   });
   bindLiquid(document);

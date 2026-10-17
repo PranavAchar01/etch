@@ -360,7 +360,7 @@ export function createBoardViewer(host) {
   // no board yet (a new board before Etch has built it): just a w x d mm workplane, the camera set back by `back` so
   // reset() can ease it in once there is something to show
   let emptyRect = null;
-  function empty({ w = 90, d = 64, back = 1.7 } = {}) {
+  function empty({ w = 100, d = 60, back = 1.5 } = {}) {
     glbRoot.clear(); parts = {}; pickables = []; boardMeshes = []; hovered = null;
     selected = new Set(); marked = new Set(); outlines.clear();
     for (const k of Object.keys(boardMats)) boardMats[k] = [];
@@ -372,6 +372,9 @@ export function createBoardViewer(host) {
     extent = Math.max(0.08, Math.ceil((model.span * 0.75) / 0.02) * 0.02);
     buildFloor();
     frameHome();
+    // from (almost) straight above, so the empty workplane reads as a sheet to draw on; set back so it can ease in
+    const top = fitDistance(new THREE.Vector3(0, 1, 0.18).normalize(), visBox());
+    persp.position.copy(top.pos); ctl.target.copy(top.tgt); home = top;
     const off = persp.position.clone().sub(ctl.target).multiplyScalar(back);
     persp.position.copy(ctl.target).add(off); ortho.position.copy(persp.position);
     ctl.maxDistance = Math.max(ctl.maxDistance, off.length() * 1.5);
@@ -735,6 +738,8 @@ export function createBoardViewer(host) {
     get moving() { return !!anim; },
     get floor() { return floorOn; },
     get isEmpty() { return !!model?.empty; },
+    // the empty workplane's drawing area in world metres (y = 0), or null once a board is loaded
+    get emptyArea() { return emptyRect && model?.empty ? { ...emptyRect } : null; },
     get workplane() { return { ...wp }; },
     controls: ctl,
     canvas: cv,
