@@ -855,6 +855,9 @@ def assemble(
             design, kept
         ):  # before _auto_mcu: a split name is not a reason to add a Pico
             stream.emit("assembly", "repair", iteration=it, kind="nets", joined=joined)
+        if radio := _radio_fix(design, kept, ask):
+            keys.update(str(p["piece"]) for p in design.get("parts", []) if p.get("piece"))
+            stream.emit("lead", "say", text="Radio: " + "; ".join(radio) + ".")
         if added := _auto_mcu(design, kept, ask):
             keys.add(added["piece"])
             stream.emit("lead", "say", text=added["say"])
@@ -1725,6 +1728,41 @@ _ANALOG_FAMILIES = (
 _POWER_IN = ("2-pin connector", "battery holder", "USB-C power input", "DC barrel jack")
 
 
+_WIRELESS = r"\b(bluetooth|ble|wi-?fi|wireless|phone|internet|online|esp32|air ?tags?|tracker|beacon|finder|iot|smart ?watch)\b"
+
+
+def _radio_fix(
+    design: dict[str, Any], kept: list[dict[str, Any]], ask: str
+) -> list[str]:
+    """A wireless ask needs a radio, not a loose antenna. The Pico W's radio and antenna are on the module, so a
+    plain Pico becomes a Pico W (same footprint, same pins) and an antenna whose every pin ends on one pin is
+    dropped (live-1792271675178, "device tracker similar to an airtag": Pico + ANT1 failed "ANT touches only
+    one pin" three times with the same design). Returns what changed, for the say line."""
+    did: list[str] = []
+    wireless = bool(re.search(_WIRELESS, ask.lower()))
+    lonely = set(_lonely_nets(design))
+    keep = []
+    for part in design.get("parts", []):
+        key = str(part.get("piece", ""))
+        nets = [str(n) for n in (part.get("pins") or {}).values()]
+        if re.search(r"antenna|:ANT", key, re.I) and all(
+            n in lonely for n in nets
+        ):
+            did.append(f"dropped {part.get('ref')}, the antenna on the module does that job")
+            continue
+        keep.append(part)
+    design["parts"] = keep
+    if wireless:
+        cat = _cat()
+        for part in keep:
+            if part.get("piece") == PICO_KEY and PICO_W_KEY in cat:
+                part["piece"] = PICO_W_KEY
+                if cat[PICO_W_KEY] not in kept:
+                    kept.append(cat[PICO_W_KEY])
+                did.append(f"{part.get('ref')} is a Pico W so the board has Bluetooth and Wi-Fi")
+    return did
+
+
 def _auto_mcu(
     design: dict[str, Any], kept: list[dict[str, Any]], ask: str
 ) -> dict[str, Any] | None:
@@ -1744,7 +1782,7 @@ def _auto_mcu(
     key = (
         PICO_W_KEY
         if re.search(
-            r"\b(bluetooth|wi-?fi|wireless|phone|internet|online|esp32)\b", ask.lower()
+            _WIRELESS, ask.lower()
         )
         else PICO_KEY
     )
@@ -2846,6 +2884,15 @@ def _has_words(ask: str) -> bool:
         "servo",
         "bluetooth",
         "wifi",
+        "airtag",
+        "airtags",
+        "tracker",
+        "beacon",
+        "gps",
+        "ble",
+        "iot",
+        "smartwatch",
+        "wearable",
     }
     return any(
         t.lower() in _WORDS or t.lower() in extra or t.lower().rstrip("s") in _WORDS

@@ -1319,6 +1319,17 @@ def stats() -> dict[str, Any]:
 # candidates (the picker still chooses); nothing here narrows what any stage can reach.
 FUNCTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (
+        r"\bair ?tags?|\btracker|\bbeacon|\bfinder\b|\bble\b|\bbluetooth tag",
+        (
+            "Raspberry Pi Pico W",
+            "ESP32-C3-MINI-1",
+            "buzzer",
+            "Battery_Cell",
+            "push button",
+            "LED",
+        ),
+    ),
+    (
         r"\bkey ?board|\bmacro ?pad|\bkey ?pad|\bnum ?pad|\b\d+ ?(key|pad)s?\b|\bmechanical\b|\bhot ?swap|\bkeys?\b",
         (
             "mechanical key switch",
