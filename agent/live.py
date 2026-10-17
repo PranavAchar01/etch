@@ -65,6 +65,7 @@ PICKER_TIMEOUT = 40
 PICKER_MAX_TOKENS = 3000
 RETRY_MAX_TOKENS = 2000
 RETRY_TIMEOUT = 25
+SLOW_SAY = "The design model took too long on this one. Try again, it usually answers on the second go."
 MISSING_SAY = (
     "Looks like we don't have all of the components for this board yet. Explore the library to see what we have, "
     "or try again in a few minutes."
@@ -540,14 +541,13 @@ def _pick_call(stream: Stream, model: str, msgs: list) -> dict[str, Any]:
         )
         return ans
     except (llm.ModelError, ValueError) as e:
-        stream.emit(
-            "picker",
-            "missing_parts",
-            reason=f"{first} / retry: {str(e)[:200]}",
-            text=MISSING_SAY,
-        )
-        stream.emit("lead", "say", text=MISSING_SAY)
-        raise PickTimeout(MISSING_SAY) from e
+        reason = f"{first} / retry: {str(e)[:200]}"
+        # a timeout or an unparsed answer is a model failure, not a missing part (live-1792272020427: the GPS
+        # tracker had every part kept and still told the user the library lacked them)
+        say = MISSING_SAY if "missing" in reason.lower() else SLOW_SAY
+        stream.emit("picker", "missing_parts", reason=reason, text=say)
+        stream.emit("lead", "say", text=say)
+        raise PickTimeout(say) from e
 
 
 def pick(
