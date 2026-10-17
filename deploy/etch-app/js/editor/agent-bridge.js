@@ -11,6 +11,8 @@
 // With ?mock=1, no backend, or a mock job id, change() and design() play a scripted build (the "full successful design
 // run" from API.md, with a failed DRC on the first try) so the whole flow can be shown without the engine. Both hand
 // the finished run to viewer.reload({ run, design, done }): on render:done (the GLB is there) and on lead:done ok.
+// Page hooks besides onEvent: onStage("Picking parts") when the job's own stage changes (the build loader's label),
+// onLost(msg) when the build is lost (gone from the server, or the engine stays unreachable past the grace).
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const cap = (s) => { s = String(s || "").trim(); return s ? s[0].toUpperCase() + s.slice(1) : s; };
@@ -143,7 +145,7 @@ function simulate({ text, ref, board, design = false, startedAt = 0 }) {
   };
 }
 
-export function createAgentBridge({ dock, api, board, viewer = null, highlight = () => {}, select = () => {}, onEvent = () => {}, onJob = () => {}, onJobEnd = () => {} } = {}) {
+export function createAgentBridge({ dock, api, board, viewer = null, highlight = () => {}, select = () => {}, onEvent = () => {}, onJob = () => {}, onJobEnd = () => {}, onStage = () => {}, onLost = () => {} } = {}) {
   if (!dock) throw new Error("createAgentBridge needs a dock");
   const timers = new Set();
   let disposed = false, jobGen = 0, askGen = 0;
@@ -332,6 +334,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     const lost = (msg) => {
       dock.step({ id: jobId + ":lost", kind: "step", title: "Lost track of this build", detail: msg, status: "failed" });
       dock.setState("confused"); dock.say(msg); dock.setStatus("Build lost");
+      try { onLost(msg); } catch (e) { /* the page's own business */ }
     };
     while (!disposed && gen === jobGen) {
       let r;
@@ -339,12 +342,19 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
       catch (e) {
         if (e?.status === 404) { map.end(); lost("Etch lost track of this build. Start it again, or open it from the library."); return null; }
         if (!down) down = Date.now();
-        if (Date.now() - down > FOLLOW_GRACE_MS) { map.end(); explain(e, jobId + ":poll", "Following the build"); return null; }
+        if (Date.now() - down > FOLLOW_GRACE_MS) {
+          map.end(); explain(e, jobId + ":poll", "Following the build");
+          try { onLost(""); } catch (e2) { /* the page's own business */ }
+          return null;
+        }
         await sleep(1500); continue;
       }
       if (disposed || gen !== jobGen) break;
       for (const ev of r.events || []) { const out = map(ev); if (out) last = out; }
-      if (r.stage && r.stage !== stage) { stage = r.stage; dock.setStatus(cap(stage)); }
+      if (r.stage && r.stage !== stage) {
+        stage = r.stage; dock.setStatus(cap(stage));
+        try { onStage(cap(stage)); } catch (e) { /* the page's own business */ }
+      }
       since = r.next ?? since + (r.events || []).length;
       if (r.done) { ended = true; break; }
       await sleep(400);
