@@ -189,6 +189,16 @@ def test_lonely_module_uart_crosses_onto_pico_uart():
     u1 = _nets(d)["U1"]
     assert u1["2"] == "TxD1" and u1["11"] == "RxD1"
 
+
+def test_lonely_reset_label_on_a_header_is_left_open():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "20": "SIG"}},
+        {"ref": "J1", "piece": "kicad:Connector_Generic:Conn_01x02@PinHeader_1x02_P2.54mm_Vertical",
+         "pins": {"1": "SIG", "2": "RUN"}},
+    ]}
+    live._drop_lonely_gpio(d, _kept(d))
+    assert _nets(d)["J1"] == {"1": "SIG"}
+
 # The first picker tries of the failing 10-17 runs, as saved: each must now pass the spec gate on try one.
 RUNS = {
     "cretae a gps tracker like an airtag": [

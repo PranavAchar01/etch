@@ -1657,6 +1657,19 @@ def _drop_lonely_gpio(design: dict[str, Any], kept: list[dict[str, Any]]) -> Non
     # "3V3_EN only on U1 pin 37"). A module pin left open is how the module ships.
     for num in [n for n, net in pins.items() if str(net) in lonely]:
         del pins[num]
+    # A no-connect or reset label on another part's lone pin (OLED header pin 4 "RUN", a module's "NC" or "RST",
+    # live-1792269010803) is a pin the board leaves open too; its pull-up lives on the module.
+    for q in design.get("parts", []):
+        qp = q.get("pins") or {}
+        for num in [
+            n
+            for n, net in qp.items()
+            if str(net) in lonely and re.fullmatch(_OPEN_LABEL, _norm_net(str(net)))
+        ]:
+            del qp[num]
+
+
+_OPEN_LABEL = r"N_?C\d*|RST|RESET|RUN|3V3_EN|ADC_VREF|AGND"
 
 
 R_KEY = "kicad:Device:R@R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical"
