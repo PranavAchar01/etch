@@ -1,0 +1,6832 @@
+{
+"kicad": "10",
+"built_s": 0.56,
+"stats": {
+"symbol_libraries": 223,
+"symbols": 22860,
+"footprint_libraries": 155,
+"libraries_kept": [
+"74xx",
+"Connector",
+"Connector_Generic",
+"Device",
+"Diode",
+"Driver_Motor",
+"MCU_Module",
+"Regulator_Linear",
+"Sensor",
+"Sensor_Optical",
+"Switch",
+"Timer",
+"Transistor_BJT",
+"Transistor_FET"
+],
+"pieces": 304
+},
+"pieces": [
+{
+"key": "kicad:Device:R@R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical",
+"lib_id": "Device:R",
+"footprint": "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical",
+"family": "resistor",
+"name": "R / R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical",
+"descr": "Resistor, Axial_DIN0204 series, Axial, Vertical, pin pitch=2.54mm, 0.167W, length*diameter=3.6*1.6mm^2, http:/",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "resistor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R@R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal",
+"lib_id": "Device:R",
+"footprint": "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal",
+"family": "resistor",
+"name": "R / R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal",
+"descr": "Resistor, Axial_DIN0204 series, Axial, Horizontal, pin pitch=5.08mm, 0.167W, length*diameter=3.6*1.6mm^2, http",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "resistor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R@R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Vertical",
+"lib_id": "Device:R",
+"footprint": "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Vertical",
+"family": "resistor",
+"name": "R / R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Vertical",
+"descr": "Resistor, Axial_DIN0204 series, Axial, Vertical, pin pitch=5.08mm, 0.167W, length*diameter=3.6*1.6mm^2, http:/",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "resistor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R@R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal",
+"lib_id": "Device:R",
+"footprint": "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal",
+"family": "resistor",
+"name": "R / R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal",
+"descr": "Resistor, Axial_DIN0204 series, Axial, Horizontal, pin pitch=7.62mm, 0.167W, length*diameter=3.6*1.6mm^2, http",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "resistor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R@R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal",
+"lib_id": "Device:R",
+"footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal",
+"family": "resistor",
+"name": "R / R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal",
+"descr": "Resistor, Axial_DIN0207 series, Axial, Horizontal, pin pitch=10.16mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "resistor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R@R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical",
+"lib_id": "Device:R",
+"footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical",
+"family": "resistor",
+"name": "R / R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical",
+"descr": "Resistor, Axial_DIN0207 series, Axial, Vertical, pin pitch=2.54mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2, ",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0207_L6.3mm_D2.5mm_P2.54mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "resistor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R@R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical",
+"lib_id": "Device:R",
+"footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical",
+"family": "resistor",
+"name": "R / R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical",
+"descr": "Resistor, Axial_DIN0207 series, Axial, Vertical, pin pitch=5.08mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2, ",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "resistor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R@R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+"lib_id": "Device:R",
+"footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+"family": "resistor",
+"name": "R / R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+"descr": "Resistor, Axial_DIN0207 series, Axial, Horizontal, pin pitch=7.62mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "resistor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R@R_Axial_DIN0309_L9.0mm_D3.2mm_P2.54mm_Vertical",
+"lib_id": "Device:R",
+"footprint": "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P2.54mm_Vertical",
+"family": "resistor",
+"name": "R / R_Axial_DIN0309_L9.0mm_D3.2mm_P2.54mm_Vertical",
+"descr": "Resistor, Axial_DIN0309 series, Axial, Vertical, pin pitch=2.54mm, 0.5W = 1/2W, length*diameter=9*3.2mm^2, htt",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0309_L9.0mm_D3.2mm_P2.54mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "resistor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R@R_Axial_DIN0309_L9.0mm_D3.2mm_P5.08mm_Vertical",
+"lib_id": "Device:R",
+"footprint": "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P5.08mm_Vertical",
+"family": "resistor",
+"name": "R / R_Axial_DIN0309_L9.0mm_D3.2mm_P5.08mm_Vertical",
+"descr": "Resistor, Axial_DIN0309 series, Axial, Vertical, pin pitch=5.08mm, 0.5W = 1/2W, length*diameter=9*3.2mm^2, htt",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0309_L9.0mm_D3.2mm_P5.08mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "resistor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C@C_Disc_D3.0mm_W1.6mm_P2.50mm",
+"lib_id": "Device:C",
+"footprint": "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm",
+"family": "capacitor",
+"name": "C / C_Disc_D3.0mm_W1.6mm_P2.50mm",
+"descr": "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=3.0*1.6mm^2, Capacitor, http://www.vishay.com/docs/45",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/C_Disc_D3.0mm_W1.6mm_P2.50mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C@C_Disc_D3.0mm_W2.0mm_P2.50mm",
+"lib_id": "Device:C",
+"footprint": "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm",
+"family": "capacitor",
+"name": "C / C_Disc_D3.0mm_W2.0mm_P2.50mm",
+"descr": "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=3*2mm^2, Capacitor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/C_Disc_D3.0mm_W2.0mm_P2.50mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C@C_Disc_D3.4mm_W2.1mm_P2.50mm",
+"lib_id": "Device:C",
+"footprint": "Capacitor_THT:C_Disc_D3.4mm_W2.1mm_P2.50mm",
+"family": "capacitor",
+"name": "C / C_Disc_D3.4mm_W2.1mm_P2.50mm",
+"descr": "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=3.4*2.1mm^2, Capacitor, http://www.vishay.com/docs/45",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/C_Disc_D3.4mm_W2.1mm_P2.50mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C@C_Disc_D4.3mm_W1.9mm_P5.00mm",
+"lib_id": "Device:C",
+"footprint": "Capacitor_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm",
+"family": "capacitor",
+"name": "C / C_Disc_D4.3mm_W1.9mm_P5.00mm",
+"descr": "C, Disc series, Radial, pin pitch=5.00mm, diameter*width=4.3*1.9mm^2, Capacitor, http://www.vishay.com/docs/45",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/C_Disc_D4.3mm_W1.9mm_P5.00mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C@C_Disc_D5.0mm_W2.5mm_P2.50mm",
+"lib_id": "Device:C",
+"footprint": "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm",
+"family": "capacitor",
+"name": "C / C_Disc_D5.0mm_W2.5mm_P2.50mm",
+"descr": "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/document",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/C_Disc_D5.0mm_W2.5mm_P2.50mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C@C_Disc_D5.0mm_W2.5mm_P5.00mm",
+"lib_id": "Device:C",
+"footprint": "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm",
+"family": "capacitor",
+"name": "C / C_Disc_D5.0mm_W2.5mm_P5.00mm",
+"descr": "C, Disc series, Radial, pin pitch=5.00mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/document",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/C_Disc_D5.0mm_W2.5mm_P5.00mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C_Polarized@CP_Radial_D4.0mm_P1.50mm",
+"lib_id": "Device:C_Polarized",
+"footprint": "Capacitor_THT:CP_Radial_D4.0mm_P1.50mm",
+"family": "electrolytic capacitor",
+"name": "C_Polarized / CP_Radial_D4.0mm_P1.50mm",
+"descr": "CP, Radial series, Radial, pin pitch=1.50mm, diameter=4mm, height=7mm, Electrolytic Capacitor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/CP_Radial_D4.0mm_P1.50mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C_Polarized@CP_Radial_D4.0mm_P2.00mm",
+"lib_id": "Device:C_Polarized",
+"footprint": "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm",
+"family": "electrolytic capacitor",
+"name": "C_Polarized / CP_Radial_D4.0mm_P2.00mm",
+"descr": "CP, Radial series, Radial, pin pitch=2.00mm, diameter=4mm, height=7mm, Electrolytic Capacitor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/CP_Radial_D4.0mm_P2.00mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C_Polarized@CP_Radial_D5.0mm_P2.00mm",
+"lib_id": "Device:C_Polarized",
+"footprint": "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm",
+"family": "electrolytic capacitor",
+"name": "C_Polarized / CP_Radial_D5.0mm_P2.00mm",
+"descr": "CP, Radial series, Radial, pin pitch=2.00mm, diameter=5mm, height=7mm, Electrolytic Capacitor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/CP_Radial_D5.0mm_P2.00mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C_Polarized@CP_Radial_D5.0mm_P2.50mm",
+"lib_id": "Device:C_Polarized",
+"footprint": "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm",
+"family": "electrolytic capacitor",
+"name": "C_Polarized / CP_Radial_D5.0mm_P2.50mm",
+"descr": "CP, Radial series, Radial, pin pitch=2.50mm, diameter=5mm, height=7mm, Electrolytic Capacitor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/CP_Radial_D5.0mm_P2.50mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C_Polarized@CP_Radial_D6.3mm_P2.50mm",
+"lib_id": "Device:C_Polarized",
+"footprint": "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm",
+"family": "electrolytic capacitor",
+"name": "C_Polarized / CP_Radial_D6.3mm_P2.50mm",
+"descr": "CP, Radial series, Radial, pin pitch=2.50mm, diameter=6.3mm, height=7mm, Electrolytic Capacitor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/CP_Radial_D6.3mm_P2.50mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C_Polarized@CP_Radial_D8.0mm_P2.50mm",
+"lib_id": "Device:C_Polarized",
+"footprint": "Capacitor_THT:CP_Radial_D8.0mm_P2.50mm",
+"family": "electrolytic capacitor",
+"name": "C_Polarized / CP_Radial_D8.0mm_P2.50mm",
+"descr": "CP, Radial series, Radial, pin pitch=2.50mm, diameter=8mm, height=10mm, Electrolytic Capacitor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/CP_Radial_D8.0mm_P2.50mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:C_Polarized@CP_Radial_D8.0mm_P3.50mm",
+"lib_id": "Device:C_Polarized",
+"footprint": "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm",
+"family": "electrolytic capacitor",
+"name": "C_Polarized / CP_Radial_D8.0mm_P3.50mm",
+"descr": "CP, Radial series, Radial, pin pitch=3.50mm, diameter=8mm, height=12mm, Electrolytic Capacitor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/CP_Radial_D8.0mm_P3.50mm.step",
+"spice": {
+"prefix": "C",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "capacitor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:LED@LED_D3.0mm",
+"lib_id": "Device:LED",
+"footprint": "LED_THT:LED_D3.0mm",
+"family": "LED",
+"name": "LED / LED_D3.0mm",
+"descr": "LED, diameter 3.0mm, 2 pins, generated by kicad-footprint-generator",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "LED_{colour}"
+},
+"spice_note": "LED, colour card from its value",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:LED@LED_D3.0mm_Clear",
+"lib_id": "Device:LED",
+"footprint": "LED_THT:LED_D3.0mm_Clear",
+"family": "LED",
+"name": "LED / LED_D3.0mm_Clear",
+"descr": "LED, diameter 3.0mm, 2 pins, clear, generated by kicad-footprint-generator",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm_Clear.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "LED_{colour}"
+},
+"spice_note": "LED, colour card from its value",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:LED@LED_D3.0mm_FlatTop",
+"lib_id": "Device:LED",
+"footprint": "LED_THT:LED_D3.0mm_FlatTop",
+"family": "LED",
+"name": "LED / LED_D3.0mm_FlatTop",
+"descr": "LED, Round, Flat Top, diameter 3.0mm, 2 pins, https://www.kingbright.com/attachments/file/psearch/000/00/00/L-",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm_FlatTop.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "LED_{colour}"
+},
+"spice_note": "LED, colour card from its value",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:LED@LED_D5.0mm",
+"lib_id": "Device:LED",
+"footprint": "LED_THT:LED_D5.0mm",
+"family": "LED",
+"name": "LED / LED_D5.0mm",
+"descr": "LED, diameter 5.0mm, 2 pins, http://cdn-reichelt.de/documents/datenblatt/A500/LL-504BC2E-009.pdf, generated by",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "LED_{colour}"
+},
+"spice_note": "LED, colour card from its value",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:LED@LED_D5.0mm_Clear",
+"lib_id": "Device:LED",
+"footprint": "LED_THT:LED_D5.0mm_Clear",
+"family": "LED",
+"name": "LED / LED_D5.0mm_Clear",
+"descr": "LED, diameter 5.0mm, 2 pins, clear, http://cdn-reichelt.de/documents/datenblatt/A500/LL-504BC2E-009.pdf, gener",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm_Clear.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "LED_{colour}"
+},
+"spice_note": "LED, colour card from its value",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:LED@LED_D5.0mm_FlatTop",
+"lib_id": "Device:LED",
+"footprint": "LED_THT:LED_D5.0mm_FlatTop",
+"family": "LED",
+"name": "LED / LED_D5.0mm_FlatTop",
+"descr": "LED, Round, Flat Top, diameter 5.0mm, 2 pins, https://www.kingbright.com/attachments/file/psearch/000/00/water",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm_FlatTop.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "LED_{colour}"
+},
+"spice_note": "LED, colour card from its value",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Thermistor_NTC@R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical",
+"lib_id": "Device:Thermistor_NTC",
+"footprint": "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical",
+"family": "thermistor",
+"name": "Thermistor_NTC / R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical",
+"descr": "Resistor, Axial_DIN0204 series, Axial, Vertical, pin pitch=2.54mm, 0.167W, length*diameter=3.6*1.6mm^2, http:/",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+]
+},
+"spice_note": "NTC thermistor at 25 C (its value, 10k)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor:DHT11@Aosong_DHT11_5.5x12.0_P2.54mm",
+"lib_id": "Sensor:DHT11",
+"footprint": "Sensor:Aosong_DHT11_5.5x12.0_P2.54mm",
+"family": "humidity sensor",
+"name": "DHT11 / Aosong_DHT11_5.5x12.0_P2.54mm",
+"descr": "Temperature and humidity module, http://akizukidenshi.com/download/ds/aosong/DHT11.pdf",
+"pins": {
+"1": "VDD",
+"2": "DATA",
+"3": "NC",
+"4": "GND"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Sensor.3dshapes/Aosong_DHT11_5.5x12.0_P2.54mm.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"4"
+],
+"role": "load",
+"ohms": 2200
+},
+"spice_note": "supply draw while measuring (about 1.5 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@Buzzer_12x9.5RM7.6",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:Buzzer_12x9.5RM7.6",
+"family": "buzzer",
+"name": "Buzzer / Buzzer_12x9.5RM7.6",
+"descr": "Generic Buzzer, D12mm height 9.5mm with RM7.6mm",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/Buzzer_12x9.5RM7.6.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@Buzzer_15x7.5RM7.6",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:Buzzer_15x7.5RM7.6",
+"family": "buzzer",
+"name": "Buzzer / Buzzer_15x7.5RM7.6",
+"descr": "Generic Buzzer, D15mm height 7.5mm with RM7.6mm",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/Buzzer_15x7.5RM7.6.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@Buzzer_CUI_CPT-9019S-SMT",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:Buzzer_CUI_CPT-9019S-SMT",
+"family": "buzzer",
+"name": "Buzzer / Buzzer_CUI_CPT-9019S-SMT",
+"descr": "https://www.cui.com/product/resource/cpt-9019s-smt.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@Buzzer_D14mm_H7mm_P10mm",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:Buzzer_D14mm_H7mm_P10mm",
+"family": "buzzer",
+"name": "Buzzer / Buzzer_D14mm_H7mm_P10mm",
+"descr": "Generic Buzzer, D14mm height 7mm with pitch 10mm",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@Buzzer_Mallory_AST1109MLTRQ",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:Buzzer_Mallory_AST1109MLTRQ",
+"family": "buzzer",
+"name": "Buzzer / Buzzer_Mallory_AST1109MLTRQ",
+"descr": "Mallory low-profile piezo buzzer, https://mspindy.com/spec-sheets/AST1109MLTRQ.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/Buzzer_Mallory_AST1109MLTRQ.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@Buzzer_Mallory_AST1240MLQ",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:Buzzer_Mallory_AST1240MLQ",
+"family": "buzzer",
+"name": "Buzzer / Buzzer_Mallory_AST1240MLQ",
+"descr": "Mallory low-profile piezo buzzer, https://www.mspindy.com/specifications/AST12140MLQ.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@Buzzer_Murata_PKLCS1212E",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:Buzzer_Murata_PKLCS1212E",
+"family": "buzzer",
+"name": "Buzzer / Buzzer_Murata_PKLCS1212E",
+"descr": "Murata Buzzer https://www.murata.com/~/media/webrenewal/support/library/catalog/products/sound/p37e.ashx",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@Buzzer_Murata_PKMCS0909E",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:Buzzer_Murata_PKMCS0909E",
+"family": "buzzer",
+"name": "Buzzer / Buzzer_Murata_PKMCS0909E",
+"descr": "Murata Buzzer http://www.murata.com/en-us/api/pdfdownloadapi?cate=&partno=PKMCS0909E4000-R1",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/Buzzer_Murata_PKMCS0909E.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@Buzzer_TDK_PS1240P02BT_D12.2mm_H6.5mm",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:Buzzer_TDK_PS1240P02BT_D12.2mm_H6.5mm",
+"family": "buzzer",
+"name": "Buzzer / Buzzer_TDK_PS1240P02BT_D12.2mm_H6.5mm",
+"descr": "Buzzer, D12.2mm height 6.5mm, https://product.tdk.com/info/en/catalog/datasheets/piezoelectronic_buzzer_ps_en.",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/Buzzer_TDK_PS1240P02BT_D12.2mm_H6.5mm.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@Indicator_PUI_AI-1440-TWT-24V-2-R",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:Indicator_PUI_AI-1440-TWT-24V-2-R",
+"family": "buzzer",
+"name": "Buzzer / Indicator_PUI_AI-1440-TWT-24V-2-R",
+"descr": "14mm Indicator, https://www.puiaudio.com/media/SpecSheet/AI-1440-TWT-24V-2-R.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/Indicator_PUI_AI-1440-TWT-24V-2-R.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_CUI_CMT-8504-100-SMT",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_CUI_CMT-8504-100-SMT",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_CUI_CMT-8504-100-SMT",
+"descr": "magnetic transducer buzzer, 5V, SPL of 100 dB at 10 cm, https://www.cuidevices.com/product/resource/pdf/cmt-85",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_CUI_CST-931RP-A",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_CUI_CST-931RP-A",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_CUI_CST-931RP-A",
+"descr": "CST-931RP-A, http://www.cui.com/product/resource/cst-931rp-a.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/MagneticBuzzer_CUI_CST-931RP-A.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_Kingstate_KCG0601",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_Kingstate_KCG0601",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_Kingstate_KCG0601",
+"descr": "Buzzer, Elektromagnetic Beeper, Summer,",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/MagneticBuzzer_Kingstate_KCG0601.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_Kobitone_254-EMB73-RO",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_Kobitone_254-EMB73-RO",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_Kobitone_254-EMB73-RO",
+"descr": "MagneticBuzzer_Kobitone_254-EMB73-RO https://www.mouser.es/datasheet/2/209/joytech_11092018_KT-400379-1501513.",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_Kobitone_254-EMB84Q-RO",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_Kobitone_254-EMB84Q-RO",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_Kobitone_254-EMB84Q-RO",
+"descr": "MagneticBuzzer Kobitone 254-EMB84Q-RO https://www.mouser.es/datasheet/2/209/KT-400385-1171904.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/MagneticBuzzer_Kobitone_254-EMB84Q-RO.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_PUI_AT-0927-TT-6-R",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_PUI_AT-0927-TT-6-R",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_PUI_AT-0927-TT-6-R",
+"descr": "Buzzer Magnetic 9mm AT-0927-TT-6-R, http://www.puiaudio.com/pdf/AT-0927-TT-6-R.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_PUI_SMT-1028-T-2-R",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_PUI_SMT-1028-T-2-R",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_PUI_SMT-1028-T-2-R",
+"descr": "Buzzer, 2830Hz, 3.6Vpp, 90dbA@10cm, Top sound port, 10x10x3,5mm, https://api.puiaudio.com/file/612539d9-c50b-4",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_ProSignal_ABI-009-RC",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_ProSignal_ABI-009-RC",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_ProSignal_ABI-009-RC",
+"descr": "Buzzer, Elektromagnetic Beeper, Summer, 6V-DC,",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/MagneticBuzzer_ProSignal_ABI-009-RC.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_ProSignal_ABI-010-RC",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_ProSignal_ABI-010-RC",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_ProSignal_ABI-010-RC",
+"descr": "Buzzer, Elektromagnetic Beeper, Summer, 12V-DC,",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/MagneticBuzzer_ProSignal_ABI-010-RC.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_ProSignal_ABT-410-RC",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_ProSignal_ABT-410-RC",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_ProSignal_ABT-410-RC",
+"descr": "Buzzer, Elektromagnetic Beeper, Summer, 1,5V-DC,",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/MagneticBuzzer_ProSignal_ABT-410-RC.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_ProjectsUnlimited_AI-4228-TWT-R",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_ProjectsUnlimited_AI-4228-TWT-R",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_ProjectsUnlimited_AI-4228-TWT-R",
+"descr": "Buzzer, Elektromagnetic Beeper, Summer, 3-28V-DC, https://www.kynix.com/uploadfiles/pdf/AI-4228-TWT-R.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/MagneticBuzzer_ProjectsUnlimited_AI-4228-TWT-R.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_HGP",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_HGP",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_HGP",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_HMB-06_HMB-12",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_HMB-06_HMB-12",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_HMB-06_HMB-12",
+"descr": "Buzzer, Elektromagnetic Beeper, Summer,",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/MagneticBuzzer_StarMicronics_HMB-06_HMB-12.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_HMB",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_HMB",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_HMB",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_QMB-105",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_QMB-105",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_QMB-105",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_QMB-108",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_QMB-108",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_QMB-108",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_QMB-111",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_QMB-111",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_QMB-111",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_QMB",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_QMB",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_QMB",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_QMX",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_QMX",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_QMX",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_RMX",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_RMX",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_RMX",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_TMB",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_TMB",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_TMB",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_TMX-F",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_TMX-F",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_TMX-F",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Buzzer@MagneticBuzzer_StarMicronics_TMX-H",
+"lib_id": "Device:Buzzer",
+"footprint": "Buzzer_Beeper:MagneticBuzzer_StarMicronics_TMX-H",
+"family": "buzzer",
+"name": "Buzzer / MagneticBuzzer_StarMicronics_TMX-H",
+"descr": "http://datasheet.octopart.com/HMB06-Star-Micronics-datasheet-514145.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "load",
+"ohms": 160
+},
+"spice_note": "buzzer as its rated load (5 V, ~30 mA)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R_Potentiometer_Trim@Potentiometer_Bourns_3296W_Vertical",
+"lib_id": "Device:R_Potentiometer_Trim",
+"footprint": "Potentiometer_THT:Potentiometer_Bourns_3296W_Vertical",
+"family": "trimmer potentiometer",
+"name": "R_Potentiometer_Trim / Potentiometer_Bourns_3296W_Vertical",
+"descr": "Potentiometer, vertical, Bourns 3296W, https://www.bourns.com/pdfs/3296.pdf",
+"pins": {
+"1": "1",
+"2": "2",
+"3": "3"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Potentiometer_THT.3dshapes/Potentiometer_Bourns_3296W_Vertical.step",
+"spice": {
+"prefix": "P",
+"pins": [
+"1",
+"2",
+"3"
+]
+},
+"spice_note": "two resistors meeting at the wiper (pin 2), set to mid travel",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R_Potentiometer_Trim@Potentiometer_Bourns_3386F_Vertical",
+"lib_id": "Device:R_Potentiometer_Trim",
+"footprint": "Potentiometer_THT:Potentiometer_Bourns_3386F_Vertical",
+"family": "trimmer potentiometer",
+"name": "R_Potentiometer_Trim / Potentiometer_Bourns_3386F_Vertical",
+"descr": "Potentiometer, vertical, Bourns 3386F, https://www.bourns.com/pdfs/3386.pdf",
+"pins": {
+"1": "1",
+"2": "2",
+"3": "3"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "P",
+"pins": [
+"1",
+"2",
+"3"
+]
+},
+"spice_note": "two resistors meeting at the wiper (pin 2), set to mid travel",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R_Potentiometer_Trim@Potentiometer_Bourns_3386P_Vertical",
+"lib_id": "Device:R_Potentiometer_Trim",
+"footprint": "Potentiometer_THT:Potentiometer_Bourns_3386P_Vertical",
+"family": "trimmer potentiometer",
+"name": "R_Potentiometer_Trim / Potentiometer_Bourns_3386P_Vertical",
+"descr": "Potentiometer, vertical, Bourns 3386P, https://www.bourns.com/pdfs/3386.pdf",
+"pins": {
+"1": "1",
+"2": "2",
+"3": "3"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "P",
+"pins": [
+"1",
+"2",
+"3"
+]
+},
+"spice_note": "two resistors meeting at the wiper (pin 2), set to mid travel",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:R_Potentiometer_Trim@Potentiometer_Piher_PT-10-V10_Vertical",
+"lib_id": "Device:R_Potentiometer_Trim",
+"footprint": "Potentiometer_THT:Potentiometer_Piher_PT-10-V10_Vertical",
+"family": "trimmer potentiometer",
+"name": "R_Potentiometer_Trim / Potentiometer_Piher_PT-10-V10_Vertical",
+"descr": "Potentiometer, vertical, Piher PT-10-V10, http://www.piher-nacesa.com/pdf/12-PT10v03.pdf",
+"pins": {
+"1": "1",
+"2": "2",
+"3": "3"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "P",
+"pins": [
+"1",
+"2",
+"3"
+]
+},
+"spice_note": "two resistors meeting at the wiper (pin 2), set to mid travel",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Switch:SW_Push@SW_PUSH_6mm",
+"lib_id": "Switch:SW_Push",
+"footprint": "Button_Switch_THT:SW_PUSH_6mm",
+"family": "push button",
+"name": "SW_Push / SW_PUSH_6mm",
+"descr": "Generic 6mm SW tactile push button",
+"pins": {
+"1": "1",
+"2": "2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Button_Switch_THT.3dshapes/SW_PUSH_6mm.step",
+"spice": {
+"prefix": "S",
+"pins": [
+"1",
+"2"
+],
+"role": "switch"
+},
+"spice_note": "switch (pressed / released scenarios)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Switch:SW_Push@SW_PUSH_6mm_H13mm",
+"lib_id": "Switch:SW_Push",
+"footprint": "Button_Switch_THT:SW_PUSH_6mm_H13mm",
+"family": "push button",
+"name": "SW_Push / SW_PUSH_6mm_H13mm",
+"descr": "tactile push button, 6x6mm e.g. PHAP33xx series, height=13mm",
+"pins": {
+"1": "1",
+"2": "2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Button_Switch_THT.3dshapes/SW_PUSH_6mm_H13mm.step",
+"spice": {
+"prefix": "S",
+"pins": [
+"1",
+"2"
+],
+"role": "switch"
+},
+"spice_note": "switch (pressed / released scenarios)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Switch:SW_Push@SW_PUSH_6mm_H5mm",
+"lib_id": "Switch:SW_Push",
+"footprint": "Button_Switch_THT:SW_PUSH_6mm_H5mm",
+"family": "push button",
+"name": "SW_Push / SW_PUSH_6mm_H5mm",
+"descr": "tactile push button, 6x6mm e.g. PHAP33xx series, height=5mm",
+"pins": {
+"1": "1",
+"2": "2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Button_Switch_THT.3dshapes/SW_PUSH_6mm_H5mm.step",
+"spice": {
+"prefix": "S",
+"pins": [
+"1",
+"2"
+],
+"role": "switch"
+},
+"spice_note": "switch (pressed / released scenarios)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Switch:SW_Push@SW_PUSH_6mm_H8mm",
+"lib_id": "Switch:SW_Push",
+"footprint": "Button_Switch_THT:SW_PUSH_6mm_H8mm",
+"family": "push button",
+"name": "SW_Push / SW_PUSH_6mm_H8mm",
+"descr": "tactile push button, 6x6mm e.g. PHAP33xx series, height=8mm",
+"pins": {
+"1": "1",
+"2": "2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Button_Switch_THT.3dshapes/SW_PUSH_6mm_H8mm.step",
+"spice": {
+"prefix": "S",
+"pins": [
+"1",
+"2"
+],
+"role": "switch"
+},
+"spice_note": "switch (pressed / released scenarios)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Battery_Cell@BatteryHolder_Keystone_1058_1x2032",
+"lib_id": "Device:Battery_Cell",
+"footprint": "Battery:BatteryHolder_Keystone_1058_1x2032",
+"family": "battery holder",
+"name": "Battery_Cell / BatteryHolder_Keystone_1058_1x2032",
+"descr": "http://www.keyelco.com/product-pdf.cfm?p=14028",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Battery.3dshapes/BatteryHolder_Keystone_1058_1x2032.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Battery_Cell@BatteryHolder_Keystone_3000_1x12mm",
+"lib_id": "Device:Battery_Cell",
+"footprint": "Battery:BatteryHolder_Keystone_3000_1x12mm",
+"family": "battery holder",
+"name": "Battery_Cell / BatteryHolder_Keystone_3000_1x12mm",
+"descr": "http://www.keyelco.com/product-pdf.cfm?p=777",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Battery.3dshapes/BatteryHolder_Keystone_3000_1x12mm.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Battery_Cell@BatteryHolder_Keystone_3002_1x2032",
+"lib_id": "Device:Battery_Cell",
+"footprint": "Battery:BatteryHolder_Keystone_3002_1x2032",
+"family": "battery holder",
+"name": "Battery_Cell / BatteryHolder_Keystone_3002_1x2032",
+"descr": "https://www.tme.eu/it/Document/a823211ec201a9e209042d155fe22d2b/KEYS2996.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Battery_Cell@BatteryHolder_Keystone_3034_1x20mm",
+"lib_id": "Device:Battery_Cell",
+"footprint": "Battery:BatteryHolder_Keystone_3034_1x20mm",
+"family": "battery holder",
+"name": "Battery_Cell / BatteryHolder_Keystone_3034_1x20mm",
+"descr": "Keystone 3034 SMD battery holder for 2020, 2025 and 2032 coincell batteries. http://www.keyelco.com/product-pd",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Battery.3dshapes/BatteryHolder_Keystone_3034_1x20mm.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Battery_Cell@BatteryHolder_LINX_BAT-HLD-012-SMT",
+"lib_id": "Device:Battery_Cell",
+"footprint": "Battery:BatteryHolder_LINX_BAT-HLD-012-SMT",
+"family": "battery holder",
+"name": "Battery_Cell / BatteryHolder_LINX_BAT-HLD-012-SMT",
+"descr": "SMT battery holder for CR1216/1220/1225, https://linxtechnologies.com/wp/wp-content/uploads/bat-hld-012-smt.pd",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Battery.3dshapes/BatteryHolder_LINX_BAT-HLD-012-SMT.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:Battery_Cell@BatteryHolder_MPD_BC2003_1x2032",
+"lib_id": "Device:Battery_Cell",
+"footprint": "Battery:BatteryHolder_MPD_BC2003_1x2032",
+"family": "battery holder",
+"name": "Battery_Cell / BatteryHolder_MPD_BC2003_1x2032",
+"descr": "http://www.memoryprotectiondevices.com/datasheets/BC-2003-datasheet.pdf",
+"pins": {
+"1": "+",
+"2": "-"
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x02@JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",
+"lib_id": "Connector_Generic:Conn_01x02",
+"footprint": "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",
+"family": "2-pin connector",
+"name": "Conn_01x02 / JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",
+"descr": "JST PH series connector, B2B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x02@JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal",
+"lib_id": "Connector_Generic:Conn_01x02",
+"footprint": "Connector_JST:JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal",
+"family": "2-pin connector",
+"name": "Conn_01x02 / JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal",
+"descr": "JST PH series connector, S2B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x02@JST_XH_B2B-XH-A_1x02_P2.50mm_Vertical",
+"lib_id": "Connector_Generic:Conn_01x02",
+"footprint": "Connector_JST:JST_XH_B2B-XH-A_1x02_P2.50mm_Vertical",
+"family": "2-pin connector",
+"name": "Conn_01x02 / JST_XH_B2B-XH-A_1x02_P2.50mm_Vertical",
+"descr": "JST XH series connector, B2B-XH-A (http://www.jst-mfg.com/product/pdf/eng/eXH.pdf)",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_XH_B2B-XH-A_1x02_P2.50mm_Vertical.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x02@JST_XH_S2B-XH-A_1x02_P2.50mm_Horizontal",
+"lib_id": "Connector_Generic:Conn_01x02",
+"footprint": "Connector_JST:JST_XH_S2B-XH-A_1x02_P2.50mm_Horizontal",
+"family": "2-pin connector",
+"name": "Conn_01x02 / JST_XH_S2B-XH-A_1x02_P2.50mm_Horizontal",
+"descr": "JST XH series connector, S2B-XH-A (http://www.jst-mfg.com/product/pdf/eng/eXH.pdf)",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_XH_S2B-XH-A_1x02_P2.50mm_Horizontal.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x02@PinHeader_1x02_P2.54mm_Horizontal",
+"lib_id": "Connector_Generic:Conn_01x02",
+"footprint": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Horizontal",
+"family": "2-pin connector",
+"name": "Conn_01x02 / PinHeader_1x02_P2.54mm_Horizontal",
+"descr": "Through hole angled pin header, 1x02, 2.54mm pitch, 6mm pin length, single row",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x02_P2.54mm_Horizontal.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x02@PinHeader_1x02_P2.54mm_Vertical",
+"lib_id": "Connector_Generic:Conn_01x02",
+"footprint": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+"family": "2-pin connector",
+"name": "Conn_01x02 / PinHeader_1x02_P2.54mm_Vertical",
+"descr": "Through hole straight pin header, 1x02, 2.54mm pitch, single row",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x02_P2.54mm_Vertical.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x02@TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",
+"lib_id": "Connector_Generic:Conn_01x02",
+"footprint": "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",
+"family": "2-pin connector",
+"name": "Conn_01x02 / TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",
+"descr": "Terminal Block Phoenix MKDS-1,5-2-5.08, 2 pins, pitch 5.08mm, size 10.2x9.8mm, drill diameter 1.3mm, pad diame",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/TerminalBlock_Phoenix.3dshapes/TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x02@TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal",
+"lib_id": "Connector_Generic:Conn_01x02",
+"footprint": "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal",
+"family": "2-pin connector",
+"name": "Conn_01x02 / TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal",
+"descr": "Terminal Block Phoenix MKDS-1,5-2, 2 pins, pitch 5mm, size 10x9.8mm, drill diameter 1.3mm, pad diameter 2.6mm,",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/TerminalBlock_Phoenix.3dshapes/TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x03@JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical",
+"lib_id": "Connector_Generic:Conn_01x03",
+"footprint": "Connector_JST:JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical",
+"family": "3-pin connector",
+"name": "Conn_01x03 / JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical",
+"descr": "JST PH series connector, B3B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2",
+"3": "Pin_3"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical.step",
+"spice": {
+"prefix": "X",
+"pins": [
+"1",
+"2",
+"3"
+],
+"role": "passive"
+},
+"spice_note": "signal connector (not driven in simulation)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x03@JST_PH_S3B-PH-K_1x03_P2.00mm_Horizontal",
+"lib_id": "Connector_Generic:Conn_01x03",
+"footprint": "Connector_JST:JST_PH_S3B-PH-K_1x03_P2.00mm_Horizontal",
+"family": "3-pin connector",
+"name": "Conn_01x03 / JST_PH_S3B-PH-K_1x03_P2.00mm_Horizontal",
+"descr": "JST PH series connector, S3B-PH-K (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2",
+"3": "Pin_3"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_PH_S3B-PH-K_1x03_P2.00mm_Horizontal.step",
+"spice": {
+"prefix": "X",
+"pins": [
+"1",
+"2",
+"3"
+],
+"role": "passive"
+},
+"spice_note": "signal connector (not driven in simulation)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x03@JST_XH_B3B-XH-A_1x03_P2.50mm_Vertical",
+"lib_id": "Connector_Generic:Conn_01x03",
+"footprint": "Connector_JST:JST_XH_B3B-XH-A_1x03_P2.50mm_Vertical",
+"family": "3-pin connector",
+"name": "Conn_01x03 / JST_XH_B3B-XH-A_1x03_P2.50mm_Vertical",
+"descr": "JST XH series connector, B3B-XH-A (http://www.jst-mfg.com/product/pdf/eng/eXH.pdf)",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2",
+"3": "Pin_3"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_XH_B3B-XH-A_1x03_P2.50mm_Vertical.step",
+"spice": {
+"prefix": "X",
+"pins": [
+"1",
+"2",
+"3"
+],
+"role": "passive"
+},
+"spice_note": "signal connector (not driven in simulation)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x03@JST_XH_S3B-XH-A_1x03_P2.50mm_Horizontal",
+"lib_id": "Connector_Generic:Conn_01x03",
+"footprint": "Connector_JST:JST_XH_S3B-XH-A_1x03_P2.50mm_Horizontal",
+"family": "3-pin connector",
+"name": "Conn_01x03 / JST_XH_S3B-XH-A_1x03_P2.50mm_Horizontal",
+"descr": "JST XH series connector, S3B-XH-A (http://www.jst-mfg.com/product/pdf/eng/eXH.pdf)",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2",
+"3": "Pin_3"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_XH_S3B-XH-A_1x03_P2.50mm_Horizontal.step",
+"spice": {
+"prefix": "X",
+"pins": [
+"1",
+"2",
+"3"
+],
+"role": "passive"
+},
+"spice_note": "signal connector (not driven in simulation)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x03@PinHeader_1x03_P2.54mm_Vertical",
+"lib_id": "Connector_Generic:Conn_01x03",
+"footprint": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+"family": "3-pin connector",
+"name": "Conn_01x03 / PinHeader_1x03_P2.54mm_Vertical",
+"descr": "Through hole straight pin header, 1x03, 2.54mm pitch, single row",
+"pins": {
+"1": "Pin_1",
+"2": "Pin_2",
+"3": "Pin_3"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x03_P2.54mm_Vertical.step",
+"spice": {
+"prefix": "X",
+"pins": [
+"1",
+"2",
+"3"
+],
+"role": "passive"
+},
+"spice_note": "signal connector (not driven in simulation)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector:USB_C_Receptacle_PowerOnly_6P@USB_C_Receptacle_GCT_USB4125-xx-x-0190_6P_TopMnt_Horizontal",
+"lib_id": "Connector:USB_C_Receptacle_PowerOnly_6P",
+"footprint": "Connector_USB:USB_C_Receptacle_GCT_USB4125-xx-x-0190_6P_TopMnt_Horizontal",
+"family": "USB-C power input",
+"name": "USB_C_Receptacle_PowerOnly_6P / USB_C_Receptacle_GCT_USB4125-xx-x-0190_6P_TopMnt_Horizontal",
+"descr": "USB Type C Receptacle, GCT, power-only, 6P, top mounted, horizontal, 3A, 1.9mm stake: https://gct.co/files/dra",
+"pins": {
+"A5": "CC1",
+"A9": "VBUS",
+"A12": "GND",
+"B5": "CC2",
+"B9": "VBUS",
+"B12": "GND",
+"SH": "SHIELD"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_USB.3dshapes/USB_C_Receptacle_GCT_USB4125-xx-x-0190_6P_TopMnt_Horizontal.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"A9",
+"A12"
+],
+"role": "power_in"
+},
+"spice_note": "5 V from VBUS",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Device:LED_RKGB@LED_D5.0mm-4_RGB_Wide_Pins",
+"lib_id": "Device:LED_RKGB",
+"footprint": "LED_THT:LED_D5.0mm-4_RGB_Wide_Pins",
+"family": "RGB LED",
+"name": "LED_RKGB / LED_D5.0mm-4_RGB_Wide_Pins",
+"descr": "LED, diameter 5.0mm, 4 pins, WP154A4, https://www.kingbright.com/attachments/file/psearch/000/00/00/L-154A4SUR",
+"pins": {
+"1": "RA",
+"2": "K",
+"3": "GA",
+"4": "BA"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm-4_RGB_Wide_Pins.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"1",
+"3",
+"4",
+"2"
+],
+"role": "rgb"
+},
+"spice_note": "RGB LED: red, green and blue diodes on one cathode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:MCU_Module:RaspberryPi_Pico@RaspberryPi_Pico_Common_THT",
+"lib_id": "MCU_Module:RaspberryPi_Pico",
+"footprint": "Module:RaspberryPi_Pico_Common_THT",
+"family": "USB microcontroller",
+"name": "RaspberryPi_Pico / RaspberryPi_Pico_Common_THT",
+"descr": "Raspberry Pi Pico common (Pico & Pico W) through-hole footprint, supports Raspberry Pi Pico 2, default sockete",
+"pins": {
+"1": "GPIO0",
+"2": "GPIO1",
+"3": "GND",
+"4": "GPIO2",
+"5": "GPIO3",
+"6": "GPIO4",
+"7": "GPIO5",
+"8": "GND",
+"9": "GPIO6",
+"10": "GPIO7",
+"11": "GPIO8",
+"12": "GPIO9",
+"13": "GND",
+"14": "GPIO10",
+"15": "GPIO11",
+"16": "GPIO12",
+"17": "GPIO13",
+"18": "GND",
+"19": "GPIO14",
+"20": "GPIO15",
+"21": "GPIO16",
+"22": "GPIO17",
+"23": "GND",
+"24": "GPIO18",
+"25": "GPIO19",
+"26": "GPIO20",
+"27": "GPIO21",
+"28": "GND",
+"29": "GPIO22",
+"30": "RUN",
+"31": "GPIO26_ADC0",
+"32": "GPIO27_ADC1",
+"33": "AGND",
+"34": "GPIO28_ADC2",
+"35": "ADC_VREF",
+"36": "3V3",
+"37": "3V3_EN",
+"38": "GND",
+"39": "VSYS",
+"40": "VBUS"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Module.3dshapes/RaspberryPi_Pico_H.step",
+"spice": {
+"prefix": "U",
+"pins": [
+"40",
+"39",
+"36"
+],
+"role": "mcu",
+"gnd": [
+"3",
+"8",
+"13",
+"18",
+"23",
+"28",
+"33",
+"38"
+],
+"gpio": {
+"1": "GPIO0",
+"2": "GPIO1",
+"4": "GPIO2",
+"5": "GPIO3",
+"6": "GPIO4",
+"7": "GPIO5",
+"9": "GPIO6",
+"10": "GPIO7",
+"11": "GPIO8",
+"12": "GPIO9",
+"14": "GPIO10",
+"15": "GPIO11",
+"16": "GPIO12",
+"17": "GPIO13",
+"19": "GPIO14",
+"20": "GPIO15",
+"21": "GPIO16",
+"22": "GPIO17",
+"24": "GPIO18",
+"25": "GPIO19",
+"26": "GPIO20",
+"27": "GPIO21",
+"29": "GPIO22",
+"31": "GPIO26_ADC0",
+"32": "GPIO27_ADC1",
+"34": "GPIO28_ADC2"
+},
+"v_io": 3.3,
+"r_out": 50
+},
+"spice_note": "USB power in; GPIO outputs driven by the tested firmware (3.3 V through ~50 ohm)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:MCU_Module:RaspberryPi_Pico_W@RaspberryPi_Pico_Common_THT",
+"lib_id": "MCU_Module:RaspberryPi_Pico_W",
+"footprint": "Module:RaspberryPi_Pico_Common_THT",
+"family": "USB microcontroller",
+"name": "RaspberryPi_Pico_W / RaspberryPi_Pico_Common_THT",
+"descr": "Raspberry Pi Pico common (Pico & Pico W) through-hole footprint, supports Raspberry Pi Pico 2, default sockete",
+"pins": {
+"1": "GPIO0",
+"2": "GPIO1",
+"3": "GND",
+"4": "GPIO2",
+"5": "GPIO3",
+"6": "GPIO4",
+"7": "GPIO5",
+"8": "GND",
+"9": "GPIO6",
+"10": "GPIO7",
+"11": "GPIO8",
+"12": "GPIO9",
+"13": "GND",
+"14": "GPIO10",
+"15": "GPIO11",
+"16": "GPIO12",
+"17": "GPIO13",
+"18": "GND",
+"19": "GPIO14",
+"20": "GPIO15",
+"21": "GPIO16",
+"22": "GPIO17",
+"23": "GND",
+"24": "GPIO18",
+"25": "GPIO19",
+"26": "GPIO20",
+"27": "GPIO21",
+"28": "GND",
+"29": "GPIO22",
+"30": "RUN",
+"31": "GPIO26_ADC0",
+"32": "GPIO27_ADC1",
+"33": "AGND",
+"34": "GPIO28_ADC2",
+"35": "ADC_VREF",
+"36": "3V3",
+"37": "3V3_EN",
+"38": "GND",
+"39": "VSYS",
+"40": "VBUS"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Module.3dshapes/RaspberryPi_Pico_H.step",
+"spice": {
+"prefix": "U",
+"pins": [
+"40",
+"39",
+"36"
+],
+"role": "mcu",
+"gnd": [
+"3",
+"8",
+"13",
+"18",
+"23",
+"28",
+"33",
+"38"
+],
+"gpio": {
+"1": "GPIO0",
+"2": "GPIO1",
+"4": "GPIO2",
+"5": "GPIO3",
+"6": "GPIO4",
+"7": "GPIO5",
+"9": "GPIO6",
+"10": "GPIO7",
+"11": "GPIO8",
+"12": "GPIO9",
+"14": "GPIO10",
+"15": "GPIO11",
+"16": "GPIO12",
+"17": "GPIO13",
+"19": "GPIO14",
+"20": "GPIO15",
+"21": "GPIO16",
+"22": "GPIO17",
+"24": "GPIO18",
+"25": "GPIO19",
+"26": "GPIO20",
+"27": "GPIO21",
+"29": "GPIO22",
+"31": "GPIO26_ADC0",
+"32": "GPIO27_ADC1",
+"34": "GPIO28_ADC2"
+},
+"v_io": 3.3,
+"r_out": 50
+},
+"spice_note": "USB power in; GPIO outputs driven by the tested firmware (3.3 V through ~50 ohm)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:74xx:74LS126@DIP-14_W7.62mm",
+"lib_id": "74xx:74LS126",
+"footprint": "Package_DIP:DIP-14_W7.62mm",
+"family": "tri-state buffer",
+"name": "74LS126 / DIP-14_W7.62mm",
+"descr": "14-lead though-hole mounted DIP package, row spacing 7.62mm (300 mils)",
+"pins": {
+"1": "",
+"2": "",
+"3": "",
+"4": "",
+"5": "",
+"6": "",
+"8": "",
+"9": "",
+"10": "",
+"11": "",
+"12": "",
+"13": "",
+"7": "GND",
+"14": "VCC"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-14_W7.62mm.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"14",
+"7"
+],
+"role": "load",
+"ohms": 40000
+},
+"spice_note": "supply draw only (logic covered by the firmware test)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:AMS1117-3.3@SOT-223-3_TabPin2",
+"lib_id": "Regulator_Linear:AMS1117-3.3",
+"footprint": "Package_TO_SOT_SMD:SOT-223-3_TabPin2",
+"family": "LDO regulator",
+"name": "AMS1117-3.3 / SOT-223-3_TabPin2",
+"descr": "module CMS SOT223 4 pins",
+"pins": {
+"1": "GND",
+"2": "VO",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-223.step",
+"spice": {
+"prefix": "U",
+"pins": [
+"3",
+"2",
+"1"
+],
+"role": "ldo",
+"vout": 3.3,
+"dropout": 1.1,
+"iq_ohms": 1000
+},
+"spice_note": "3.3 V out, 1.1 V dropout, load current drawn from the input plus about 5 mA quiescent",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector:USB_C_Receptacle_USB2.0_16P@USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal",
+"lib_id": "Connector:USB_C_Receptacle_USB2.0_16P",
+"footprint": "Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal",
+"family": "USB-C data connector",
+"name": "USB_C_Receptacle_USB2.0_16P / USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal",
+"descr": "USB 2.0 Type C Receptacle, GCT, 16P, top mounted, horizontal, 5A: https://gct.co/files/drawings/usb4105.pdf",
+"pins": {
+"A1": "GND",
+"A4": "VBUS",
+"A5": "CC1",
+"A6": "D+",
+"A7": "D-",
+"A8": "SBU1",
+"A9": "VBUS",
+"A12": "GND",
+"B1": "GND",
+"B4": "VBUS",
+"B5": "CC2",
+"B6": "D+",
+"B7": "D-",
+"B8": "SBU2",
+"B9": "VBUS",
+"B12": "GND",
+"SH": "SHIELD"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_USB.3dshapes/USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"A4",
+"A1"
+],
+"role": "power_in"
+},
+"spice_note": "5 V from VBUS (D+/D- not simulated)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector:Barrel_Jack@BarrelJack_CUI_PJ-102AH_Horizontal",
+"lib_id": "Connector:Barrel_Jack",
+"footprint": "Connector_BarrelJack:BarrelJack_CUI_PJ-102AH_Horizontal",
+"family": "DC barrel jack",
+"name": "Barrel_Jack / BarrelJack_CUI_PJ-102AH_Horizontal",
+"descr": "Thin-pin DC Barrel Jack, https://cdn-shop.adafruit.com/datasheets/21mmdcjackDatasheet.pdf",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": null,
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Connector:Barrel_Jack@BarrelJack_Horizontal",
+"lib_id": "Connector:Barrel_Jack",
+"footprint": "Connector_BarrelJack:BarrelJack_Horizontal",
+"family": "DC barrel jack",
+"name": "Barrel_Jack / BarrelJack_Horizontal",
+"descr": "DC Barrel Jack",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_BarrelJack.3dshapes/BarrelJack_Horizontal.step",
+"spice": {
+"prefix": "V",
+"pins": [
+"1",
+"2"
+],
+"role": "power_in"
+},
+"spice_note": "power in (pin 1 +) or a load",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:2N3904@TO-92_Inline",
+"lib_id": "Transistor_BJT:2N3904",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "2N3904 / TO-92_Inline",
+"descr": "0.2A Ic, 40V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "B",
+"3": "C"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": {
+"prefix": "Q",
+"pins": [
+"3",
+"2",
+"1"
+],
+"model": "2N3904"
+},
+"spice_note": "2N3904 published card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:2N3905@TO-92_Inline",
+"lib_id": "Transistor_BJT:2N3905",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "2N3905 / TO-92_Inline",
+"descr": "-0.2A Ic, -40V Vce, Small Signal PNP Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "B",
+"3": "C"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for 2N3905",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:2N3906@TO-92_Inline",
+"lib_id": "Transistor_BJT:2N3906",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "2N3906 / TO-92_Inline",
+"descr": "-0.2A Ic, -40V Vce, Small Signal PNP Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "B",
+"3": "C"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": {
+"prefix": "Q",
+"pins": [
+"3",
+"2",
+"1"
+],
+"model": "2N3906"
+},
+"spice_note": "2N3906 published card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:2SA1015@TO-92_Inline",
+"lib_id": "Transistor_BJT:2SA1015",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "2SA1015 / TO-92_Inline",
+"descr": "-0.15A Ic, -50V Vce, Low Noise Audio PNP Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "C",
+"3": "B"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for 2SA1015",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:2SC1815@TO-92_Inline",
+"lib_id": "Transistor_BJT:2SC1815",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "2SC1815 / TO-92_Inline",
+"descr": "0.15A Ic, 50V Vce, Low Noise Audio NPN Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "C",
+"3": "B"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for 2SC1815",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:2SC1941@TO-92_Inline",
+"lib_id": "Transistor_BJT:2SC1941",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "2SC1941 / TO-92_Inline",
+"descr": "50mA Ic, 160V Vce, Audio High Voltage NPN Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "C",
+"3": "B"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for 2SC1941",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC212@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC212",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC212 / TO-92_Inline",
+"descr": "0.3A Ic, 50V Vce, PNP Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC212",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC237@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC237",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC237 / TO-92_Inline",
+"descr": "100mA Ic, 50V Vce, Epitaxial Silicon NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC237",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC240@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC240",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC240 / TO-92_Inline",
+"descr": "50mA Ic, 40V Vce, RF Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "E",
+"3": "B"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC240",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC307@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC307",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC307 / TO-92_Inline",
+"descr": "100mA Ic, 45V Vce, Epitaxial Silicon PNP Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC307",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC327@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC327",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC327 / TO-92_Inline",
+"descr": "0.8A Ic, 45V Vce, PNP Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC327",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC328@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC328",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC328 / TO-92_Inline",
+"descr": "0.8A Ic, 25V Vce, PNP Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC328",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC337@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC337",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC337 / TO-92_Inline",
+"descr": "0.8A Ic, 45V Vce, NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC337",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC338@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC338",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC338 / TO-92_Inline",
+"descr": "0.8A Ic, 25V Vce, NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC338",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC413@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC413",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC413 / TO-92_Inline",
+"descr": "0.1A Ic, 30V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC413",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC413B@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC413B",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC413B / TO-92_Inline",
+"descr": "0.1A Ic, 30V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC413B",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC413C@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC413C",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC413C / TO-92_Inline",
+"descr": "0.1A Ic, 30V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC413C",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC414@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC414",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC414 / TO-92_Inline",
+"descr": "0.1A Ic, 45V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC414",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC414B@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC414B",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC414B / TO-92_Inline",
+"descr": "0.1A Ic, 45V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC414B",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC414C@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC414C",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC414C / TO-92_Inline",
+"descr": "0.1A Ic, 45V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC414C",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC516@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC516",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC516 / TO-92_Inline",
+"descr": "1A Ic, 30V Vce, Darlington PNP Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC516",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC517@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC517",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC517 / TO-92_Inline",
+"descr": "1A Ic, 30V Vce, Darlington NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC517",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC546@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC546",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC546 / TO-92_Inline",
+"descr": "0.1A Ic, 65V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC546",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC547@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC547",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC547 / TO-92_Inline",
+"descr": "0.1A Ic, 45V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC547",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC548@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC548",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC548 / TO-92_Inline",
+"descr": "0.1A Ic, 30V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC548",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC549@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC549",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC549 / TO-92_Inline",
+"descr": "0.1A Ic, 30V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC549",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC550@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC550",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC550 / TO-92_Inline",
+"descr": "0.1A Ic, 45V Vce, Small Signal NPN Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC550",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC556@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC556",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC556 / TO-92_Inline",
+"descr": "0.1A Ic, 65V Vce, PNP Small Signal Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC556",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC557@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC557",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC557 / TO-92_Inline",
+"descr": "0.1A Ic, 45V Vce, PNP Small Signal Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC557",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC558@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC558",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC558 / TO-92_Inline",
+"descr": "0.1A Ic, 30V Vce, PNP Small Signal Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC558",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC559@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC559",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC559 / TO-92_Inline",
+"descr": "0.1A Ic, 30V Vce, PNP Small Signal Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC559",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC560@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC560",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC560 / TO-92_Inline",
+"descr": "0.1A Ic, 45V Vce, PNP Small Signal Transistor, TO-92",
+"pins": {
+"1": "C",
+"2": "B",
+"3": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC560",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BC636@TO-92_Inline",
+"lib_id": "Transistor_BJT:BC636",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BC636 / TO-92_Inline",
+"descr": "1A Ic, 45V Vce, PNP Medium Power Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "C",
+"3": "B"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BC636",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:BF199@TO-92_Inline",
+"lib_id": "Transistor_BJT:BF199",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "BF199 / TO-92_Inline",
+"descr": "50mA Ic, 25V Vce, NPN Radio Frequency Transistor, TO-220",
+"pins": {
+"1": "C",
+"2": "E",
+"3": "B"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for BF199",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:MPSA42@TO-92_Inline",
+"lib_id": "Transistor_BJT:MPSA42",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "MPSA42 / TO-92_Inline",
+"descr": "0.5A Ic, 300V Vce, NPN High Voltage Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "B",
+"3": "C"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for MPSA42",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:MPSA92@TO-92_Inline",
+"lib_id": "Transistor_BJT:MPSA92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "MPSA92 / TO-92_Inline",
+"descr": "0.5A Ic, 300V Vce, PNP High Voltage Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "B",
+"3": "C"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for MPSA92",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:PN2222A@TO-92_Inline",
+"lib_id": "Transistor_BJT:PN2222A",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "PN2222A / TO-92_Inline",
+"descr": "1A Ic, 40V Vce, NPN Transistor, General Purpose Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "B",
+"3": "C"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": {
+"prefix": "Q",
+"pins": [
+"3",
+"2",
+"1"
+],
+"model": "2N2222"
+},
+"spice_note": "2N2222 published card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:S8050@TO-92_Inline",
+"lib_id": "Transistor_BJT:S8050",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "S8050 / TO-92_Inline",
+"descr": "0.7A Ic, 20V Vce, Low Voltage High Current NPN Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "B",
+"3": "C"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for S8050",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_BJT:S8550@TO-92_Inline",
+"lib_id": "Transistor_BJT:S8550",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "BJT transistor",
+"name": "S8550 / TO-92_Inline",
+"descr": "0.7A Ic, 20V Vce, Low Voltage High Current PNP Transistor, TO-92",
+"pins": {
+"1": "E",
+"2": "B",
+"3": "C"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE card for S8550",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:2N3819@TO-92",
+"lib_id": "Transistor_FET:2N3819",
+"footprint": "Package_TO_SOT_THT:TO-92",
+"family": "MOSFET",
+"name": "2N3819 / TO-92",
+"descr": "20mA Id, 25V Vgs, N-Channel JFET Transistor, TO-92",
+"pins": {
+"1": "D",
+"2": "G",
+"3": "S"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:2N7000@TO-92_Inline",
+"lib_id": "Transistor_FET:2N7000",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "2N7000 / TO-92_Inline",
+"descr": "0.2A Id, 200V Vds, N-Channel MOSFET, 2.6V Logic Level, TO-92",
+"pins": {
+"1": "S",
+"2": "G",
+"3": "D"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:BF244A@TO-92_Inline",
+"lib_id": "Transistor_FET:BF244A",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "BF244A / TO-92_Inline",
+"descr": "50mA Id, 30V Vgs, N-Channel FET Transistor, TO-92",
+"pins": {
+"1": "D",
+"2": "G",
+"3": "S"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:BF244B@TO-92_Inline",
+"lib_id": "Transistor_FET:BF244B",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "BF244B / TO-92_Inline",
+"descr": "50mA Id, 30V Vgs, N-Channel FET Transistor, TO-92",
+"pins": {
+"1": "D",
+"2": "G",
+"3": "S"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:BF244C@TO-92_Inline",
+"lib_id": "Transistor_FET:BF244C",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "BF244C / TO-92_Inline",
+"descr": "10mA Id, 30V Vgs, N-Channel FET Transistor, TO-92",
+"pins": {
+"1": "D",
+"2": "G",
+"3": "S"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:BF245A@TO-92_Inline",
+"lib_id": "Transistor_FET:BF245A",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "BF245A / TO-92_Inline",
+"descr": "50mA Id, 30V Vgs, N-Channel FET Transistor, TO-92",
+"pins": {
+"1": "G",
+"2": "S",
+"3": "D"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:BF245B@TO-92_Inline",
+"lib_id": "Transistor_FET:BF245B",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "BF245B / TO-92_Inline",
+"descr": "10mA Id, 30V Vgs, N-Channel FET Transistor, TO-92",
+"pins": {
+"1": "G",
+"2": "S",
+"3": "D"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:BF245C@TO-92_Inline",
+"lib_id": "Transistor_FET:BF245C",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "BF245C / TO-92_Inline",
+"descr": "10mA Id, 30V Vgs, N-Channel FET Transistor, TO-92",
+"pins": {
+"1": "G",
+"2": "S",
+"3": "D"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:BS107@TO-92_Inline",
+"lib_id": "Transistor_FET:BS107",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "BS107 / TO-92_Inline",
+"descr": "0.25A Id, 200V Vds, N-Channel MOSFET, TO-92",
+"pins": {
+"1": "D",
+"2": "G",
+"3": "S"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:BS108@TO-92_Inline",
+"lib_id": "Transistor_FET:BS108",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "BS108 / TO-92_Inline",
+"descr": "0.25A Id, 200V Vds, N-Channel MOSFET, TO-92",
+"pins": {
+"1": "D",
+"2": "G",
+"3": "S"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:BS170@TO-92_Inline",
+"lib_id": "Transistor_FET:BS170",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "BS170 / TO-92_Inline",
+"descr": "0.5A Id, 60V Vds, N-Channel MOSFET, TO-92",
+"pins": {
+"1": "D",
+"2": "G",
+"3": "S"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:BS250@TO-92_Inline",
+"lib_id": "Transistor_FET:BS250",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "MOSFET",
+"name": "BS250 / TO-92_Inline",
+"descr": "-0.18A Id, -45V Vds, P-Channel MOSFET, TO-92",
+"pins": {
+"1": "D",
+"2": "G",
+"3": "S"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:TP0610L@TO-92L_Inline",
+"lib_id": "Transistor_FET:TP0610L",
+"footprint": "Package_TO_SOT_THT:TO-92L_Inline",
+"family": "MOSFET",
+"name": "TP0610L / TO-92L_Inline",
+"descr": "-0.18A Id, -60V Vds, P-Channel MOSFET, TO-92",
+"pins": {
+"1": "S",
+"2": "G",
+"3": "D"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92L_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Transistor_FET:VP0610L@TO-92L_Inline",
+"lib_id": "Transistor_FET:VP0610L",
+"footprint": "Package_TO_SOT_THT:TO-92L_Inline",
+"family": "MOSFET",
+"name": "VP0610L / TO-92L_Inline",
+"descr": "-0.18A Id, -60V Vds, P-Channel MOSFET, TO-92",
+"pins": {
+"1": "S",
+"2": "G",
+"3": "D"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92L_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a MOSFET",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4001@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4001",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4001 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "50V 1A General Purpose Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N4007"
+},
+"spice_note": "D1N4007 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4002@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4002",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4002 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "100V 1A General Purpose Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N4007"
+},
+"spice_note": "D1N4007 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4003@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4003",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4003 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "200V 1A General Purpose Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N4007"
+},
+"spice_note": "D1N4007 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4004@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4004",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4004 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "400V 1A General Purpose Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N4007"
+},
+"spice_note": "D1N4007 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4005@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4005",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4005 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "600V 1A General Purpose Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N4007"
+},
+"spice_note": "D1N4007 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4006@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4006",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4006 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "800V 1A General Purpose Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N4007"
+},
+"spice_note": "D1N4007 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4007@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4007",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4007 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "1000V 1A General Purpose Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N4007"
+},
+"spice_note": "D1N4007 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4148@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:1N4148",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "1N4148 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "100V 0.15A standard switching diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N4148"
+},
+"spice_note": "D1N4148 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4149@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:1N4149",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "1N4149 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "75V Vrm 0.5A Ifsm standard switching diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4151@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:1N4151",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "1N4151 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "75V 0.5A standard switching diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4448@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:1N4448",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "1N4448 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "100V 0.15A High-speed standard diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N47xxA@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N47xxA",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N47xxA / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "1300mW Silicon planar power Zener diodes, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4933@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4933",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4933 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "Fast Switching Plastic Rectifier, VRRM 50V, IF(AV) 1.0A, trr 200ns, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4934@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4934",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4934 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "Fast Switching Plastic Rectifier, VRRM 100V, IF(AV) 1.0A, trr 200ns, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4935@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4935",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4935 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "Fast Switching Plastic Rectifier, VRRM 200V, IF(AV) 1.0A, trr 200ns, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4936@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4936",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4936 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "Fast Switching Plastic Rectifier, VRRM 400V, IF(AV) 1.0A, trr 200ns, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N4937@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N4937",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N4937 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "Fast Switching Plastic Rectifier, VRRM 600V, IF(AV) 1.0A, trr 200ns, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N5711@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:1N5711",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "1N5711 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "70V 33mA Schottky diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N5712@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:1N5712",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "1N5712 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "20V 75mA Schottky diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N5817@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N5817",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N5817 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "20V 1A Schottky Barrier Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N5819"
+},
+"spice_note": "D1N5819 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N5818@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N5818",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N5818 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "30V 1A Schottky Barrier Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N5819"
+},
+"spice_note": "D1N5819 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N5819@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:1N5819",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "1N5819 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "40V 1A Schottky Barrier Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N5819"
+},
+"spice_note": "D1N5819 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N6263@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:1N6263",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "1N6263 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "60V 15mA Schottky diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N6857@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:1N6857",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "1N6857 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "20V 150mA Schottky diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N6858@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:1N6858",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "1N6858 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "70V 75mA Schottky diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:1N914@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:1N914",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "1N914 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "100V 0.3A Small Signal Fast Switching Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": {
+"prefix": "D",
+"pins": [
+"2",
+"1"
+],
+"model": "D1N4148"
+},
+"spice_note": "D1N4148 card",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BA157@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:BA157",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "BA157 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "400V 1A Fast recovery Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BA158@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:BA158",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "BA158 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "600V 1A Fast recovery Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BA159@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:BA159",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "BA159 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "1000V 1A Fast recovery Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BA243@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BA243",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BA243 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "20V 0.1A silicon planar diode for VHF tuner band selection, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BA244@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BA244",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BA244 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "20V 0.1A silicon planar diode for VHF tuner band selection, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BA282@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BA282",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BA282 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "35V 0.1A Band Switching Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BA283@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BA283",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BA283 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "35V 0.1A Band Switching Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAT41@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAT41",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAT41 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "100V 0.1A Small Signal Schottky Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAT42@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAT42",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAT42 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "30V 0.2A Small Signal Schottky Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAT43@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAT43",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAT43 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "30V 0.2A Small Signal Schottky Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAT46@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAT46",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAT46 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "100V 0.15A Small Signal Schottky Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAT48RL@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAT48RL",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAT48RL / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "40V 0.35A Small Signal Schottky Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAT85@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAT85",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAT85 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "30V 0.2A Schottky barrier single diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAT86@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAT86",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAT86 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "50V 0.2A Small Signal Schottky Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAT86S@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAT86S",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAT86S / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "50V 0.2A Small Signal Schottky Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAV17@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAV17",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAV17 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "20V 0.25A Small Signal Switching Diode, High Voltage, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAV18@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAV18",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAV18 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "50V 0.25A Small Signal Switching Diode, High Voltage, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAV19@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAV19",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAV19 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "100V 0.25A Small Signal Switching Diode, High Voltage, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAV20@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAV20",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAV20 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "150V 0.25A Small Signal Switching Diode, High Voltage, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAV21@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAV21",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAV21 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "200V 0.25A Small Signal Switching Diode, High Voltage, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAW75@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAW75",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAW75 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "25V 0.45A Small Signal Switching Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAW76@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAW76",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAW76 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "50V 0.3A Small Signal Fast Switching Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:BAY93@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:BAY93",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "BAY93 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "20V 0.115A Very Fast Switching Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:DB3@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:DB3",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "DB3 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "32V 2A Bidirectional trigger diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:DB4@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:DB4",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "DB4 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "34V 2A Bidirectional trigger diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:DC34@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:DC34",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "DC34 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "40V 2A Bidirectional trigger diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:DSB2810@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:DSB2810",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "DSB2810 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "20V 75mA Schottky diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:DSB5712@D_DO-35_SOD27_P7.62mm_Horizontal",
+"lib_id": "Diode:DSB5712",
+"footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+"family": "diode",
+"name": "DSB5712 / D_DO-35_SOD27_P7.62mm_Horizontal",
+"descr": "20V 75mA Schottky diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:SB120@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:SB120",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "SB120 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "20V 1A Schottky Barrier Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:SB130@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:SB130",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "SB130 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "30V 1A Schottky Barrier Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:SB140@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:SB140",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "SB140 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "40V 1A Schottky Barrier Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:SB150@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:SB150",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "SB150 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "50V 1A Schottky Barrier Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:SB160@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:SB160",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "SB160 / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "60V 1A Schottky Barrier Rectifier Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:ZPDxx@D_DO-35_SOD27_P10.16mm_Horizontal",
+"lib_id": "Diode:ZPDxx",
+"footprint": "Diode_THT:D_DO-35_SOD27_P10.16mm_Horizontal",
+"family": "diode",
+"name": "ZPDxx / D_DO-35_SOD27_P10.16mm_Horizontal",
+"descr": "500mW Zener Diode, DO-35",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:ZPYxx@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:ZPYxx",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "ZPYxx / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "1300mW Zener Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Diode:ZYxxx@D_DO-41_SOD81_P10.16mm_Horizontal",
+"lib_id": "Diode:ZYxxx",
+"footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+"family": "diode",
+"name": "ZYxxx / D_DO-41_SOD81_P10.16mm_Horizontal",
+"descr": "2000mW Zener Diode, DO-41",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+"spice": null,
+"spice_note": "no SPICE card for this diode",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:A1050@R_LDR_D6.4mm_P3.4mm_Vertical",
+"lib_id": "Sensor_Optical:A1050",
+"footprint": "OptoDevice:R_LDR_D6.4mm_P3.4mm_Vertical",
+"family": "light sensor",
+"name": "A1050 / R_LDR_D6.4mm_P3.4mm_Vertical",
+"descr": "light dependent resistor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/OptoDevice.3dshapes/R_LDR_D6.4mm_P3.4mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "ldr",
+"dark": "1Meg",
+"light": "1k"
+},
+"spice_note": "LDR: dark 1 Mohm, lit 1 kohm (datasheet order of magnitude)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:A1060@R_LDR_D6.4mm_P3.4mm_Vertical",
+"lib_id": "Sensor_Optical:A1060",
+"footprint": "OptoDevice:R_LDR_D6.4mm_P3.4mm_Vertical",
+"family": "light sensor",
+"name": "A1060 / R_LDR_D6.4mm_P3.4mm_Vertical",
+"descr": "light dependent resistor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/OptoDevice.3dshapes/R_LDR_D6.4mm_P3.4mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "ldr",
+"dark": "1Meg",
+"light": "1k"
+},
+"spice_note": "LDR: dark 1 Mohm, lit 1 kohm (datasheet order of magnitude)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:A9013@R_LDR_5.0x4.1mm_P3mm_Vertical",
+"lib_id": "Sensor_Optical:A9013",
+"footprint": "OptoDevice:R_LDR_5.0x4.1mm_P3mm_Vertical",
+"family": "light sensor",
+"name": "A9013 / R_LDR_5.0x4.1mm_P3mm_Vertical",
+"descr": "light dependent resistor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/OptoDevice.3dshapes/R_LDR_5.0x4.1mm_P3mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "ldr",
+"dark": "1Meg",
+"light": "1k"
+},
+"spice_note": "LDR: dark 1 Mohm, lit 1 kohm (datasheet order of magnitude)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:A9050@R_LDR_5.0x4.1mm_P3mm_Vertical",
+"lib_id": "Sensor_Optical:A9050",
+"footprint": "OptoDevice:R_LDR_5.0x4.1mm_P3mm_Vertical",
+"family": "light sensor",
+"name": "A9050 / R_LDR_5.0x4.1mm_P3mm_Vertical",
+"descr": "light dependent resistor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/OptoDevice.3dshapes/R_LDR_5.0x4.1mm_P3mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "ldr",
+"dark": "1Meg",
+"light": "1k"
+},
+"spice_note": "LDR: dark 1 Mohm, lit 1 kohm (datasheet order of magnitude)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:A9060@R_LDR_5.0x4.1mm_P3mm_Vertical",
+"lib_id": "Sensor_Optical:A9060",
+"footprint": "OptoDevice:R_LDR_5.0x4.1mm_P3mm_Vertical",
+"family": "light sensor",
+"name": "A9060 / R_LDR_5.0x4.1mm_P3mm_Vertical",
+"descr": "light dependent resistor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/OptoDevice.3dshapes/R_LDR_5.0x4.1mm_P3mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "ldr",
+"dark": "1Meg",
+"light": "1k"
+},
+"spice_note": "LDR: dark 1 Mohm, lit 1 kohm (datasheet order of magnitude)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:BP103B@LED_D5.0mm_Clear",
+"lib_id": "Sensor_Optical:BP103B",
+"footprint": "LED_THT:LED_D5.0mm_Clear",
+"family": "light sensor",
+"name": "BP103B / LED_D5.0mm_Clear",
+"descr": "NPN phototransistor",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:BP103BF@LED_D5.0mm_Clear",
+"lib_id": "Sensor_Optical:BP103BF",
+"footprint": "LED_THT:LED_D5.0mm_Clear",
+"family": "light sensor",
+"name": "BP103BF / LED_D5.0mm_Clear",
+"descr": "NPN phototransistor with daylight filter",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:BPW40@LED_D5.0mm_Clear",
+"lib_id": "Sensor_Optical:BPW40",
+"footprint": "LED_THT:LED_D5.0mm_Clear",
+"family": "light sensor",
+"name": "BPW40 / LED_D5.0mm_Clear",
+"descr": "Phototransistor NPN",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:BPW42@LED_D3.0mm_Clear",
+"lib_id": "Sensor_Optical:BPW42",
+"footprint": "LED_THT:LED_D3.0mm_Clear",
+"family": "light sensor",
+"name": "BPW42 / LED_D3.0mm_Clear",
+"descr": "NPN phototransistor",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:BPW85@LED_D3.0mm_Clear",
+"lib_id": "Sensor_Optical:BPW85",
+"footprint": "LED_THT:LED_D3.0mm_Clear",
+"family": "light sensor",
+"name": "BPW85 / LED_D3.0mm_Clear",
+"descr": "Silicon NPN Phototransistor, Ica = 0.8-8mA, T-1",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:BPW85A@LED_D3.0mm_Clear",
+"lib_id": "Sensor_Optical:BPW85A",
+"footprint": "LED_THT:LED_D3.0mm_Clear",
+"family": "light sensor",
+"name": "BPW85A / LED_D3.0mm_Clear",
+"descr": "Silicon NPN Phototransistor, Ica = 0.8-2.5mA, T-1",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:BPW85B@LED_D3.0mm_Clear",
+"lib_id": "Sensor_Optical:BPW85B",
+"footprint": "LED_THT:LED_D3.0mm_Clear",
+"family": "light sensor",
+"name": "BPW85B / LED_D3.0mm_Clear",
+"descr": "Silicon NPN Phototransistor, Ica = 1.5-4mA, T-1",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:BPW85C@LED_D3.0mm_Clear",
+"lib_id": "Sensor_Optical:BPW85C",
+"footprint": "LED_THT:LED_D3.0mm_Clear",
+"family": "light sensor",
+"name": "BPW85C / LED_D3.0mm_Clear",
+"descr": "Silicon NPN Phototransistor, Ica = 3-8mA, T-1",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:LDR03@R_LDR_10x8.5mm_P7.6mm_Vertical",
+"lib_id": "Sensor_Optical:LDR03",
+"footprint": "OptoDevice:R_LDR_10x8.5mm_P7.6mm_Vertical",
+"family": "light sensor",
+"name": "LDR03 / R_LDR_10x8.5mm_P7.6mm_Vertical",
+"descr": "light dependent resistor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/OptoDevice.3dshapes/R_LDR_10x8.5mm_P7.6mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "ldr",
+"dark": "1Meg",
+"light": "1k"
+},
+"spice_note": "LDR: dark 1 Mohm, lit 1 kohm (datasheet order of magnitude)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:LDR07@R_LDR_5.1x4.3mm_P3.4mm_Vertical",
+"lib_id": "Sensor_Optical:LDR07",
+"footprint": "OptoDevice:R_LDR_5.1x4.3mm_P3.4mm_Vertical",
+"family": "light sensor",
+"name": "LDR07 / R_LDR_5.1x4.3mm_P3.4mm_Vertical",
+"descr": "light dependent resistor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/OptoDevice.3dshapes/R_LDR_5.1x4.3mm_P3.4mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "ldr",
+"dark": "1Meg",
+"light": "1k"
+},
+"spice_note": "LDR: dark 1 Mohm, lit 1 kohm (datasheet order of magnitude)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:M9960@R_LDR_5.2x5.2mm_P3.5mm_Horizontal",
+"lib_id": "Sensor_Optical:M9960",
+"footprint": "OptoDevice:R_LDR_5.2x5.2mm_P3.5mm_Horizontal",
+"family": "light sensor",
+"name": "M9960 / R_LDR_5.2x5.2mm_P3.5mm_Horizontal",
+"descr": "light dependent resistor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/OptoDevice.3dshapes/R_LDR_5.2x5.2mm_P3.5mm_Horizontal.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "ldr",
+"dark": "1Meg",
+"light": "1k"
+},
+"spice_note": "LDR: dark 1 Mohm, lit 1 kohm (datasheet order of magnitude)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:SFH203@LED_D5.0mm_IRGrey",
+"lib_id": "Sensor_Optical:SFH203",
+"footprint": "LED_THT:LED_D5.0mm_IRGrey",
+"family": "light sensor",
+"name": "SFH203 / LED_D5.0mm_IRGrey",
+"descr": "Silicon PIN Photodiode",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm_IRGrey.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:SFH203FA@LED_D5.0mm_IRGrey",
+"lib_id": "Sensor_Optical:SFH203FA",
+"footprint": "LED_THT:LED_D5.0mm_IRGrey",
+"family": "light sensor",
+"name": "SFH203FA / LED_D5.0mm_IRGrey",
+"descr": "Silicon PIN Photodiode with Daylight Blocking Filter",
+"pins": {
+"1": "K",
+"2": "A"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm_IRGrey.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:SFH300@LED_D5.0mm_Clear",
+"lib_id": "Sensor_Optical:SFH300",
+"footprint": "LED_THT:LED_D5.0mm_Clear",
+"family": "light sensor",
+"name": "SFH300 / LED_D5.0mm_Clear",
+"descr": "silicon NPN phototransistor",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:SFH309@LED_D3.0mm_Clear",
+"lib_id": "Sensor_Optical:SFH309",
+"footprint": "LED_THT:LED_D3.0mm_Clear",
+"family": "light sensor",
+"name": "SFH309 / LED_D3.0mm_Clear",
+"descr": "Phototransistor NPN",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:TEPT4400@LED_D3.0mm_Clear",
+"lib_id": "Sensor_Optical:TEPT4400",
+"footprint": "LED_THT:LED_D3.0mm_Clear",
+"family": "light sensor",
+"name": "TEPT4400 / LED_D3.0mm_Clear",
+"descr": "Ambient Light Sensor, NPN Epitaxial Planar Phototransistor, T-1",
+"pins": {
+"1": "C",
+"2": "E"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm_Clear.step",
+"spice": null,
+"spice_note": "no SPICE model for a light sensor",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Sensor_Optical:VT93xx@R_LDR_4.9x4.2mm_P2.54mm_Vertical",
+"lib_id": "Sensor_Optical:VT93xx",
+"footprint": "OptoDevice:R_LDR_4.9x4.2mm_P2.54mm_Vertical",
+"family": "light sensor",
+"name": "VT93xx / R_LDR_4.9x4.2mm_P2.54mm_Vertical",
+"descr": "light dependent resistor",
+"pins": {
+"1": "",
+"2": ""
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/OptoDevice.3dshapes/R_LDR_4.9x4.2mm_P2.54mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"2"
+],
+"role": "ldr",
+"dark": "1Meg",
+"light": "1k"
+},
+"spice_note": "LDR: dark 1 Mohm, lit 1 kohm (datasheet order of magnitude)",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:ICM7209@DIP-8_W7.62mm",
+"lib_id": "Timer:ICM7209",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "ICM7209 / DIP-8_W7.62mm",
+"descr": "Timebase generator, DIP-8",
+"pins": {
+"1": "OSC_OUT",
+"2": "OSC_IN",
+"3": "DISABLE",
+"4": "VDD",
+"5": "OUT/1",
+"6": "OUT/8",
+"8": "VSS"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:ICM7555xP@DIP-8_W7.62mm",
+"lib_id": "Timer:ICM7555xP",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "ICM7555xP / DIP-8_W7.62mm",
+"descr": "CMOS General Purpose Timer, 555 compatible, PDIP-8",
+"pins": {
+"1": "GND",
+"8": "VCC",
+"2": "TRIG",
+"3": "OUT",
+"4": "~{RST}",
+"5": "CONT",
+"6": "THRES",
+"7": "DISCH"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:LM555xN@DIP-8_W7.62mm",
+"lib_id": "Timer:LM555xN",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "LM555xN / DIP-8_W7.62mm",
+"descr": "Timer, 555 compatible, PDIP-8",
+"pins": {
+"1": "GND",
+"8": "VCC",
+"2": "TRIG",
+"3": "OUT",
+"4": "~{RST}",
+"5": "CONT",
+"6": "THRES",
+"7": "DISCH"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:LMC555xN@DIP-8_W7.62mm",
+"lib_id": "Timer:LMC555xN",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "LMC555xN / DIP-8_W7.62mm",
+"descr": "CMOS Timer, 555 compatible, PDIP-8",
+"pins": {
+"1": "GND",
+"8": "VCC",
+"2": "TRIG",
+"3": "OUT",
+"4": "~{RST}",
+"5": "CONT",
+"6": "THRES",
+"7": "DISCH"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:MC1455P@DIP-8_W7.62mm",
+"lib_id": "Timer:MC1455P",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "MC1455P / DIP-8_W7.62mm",
+"descr": "Timer, 555 compatible, PDIP-8",
+"pins": {
+"1": "GND",
+"8": "VCC",
+"2": "TRIG",
+"3": "OUT",
+"4": "~{RST}",
+"5": "CONT",
+"6": "THRES",
+"7": "DISCH"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:MN3101@DIP-8_W7.62mm",
+"lib_id": "Timer:MN3101",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "MN3101 / DIP-8_W7.62mm",
+"descr": "Clock Generator Driver/Driver for MN3000 Series BBD (bucket brigade device), -8V to -16V, DIP-8",
+"pins": {
+"1": "GND",
+"2": "CP1",
+"3": "VDD",
+"4": "CP2",
+"5": "OX3",
+"6": "OX2",
+"7": "OX1",
+"8": "VGG_OUT"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:MN3102@DIP-8_W7.62mm",
+"lib_id": "Timer:MN3102",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "MN3102 / DIP-8_W7.62mm",
+"descr": "Clock Generator Driver/Driver for MN3000 Series BBD (bucket brigade device), 4V to 10V, DIP-8",
+"pins": {
+"1": "VDD",
+"2": "CP1",
+"3": "GND",
+"4": "CP2",
+"5": "OX3",
+"6": "OX2",
+"7": "OX1",
+"8": "VGG_OUT"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:NA555P@DIP-8_W7.62mm",
+"lib_id": "Timer:NA555P",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "NA555P / DIP-8_W7.62mm",
+"descr": "Precision Timers, 555 compatible, PDIP-8",
+"pins": {
+"1": "GND",
+"8": "VCC",
+"2": "TRIG",
+"3": "OUT",
+"4": "~{RST}",
+"5": "CONT",
+"6": "THRES",
+"7": "DISCH"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:NE555P@DIP-8_W7.62mm",
+"lib_id": "Timer:NE555P",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "NE555P / DIP-8_W7.62mm",
+"descr": "Precision Timers, 555 compatible, PDIP-8",
+"pins": {
+"1": "GND",
+"8": "VCC",
+"2": "TRIG",
+"3": "OUT",
+"4": "~{RST}",
+"5": "CONT",
+"6": "THRES",
+"7": "DISCH"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:SA555P@DIP-8_W7.62mm",
+"lib_id": "Timer:SA555P",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "SA555P / DIP-8_W7.62mm",
+"descr": "Precision Timers, 555 compatible, PDIP-8",
+"pins": {
+"1": "GND",
+"8": "VCC",
+"2": "TRIG",
+"3": "OUT",
+"4": "~{RST}",
+"5": "CONT",
+"6": "THRES",
+"7": "DISCH"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:SE555P@DIP-8_W7.62mm",
+"lib_id": "Timer:SE555P",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "SE555P / DIP-8_W7.62mm",
+"descr": "Precision Timers, 555 compatible, PDIP-8",
+"pins": {
+"1": "GND",
+"8": "VCC",
+"2": "TRIG",
+"3": "OUT",
+"4": "~{RST}",
+"5": "CONT",
+"6": "THRES",
+"7": "DISCH"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Timer:TLC555xP@DIP-8_W7.62mm",
+"lib_id": "Timer:TLC555xP",
+"footprint": "Package_DIP:DIP-8_W7.62mm",
+"family": "timer IC",
+"name": "TLC555xP / DIP-8_W7.62mm",
+"descr": "Single LinCMOS Timer, 555 compatible, PDIP-8",
+"pins": {
+"1": "GND",
+"8": "VCC",
+"2": "TRIG",
+"3": "OUT",
+"4": "~{RST}",
+"5": "CONT",
+"6": "THRES",
+"7": "DISCH"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+"spice": null,
+"spice_note": "no SPICE model for a timer IC",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:AP7384-28V@TO-92_Inline_Wide",
+"lib_id": "Regulator_Linear:AP7384-28V",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline_Wide",
+"family": "linear regulator",
+"name": "AP7384-28V / TO-92_Inline_Wide",
+"descr": "50mA Low Dropout Voltage Regulator, Fixed Output 2.8V, Wide Input Voltage Range 40V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline_Wide.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:AP7384-33V@TO-92_Inline_Wide",
+"lib_id": "Regulator_Linear:AP7384-33V",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline_Wide",
+"family": "linear regulator",
+"name": "AP7384-33V / TO-92_Inline_Wide",
+"descr": "50mA Low Dropout Voltage Regulator, Fixed Output 3.3V, Wide Input Voltage Range 40V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline_Wide.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:AP7384-50V@TO-92_Inline_Wide",
+"lib_id": "Regulator_Linear:AP7384-50V",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline_Wide",
+"family": "linear regulator",
+"name": "AP7384-50V / TO-92_Inline_Wide",
+"descr": "50mA Low Dropout Voltage Regulator, Fixed Output 5V, Wide Input Voltage Range 40V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline_Wide.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:AP7384-70V@TO-92_Inline_Wide",
+"lib_id": "Regulator_Linear:AP7384-70V",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline_Wide",
+"family": "linear regulator",
+"name": "AP7384-70V / TO-92_Inline_Wide",
+"descr": "50mA Low Dropout Voltage Regulator, Fixed Output 7V, Wide Input Voltage Range 40V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline_Wide.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L78L05_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L78L05_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L78L05_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 5V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L78L06_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L78L06_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L78L06_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 6V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L78L08_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L78L08_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L78L08_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 8V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L78L09_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L78L09_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L78L09_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 9V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L78L10_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L78L10_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L78L10_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 10V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L78L12_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L78L12_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L78L12_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 12V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L78L15_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L78L15_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L78L15_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 15V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L78L18_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L78L18_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L78L18_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 18V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L78L24_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L78L24_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L78L24_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 24V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L78L33_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L78L33_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L78L33_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 3.3V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L79L05_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L79L05_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L79L05_TO92 / TO-92_Inline",
+"descr": "Negative 100mA -30V Linear Regulator, Fixed Output -5V, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L79L08_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L79L08_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L79L08_TO92 / TO-92_Inline",
+"descr": "Negative 100mA -30V Linear Regulator, Fixed Output -5V, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L79L12_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L79L12_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L79L12_TO92 / TO-92_Inline",
+"descr": "Negative 100mA -30V Linear Regulator, Fixed Output -5V, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:L79L15_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:L79L15_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "L79L15_TO92 / TO-92_Inline",
+"descr": "Negative 100mA -30V Linear Regulator, Fixed Output -5V, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM2931-ADJ_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM2931-ADJ_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM2931-ADJ_TO92 / TO-92_Inline",
+"descr": "100mA Low drop-out regulator, Adjustable Output, TO-92",
+"pins": {
+"1": "VO",
+"2": "ADJ",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM2931AZ-5.0_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM2931AZ-5.0_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM2931AZ-5.0_TO92 / TO-92_Inline",
+"descr": "100mA Low drop-out regulator, Fixed Output 5V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM2936-3.0_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM2936-3.0_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM2936-3.0_TO92 / TO-92_Inline",
+"descr": "50mA Ultra-Low Quiescent Current LDO Voltage Regulator, 3.0V fixed output, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM2936-3.3_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM2936-3.3_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM2936-3.3_TO92 / TO-92_Inline",
+"descr": "50mA Ultra-Low Quiescent Current LDO Voltage Regulator, 3.3V fixed output, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM2936-5.0_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM2936-5.0_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM2936-5.0_TO92 / TO-92_Inline",
+"descr": "50mA Ultra-Low Quiescent Current LDO Voltage Regulator, 5.0V fixed output, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM317L_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM317L_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM317L_TO92 / TO-92_Inline",
+"descr": "100mA 35V Adjustable Linear Regulator, TO-92",
+"pins": {
+"1": "ADJ",
+"2": "VO",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM337L_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM337L_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM337L_TO92 / TO-92_Inline",
+"descr": "Negative 100mA 35V Adjustable Linear Regulator, TO-92",
+"pins": {
+"1": "ADJ",
+"2": "VO",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM78L05_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM78L05_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM78L05_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 5V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM78L12_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM78L12_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM78L12_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 12V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM79L05_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM79L05_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM79L05_TO92 / TO-92_Inline",
+"descr": "3-Terminal Negative Regulator, -5V, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM79L12_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM79L12_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM79L12_TO92 / TO-92_Inline",
+"descr": "3-Terminal Negative Regulator, -12V, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LM79L15_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LM79L15_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LM79L15_TO92 / TO-92_Inline",
+"descr": "3-Terminal Negative Regulator, -15V, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LP2950-3.0_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LP2950-3.0_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LP2950-3.0_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Micropower Voltage Regulator, Fixed Output 3.0V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LP2950-3.3_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LP2950-3.3_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LP2950-3.3_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Micropower Voltage Regulator, Fixed Output 3.3V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LP2950-5.0_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:LP2950-5.0_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LP2950-5.0_TO92 / TO-92_Inline",
+"descr": "Micropower Voltage Regulators with Shutdown, 100mA, Fixed Output 5.0V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:LR8N3-G@TO-92_Inline",
+"lib_id": "Regulator_Linear:LR8N3-G",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "LR8N3-G / TO-92_Inline",
+"descr": "30mA 450V High-Voltage Linear Regulator (Adjustable), TO-92",
+"pins": {
+"1": "IN",
+"2": "OUT",
+"3": "ADJ"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MC78L05_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:MC78L05_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MC78L05_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 5V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MC78L06_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:MC78L06_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MC78L06_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 6V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MC78L08_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:MC78L08_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MC78L08_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 8V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MC78L12_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:MC78L12_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MC78L12_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 12V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MC78L15_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:MC78L15_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MC78L15_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 15V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MC78L18_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:MC78L18_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MC78L18_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 18V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MC78L24_TO92@TO-92_Inline",
+"lib_id": "Regulator_Linear:MC78L24_TO92",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MC78L24_TO92 / TO-92_Inline",
+"descr": "Positive 100mA 30V Linear Regulator, Fixed Output 24V, TO-92",
+"pins": {
+"1": "VO",
+"2": "GND",
+"3": "VI"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MCP1700x-120xxTO@TO-92_Inline",
+"lib_id": "Regulator_Linear:MCP1700x-120xxTO",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MCP1700x-120xxTO / TO-92_Inline",
+"descr": "250mA Low Quiscent Current LDO, 1.2V output, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MCP1700x-180xxTO@TO-92_Inline",
+"lib_id": "Regulator_Linear:MCP1700x-180xxTO",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MCP1700x-180xxTO / TO-92_Inline",
+"descr": "250mA Low Quiscent Current LDO, 1.8V output, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MCP1700x-250xxTO@TO-92_Inline",
+"lib_id": "Regulator_Linear:MCP1700x-250xxTO",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MCP1700x-250xxTO / TO-92_Inline",
+"descr": "250mA Low Quiscent Current LDO, 2.5V output, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MCP1700x-280xxTO@TO-92_Inline",
+"lib_id": "Regulator_Linear:MCP1700x-280xxTO",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MCP1700x-280xxTO / TO-92_Inline",
+"descr": "250mA Low Quiscent Current LDO, 2.8V output, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MCP1700x-300xxTO@TO-92_Inline",
+"lib_id": "Regulator_Linear:MCP1700x-300xxTO",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MCP1700x-300xxTO / TO-92_Inline",
+"descr": "250mA Low Quiscent Current LDO, 3.0V output, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MCP1700x-330xxTO@TO-92_Inline",
+"lib_id": "Regulator_Linear:MCP1700x-330xxTO",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MCP1700x-330xxTO / TO-92_Inline",
+"descr": "250mA Low Quiscent Current LDO, 3.3V output, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Regulator_Linear:MCP1700x-500xxTO@TO-92_Inline",
+"lib_id": "Regulator_Linear:MCP1700x-500xxTO",
+"footprint": "Package_TO_SOT_THT:TO-92_Inline",
+"family": "linear regulator",
+"name": "MCP1700x-500xxTO / TO-92_Inline",
+"descr": "250mA Low Quiscent Current LDO, 5.0V output, TO-92",
+"pins": {
+"1": "GND",
+"2": "VI",
+"3": "VO"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+"spice": null,
+"spice_note": "no SPICE model for a linear regulator",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Driver_Motor:L293@DIP-16_W7.62mm",
+"lib_id": "Driver_Motor:L293",
+"footprint": "Package_DIP:DIP-16_W7.62mm",
+"family": "motor driver",
+"name": "L293 / DIP-16_W7.62mm",
+"descr": "Quadruple Half-H Drivers",
+"pins": {
+"1": "EN1,2",
+"2": "1A",
+"3": "1Y",
+"4": "GND",
+"5": "GND",
+"6": "2Y",
+"7": "2A",
+"8": "VCC2",
+"9": "EN3,4",
+"10": "3A",
+"11": "3Y",
+"12": "GND",
+"13": "GND",
+"14": "4Y",
+"15": "4A",
+"16": "VCC1"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-16_W7.62mm.step",
+"spice": {
+"prefix": "U",
+"pins": [
+"16",
+"8",
+"4",
+"1",
+"2",
+"3",
+"7",
+"6",
+"9",
+"10",
+"11",
+"15",
+"14"
+],
+"role": "hbridge",
+"ohms": 250
+},
+"spice_note": "half-H outputs switched by EN/A, typical drops",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Driver_Motor:L293D@DIP-16_W7.62mm",
+"lib_id": "Driver_Motor:L293D",
+"footprint": "Package_DIP:DIP-16_W7.62mm",
+"family": "motor driver",
+"name": "L293D / DIP-16_W7.62mm",
+"descr": "Quadruple Half-H Drivers",
+"pins": {
+"1": "EN1,2",
+"2": "1A",
+"3": "1Y",
+"4": "GND",
+"5": "GND",
+"6": "2Y",
+"7": "2A",
+"8": "VCC2",
+"9": "EN3,4",
+"10": "3A",
+"11": "3Y",
+"12": "GND",
+"13": "GND",
+"14": "4Y",
+"15": "4A",
+"16": "VCC1"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-16_W7.62mm.step",
+"spice": {
+"prefix": "U",
+"pins": [
+"16",
+"8",
+"4",
+"1",
+"2",
+"3",
+"7",
+"6",
+"9",
+"10",
+"11",
+"15",
+"14"
+],
+"role": "hbridge",
+"ohms": 250
+},
+"spice_note": "half-H outputs switched by EN/A, typical drops",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Driver_Motor:SN754410NE@DIP-16_W7.62mm",
+"lib_id": "Driver_Motor:SN754410NE",
+"footprint": "Package_DIP:DIP-16_W7.62mm",
+"family": "motor driver",
+"name": "SN754410NE / DIP-16_W7.62mm",
+"descr": "Quadruple Half-H Driver, DIP-16",
+"pins": {
+"1": "1,2EN",
+"2": "1A",
+"3": "1Y",
+"4": "GND",
+"5": "GND",
+"6": "2Y",
+"7": "2A",
+"8": "VCC2",
+"9": "3,4EN",
+"10": "3A",
+"11": "3Y",
+"12": "GND",
+"13": "GND",
+"14": "4Y",
+"15": "4A",
+"16": "VCC1"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-16_W7.62mm.step",
+"spice": {
+"prefix": "U",
+"pins": [
+"16",
+"8",
+"4",
+"1",
+"2",
+"3",
+"7",
+"6",
+"9",
+"10",
+"11",
+"15",
+"14"
+],
+"role": "hbridge",
+"ohms": 250
+},
+"spice_note": "half-H outputs switched by EN/A, typical drops",
+"source": "kicad-lib"
+},
+{
+"key": "kicad:Espressif:ESP32-S3-WROOM-1@ESP32-S3-WROOM-1",
+"lib_id": "Espressif:ESP32-S3-WROOM-1",
+"footprint": "Espressif:ESP32-S3-WROOM-1",
+"family": "Wi-Fi microcontroller module",
+"name": "ESP32-S3-WROOM-1 / ESP32-S3-WROOM-1",
+"descr": "ESP32-S3-WROOM-1 Wi-Fi + Bluetooth LE module (Espressif)",
+"pins": {
+"1": "GND",
+"2": "3V3",
+"3": "EN",
+"4": "GPIO4/TOUCH4/ADC1_CH3",
+"5": "GPIO5/TOUCH5/ADC1_CH4",
+"6": "GPIO6/TOUCH6/ADC1_CH5",
+"7": "GPIO7/TOUCH7/ADC1_CH6",
+"8": "GPIO15/U0RTS/ADC2_CH4/XTAL_32K_P",
+"9": "GPIO16/U0CTS/ADC2_CH5/XTAL_32K_N",
+"10": "GPIO17/U1TXD/ADC2_CH6",
+"11": "GPIO18/U1RXD/ADC2_CH7/CLK_OUT3",
+"12": "GPIO8/TOUCH8/ADC1_CH7/SUBSPICS1",
+"13": "GPIO19/U1RTS/ADC2_CH8/CLK_OUT2/USB_D-",
+"14": "GPIO20/U1CTS/ADC2_CH9/CLK_OUT1/USB_D+",
+"15": "GPIO3/TOUCH3/ADC1_CH2",
+"16": "GPIO46",
+"17": "GPIO9/TOUCH9/ADC1_CH8/FSPIHD/SUBSPIHD",
+"18": "GPIO10/TOUCH10/ADC1_CH9/FSPICS0/FSPIIO4/SUBSPICS0",
+"19": "GPIO11/TOUCH11/ADC2_CH0/FSPID/FSPIIO5/SUBSPID",
+"20": "GPIO12/TOUCH12/ADC2_CH1/FSPICLK/FSPIIO6/SUBSPICLK",
+"21": "GPIO13/TOUCH13/ADC2_CH2/FSPIQ/FSPIIO7/SUBSPIQ",
+"22": "GPIO14/TOUCH14/ADC2_CH3/FSPIWP/FSPIDQS/SUBSPIWP",
+"23": "GPIO21",
+"24": "GPIO47/SPICLK_P/SUBSPICLK_P_DIFF",
+"25": "GPIO48/SPICLK_N/SUBSPICLK_N_DIFF",
+"26": "GPIO45",
+"27": "GPIO0/BOOT",
+"28": "SPIIO6/GPIO35/FSPID/SUBSPID",
+"29": "SPIIO7/GPIO36/FSPICLK/SUBSPICLK",
+"30": "SPIDQS/GPIO37/FSPIQ/SUBSPIQ",
+"31": "GPIO38/FSPIWP/SUBSPIWP",
+"32": "MTCK/GPIO39/CLK_OUT3/SUBSPICS1",
+"33": "MTDO/GPIO40/CLK_OUT2",
+"34": "MTDI/GPIO41/CLK_OUT1",
+"35": "MTMS/GPIO42",
+"36": "U0RXD/GPIO44/CLK_OUT2",
+"37": "U0TXD/GPIO43/CLK_OUT1",
+"38": "GPIO2/TOUCH2/ADC1_CH1",
+"39": "GPIO1/TOUCH1/ADC1_CH0",
+"40": "GND",
+"41": "GND"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/helloworld/pcb-loop/vendor/espressif-kicad-libraries/3dmodels/espressif.3dshapes/ESP32-S3-WROOM-1.STEP",
+"spice": {
+"prefix": "U",
+"pins": [
+"2"
+],
+"role": "mcu",
+"rail": true,
+"chip": "esp32s3",
+"reserved": [
+"13",
+"14",
+"27"
+],
+"gnd": [
+"1",
+"40",
+"41"
+],
+"gpio": {
+"4": "GPIO4",
+"5": "GPIO5",
+"6": "GPIO6",
+"7": "GPIO7",
+"8": "GPIO15",
+"9": "GPIO16",
+"10": "GPIO17",
+"11": "GPIO18",
+"12": "GPIO8",
+"15": "GPIO3",
+"16": "GPIO46",
+"17": "GPIO9",
+"18": "GPIO10",
+"19": "GPIO11",
+"20": "GPIO12",
+"21": "GPIO13",
+"22": "GPIO14",
+"23": "GPIO21",
+"24": "GPIO47",
+"25": "GPIO48",
+"26": "GPIO45",
+"31": "GPIO38",
+"38": "GPIO2",
+"39": "GPIO1"
+},
+"v_io": 3.3,
+"r_out": 50,
+"idd_ohms": 35
+},
+"spice_note": "runs from its 3V3 pin: Wi-Fi receive current as a load, GPIO outputs from the tested firmware (3.3 V, ~50 ohm)",
+"source": "vendor-lib",
+"provenance": {
+"route": "Espressif KiCad library (vendored, pinned tag)",
+"source_url": "https://github.com/espressif/kicad-libraries/blob/3.2.1/footprints/Espressif.pretty/ESP32-S3-WROOM-1.kicad_mod",
+"symbol_url": "https://github.com/espressif/kicad-libraries/blob/3.2.1/symbols/Espressif.kicad_sym",
+"model_url": "https://github.com/espressif/kicad-libraries/blob/3.2.1/3dmodels/espressif.3dshapes/ESP32-S3-WROOM-1.STEP",
+"version": "espressif/kicad-libraries tag 3.2.1 (commit 1dfc3110895c)",
+"licence": "CC-BY-SA-4.0 with the KiCad libraries exception (Espressif LICENSE.md)",
+"repo": "github.com/espressif/kicad-libraries",
+"commit": "1dfc3110895c9cd62daf332f49c49ee0ee200831"
+}
+},
+{
+"key": "kicad:Espressif:ESP32-C3-MINI-1@ESP32-C3-MINI-1",
+"lib_id": "Espressif:ESP32-C3-MINI-1",
+"footprint": "Espressif:ESP32-C3-MINI-1",
+"family": "Wi-Fi microcontroller module",
+"name": "ESP32-C3-MINI-1 / ESP32-C3-MINI-1",
+"descr": "ESP32-C3-MINI-1 Wi-Fi + Bluetooth LE module (Espressif)",
+"pins": {
+"1": "GND",
+"2": "GND",
+"3": "3V3",
+"4": "NC",
+"5": "GPIO2/ADC1_CH2",
+"6": "GPIO3/ADC1_CH3",
+"7": "NC",
+"8": "EN/CHIP_PU",
+"9": "NC",
+"10": "NC",
+"11": "GND",
+"12": "GPIO0/ADC1_CH0/XTAL_32K_P",
+"13": "GPIO1/ADC1_CH1/XTAL_32K_N",
+"14": "GND",
+"15": "NC",
+"16": "GPIO10",
+"17": "NC",
+"18": "GPIO4/ADC1_CH4",
+"19": "GPIO5/ADC2_CH0",
+"20": "GPIO6",
+"21": "GPIO7",
+"22": "GPIO8",
+"23": "GPIO9",
+"24": "NC",
+"25": "NC",
+"26": "GPIO18/USB_D-",
+"27": "GPIO19/USB_D+",
+"28": "NC",
+"29": "NC",
+"30": "GPIO20/U0RXD",
+"31": "GPIO21/U0TXD",
+"32": "NC",
+"33": "NC",
+"34": "NC",
+"35": "NC",
+"36": "GND",
+"37": "GND",
+"38": "GND",
+"39": "GND",
+"40": "GND",
+"41": "GND",
+"42": "GND",
+"43": "GND",
+"44": "GND",
+"45": "GND",
+"46": "GND",
+"47": "GND",
+"48": "GND",
+"49": "GND",
+"50": "GND",
+"51": "GND",
+"52": "GND",
+"53": "GND"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/helloworld/pcb-loop/vendor/espressif-kicad-libraries/3dmodels/espressif.3dshapes/ESP32-C3-MINI-1.STEP",
+"spice": {
+"prefix": "U",
+"pins": [
+"3"
+],
+"role": "mcu",
+"rail": true,
+"chip": "esp32c3",
+"reserved": [
+"5",
+"22",
+"23",
+"26",
+"27"
+],
+"gnd": [
+"1",
+"2",
+"11",
+"14",
+"36",
+"37",
+"38",
+"39",
+"40",
+"41",
+"42",
+"43",
+"44",
+"45",
+"46",
+"47",
+"48",
+"49",
+"50",
+"51",
+"52",
+"53"
+],
+"gpio": {
+"6": "GPIO3",
+"12": "GPIO0",
+"13": "GPIO1",
+"16": "GPIO10",
+"18": "GPIO4",
+"19": "GPIO5",
+"20": "GPIO6",
+"21": "GPIO7",
+"30": "GPIO20",
+"31": "GPIO21"
+},
+"v_io": 3.3,
+"r_out": 50,
+"idd_ohms": 40
+},
+"spice_note": "runs from its 3V3 pin: Wi-Fi receive current as a load, GPIO outputs from the tested firmware (3.3 V, ~50 ohm)",
+"source": "vendor-lib",
+"provenance": {
+"route": "Espressif KiCad library (vendored, pinned tag)",
+"source_url": "https://github.com/espressif/kicad-libraries/blob/3.2.1/footprints/Espressif.pretty/ESP32-C3-MINI-1.kicad_mod",
+"symbol_url": "https://github.com/espressif/kicad-libraries/blob/3.2.1/symbols/Espressif.kicad_sym",
+"model_url": "https://github.com/espressif/kicad-libraries/blob/3.2.1/3dmodels/espressif.3dshapes/ESP32-C3-MINI-1.STEP",
+"version": "espressif/kicad-libraries tag 3.2.1 (commit 1dfc3110895c)",
+"licence": "CC-BY-SA-4.0 with the KiCad libraries exception (Espressif LICENSE.md)",
+"repo": "github.com/espressif/kicad-libraries",
+"commit": "1dfc3110895c9cd62daf332f49c49ee0ee200831"
+}
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x03@PinSocket_1x03_P2.54mm_Vertical",
+"lib_id": "Connector_Generic:Conn_01x03",
+"footprint": "Connector_PinSocket_2.54mm:PinSocket_1x03_P2.54mm_Vertical",
+"family": "mic module",
+"name": "Electret mic + MAX4466 amplifier module (Adafruit 1063) / 3-pin socket",
+"descr": "electret microphone with MAX4466 auto-biased amplifier; plugs in: VCC, GND, OUT (VCC/2 + audio)",
+"pins": {
+"1": "VCC",
+"2": "GND",
+"3": "OUT"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x03_P2.54mm_Vertical.step",
+"spice": {
+"prefix": "X",
+"pins": [
+"1",
+"2",
+"3"
+],
+"role": "mic"
+},
+"spice_note": "mic amp module: 0.5 mA, output at VCC/2 plus the sound (quiet / speaking scenarios)",
+"source": "module",
+"provenance": {
+"design": "Adafruit Electret Microphone Amplifier - MAX4466 with Adjustable Gain, product 1063",
+"repo": "github.com/adafruit/Adafruit-MAX4466-Electret-Mic-Amplifier-PCBs",
+"file": "Adafruit MAX4466 Mic Amp.brd",
+"sha256": "227be8cd74544c4b2c4ab8508931ec2b849cdebf56dfcb59ea1f73af5f2268c9",
+"pinout": "JP1 pin 1 VCC, pin 2 GND, pin 3 OUT (from U1 pin 4); 1x03 0.1 in header",
+"licence": "CC BY-SA (Limor Fried / Ladyada for Adafruit Industries)",
+"socket": "KiCad 10 library Connector_PinSocket_2.54mm:PinSocket_1x03_P2.54mm_Vertical"
+}
+},
+{
+"key": "kicad:Connector_Generic:Conn_01x06@PinSocket_1x06_P2.54mm_Vertical",
+"lib_id": "Connector_Generic:Conn_01x06",
+"footprint": "Connector_PinSocket_2.54mm:PinSocket_1x06_P2.54mm_Vertical",
+"family": "OLED display module",
+"name": "SSD1306 128x32 I2C OLED module (Adafruit 931) / 6-pin socket",
+"descr": "monochrome SSD1306 OLED, I2C, own 3.3 V regulator and level shifter; plugs in: VIN, 3V3, GND, RST, SCL, SDA",
+"pins": {
+"1": "VIN",
+"2": "3V3",
+"3": "GND",
+"4": "RST",
+"5": "SCL",
+"6": "SDA"
+},
+"pads_ok": true,
+"model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x06_P2.54mm_Vertical.step",
+"spice": {
+"prefix": "R",
+"pins": [
+"1",
+"3"
+],
+"role": "load",
+"ohms": 250
+},
+"spice_note": "OLED module as its supply draw (about 20 mA)",
+"source": "module",
+"provenance": {
+"design": "Adafruit Monochrome 128x32 I2C OLED graphic display (SSD1306), product 931, STEMMA QT rev B",
+"repo": "github.com/adafruit/Adafruit-128x32-I2C-OLED-Breakout-PCB",
+"file": "Adafruit OLED 128x32 Mono I2C STEMMA QT rev B.sch",
+"sha256": "5eb32b8ec3ff34e178e23045bda916a54dcd9bc4071beecc53417c713b740b7d",
+"pinout": "JP1 pin 1 VCC (VIN), 2 3.3V out, 3 GND, 4 RESET, 5 SCL, 6 SDA; 1x06 0.1 in header",
+"licence": "CC BY-SA (Limor Fried / Ladyada for Adafruit Industries)",
+"socket": "KiCad 10 library Connector_PinSocket_2.54mm:PinSocket_1x06_P2.54mm_Vertical"
+}
+}
+]
+}
