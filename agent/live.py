@@ -453,7 +453,7 @@ PICK_RULES = """Rules (code checks every one):
 - group: function blocks left to right, e.g. power, sensor, driver, output. Group "power" holds only the power input.
 - Benchmarks: only these checks exist. Gate counts: drc_violations, erc_errors, unconnected, parity (always max 0;
   added for you). Simulation (ngspice, 6 s transient, every scenario): for EVERY LED and every load (buzzer, load
-  connector) <REF>.avg_ma, <REF>.peak_ma, <REF>.blink_hz, <REF>.duty; also supply_ma_avg. With scenarios, prefix
+  connector) <REF>.avg_ma, <REF>.peak_ma, <REF>.blink_hz, <REF>.duty. With scenarios, prefix
   the scenario name: dark.BZ1.avg_ma, light.BZ1.avg_ma, v3_0.D1.avg_ma. Give honest slack (+-50 % on rates).
   duty is a FRACTION 0..1 (use min 0.2, max 0.8), never a percent. Currents are mA, rates Hz.
   Benchmarks state what the ASK needs, with wide limits; never predict exact values. ON = avg_ma at least 2;
@@ -466,8 +466,9 @@ PICK_RULES = """Rules (code checks every one):
 - In an idle scenario (or with no scenarios at all, which simulates as "idle") nothing plays or drives a speaker,
   buzzer or motor: never give such a load, or the supply "including" it, a minimum current there; a max is fine.
 - To change a current, change a part's VALUE. Never add copies of a part in parallel (no R1b, R1c beside R1).
-- supply_ma_avg only as a loose sanity bound that counts every load: an LED 2-15 mA, a buzzer 10-30 mA, a fan or
-  motor 50-200 mA. A load that follows a blink is on about half the time, so its avg_ma is about half its on current.
+- Never write supply_ma_avg or supply_ma_peak: code sets the supply band from the parts' datasheet currents.
+  Load currents: an LED 2-15 mA, a buzzer 10-30 mA, a fan or motor 50-200 mA. A load that follows a blink is on
+  about half the time, so its avg_ma is about half its on current.
 - Scenarios only when the ask is about light, battery voltage or a button. A plain blinker or fan has NO scenarios.
   Every scenario must set ldr, voltage or switch; a scenario with only a name changes nothing in the simulation.
   A sensor none of those drive (soil moisture, gas, ...) goes in missing; never stand it in with plain resistors.
@@ -509,6 +510,14 @@ def _piece_line(p: dict[str, Any]) -> str:
     return f"{p['key']} | {p['family']} | pins {pins} | sim: {p['spice_note']}"
 
 
+def _by_model(ans: dict[str, Any]) -> dict[str, Any]:
+    """Tags the picker's benchmark rows as model-written, so to_spec can drop the ones code writes itself."""
+    for b in ans.get("benchmarks") or []:
+        if isinstance(b, dict):
+            b["by"] = "model"
+    return ans
+
+
 def _pick_call(stream: Stream, model: str, msgs: list) -> dict[str, Any]:
     """One picker answer: the main model with an output cap; on a timeout or model failure, one retry on the quick
     sub-model with a tight cap; when that fails too, the missing-parts event and PickTimeout."""
@@ -523,7 +532,7 @@ def _pick_call(stream: Stream, model: str, msgs: list) -> dict[str, Any]:
             timeout=PICKER_TIMEOUT,
             max_tokens=PICKER_MAX_TOKENS,
         )
-        return ans
+        return _by_model(ans)
     except (llm.ModelError, ValueError) as e:
         first = str(e)[:200]
     stream.emit(
@@ -544,7 +553,7 @@ def _pick_call(stream: Stream, model: str, msgs: list) -> dict[str, Any]:
             timeout=RETRY_TIMEOUT,
             max_tokens=RETRY_MAX_TOKENS,
         )
-        return ans
+        return _by_model(ans)
     except (llm.ModelError, ValueError) as e:
         reason = f"{first} / retry: {str(e)[:200]}"
         # a timeout or an unparsed answer is a model failure, not a missing part (live-1792272020427: the GPS
@@ -692,6 +701,12 @@ def to_spec(design: dict[str, Any], code: str) -> dict[str, Any]:
     scen = [s["name"] for s in design.get("scenarios") or [] if s.get("name")]
     for b in design.get("benchmarks", []):
         if b["check"] in gate_names:
+            continue
+        # code writes the supply-current row from the parts' datasheet currents (sim.supply_budget); a model's
+        # own supply band was guesswork and failed boards that were fine (live-1792274265002: Pico W, min 50)
+        if b.get("by") == "model" and re.search(
+            r"(?:^|\.)supply_ma_(?:avg|peak)$", b["check"]
+        ):
             continue
         row = {
             k: b[k]

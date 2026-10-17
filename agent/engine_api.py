@@ -127,7 +127,7 @@ def validate(spec_path: Path) -> str | None:
 
 def verdict(rep: dict[str, Any]) -> dict[str, Any]:
     c = rep["checks"]
-    fails = [b for b in rep["benchmarks"] if not b["pass"]]
+    fails = [b for b in rep["benchmarks"] if b["pass"] is False]  # None = not measurable, never a failure
     ok = not fails and not rep["unrouted"] and c["models"]["missing"] == 0
     return {
         "pass": ok,
@@ -150,6 +150,7 @@ def verdict(rep: dict[str, Any]) -> dict[str, Any]:
                 "value": b["value"],
                 "pass": b["pass"],
                 "text": b["text"],
+                **({"status": b["status"]} if b.get("status") else {}),
             }
             for b in rep["benchmarks"]
         ],
@@ -221,7 +222,7 @@ def run_checks(bdir: Path) -> dict[str, Any]:
         "sim": {k: v for k, v in s.items() if k != "wave"},
     }
     bench = _bench(spec, checks)
-    fails = [b for b in bench if not b["pass"]]
+    fails = [b for b in bench if b["pass"] is False]  # None = not measurable
     return {
         "pass": not fails,
         "seconds": round(time.time() - t0, 2),
