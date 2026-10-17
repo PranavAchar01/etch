@@ -597,7 +597,7 @@ def supply_budget(spec: Spec, scen: dict[str, Any] | None = None) -> dict[str, A
             else:
                 ma = float(s.get("idd_ma", MCU_IDLE_MA))
                 terms.append((p.ref, ma + v / 2e3 * 1e3, "MCU module running current (datasheet) plus its regulator"))
-            floor += 0.5 * ma
+            floor += 0.5 * ma if v >= 3.0 else 0.0  # a battery scenario below 3 V may brown the MCU out
         elif role == "ldo":
             terms.append((p.ref, v / float(s.get("iq_ohms", 1000)) * 1e3, "regulator quiescent current (datasheet)"))
         elif role == "ic":
