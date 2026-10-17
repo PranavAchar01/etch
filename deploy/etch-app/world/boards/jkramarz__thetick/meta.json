@@ -1,0 +1,59 @@
+{
+ "id": "gh:jkramarz/TheTick",
+ "slug": "jkramarz__thetick",
+ "title": "TheTick",
+ "owner": "jkramarz",
+ "repo": "TheTick",
+ "category": "dev-boards",
+ "stars": 184,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  33.0,
+  22.5
+ ],
+ "parts": 35,
+ "glb_bytes": 487884,
+ "url": "https://github.com/jkramarz/TheTick",
+ "commit": "74d8d6b81eab4fd260727502a72f293ef94791cf",
+ "pcb_path": "hardware/Tick.kicad_pcb",
+ "description": "The Tick is the next evolution in covert access control system implants for simulating adversary-in-the-middle attacks.",
+ "license_url": "https://github.com/jkramarz/TheTick/blob/74d8d6b/LICENSE.md",
+ "author_url": "https://github.com/jkramarz",
+ "topics": [
+  "access-control",
+  "esp32",
+  "facility-security",
+  "kicad",
+  "redteam",
+  "wiegand"
+ ],
+ "board": {
+  "mask": "purple",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 0.19
+ },
+ "models": {
+  "total": 31,
+  "resolved": 31,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.136,
+   -0.00859,
+   0.0915
+  ],
+  "max": [
+   0.169,
+   0.00302,
+   0.114
+  ]
+ },
+ "rendered": "2026-10-17T18:10:29Z",
+ "kicad": "10.0.7"
+}

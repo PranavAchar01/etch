@@ -1,0 +1,64 @@
+{
+ "id": "gh:strayer/taira-keyboard/plates/bottom",
+ "slug": "strayer__taira-keyboard__plates__bottom",
+ "title": "Taira Keyboard · Taira Bottom Plate",
+ "owner": "strayer",
+ "repo": "taira-keyboard",
+ "category": "keyboards",
+ "stars": 162,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  151.26,
+  120.84
+ ],
+ "parts": 8,
+ "glb_bytes": 36872,
+ "url": "https://github.com/strayer/taira-keyboard",
+ "commit": "3ed4d2978658386cf189df129f36f1a53dfa545d",
+ "pcb_path": "plates/bottom/taira-bottom-plate.kicad_pcb",
+ "description": "A wireless low-profile split mechanical keyboard with 66 keys inspired by the ErgoDash and Corne Chocolate",
+ "license_url": "https://github.com/strayer/taira-keyboard/blob/3ed4d29/LICENSE",
+ "author_url": "https://github.com/strayer",
+ "topics": [
+  "diy",
+  "diy-electronics",
+  "ergonomic-keyboard",
+  "keyboard",
+  "kicad",
+  "mechanical-keyboard",
+  "ortholinear",
+  "split-keyboard",
+  "split-keyboards",
+  "zmk",
+  "zmk-shield"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.07792,
+   -5e-05,
+   0.03801
+  ],
+  "max": [
+   0.22946,
+   0.00156,
+   0.15917
+  ]
+ },
+ "rendered": "2026-10-17T18:11:59Z",
+ "kicad": "10.0.7"
+}

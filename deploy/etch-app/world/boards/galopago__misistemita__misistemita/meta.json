@@ -1,0 +1,60 @@
+{
+ "id": "gh:galopago/misistemita/MISISTEMITA",
+ "slug": "galopago__misistemita__misistemita",
+ "title": "Misistemita · MISISTEMITA",
+ "owner": "galopago",
+ "repo": "misistemita",
+ "category": "everything-else",
+ "stars": 47,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  231.14,
+  109.22
+ ],
+ "parts": 218,
+ "glb_bytes": 186544,
+ "url": "https://github.com/galopago/misistemita",
+ "commit": "4ff8ffb8ad80d6836cf9cbfcf74dfce9c9a24ba3",
+ "pcb_path": "MISISTEMITA.kicad_pcb",
+ "description": "Electronic hardware prototyping system. Solderless, robust and open source. Solves the typical problem of the circuit that works on a breadboard but stops working on a real-world setup. Easy to replicate and compatible with virtually every electronic module.",
+ "license_url": "https://github.com/galopago/misistemita/blob/4ff8ffb/LICENSE",
+ "author_url": "https://github.com/galopago",
+ "topics": [
+  "diy",
+  "hardware",
+  "kicad",
+  "open-hardware",
+  "open-hardware-electronics",
+  "pcb",
+  "prototyping"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -3787.56585,
+   -26.03094,
+   -1789.91399
+  ],
+  "max": [
+   3787.83699,
+   26.03245,
+   1790.06321
+  ]
+ },
+ "rendered": "2026-10-17T17:56:51Z",
+ "kicad": "10.0.7"
+}

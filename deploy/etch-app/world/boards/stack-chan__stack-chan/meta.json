@@ -1,0 +1,72 @@
+{
+ "id": "gh:stack-chan/stack-chan",
+ "slug": "stack-chan__stack-chan",
+ "title": "Stack Chan",
+ "owner": "stack-chan",
+ "repo": "stack-chan",
+ "category": "dev-boards",
+ "stars": 1784,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  50.0,
+  50.0
+ ],
+ "parts": 38,
+ "glb_bytes": 801804,
+ "url": "https://github.com/stack-chan/stack-chan",
+ "commit": "ad876ea36e7ef13f08de2982fe8d15a6ffda5cc7",
+ "pcb_path": "schematics/m5-pantilt/m5-pantilt.kicad_pcb",
+ "description": "A JavaScript-driven M5Stack-embedded super-kawaii robot.",
+ "license_url": "https://github.com/stack-chan/stack-chan/blob/ad876ea/LICENSE",
+ "author_url": "https://github.com/stack-chan",
+ "topics": [
+  "chatgpt",
+  "esp32",
+  "fusion360",
+  "hardware",
+  "javascript",
+  "kawaii",
+  "kicad",
+  "m5stack",
+  "moddable",
+  "robots",
+  "schematics",
+  "stackchan",
+  "typescript"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 33,
+  "resolved": 32,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "SW1",
+    "path": "${KISYS3DMOD}/Button_Switch_THT.3dshapes/SW_CuK_OS102011MA1QN1_SPDT_Angled.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.1,
+   -0.00938,
+   0.04875
+  ],
+  "max": [
+   0.15,
+   0.00907,
+   0.1
+  ]
+ },
+ "rendered": "2026-10-17T18:02:33Z",
+ "kicad": "10.0.7"
+}

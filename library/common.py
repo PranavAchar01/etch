@@ -167,3 +167,10 @@ def kicad_cli() -> Path | None:
         if p and Path(p).exists():
             return Path(p)
     return None
+
+
+def scrub(text: str) -> str:
+    """Text without local absolute paths: repo-relative for this checkout, <tmp> for temp dirs, ~ for homes."""
+    text = text.replace(str(ROOT) + "/", "").replace(str(ROOT), ".")
+    text = re.sub(r"(/private)?/(tmp|var/folders)/[^\s'\"]*", "<tmp>", text)
+    return re.sub(r"/(Users|home)/[^/\s'\"]+/", "~/", text)

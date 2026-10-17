@@ -1,0 +1,60 @@
+{
+ "id": "gh:raeedcho/temper/case/top-plate",
+ "slug": "raeedcho__temper__case__top-plate",
+ "title": "Temper · Temper Topplate",
+ "owner": "raeedcho",
+ "repo": "temper",
+ "category": "keyboards",
+ "stars": 484,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  111.37,
+  89.95
+ ],
+ "parts": 18,
+ "glb_bytes": 41696,
+ "url": "https://github.com/raeedcho/temper",
+ "commit": "08b23b021fcec6c2ae355cade7e0e473530afb85",
+ "pcb_path": "case/top-plate/temper-topplate.kicad_pcb",
+ "description": "a wireless-only split keyboard based on the chocofi",
+ "license_url": "https://github.com/raeedcho/temper/blob/08b23b0/LICENSE",
+ "author_url": "https://github.com/raeedcho",
+ "topics": [
+  "ergonomic-keyboard",
+  "keyboard",
+  "kicad",
+  "nicenano",
+  "pcb",
+  "split-keyboard",
+  "zmk"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.07696,
+   -5e-05,
+   0.04403
+  ],
+  "max": [
+   0.18837,
+   0.00156,
+   0.13402
+  ]
+ },
+ "rendered": "2026-10-17T18:04:57Z",
+ "kicad": "10.0.7"
+}

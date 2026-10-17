@@ -1,0 +1,73 @@
+{
+ "id": "gh:vul-os/sirboard/Boards/Breakout/WROOM02",
+ "slug": "vul-os__sirboard__boards__breakout__wroom02",
+ "title": "Sirboard · WROOM02",
+ "owner": "vul-os",
+ "repo": "sirboard",
+ "category": "iot",
+ "stars": 56,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  27.94,
+  25.4
+ ],
+ "parts": 6,
+ "glb_bytes": 332440,
+ "url": "https://github.com/vul-os/sirboard",
+ "commit": "d8cf54d452867eb5fca43e35d5bb63d60c618511",
+ "pcb_path": "Boards/Breakout/WROOM02/WROOM02.kicad_pcb",
+ "description": "Open hardware: 107 KiCad PCB designs — SMD-to-THT breakout adapters, ATTiny/ATMega/ESP development boards, and a 39-part sensor line on a common JST-SH connector.",
+ "license_url": "https://github.com/vul-os/sirboard/blob/d8cf54d/LICENSE-APACHE",
+ "author_url": "https://github.com/vul-os",
+ "topics": [
+  "arduino",
+  "atmega",
+  "attiny",
+  "breakout-board",
+  "electronics",
+  "esp32",
+  "fritzing",
+  "hardware",
+  "i2c",
+  "kicad",
+  "open-hardware",
+  "pcb",
+  "pcb-design",
+  "qfn",
+  "sensors",
+  "smd",
+  "soic",
+  "tht",
+  "tqfp",
+  "vulos"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 4,
+  "resolved": 4,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -457.68599,
+   -189.0707,
+   -416.08577
+  ],
+  "max": [
+   457.82391,
+   189.07943,
+   416.16294
+  ]
+ },
+ "rendered": "2026-10-17T17:55:59Z",
+ "kicad": "10.0.7"
+}

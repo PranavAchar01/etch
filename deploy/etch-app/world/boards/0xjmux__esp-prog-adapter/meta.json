@@ -1,0 +1,57 @@
+{
+ "id": "gh:0xjmux/ESP-PROG-Adapter",
+ "slug": "0xjmux__esp-prog-adapter",
+ "title": "ESP PROG Adapter",
+ "owner": "0xjmux",
+ "repo": "ESP-PROG-Adapter",
+ "category": "tools",
+ "stars": 55,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  37.82,
+  25.09
+ ],
+ "parts": 11,
+ "glb_bytes": 404628,
+ "url": "https://github.com/0xjmux/ESP-PROG-Adapter",
+ "commit": "4a74ef898489da83ddcd2ad42852188cf0471b6c",
+ "pcb_path": "PCB/ESPPROG-Adapter.kicad_pcb",
+ "description": "Adapter PCB and Kicad Library to make adding component-less program and debug footprints to your PCBs as easy as possible",
+ "license_url": "https://github.com/0xjmux/ESP-PROG-Adapter/blob/4a74ef8/LICENSE.md",
+ "author_url": "https://github.com/0xjmux",
+ "topics": [
+  "esp32",
+  "jtag",
+  "jtag-adapter",
+  "kicad"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "None",
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 6,
+  "resolved": 6,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -619.50351,
+   -198.24286,
+   -411.07965
+  ],
+  "max": [
+   619.77385,
+   198.25215,
+   411.22231
+  ]
+ },
+ "rendered": "2026-10-17T17:55:55Z",
+ "kicad": "10.0.7"
+}

@@ -1,0 +1,61 @@
+{
+ "id": "gh:Hanqaqa/Easyduino/ESP32S3",
+ "slug": "hanqaqa__easyduino__esp32s3",
+ "title": "Easyduino · Easyduino ESP32S3",
+ "owner": "Hanqaqa",
+ "repo": "Easyduino",
+ "category": "dev-boards",
+ "stars": 753,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  25.86,
+  63.9
+ ],
+ "parts": 35,
+ "glb_bytes": 1179004,
+ "url": "https://github.com/Hanqaqa/Easyduino",
+ "commit": "53b14b66d64f25c55f88971c1c1b51656126bd30",
+ "pcb_path": "ESP32S3/Easyduino_ESP32S3.kicad_pcb",
+ "description": "Easily dive into different PCB KiCad designs of the most popular microcontroller devboards",
+ "license_url": "https://github.com/Hanqaqa/Easyduino/blob/53b14b6/License.txt",
+ "author_url": "https://github.com/Hanqaqa",
+ "topics": [
+  "arduino",
+  "esp32",
+  "esp32s3",
+  "kicad",
+  "kicad-pcb",
+  "rp2040",
+  "stm32",
+  "stm32f103"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 34,
+  "resolved": 34,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.12711,
+   -5e-05,
+   0.05275
+  ],
+  "max": [
+   0.15296,
+   0.0049,
+   0.1236
+  ]
+ },
+ "rendered": "2026-10-17T18:04:01Z",
+ "kicad": "10.0.7"
+}

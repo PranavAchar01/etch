@@ -1,0 +1,73 @@
+{
+ "id": "gh:AzonInc/Doorman/pcb",
+ "slug": "azoninc__doorman__pcb",
+ "title": "Doorman · PCB",
+ "owner": "AzonInc",
+ "repo": "Doorman",
+ "category": "iot",
+ "stars": 246,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  37.07,
+  37.2
+ ],
+ "parts": 41,
+ "glb_bytes": 968184,
+ "url": "https://github.com/AzonInc/Doorman",
+ "commit": "fdec5c030e77bb8e0219d745cc0282139c96836c",
+ "pcb_path": "pcb/doorman.kicad_pcb",
+ "description": "ESP32-S3 based Intercom Gateway (TCS / Koch / Niko / Scantron / Analogue Systems)",
+ "license_url": "https://github.com/AzonInc/Doorman/blob/fdec5c0/LICENSE",
+ "author_url": "https://github.com/AzonInc",
+ "topics": [
+  "esp",
+  "esp32",
+  "esp32-s3",
+  "esphome",
+  "gegensprechanlage",
+  "home-assistant",
+  "home-automation",
+  "homeautomation",
+  "intercom",
+  "kicad",
+  "koch",
+  "niko",
+  "nuki",
+  "nuki-smartlock",
+  "pcb",
+  "pcb-design",
+  "scantron",
+  "tc-bus",
+  "tcs",
+  "tcs-bus"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "HAL lead-free",
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 35,
+  "resolved": 35,
+  "hidden": 1,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.12683,
+   -0.0019,
+   0.07668
+  ],
+  "max": [
+   0.1648,
+   0.01159,
+   0.11481
+  ]
+ },
+ "rendered": "2026-10-17T18:09:49Z",
+ "kicad": "10.0.7"
+}

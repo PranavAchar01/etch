@@ -1,0 +1,59 @@
+{
+ "id": "gh:KOEGlike/meko/hardware/pcb_touchpad",
+ "slug": "koeglike__meko__hardware__pcb_touchpad",
+ "title": "Meko · Touchpad",
+ "owner": "KOEGlike",
+ "repo": "meko",
+ "category": "audio",
+ "stars": 87,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  41.34,
+  30.38
+ ],
+ "parts": 18,
+ "glb_bytes": 409836,
+ "url": "https://github.com/KOEGlike/meko",
+ "commit": "19e8bf6483dc50f256ca904f2e421b848d1de6c6",
+ "pcb_path": "hardware/pcb_touchpad/touchpad.kicad_pcb",
+ "description": "A linux music player with ddr3, a 70hz e-paper display and a haptic touchpad",
+ "license_url": "https://github.com/KOEGlike/meko/blob/19e8bf6/LICENSE",
+ "author_url": "https://github.com/KOEGlike",
+ "topics": [
+  "dac",
+  "embedded",
+  "fusion",
+  "kicad",
+  "nrf5340",
+  "zephyr-rtos"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 6,
+  "resolved": 6,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.1485,
+   -0.00389,
+   0.105
+  ],
+  "max": [
+   0.18984,
+   0.00156,
+   0.13538
+  ]
+ },
+ "rendered": "2026-10-17T18:16:44Z",
+ "kicad": "10.0.7"
+}

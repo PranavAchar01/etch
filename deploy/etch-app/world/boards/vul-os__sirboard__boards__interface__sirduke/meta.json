@@ -1,0 +1,73 @@
+{
+ "id": "gh:vul-os/sirboard/Boards/Interface/SirDuke",
+ "slug": "vul-os__sirboard__boards__interface__sirduke",
+ "title": "Sirboard · SirDuke",
+ "owner": "vul-os",
+ "repo": "sirboard",
+ "category": "iot",
+ "stars": 56,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  42.44,
+  14.11
+ ],
+ "parts": 23,
+ "glb_bytes": 407844,
+ "url": "https://github.com/vul-os/sirboard",
+ "commit": "d8cf54d452867eb5fca43e35d5bb63d60c618511",
+ "pcb_path": "Boards/Interface/SirDuke/SirDuke.kicad_pcb",
+ "description": "Open hardware: 107 KiCad PCB designs — SMD-to-THT breakout adapters, ATTiny/ATMega/ESP development boards, and a 39-part sensor line on a common JST-SH connector.",
+ "license_url": "https://github.com/vul-os/sirboard/blob/d8cf54d/LICENSE-APACHE",
+ "author_url": "https://github.com/vul-os",
+ "topics": [
+  "arduino",
+  "atmega",
+  "attiny",
+  "breakout-board",
+  "electronics",
+  "esp32",
+  "fritzing",
+  "hardware",
+  "i2c",
+  "kicad",
+  "open-hardware",
+  "pcb",
+  "pcb-design",
+  "qfn",
+  "sensors",
+  "smd",
+  "soic",
+  "tht",
+  "tqfp",
+  "vulos"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 23,
+  "resolved": 23,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -695.27035,
+   -189.06122,
+   -231.0715
+  ],
+  "max": [
+   695.47261,
+   189.06995,
+   231.26448
+  ]
+ },
+ "rendered": "2026-10-17T17:55:39Z",
+ "kicad": "10.0.7"
+}

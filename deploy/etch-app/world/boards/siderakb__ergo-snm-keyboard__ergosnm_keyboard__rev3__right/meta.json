@@ -1,0 +1,66 @@
+{
+ "id": "gh:siderakb/ergo-snm-keyboard/ErgoSNM_Keyboard/rev3/right",
+ "slug": "siderakb__ergo-snm-keyboard__ergosnm_keyboard__rev3__right",
+ "title": "Ergo Snm Keyboard · ErgoSNM V3 Right",
+ "owner": "siderakb",
+ "repo": "ergo-snm-keyboard",
+ "category": "keyboards",
+ "stars": 171,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  115.57,
+  106.68
+ ],
+ "parts": 90,
+ "glb_bytes": 1493856,
+ "url": "https://github.com/siderakb/ergo-snm-keyboard",
+ "commit": "20e9e51e9f52749140369968b2bf5e741bf063b0",
+ "pcb_path": "ErgoSNM_Keyboard/rev3/right/ErgoSNM_v3_right.kicad_pcb",
+ "description": "ErgoSNM is a split ergonomic keyboard integrated with trackball, wireless is in beta",
+ "license_url": "https://github.com/siderakb/ergo-snm-keyboard/blob/20e9e51/LICENSE",
+ "author_url": "https://github.com/siderakb",
+ "topics": [
+  "keyboard",
+  "kicad",
+  "nrf52840",
+  "oshw",
+  "pcb",
+  "pmw3360",
+  "rp2040"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 52,
+  "resolved": 51,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "J1",
+    "path": "${KICAD6_3DMODEL_DIR}/Connector_USB.3dshapes/USB_C_Receptacle_HRO_TYPE-C-31-M-12.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.07461,
+   -0.00862,
+   0.03375
+  ],
+  "max": [
+   0.19018,
+   0.00292,
+   0.14043
+  ]
+ },
+ "rendered": "2026-10-17T18:11:01Z",
+ "kicad": "10.0.7"
+}

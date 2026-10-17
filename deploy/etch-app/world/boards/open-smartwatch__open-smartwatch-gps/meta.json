@@ -1,0 +1,61 @@
+{
+ "id": "gh:Open-Smartwatch/open-smartwatch-gps",
+ "slug": "open-smartwatch__open-smartwatch-gps",
+ "title": "Open Smartwatch GPS",
+ "owner": "Open-Smartwatch",
+ "repo": "open-smartwatch-gps",
+ "category": "wearables",
+ "stars": 242,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  45.0,
+  41.0
+ ],
+ "parts": 67,
+ "glb_bytes": 1128184,
+ "url": "https://github.com/Open-Smartwatch/open-smartwatch-gps",
+ "commit": "744b1f4074e90fff00ded519dc4430f6050fd8d2",
+ "pcb_path": "osw.kicad_pcb",
+ "description": "Hardware design files for the GPS version of the open-smartwatch",
+ "license_url": "https://github.com/Open-Smartwatch/open-smartwatch-gps/blob/744b1f4/LICENSE",
+ "author_url": "https://github.com/Open-Smartwatch",
+ "topics": [
+  "gerber-files",
+  "kicad"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 57,
+  "resolved": 56,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "U3",
+    "path": "${KISYS3DMOD}/Package_SO.3dshapes/SOP-8_3.9x4.9mm_P1.27mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.1375,
+   -0.00044,
+   0.0895
+  ],
+  "max": [
+   0.1825,
+   0.00334,
+   0.1305
+  ]
+ },
+ "rendered": "2026-10-17T18:09:55Z",
+ "kicad": "10.0.7"
+}

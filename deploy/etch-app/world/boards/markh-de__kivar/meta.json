@@ -1,0 +1,57 @@
+{
+ "id": "gh:markh-de/KiVar",
+ "slug": "markh-de__kivar",
+ "title": "KiVar",
+ "owner": "markh-de",
+ "repo": "KiVar",
+ "category": "everything-else",
+ "stars": 64,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  59.0,
+  42.0
+ ],
+ "parts": 66,
+ "glb_bytes": 333552,
+ "url": "https://github.com/markh-de/KiVar",
+ "commit": "0abe3c4f04875c09667829af8ae0f86b3306a368",
+ "pcb_path": "demo/kivar-demo.kicad_pcb",
+ "description": "PCB Assembly Variants for KiCad",
+ "license_url": "https://github.com/markh-de/KiVar/blob/0abe3c4/LICENSE",
+ "author_url": "https://github.com/markh-de",
+ "topics": [
+  "kicad",
+  "pcb-design",
+  "pcbnew",
+  "schematic"
+ ],
+ "board": {
+  "mask": "#ffffffff",
+  "silk": "#000000ff",
+  "finish": "None",
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 59,
+  "resolved": 59,
+  "hidden": 1,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -966.54294,
+   -50.78416,
+   -688.02496
+  ],
+  "max": [
+   966.70994,
+   50.79045,
+   688.20896
+  ]
+ },
+ "rendered": "2026-10-17T17:55:36Z",
+ "kicad": "10.0.7"
+}

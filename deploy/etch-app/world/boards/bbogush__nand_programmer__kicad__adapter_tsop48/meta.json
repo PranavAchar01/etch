@@ -1,0 +1,61 @@
+{
+ "id": "gh:bbogush/nand_programmer/kicad/adapter_tsop48",
+ "slug": "bbogush__nand_programmer__kicad__adapter_tsop48",
+ "title": "Nand Programmer · Adapter TSOP48",
+ "owner": "bbogush",
+ "repo": "nand_programmer",
+ "category": "tools",
+ "stars": 389,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  48.0,
+  33.0
+ ],
+ "parts": 3,
+ "glb_bytes": 417908,
+ "url": "https://github.com/bbogush/nand_programmer",
+ "commit": "4d840b7afff7c1a1c02eacce3a72761cd0f58c93",
+ "pcb_path": "kicad/adapter_tsop48/adapter_tsop48.kicad_pcb",
+ "description": "NANDO - NAND Open programmer",
+ "license_url": "https://github.com/bbogush/nand_programmer/blob/4d840b7/LICENSE.txt",
+ "author_url": "https://github.com/bbogush",
+ "topics": [
+  "flashmemory",
+  "kicad",
+  "nand",
+  "nand-memory",
+  "nand-programmer",
+  "programmer",
+  "spimemory",
+  "stm32f103"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 2,
+  "resolved": 2,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.1,
+   -0.00858,
+   0.083
+  ],
+  "max": [
+   0.148,
+   0.00301,
+   0.116
+  ]
+ },
+ "rendered": "2026-10-17T18:05:50Z",
+ "kicad": "10.0.7"
+}

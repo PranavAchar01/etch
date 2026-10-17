@@ -1,0 +1,54 @@
+{
+ "id": "gh:Open-Smartwatch/open-smartwatch-light",
+ "slug": "open-smartwatch__open-smartwatch-light",
+ "title": "Open Smartwatch Light",
+ "owner": "Open-Smartwatch",
+ "repo": "open-smartwatch-light",
+ "category": "wearables",
+ "stars": 247,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  36.13,
+  36.13
+ ],
+ "parts": 51,
+ "glb_bytes": 826424,
+ "url": "https://github.com/Open-Smartwatch/open-smartwatch-light",
+ "commit": "55ce0ec0e0254e03b575917788cb001507b01619",
+ "pcb_path": "osw-light.kicad_pcb",
+ "description": "Hardware design files. Light version (no GPS, no uSD) of the open-smartwatch",
+ "license_url": "https://github.com/Open-Smartwatch/open-smartwatch-light/blob/55ce0ec/LICENSE",
+ "author_url": "https://github.com/Open-Smartwatch",
+ "topics": [
+  "kicad"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 43,
+  "resolved": 43,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.05814,
+   -8e-05,
+   0.08354
+  ],
+  "max": [
+   0.09426,
+   0.00334,
+   0.11966
+  ]
+ },
+ "rendered": "2026-10-17T18:09:34Z",
+ "kicad": "10.0.7"
+}

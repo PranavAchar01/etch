@@ -1,0 +1,68 @@
+{
+ "id": "gh:jangtrinh/design-os-3d-blender/docs/reviews/dc-01/r02/cad",
+ "slug": "jangtrinh__design-os-3d-blender__docs__reviews__dc-01__r02__cad",
+ "title": "Design Os 3D Blender · Desktop Companion",
+ "owner": "jangtrinh",
+ "repo": "design-os-3d-blender",
+ "category": "robotics",
+ "stars": 96,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  54.0,
+  46.0
+ ],
+ "parts": 24,
+ "glb_bytes": 262404,
+ "url": "https://github.com/jangtrinh/design-os-3d-blender",
+ "commit": "8909ac7bfcfed8460e1c291de08113538b2856ff",
+ "pcb_path": "docs/reviews/dc-01/r02/cad/desktop-companion.kicad_pcb",
+ "description": "AI agent operating system for Blender 5.2: bpy knowledge base, AGENT_OK execution contract, 3D-print production gate, worked keyboard and desktop-robot builds.",
+ "license_url": "https://github.com/jangtrinh/design-os-3d-blender/blob/8909ac7/LICENSE",
+ "author_url": "https://github.com/jangtrinh",
+ "topics": [
+  "3d-printing",
+  "3mf",
+  "agent-skills",
+  "ai-agent",
+  "blender",
+  "blender-python",
+  "bpy",
+  "claude-code",
+  "codex",
+  "cycles",
+  "kicad",
+  "mcp",
+  "model-context-protocol",
+  "robotics",
+  "stl"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.0,
+   -5e-05,
+   -0.0
+  ],
+  "max": [
+   0.054,
+   0.00158,
+   0.046
+  ]
+ },
+ "rendered": "2026-10-17T18:15:30Z",
+ "kicad": "10.0.7"
+}

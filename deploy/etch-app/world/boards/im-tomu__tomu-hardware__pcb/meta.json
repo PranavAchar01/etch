@@ -1,0 +1,59 @@
+{
+ "id": "gh:im-tomu/tomu-hardware/pcb",
+ "slug": "im-tomu__tomu-hardware__pcb",
+ "title": "Tomu Hardware · Tomu",
+ "owner": "im-tomu",
+ "repo": "tomu-hardware",
+ "category": "robotics",
+ "stars": 365,
+ "license": "CC-BY-SA-4.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  13.0,
+  9.4
+ ],
+ "parts": 17,
+ "glb_bytes": 187452,
+ "url": "https://github.com/im-tomu/tomu-hardware",
+ "commit": "82dee8e32ebf79712f4e99fa3542675b8a289a3f",
+ "pcb_path": "pcb/tomu.kicad_pcb",
+ "description": "A tiny ARM microprocessor which fits in your USB port.",
+ "license_url": "https://github.com/im-tomu/tomu-hardware/blob/82dee8e/LICENSE",
+ "author_url": "https://github.com/im-tomu",
+ "topics": [
+  "arm",
+  "hardware",
+  "hardware-device",
+  "kicad",
+  "tomu",
+  "u2f"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 0.6
+ },
+ "models": {
+  "total": 10,
+  "resolved": 10,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.01702,
+   -0.00085,
+   0.0171
+  ],
+  "max": [
+   0.03002,
+   0.00058,
+   0.0265
+  ]
+ },
+ "rendered": "2026-10-17T18:06:22Z",
+ "kicad": "10.0.7"
+}

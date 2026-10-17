@@ -1,0 +1,60 @@
+{
+ "id": "gh:Hydra-Designs/project-hydra-meshtastic-pcb/meshtastic-diy",
+ "slug": "hydra-designs__project-hydra-meshtastic-pcb__meshtastic-diy",
+ "title": "Project Hydra Meshtastic PCB · Meshtastic Diy",
+ "owner": "Hydra-Designs",
+ "repo": "project-hydra-meshtastic-pcb",
+ "category": "rf",
+ "stars": 167,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  28.0,
+  46.2
+ ],
+ "parts": 47,
+ "glb_bytes": 870500,
+ "url": "https://github.com/Hydra-Designs/project-hydra-meshtastic-pcb",
+ "commit": "3ff34b532b74792a773c70989041756519516835",
+ "pcb_path": "meshtastic-diy.kicad_pcb",
+ "description": "A minimalist 1W LoRA PCB design for Meshtastic-device firmware",
+ "license_url": "https://github.com/Hydra-Designs/project-hydra-meshtastic-pcb/blob/3ff34b5/LICENSE",
+ "author_url": "https://github.com/Hydra-Designs",
+ "topics": [
+  "diy",
+  "esp32",
+  "kibot",
+  "kicad",
+  "lora",
+  "meshtastic",
+  "pcb"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 39,
+  "resolved": 39,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.1425,
+   -0.00863,
+   0.08
+  ],
+  "max": [
+   0.1705,
+   0.00479,
+   0.1262
+  ]
+ },
+ "rendered": "2026-10-17T18:11:35Z",
+ "kicad": "10.0.7"
+}

@@ -31,7 +31,9 @@ KEEP_EXT = (
     ".sch",
     ".step",
     ".stp",
+    ".stpz",
     ".wrl",
+    ".wrz",
     ".vrml",
 )
 

@@ -4,12 +4,14 @@
 
 Per board:
   1. kicad-cli pcb export glb (library STEP models, copper, mask, silk; nodes named by refdes)
-  2. gltf-transform optimize: dedup + meshopt + quantisation, no simplification (PLAN.md rule 2), with the
-     scene graph kept (no flatten/join/instancing), so every footprint stays its own named node
+  2. library/optimize.mjs: dedup + join primitives per material + quantisation + meshopt, no simplification
+     (PLAN.md rule 2), with the scene graph kept (no flatten/join/instancing), so every footprint stays its
+     own named node; boards over --max-glb-mb (20) after that are skipped, never simplified
   3. kicad-cli pcb render (raytraced, perspective, 3/4 view) -> 1280x800 PNG -> 640x400 WebP
   4. parts.json from the .kicad_pcb (+ schematic descriptions), positions measured in the GLB frame
-  5. meta.json records models {total, resolved, missing: [{ref, path}]}; identical is true only when no model
-     is missing (PLAN.md rule 4)
+  5. meta.json records models {total, resolved, hidden, missing: [{ref, path, reason}]} (from fetch.py's
+     models.json plus every model kicad-cli could not load) and identical (PLAN.md rule 4)
+Only boards fetch.py marked identical are rendered unless --allow-missing.
 Failures are logged to library/cache/render_log.json and the board is skipped.
 """
 
@@ -27,7 +29,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from common import LIB_DIR, BOARDS_JSON, RENDER_LOG, SRC, WORK, WORLD, kicad_cli, load_json, log, save_json
+from common import LIB_DIR, BOARDS_JSON, scrub, RENDER_LOG, SRC, WORK, WORLD, kicad_cli, load_json, log, save_json
 from pcbinfo import board_info, footprint_models, glb_bounds, glb_nodes
 
 GLB_FLAGS = [
@@ -42,7 +44,6 @@ NODE_DIR = LIB_DIR / "cache" / "node"
 NODE_LIBS = ["@gltf-transform/core@4.5.1", "@gltf-transform/functions@4.5.1", "@gltf-transform/extensions@4.5.1",
              "meshoptimizer@0.22.0"]
 MAX_BYTES = 20_000_000  # --max-glb-mb: a board still bigger after lossless compression is skipped, not simplified
-EXPORTABLE = (".step", ".stp", ".stpz", ".igs", ".iges")  # what the GLB (OCC) export can load
 RENDER_W, RENDER_H = 1280, 800
 
 
@@ -80,10 +81,9 @@ def ensure_node_libs() -> None:
 
 
 def optimize(raw: Path, out: Path, max_bytes: int = MAX_BYTES) -> tuple[bool, str]:
-    """library/optimize.mjs (dedup, join prims per material, weld, quantize, meshopt). One lossless pass:
-    a board over max_bytes afterwards is reported, never simplified to fit."""
+    """library/optimize.mjs: lossless-looking compression only (join prims per material, quantize, meshopt)."""
     out.unlink(missing_ok=True)
-    p = run(["node", str(LIB_DIR / "optimize.mjs"), str(raw), str(out)], timeout=900)
+    p = run(["node", str(LIB_DIR / "optimize.mjs"), str(raw), str(out)], timeout=1800)
     if p.returncode != 0 or not out.exists():
         return False, (p.stderr or p.stdout)[-300:]
     if out.stat().st_size > max_bytes:
@@ -91,52 +91,13 @@ def optimize(raw: Path, out: Path, max_bytes: int = MAX_BYTES) -> tuple[bool, st
     return True, ""
 
 
-def _twin(p: Path) -> Path | None:
-    """The file kicad-cli --subst-models would load: the model itself if STEP/IGES, else a STEP twin."""
-    if p.suffix.lower() in EXPORTABLE and p.is_file():
-        return p
-    for ext in (".step", ".stp", ".STEP", ".STP", ".stpz"):
-        q = p.with_suffix(ext)
-        if q.is_file():
-            return q
-    return None
-
-
-def model_report(pcb: Path, src: Path, env: dict[str, str]) -> dict[str, Any]:
-    """{total, resolved, missing: [{ref, path}]} over every visible footprint model, resolved the way kicad-cli
-    resolves it for the GLB export (variables, ${KIPRJMOD}, project-relative, then the stock library)."""
-    stock = Path(env.get("KICAD10_3DMODEL_DIR", ""))
-    total, resolved, missing = 0, 0, []
-    for m in footprint_models(pcb):
-        if m["hidden"]:
-            continue
-        total += 1
-        raw = m["path"].replace("\\", "/")
-
-        def var(x: re.Match) -> str:
-            name = x.group(1) or x.group(2)
-            return str(src) if name == "KIPRJMOD" else env.get(name, x.group(0))
-
-        path = re.sub(r"\$\{(\w+)\}|\$\((\w+)\)", var, raw)
-        hit = None
-        if "$" not in path:
-            cands = [Path(path)] if Path(path).is_absolute() else [src / path, stock / path]
-            for c in cands:
-                if (hit := _twin(c)):
-                    break
-        if hit:
-            resolved += 1
-        else:
-            missing.append({"ref": m["ref"], "path": m["path"]})
-    return {"total": total, "resolved": resolved, "missing": missing}
-
-
-def thumb(cli: Path, env: dict, pcb: Path, work: Path, out: Path) -> tuple[bool, str]:
+def thumb(cli: Path, env: dict, pcb: Path, work: Path, out: Path, size_mm: list[float]) -> tuple[bool, str]:
     png = work / "thumb.png"
     png.unlink(missing_ok=True)
     cmd = [str(cli), "pcb", "render", "-o", str(png), "--width", str(RENDER_W), "--height", str(RENDER_H),
            "--side", "top", "--perspective", "--quality", "high", "--use-board-stackup-colors", "--background", "opaque",
-           "--rotate", "-40,0,-25", "--zoom", "0.8", str(pcb)]
+           "--rotate", "-40,0,65" if size_mm[1] > size_mm[0] * 1.25 else "-40,0,-25",  # long axis across the frame
+           "--zoom", "0.8", str(pcb)]
     p = run(cmd, timeout=600, env=env)
     if not png.exists():
         return False, "render: " + (p.stderr or p.stdout)[-300:]
@@ -179,10 +140,35 @@ def render_board(b: dict, cli: Path, env: dict, kver: str, force: bool, max_byte
     raw = work / "raw.glb"
     raw.unlink(missing_ok=True)
     p = run([str(cli), "pcb", "export", "glb", "-f", *GLB_FLAGS, "-o", str(raw), str(pcb)], timeout=900, env=env)
-    if p.returncode != 0 or not raw.exists():
+    # kicad-cli exits non-zero when any model fails to load but still writes the GLB; judge by the file
+    if not raw.exists() or raw.stat().st_size < 1000:
         return {"ok": False, "error": "export glb: " + (p.stderr or p.stdout)[-300:].strip()}
-    models = model_report(pcb, src, env)
-    cli_missing = (p.stdout + p.stderr).count("Could not add 3D model")
+    cli_out = p.stdout + p.stderr
+    models = load_json(src / "models.json", {"total": 0, "resolved": 0, "hidden": 0, "missing": []})
+    # models that resolved to a file but that kicad-cli could not load also count as missing
+    known = {m["ref"] for m in models["missing"]}
+    # "No model for filename '<path>'": a model file that resolved but that kicad-cli (OpenCASCADE) cannot read
+    by_path: dict[str, list[str]] = {}
+    try:
+        for e in footprint_models(pcb):
+            if not e["hidden"]:
+                by_path.setdefault(e["path"], []).append(e["ref"])
+    except Exception:  # noqa: BLE001
+        pass
+    for bad in dict.fromkeys(re.findall(r"No model for filename '([^']+)'", cli_out)):
+        for ref in by_path.get(bad, ["?"]):
+            models["missing"].append({"ref": ref, "path": scrub(bad),
+                                      "reason": "kicad-cli could not read the model file"})
+            known.add(ref)
+            models["identical"] = False
+    for line in cli_out.splitlines():
+        m = re.search(r"Could not add 3D model for (.+?)\.?$", line.strip())
+        if m and m.group(1) not in known:
+            known.add(m.group(1))
+            models["missing"].append({"ref": m.group(1), "path": "?", "reason": "kicad-cli could not load the model file"})
+            models["identical"] = False
+    models["resolved"] = max(0, models["total"] - len(models["missing"]))
+    identical = bool(models.get("identical", not models["missing"]))
 
     opt = work / "board.glb"
     ok, msg = optimize(raw, opt, max_bytes)
@@ -190,7 +176,7 @@ def render_board(b: dict, cli: Path, env: dict, kver: str, force: bool, max_byte
         return {"ok": False, "error": "optimize: " + msg, "raw_bytes": raw.stat().st_size}
 
     th = work / "thumb.webp"
-    ok, msg = thumb(cli, env, pcb, work, th)
+    ok, msg = thumb(cli, env, pcb, work, th, info["size_mm"])
     if not ok:
         return {"ok": False, "error": msg}
 
@@ -241,10 +227,10 @@ def render_board(b: dict, cli: Path, env: dict, kver: str, force: bool, max_byte
         "topics": b["topics"],
         "board": {"mask": info["mask"], "silk": info["silk"], "finish": info["finish"],
                   "thickness_mm": info["thickness_mm"]},
+        "models": {"total": models["total"], "resolved": models["resolved"], "hidden": models.get("hidden", 0),
+                   "missing": models["missing"]},
+        "identical": identical,
         "glb_bounds_m": {"min": [round(v, 5) for v in lo], "max": [round(v, 5) for v in hi]},
-        "models": models,
-        # kicad-cli's own count of models it could not load is a second witness: either one blocks identical
-        "identical": not models["missing"] and cli_missing == 0,
         "rendered": now,
         "kicad": kver,
     }
@@ -252,8 +238,7 @@ def render_board(b: dict, cli: Path, env: dict, kver: str, force: bool, max_byte
     shutil.rmtree(work, ignore_errors=True)
     return {"ok": True, "seconds": round(time.time() - t0, 1), "glb_bytes": meta["glb_bytes"],
             "raw_bytes": raw.stat().st_size if raw.exists() else None, "nodes_matched": len(offs),
-            "parts": len(parts), "models_total": models["total"], "models_missing": len(models["missing"]),
-            "cli_missing": cli_missing, "identical": meta["identical"]}
+            "parts": len(parts), "missing_models": len(models["missing"]), "identical": identical}
 
 
 def world_bytes() -> int:
@@ -267,8 +252,12 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--retry-failed", action="store_true")
+    ap.add_argument("--allow-missing", action="store_true",
+                    help="also render boards with unresolved 3D models (identical: false); default renders only "
+                         "boards where every model KiCad would draw resolved")
     ap.add_argument("--budget-mb", type=float, default=150.0, help="stop when world/ grows past this")
-    ap.add_argument("--max-glb-mb", type=float, default=MAX_BYTES / 1e6, help="skip boards bigger than this after compression")
+    ap.add_argument("--max-glb-mb", type=float, default=MAX_BYTES / 1e6,
+                    help="skip boards bigger than this after compression")
     args = ap.parse_args()
 
     cli = kicad_cli()
@@ -280,6 +269,8 @@ def main() -> None:
     boards = [b for b in load_json(BOARDS_JSON, []) if (SRC / b["slug"] / "board.kicad_pcb").exists()]
     if args.only:
         boards = [b for b in boards if b["slug"] in args.only]
+    elif not args.allow_missing:
+        boards = [b for b in boards if load_json(SRC / b["slug"] / "models.json", {}).get("identical")]
     logd: dict[str, Any] = load_json(RENDER_LOG, {})
     if not args.retry_failed and not args.force and not args.only:
         boards = [b for b in boards if logd.get(b["slug"], {}).get("ok", True)]
@@ -304,6 +295,8 @@ def main() -> None:
                 res = fut.result()
             except Exception as e:  # noqa: BLE001
                 res = {"ok": False, "error": f"crash: {e}"}
+            if res.get("error"):
+                res["error"] = scrub(res["error"])
             if not res.get("cached"):
                 logd[b["slug"]] = res
                 save_json(RENDER_LOG, logd)

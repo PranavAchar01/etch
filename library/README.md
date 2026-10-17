@@ -6,16 +6,45 @@ serves static files and never converts or renders anything at view time. Output 
 
 ```
 python3 library/crawl.py --limit 200     # GitHub search via `gh` -> library/cache/{repos,boards}.json
-python3 library/fetch.py                 # pcb + project/schematics + repo-local 3D models -> library/cache/src/<slug>/
-python3 library/render.py --limit 150    # kicad-cli GLB + raytraced thumb + parts.json + meta.json
-python3 library/build_index.py --prune   # deploy/etch-app/world/index.json
+python3 library/fetch.py                 # pcb, project, schematics, every 3D model -> library/cache/src/<slug>/
+python3 library/render.py                # kicad-cli GLB + raytraced thumb + parts.json + meta.json
+python3 library/build_index.py --prune   # deploy/etch-app/world/index.json + library/manifest.json
 ```
 
 All steps are incremental: re-running skips repos/boards already done (`--refresh`, `--force`,
-`--retry-failed` to redo). Failures and timings are in `library/cache/render_log.json`.
+`--retry-failed` to redo, `--only <slug>...` for single boards). Hand-picked boards pinned to an exact
+commit live in `PINNED_BOARDS` in `crawl.py`. Failures and timings: `library/cache/render_log.json`.
+`library/manifest.json` (committed) lists every crawled board as queued / rendered / skipped with the
+reason and its 3D-model summary.
 
-Needs: `gh` (authenticated), KiCad 9+ (`/Applications/KiCad/KiCad.app`, or set `KICAD_CLI`), Node (`npx`
-runs `@gltf-transform/cli`), `cwebp` (`brew install webp`). Python is stdlib only.
+Needs: `gh` (authenticated), KiCad 9+ (`$ETCH_KICAD_APP`, `/Applications/KiCad/KiCad.app` or the Homebrew
+Caskroom; or set `KICAD_CLI`), Node (`render.py` installs `@gltf-transform/*` + `meshoptimizer` into
+`library/cache/node`), `cwebp` (`brew install webp`), `git`. Python is stdlib only.
+
+## Identical rendering
+
+A board in the library must look like the original project in KiCad: the same parts, the same 3D models,
+the same colours.
+
+- **Every `(model ...)` path is resolved**, never substituted: KiCad's stock variables -> the installed
+  KiCad 3D library, then the official library at the version the variable names (`KICAD8_3DMODEL_DIR` ->
+  kicad-packages3D 8.0.9, `KISYS3DMOD` -> 5.1.12 then the KiCad 4 library), fetched from blobless git
+  clones; `${KIPRJMOD}` / relative paths -> the repo at the pinned commit; absolute paths and custom
+  variables -> the longest matching path in the repo or the KiCad library, then the same file name in the
+  repo, the author's own published library (`AUTHOR_LIBS`, e.g. OLIMEX/KiCAD) and the KiCad library. A
+  `.wrl` with a `.step` twin uses the STEP (as `kicad-cli --subst-models` does). Offsets, scales,
+  rotations and hidden models are left exactly as in the pcb.
+- **No geometry is changed to save bytes.** GLBs are only compressed: primitives with the same material
+  are joined inside each mesh, then 16-bit position / 10-bit normal quantisation and meshopt. No
+  simplification, decimation or instancing. Boards over 25 MB are skipped, not simplified.
+- **Only identical boards are published** (`render.py --allow-missing` overrides). `meta.json` records
+  `models: {total, resolved, hidden, missing: [{ref, path, reason}]}` and `identical`. A model counts as
+  missing when its file is in neither the repo nor any KiCad library, or when kicad-cli cannot read it. One
+  case does not break identity: a path into a real KiCad library folder for a model the library never
+  shipped (e.g. `Connector_USB.3dshapes/USB_C_Receptacle_HRO_TYPE-C-31-M-12.step`), because KiCad draws
+  nothing there either; such entries stay listed under `missing` with that reason.
+- Colours come from the board's own stackup (`--use-board-stackup-colors` for the thumbnail; mask, silk
+  and finish in `meta.board`).
 
 ## Licence policy
 
@@ -27,6 +56,11 @@ runs `@gltf-transform/cli`), `cwebp` (`brew install webp`). Python is stdlib onl
 
 ## Output
 
-`deploy/etch-app/world/` is committed and served by Vercel, so keep it small: GLBs are meshopt-compressed
-(target < 1.5 MB, boards over 4 MB are skipped) and `render.py` stops at `--budget-mb` (default 150).
-`library/cache/` is gitignored.
+`deploy/etch-app/world/` is committed and served by Vercel. `render.py` stops at `--budget-mb` (default
+150). `library/cache/` is gitignored.
+
+GLB frame: metres, glTF Y-up, x = KiCad x, z = KiCad y, in KiCad's page coordinates (the board is not
+centred; `meta.glb_bounds_m` gives the bounds). Each footprint is a node named by its refdes (e.g. `U6`,
+`USB-UART1`) whose children carry the meshes; names below a footprint node are cleared. The board itself
+(copper, mask, silk, vias, pads) is in unnamed nodes. Files use `EXT_meshopt_compression` and
+`KHR_mesh_quantization`, so three.js needs `loader.setMeshoptDecoder(MeshoptDecoder)`.

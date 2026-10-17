@@ -1,0 +1,52 @@
+{
+ "id": "gh:kazkojima/esp32-phy/hardware/esp32-wslan8720",
+ "slug": "kazkojima__esp32-phy__hardware__esp32-wslan8720",
+ "title": "ESP32 Phy · ESP32 Wslan8720",
+ "owner": "kazkojima",
+ "repo": "esp32-phy",
+ "category": "dev-boards",
+ "stars": 34,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  78.59,
+  78.75
+ ],
+ "parts": 10,
+ "glb_bytes": 783980,
+ "url": "https://github.com/kazkojima/esp32-phy",
+ "commit": "3ba6b004d38aac7a3eaba2ac62df26bf4e1f1c5d",
+ "pcb_path": "hardware/esp32-wslan8720/esp32-wslan8720.kicad_pcb",
+ "description": "KiCAD files and apps for ESP-WROOM-32 ethernet boards",
+ "license_url": "https://github.com/kazkojima/esp32-phy/blob/3ba6b00/COPYING",
+ "author_url": "https://github.com/kazkojima",
+ "topics": [],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 9,
+  "resolved": 9,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.11837,
+   -0.00204,
+   0.02277
+  ],
+  "max": [
+   0.2032,
+   0.01014,
+   0.13589
+  ]
+ },
+ "rendered": "2026-10-17T17:59:28Z",
+ "kicad": "10.0.7"
+}

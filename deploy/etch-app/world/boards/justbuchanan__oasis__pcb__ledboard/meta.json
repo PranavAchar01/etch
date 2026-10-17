@@ -1,0 +1,58 @@
+{
+ "id": "gh:justbuchanan/oasis/pcb/ledboard",
+ "slug": "justbuchanan__oasis__pcb__ledboard",
+ "title": "Oasis · Ledboard",
+ "owner": "justbuchanan",
+ "repo": "oasis",
+ "category": "iot",
+ "stars": 270,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  140.0,
+  140.0
+ ],
+ "parts": 11,
+ "glb_bytes": 60212,
+ "url": "https://github.com/justbuchanan/oasis",
+ "commit": "3462f162f80e11c78705218441af37639d87bfdc",
+ "pcb_path": "pcb/ledboard/ledboard.kicad_pcb",
+ "description": "3d-printed smart terrarium",
+ "license_url": "https://github.com/justbuchanan/oasis/blob/3462f16/LICENSE",
+ "author_url": "https://github.com/justbuchanan",
+ "topics": [
+  "3d-printing",
+  "cadquery",
+  "kicad",
+  "oasis",
+  "terrarium"
+ ],
+ "board": {
+  "mask": "white",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 5,
+  "resolved": 5,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.03001,
+   -5e-05,
+   0.03002
+  ],
+  "max": [
+   0.17,
+   0.00398,
+   0.16999
+  ]
+ },
+ "rendered": "2026-10-17T18:07:53Z",
+ "kicad": "10.0.7"
+}

@@ -1,0 +1,85 @@
+{
+ "id": "gh:OpenLightingProject/rp2040-dmxsun/hardware/ioboard_4ports_isolated",
+ "slug": "openlightingproject__rp2040-dmxsun__hardware__ioboard_4ports_isolated",
+ "title": "RP2040 Dmxsun · Ioboard 4PORTS Isolated",
+ "owner": "OpenLightingProject",
+ "repo": "rp2040-dmxsun",
+ "category": "lighting",
+ "stars": 128,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  106.0,
+  55.0
+ ],
+ "parts": 60,
+ "glb_bytes": 1315264,
+ "url": "https://github.com/OpenLightingProject/rp2040-dmxsun",
+ "commit": "f3b1749c982da85770dc9a11eada035404edc25d",
+ "pcb_path": "hardware/ioboard_4ports_isolated/ioboard_4ports_isolated.kicad_pcb",
+ "description": "RP2040-based USB DMX dongle with integrated web server",
+ "license_url": "https://github.com/OpenLightingProject/rp2040-dmxsun/blob/f3b1749/LICENSE",
+ "author_url": "https://github.com/OpenLightingProject",
+ "topics": [
+  "artnet",
+  "dmx",
+  "dmx512",
+  "kicad",
+  "lighting-control",
+  "lwip",
+  "pcb",
+  "raspberry-pi-pico",
+  "rp2040",
+  "rpi-pico",
+  "tinyusb"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 50,
+  "resolved": 46,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "J2",
+    "path": "${KICAD8_3DMODEL_DIR}/Connector_Audio.3dshapes/Jack_XLR_Neutrik_NC3FAAH_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J8",
+    "path": "${KICAD8_3DMODEL_DIR}/Connector_Audio.3dshapes/Jack_XLR_Neutrik_NC3FAAH_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J10",
+    "path": "${KICAD8_3DMODEL_DIR}/Connector_Audio.3dshapes/Jack_XLR_Neutrik_NC3FAAH_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J4",
+    "path": "${KICAD8_3DMODEL_DIR}/Connector_Audio.3dshapes/Jack_XLR_Neutrik_NC3FAAH_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.025,
+   -0.00241,
+   0.02
+  ],
+  "max": [
+   0.131,
+   0.01013,
+   0.075
+  ]
+ },
+ "rendered": "2026-10-17T18:14:23Z",
+ "kicad": "10.0.7"
+}

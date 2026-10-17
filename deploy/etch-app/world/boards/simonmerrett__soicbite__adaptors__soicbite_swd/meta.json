@@ -1,0 +1,63 @@
+{
+ "id": "gh:SimonMerrett/SOICbite/adaptors/SOICbite_SWD",
+ "slug": "simonmerrett__soicbite__adaptors__soicbite_swd",
+ "title": "SOICbite · SOICbite SWD",
+ "owner": "SimonMerrett",
+ "repo": "SOICbite",
+ "category": "tools",
+ "stars": 354,
+ "license": "BSD-2-Clause",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  39.8,
+  13.1
+ ],
+ "parts": 4,
+ "glb_bytes": 207132,
+ "url": "https://github.com/SimonMerrett/SOICbite",
+ "commit": "ef1ad26febff8ace92e256f7026b4203fd2161e5",
+ "pcb_path": "adaptors/SOICbite_SWD/SOICbite_SWD.kicad_pcb",
+ "description": "A compact PCB footprint which allows SOIC test clips to be used as a space-efficient programming and debugging connector",
+ "license_url": "https://github.com/SimonMerrett/SOICbite/blob/ef1ad26/LICENSE",
+ "author_url": "https://github.com/SimonMerrett",
+ "topics": [
+  "connector",
+  "debugging",
+  "eagle-cad",
+  "eagle-pcb",
+  "electronics-tools",
+  "embedded",
+  "hardware",
+  "kicad",
+  "kicad-footprints",
+  "programmer-hardware"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 4,
+  "resolved": 4,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.0833,
+   -0.00141,
+   0.0941
+  ],
+  "max": [
+   0.1231,
+   0.0107,
+   0.1072
+  ]
+ },
+ "rendered": "2026-10-17T18:07:22Z",
+ "kicad": "10.0.7"
+}

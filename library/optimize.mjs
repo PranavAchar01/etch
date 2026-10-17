@@ -3,10 +3,11 @@
 //   node library/optimize.mjs in.glb out.glb
 //
 // kicad-cli writes one primitive (with its own accessors) per STEP face: a 60 x 55 mm board is ~50k accessors
-// and ~17 MB. Here: dedup -> join primitives that share a material inside each mesh -> weld -> quantize ->
-// meshopt. No simplification (library/PLAN.md, identical rendering rule 2): every triangle stays.
-// The scene graph is kept as is (no flatten/join across nodes, no instancing), so footprint nodes keep
-// their names and transforms. Needs the libs installed in library/cache/node
+// and ~17 MB. Here, without changing any geometry: dedup -> join primitives that share a material inside each
+// mesh -> weld (bitwise-identical vertices only) -> quantize (position 16 bit, normal 10 bit) -> meshopt.
+// No simplification or decimation: the board must look identical to the original design.
+// The scene graph is kept as is (no flatten/join across nodes, no instancing), so
+// footprint nodes keep their names and transforms. Needs the libs installed in library/cache/node
 // (render.py installs them).
 
 import { createRequire } from 'node:module';
@@ -57,7 +58,11 @@ for (const mesh of root.listMeshes()) {
 const clear = (n) => { for (const c of n.listChildren()) { c.setName(''); clear(c); } };
 for (const scene of root.listScenes()) {
   for (const top of scene.listChildren()) {
-    for (const fp of top.listChildren()) clear(fp);
+    for (const fp of top.listChildren()) {
+      clear(fp);
+      // board body / copper / mask / silk nodes are named "=>[0:1:1:94]": unnamed, so only refdes remain
+      if (/^=>\[/.test(fp.getName())) fp.setName('');
+    }
   }
 }
 
@@ -65,7 +70,12 @@ await doc.transform(
   F.dedup(),
   F.prune({ keepLeaves: false, keepAttributes: false }),
   F.weld({}),
-  F.quantize({ quantizePosition: 14, quantizeNormal: 8 }),
+  F.quantize({ quantizePosition: 16, quantizeNormal: 10, quantizeTexcoord: 14 }),
   F.meshopt({ encoder: MeshoptEncoder, level: 'high' }),
 );
+// neutral asset metadata: no tool/machine strings from the exporter
+const asset = root.getAsset();
+asset.generator = 'Etch';
+delete asset.copyright;
+delete asset.extras;
 await io.write(output, doc);

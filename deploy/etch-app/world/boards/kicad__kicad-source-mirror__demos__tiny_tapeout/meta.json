@@ -1,0 +1,64 @@
+{
+ "id": "gh:KiCad/kicad-source-mirror/demos/tiny_tapeout",
+ "slug": "kicad__kicad-source-mirror__demos__tiny_tapeout",
+ "title": "Kicad Source Mirror · Tinytapeout Demo",
+ "owner": "KiCad",
+ "repo": "kicad-source-mirror",
+ "category": "computing",
+ "stars": 3041,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  104.5,
+  81.0
+ ],
+ "parts": 171,
+ "glb_bytes": 3854004,
+ "url": "https://github.com/KiCad/kicad-source-mirror",
+ "commit": "65a2918b01dfbc413a95e80898d6db4b1743504f",
+ "pcb_path": "demos/tiny_tapeout/tinytapeout-demo.kicad_pcb",
+ "description": "This is an active mirror of the KiCad development branch, which is hosted at GitLab (updated every time something is pushed). Pull requests on GitHub are not accepted or watched.",
+ "license_url": "https://github.com/KiCad/kicad-source-mirror/blob/65a2918/LICENSE",
+ "author_url": "https://github.com/KiCad",
+ "topics": [
+  "cad",
+  "eda",
+  "electronics",
+  "engineering",
+  "kicad",
+  "linux",
+  "macos",
+  "pcb",
+  "schematic",
+  "windows",
+  "wxwidgets"
+ ],
+ "board": {
+  "mask": "blue",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.563
+ },
+ "models": {
+  "total": 130,
+  "resolved": 130,
+  "hidden": 1,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.04843,
+   -0.00144,
+   0.0535
+  ],
+  "max": [
+   0.161,
+   0.01086,
+   0.14153
+  ]
+ },
+ "rendered": "2026-10-17T18:04:17Z",
+ "kicad": "10.0.7"
+}

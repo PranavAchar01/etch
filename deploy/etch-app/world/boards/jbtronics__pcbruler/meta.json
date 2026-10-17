@@ -1,0 +1,66 @@
+{
+ "id": "gh:jbtronics/PCBruler",
+ "slug": "jbtronics__pcbruler",
+ "title": "PCBruler",
+ "owner": "jbtronics",
+ "repo": "PCBruler",
+ "category": "tools",
+ "stars": 83,
+ "license": "CC-BY-4.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  170.0,
+  35.0
+ ],
+ "parts": 20,
+ "glb_bytes": 678028,
+ "url": "https://github.com/jbtronics/PCBruler",
+ "commit": "0279b6a3a5303696c480797475c67ae86b7d8d7b",
+ "pcb_path": "PCBRuler.kicad_pcb",
+ "description": "A PCB Ruler created in KiCAD",
+ "license_url": "https://github.com/jbtronics/PCBruler/blob/0279b6a/License.md",
+ "author_url": "https://github.com/jbtronics",
+ "topics": [
+  "hardware",
+  "kicad",
+  "pcb",
+  "pcb-layout",
+  "pcb-ruler",
+  "ruler",
+  "tool"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 23,
+  "resolved": 22,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "BGA16",
+    "path": "${KISYS3DMOD}/Housings_BGA.3dshapes/BGA-16_4x4_1.92x1.92mm_Pitch0.5mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.08493,
+   -0.00862,
+   0.09493
+  ],
+  "max": [
+   0.25508,
+   0.00292,
+   0.13007
+  ]
+ },
+ "rendered": "2026-10-17T18:16:59Z",
+ "kicad": "10.0.7"
+}
