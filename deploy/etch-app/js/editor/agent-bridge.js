@@ -1,8 +1,13 @@
-// Agent bridge: turns the board editor's questions and change requests into Etch API calls (deploy/API.md) and shows
-// every step of the work in the dock: steps, tool chips, task rows, the streamed answer, spoken lines and states.
+// Agent bridge: turns the board editor's questions and change requests into Etch API calls (deploy/API.md). The dock
+// is a helper that only speaks when spoken to, so the bridge runs two lanes over the same code:
+//   loud: ask() and change(), started by the person from the helper. Steps, tool chips, the recommend card, the
+//         streamed answer and short reply lines land in that person's turn in the helper panel.
+//   quiet: design(), resume() and onLoad(), the builds and loads nobody asked the helper about. They run against a
+//         mute dock: nothing is written, said, emoted or opened. Their progress belongs to the build view (onStage,
+//         onLost, onEvent, onJob/onJobEnd); a failure reaches the page through onQuietError(msg) (a toast).
 //
-//   const bridge = createAgentBridge({ dock, api, board, viewer, highlight, select });
-//   bridge.ask("What does this do?", { ref: "U6" });      // POST /etch/ask, streamed into the dock
+//   const bridge = createAgentBridge({ dock, api, board, viewer, highlight, select, onStage, onLost, onQuietError });
+//   bridge.ask("What does this do?", { ref: "U6" });      // POST /etch/ask, streamed into the helper
 //   bridge.change("add a buzzer", { ref: "J1" });         // recommend card, then /etch/live or /etch/change + /etch/job
 //   bridge.design("an ESP32 weather station");           // a new board: POST /etch/live {mode:"design"} + /etch/job
 //   const load = bridge.onLoad([{ id: "board", title: "Loading the board" }, …]); load.done("board");
@@ -11,8 +16,9 @@
 // With ?mock=1, no backend, or a mock job id, change() and design() play a scripted build (the "full successful design
 // run" from API.md, with a failed DRC on the first try) so the whole flow can be shown without the engine. Both hand
 // the finished run to viewer.reload({ run, design, done }): on render:done (the GLB is there) and on lead:done ok.
-// Page hooks besides onEvent: onStage("Picking parts") when the job's own stage changes (the build loader's label),
-// onLost(msg) when the build is lost (gone from the server, or the engine stays unreachable past the grace).
+// Page hooks besides onEvent: onStage("Picking parts") when the job's own stage changes (the build loader's label;
+// fires in both lanes), onLost(msg) when the build is lost (gone from the server, or the engine stays unreachable
+// past the grace).
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const cap = (s) => { s = String(s || "").trim(); return s ? s[0].toUpperCase() + s.slice(1) : s; };
@@ -145,8 +151,7 @@ function simulate({ text, ref, board, design = false, startedAt = 0 }) {
   };
 }
 
-export function createAgentBridge({ dock, api, board, viewer = null, highlight = () => {}, select = () => {}, onEvent = () => {}, onJob = () => {}, onJobEnd = () => {}, onStage = () => {}, onLost = () => {} } = {}) {
-  if (!dock) throw new Error("createAgentBridge needs a dock");
+function lane({ dock, api, board, viewer = null, highlight = () => {}, select = () => {}, onEvent = () => {}, onJob = () => {}, onJobEnd = () => {}, onStage = () => {}, onLost = () => {}, onError = () => {} } = {}) {
   const timers = new Set();
   let disposed = false, jobGen = 0, askGen = 0;
   // read each time: a new board (kind "new") becomes a live-* or library board once its design build is loaded
@@ -166,10 +171,10 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
   let settleTm = null;
   const busy = () => { if (settleTm) { clearTimeout(settleTm); timers.delete(settleTm); settleTm = null; } };
   const later = (ms, f) => { busy(); const tm = settleTm = setTimeout(() => { timers.delete(tm); settleTm = null; if (!disposed) f(); }, ms); timers.add(tm); };
-  async function speak(text, then = "idle") {
+  async function speak(text, then = "idle", o) {
     if (!text) { dock.setState(then); return; }
     dock.setState("speaking");
-    const p = dock.say(text);
+    const p = dock.say(text, o);
     if (p && typeof p.then === "function") await p.catch(() => {});
     else await sleep(Math.min(5000, 400 + text.split(/\s+/).length * 220));
     if (!disposed) dock.setState(then);
@@ -183,6 +188,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
   // show an error the API.md way: limits and refusals as is (confused), no engine (offline)
   function explain(e, stepId, title, kind = "step") {
     const msg = String(e?.message || "Something went wrong.");
+    try { onError(isNetwork(e) ? "Can't reach Etch's engine right now. Try again in a minute." : msg); } catch (e2) { /* the page's own business */ }
     if (stepId) dock.step({ id: stepId, kind, title, detail: msg, status: "failed" });
     if (isNetwork(e)) {
       dock.setState("offline"); dock.setStatus("Etch's engine is offline");
@@ -247,7 +253,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     dock.answerEnd(id, { mentions, followups: followups(ref, mentions), seconds: r.seconds, thoughts });
     if (disposed || gen !== askGen) return r;
     dock.setStatus("");
-    await speak(firstSentences(r.answer));
+    await speak(firstSentences(r.answer), "idle", { note: false });
     return r;
   }
 
@@ -564,4 +570,18 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
   }
 
   return { ask, change, design, resume, onLoad, dispose };
+}
+
+// a dock that takes every call and does nothing (say resolves at once): the quiet lane's
+const MUTE = new Proxy({}, { get: (_, k) => (k === "say" ? () => Promise.resolve() : () => undefined) });
+
+export function createAgentBridge(o = {}) {
+  if (!o.dock) throw new Error("createAgentBridge needs a dock");
+  const loud = lane(o);
+  const quiet = lane({ ...o, dock: MUTE, onError: o.onQuietError || (() => {}) });
+  return {
+    ask: loud.ask, change: loud.change,
+    design: quiet.design, resume: quiet.resume, onLoad: quiet.onLoad,
+    dispose() { loud.dispose(); quiet.dispose(); },
+  };
 }
