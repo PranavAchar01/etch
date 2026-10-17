@@ -560,7 +560,7 @@ class Router:
 
 def pin_zones(pads, hv_names, pad_margin=0.25):
     """{ref: (x0, y0, x1, y1)}: the pad area (plus pad_margin, inside the courtyard) of every part that has an HV
-    pin and a pin of another net, e.g. the MC34063's SOIC-8 with its 170 V switch pin 1.27 mm from pin 2. The
+    pin and a pin of any other net, e.g. the MC34063's SOIC-8 with its 170 V switch pin 1.27 mm from pin 2. The
     router relaxes the HV gap there and layout.py writes the matching DRC exception for that courtyard."""
     by_ref = {}
     for p in pads:
@@ -568,7 +568,7 @@ def pin_zones(pads, hv_names, pad_margin=0.25):
     out = {}
     for ref, ps in by_ref.items():
         nets = {p["net"] for p in ps if p["net"]}
-        if nets & set(hv_names) and nets - set(hv_names):
+        if nets & set(hv_names) and len(nets) > 1:  # two HV nets (an anode resistor) need the gap too
             out[ref] = (
                 min(p["rect"][0] for p in ps) - pad_margin,
                 min(p["rect"][1] for p in ps) - pad_margin,

@@ -356,6 +356,10 @@ def main(job_path, result_path):
     # wall-clock budget (set by build.py under the kicad_python timeout) stops routing with the copper so far kept
     budget = job.get("route_budget_s")
     order = net_order(pads, sorted({p["net"] for p in pads if p["net"]}))
+    # HV nets first: they need the widest gap, and a late one finds its pins already walled in by the HV-gap
+    # rings of other nets' tracks (rip-up and retry still sorts out two HV nets that wall each other in)
+    hv_first = set(rules.get("hv_nets") or [])
+    order = [n for n in order if n in hv_first] + [n for n in order if n not in hv_first]
     router, route_info = route_all(make_router, order, budget_s=float(budget) if budget else None)
     route_info["budget_s"] = budget
     new_tracks, new_vias = route_info.pop("new_tracks"), route_info.pop("new_vias")
