@@ -665,6 +665,15 @@ FILE_RE = re.compile(
 )
 BASE_RE = re.compile(r"^/?engine/out/(live-\d+)/?$")
 
+# ---- explore: board view routes (/etch/ask, /etch/comments*, /etch/change) live in deploy/explore_api.py
+import sys  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import explore_api  # noqa: E402
+
+explore_api.bind(sys.modules[__name__])
+# ---- end explore
+
 
 class H(BaseHTTPRequestHandler):
     server_version = "etch"
@@ -834,6 +843,8 @@ class H(BaseHTTPRequestHandler):
             )
         if u.path.startswith("/etch/files/"):
             return self.file(u.path[len("/etch/files") :])
+        if explore_api.owns(u.path):  # explore: board view routes
+            return explore_api.do_GET(self, u)
         return self.send_json({"error": "not found"}, 404)
 
     def blob(self, data: bytes, ctype: str, cache: str, name: str | None = None):
@@ -889,6 +900,8 @@ class H(BaseHTTPRequestHandler):
         if not self.authed():
             LIM.allow("authfail:" + ip, AUTH_FAILS_PER_IP_10MIN, 600)
             return self.send_json({"error": "code"}, 401)
+        if explore_api.owns(self.path):  # explore: board view routes
+            return explore_api.do_POST(self, ip)
         if self.path == "/etch/cancel":
             try:
                 body = json.loads(self.body(4096) or b"{}")
