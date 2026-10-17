@@ -295,6 +295,9 @@ def build(
                 "vias": lay["vias"],
                 "courts": [v["court"] for v in lay["parts"].values()],
                 "title_box": lay.get("title_box"),
+                # stitching vias keep the HV net class gap from high-voltage copper
+                "hv_nets": spec.rules.get("hv_nets") or [],
+                "hv_clearance": spec.rules.get("hv_clearance") or 0,
             }
         fin_path = out / "finish_job.json"
         fin_path.write_text(json.dumps(fin, indent=1))

@@ -15,7 +15,7 @@ import pcbnew  # noqa: E402
 
 from placer import place, rot_box  # noqa: E402
 from rows import place_rows  # noqa: E402
-from router import Router, net_order, route_all  # noqa: E402
+from router import Router, net_order, pin_zones, route_all  # noqa: E402
 
 MM = pcbnew.FromMM
 
@@ -170,12 +170,13 @@ def _clear_under(keep, boxes, clearance):
     }
 
 
-def hv_net_class(pcb_path, rules):
+def hv_net_class(pcb_path, rules, pads):
     """High-voltage nets (rules.hv_nets) get an "HV" net class at rules.hv_clearance (IPC-2221B B2), so the zone
-    filler and DRC keep it, plus a project rule: a pin-pitch exception for pairs that involve a pad (a fine-pitch part's pins sit closer than the board gap; the router keeps the
-    full gap everywhere but the fan-out next to a pin, and pours always keep it). Creepage is not a separate
-    rule: on one uncut surface the creepage path is the clearance, and KiCad 10's creepage check ignores the
-    pad exception (it flagged a 2.54 mm resistor's own two pins), so it would fail every such part."""
+    filler and DRC keep it. Project rules (.kicad_dru) relax it only where the board cannot do better: pad to
+    pad (placement and the part's own pitch set that gap), and inside the courtyard of a part with an HV pin
+    beside other pins (router.pin_zones, where the router relaxes it too). Pours always keep the HV gap.
+    Creepage is not a separate rule: on one uncut surface the creepage path is the clearance, and KiCad 10's
+    creepage check ignores rule exceptions (it flagged a 2.54 mm resistor's own two pins)."""
     nets, hv = rules.get("hv_nets") or [], float(rules.get("hv_clearance") or 0)
     if not nets or hv <= float(rules["clearance"]):
         return
@@ -189,12 +190,13 @@ def hv_net_class(pcb_path, rules):
     ]
     pro.write_text(json.dumps(d, indent=2) + "\n")
     lo = f"{float(rules['clearance']):g}mm"
-    Path(pcb_path).with_suffix(".kicad_dru").write_text(
-        "(version 1)\n"
-        f'(rule "HV pin pitch" (constraint clearance (min {lo}))\n'
-        "  (condition \"(A.NetClass == 'HV' || B.NetClass == 'HV') && (A.Type == 'Pad' || B.Type == 'Pad')"
-        " && A.Type != 'Zone' && B.Type != 'Zone'\"))\n"
-    )
+    hv_pair = "(A.NetClass == 'HV' || B.NetClass == 'HV') && A.Type != 'Zone' && B.Type != 'Zone'"
+    out = ["(version 1)", f'(rule "HV pad to pad" (constraint clearance (min {lo}))',
+           f"  (condition \"{hv_pair} && A.Type == 'Pad' && B.Type == 'Pad'\"))"]
+    for ref in sorted(pin_zones(pads, nets)):
+        out += [f'(rule "HV pin pitch {ref}" (constraint clearance (min {lo}))',
+                f"  (condition \"{hv_pair} && A.intersectsCourtyard('{ref}') && B.intersectsCourtyard('{ref}')\"))"]
+    Path(pcb_path).with_suffix(".kicad_dru").write_text("\n".join(out) + "\n")
 
 
 def main(job_path, result_path):
@@ -392,7 +394,7 @@ def main(job_path, result_path):
         board.Add(txt)
 
     pcbnew.SaveBoard(job["out_pcb"], board)
-    hv_net_class(job["out_pcb"], rules)
+    hv_net_class(job["out_pcb"], rules, pads)
     parts_out = {}
     for ref, fp in fps.items():
         fp.BuildCourtyardCaches()

@@ -138,6 +138,8 @@ def test_power_pins_wired_before_auto_mcu():
     pico = [p for p in d["parts"] if p["piece"] in (live.PICO_KEY, live.PICO_W_KEY)]
     # the 170 V anode net is lonely too, but never goes on a 3.3 V GPIO pin
     assert all("HV_ANODE" not in p["pins"].values() for p in pico)
+    # nor do the boost chip's own lonely pins (current sense, timing cap): those are missing parts
+    assert all(not {"IPEAK", "TC"} & set(p["pins"].values()) for p in pico)
 
 
 def test_supply_pin_with_company_is_left_alone():

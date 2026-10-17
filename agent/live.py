@@ -2242,6 +2242,9 @@ def _radio_fix(
     return did
 
 
+_POWER_CHIP = r"regulator|converter|power management|power supervisor"
+
+
 def _auto_mcu(
     design: dict[str, Any], kept: list[dict[str, Any]], ask: str
 ) -> dict[str, Any] | None:
@@ -2251,10 +2254,19 @@ def _auto_mcu(
     if firmware.mcu_part(design, kept):
         return None
     hv = set(_hv_nets(design, kept, ask)[1])  # a 170 V anode on a GPIO pin would kill the Pico
+    by_key0 = _cat() | {p["key"]: p for p in kept}
+    # a regulator's own lonely pin (MC34063 Ipk, timing cap, feedback) is a missing part, not a GPIO: it goes
+    # back to the picker (nzcIIiKo49iFA5-o wired Ipk, TC, SwC, SwE, Vfb and Vin of a boost chip to a Pico)
+    power_only = {
+        str(net)
+        for part in design.get("parts", [])
+        if re.search(_POWER_CHIP, (by_key0.get(part.get("piece")) or {}).get("family", ""), re.I)
+        for net in (part.get("pins") or {}).values()
+    }
     lonely = [
         n
         for n in _lonely_nets(design)
-        if n.upper() not in ("GND",) + _SUPPLY_5V + _SUPPLY_3V3 and n not in hv
+        if n.upper() not in ("GND",) + _SUPPLY_5V + _SUPPLY_3V3 and n not in hv and n not in power_only
     ]
     if not lonely:
         return None
