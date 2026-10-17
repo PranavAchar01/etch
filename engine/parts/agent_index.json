@@ -1498,6 +1498,179 @@
    "mpn": "HX711",
    "manufacturer": "Avia Semicon (Xiamen)",
    "datasheet": "https://www.lcsc.com/datasheet/lcsc_datasheet_2011051703_Avia-Semicon--Xiamen-HX711_C43656.pdf"
+  },
+  {
+   "provenance": {
+    "route": "JLCPCB/LCSC catalogue search, part-scout pick, easyeda2kicad",
+    "source_url": "https://www.lcsc.com/product-detail/C99761.html",
+    "api_url": "https://easyeda.com/api/products/C99761/components",
+    "version": "EasyEDA library as of 2026-10-17, easyeda2kicad 1.0.1",
+    "licence": "not stated by LCSC/EasyEDA (vendor library; check terms before redistributing)",
+    "model_file": "LED-TH_BD3.0-P2.54-FD-GREEN.step",
+    "model_sha256": "57ff8302a411fb6ee3894f01f513c35bb9728db2415e65b8e78da735c9f883eb"
+   },
+   "key": "204_10sugd_s400_a5_c99761",
+   "name": "204-10SUGD_S400-A5 (LED-TH_BD3.0-P2.54-FD-GREEN)",
+   "aliases": [
+    "c99761",
+    "204-10sugd_s400-a5"
+   ],
+   "lib_id": "LCSC_C99761:204-10SUGD_S400-A5",
+   "footprint": "LCSC_C99761:LED-TH_BD3.0-P2.54-FD-GREEN",
+   "category": "fetched",
+   "value": "204-10SUGD_S400-A5",
+   "spice": {
+    "prefix": "R",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "passive"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C99761/LCSC_C99761.3dshapes/LED-TH_BD3.0-P2.54-FD-GREEN.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "pin_names": {
+    "1": "A",
+    "2": "K"
+   },
+   "source": "LCSC via easyeda2kicad",
+   "lcsc": "C99761",
+   "mpn": "204-10SUGD/S400-A5",
+   "package": "Plugin,D=3mm",
+   "datasheet": "https://www.lcsc.com/datasheet/lcsc_datasheet_2312221142_Everlight-Elec-204-10SUGD-S400-A5_C99761.pdf",
+   "spice_note": "LED Diffused modelled as a two-pin passive"
+  },
+  {
+   "provenance": {
+    "route": "scout you.com found FC-28, LCSC C1672553, easyeda2kicad",
+    "source_url": "https://www.lcsc.com/product-detail/C1672553.html",
+    "api_url": "https://easyeda.com/api/products/C1672553/components",
+    "version": "EasyEDA library as of 2026-10-17, easyeda2kicad 1.0.1",
+    "licence": "not stated by LCSC/EasyEDA (vendor library; check terms before redistributing)",
+    "model_file": "OSC-SMD_4P-L3.2-W2.5-BL_AMPME.step",
+    "model_sha256": "9a20b308d31b37c66f9b30085f5b7ad279091a684c4dbe9730833b4929de77dc",
+    "search_url": "https://www.alldatasheet.com/view.jsp?Searchword=FC-28&sField=3",
+    "search": "you.com Web Search (allowlisted distributor/manufacturer domains)",
+    "datasheet": "https://datasheet.lcsc.com/lcsc/2201200800_Abracon-LLC-AMPMEFC-28-6363_C1672553.pdf"
+   },
+   "key": "ampmefc_28_6363_c1672553",
+   "name": "AMPMEFC-28.6363 (OSC-SMD_4P-L3.2-W2.5-BL_AMPME)",
+   "aliases": [
+    "c1672553",
+    "ampmefc-28.6363"
+   ],
+   "lib_id": "LCSC_C1672553:AMPMEFC-28.6363",
+   "footprint": "LCSC_C1672553:OSC-SMD_4P-L3.2-W2.5-BL_AMPME",
+   "category": "fetched",
+   "value": "AMPMEFC-28.6363",
+   "spice": {
+    "prefix": "R",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "passive"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C1672553/LCSC_C1672553.3dshapes/OSC-SMD_4P-L3.2-W2.5-BL_AMPME.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "pin_names": {
+    "1": "OE/STBY",
+    "2": "GND",
+    "3": "Output",
+    "4": "VDD"
+   },
+   "source": "LCSC via easyeda2kicad",
+   "lcsc": "C1672553",
+   "mpn": "FC-28",
+   "manufacturer": "Abracon LLC",
+   "datasheet": "https://datasheet.lcsc.com/lcsc/2201200800_Abracon-LLC-AMPMEFC-28-6363_C1672553.pdf",
+   "spice_note": "soil moisture sensor modelled as a two-pin passive"
+  },
+  {
+   "provenance": {
+    "route": "scout you.com found SN74F175, LCSC C2868638, easyeda2kicad",
+    "source_url": "https://www.lcsc.com/product-detail/C2868638.html",
+    "api_url": "https://easyeda.com/api/products/C2868638/components",
+    "version": "EasyEDA library as of 2026-10-17, easyeda2kicad 1.0.1",
+    "licence": "not stated by LCSC/EasyEDA (vendor library; check terms before redistributing)",
+    "model_file": "PDIP-16_L19.3-W6.4-P2.54-LS7.9-BL.step",
+    "model_sha256": "e56344edbf7e4556e779dee171ab39613dc7c87fc98b80a1b3c230d8d92c07d4",
+    "search_url": "https://www.ti.com/lit/gpn/SN74F175",
+    "search": "you.com Web Search (allowlisted distributor/manufacturer domains)",
+    "datasheet": "https://www.ti.com/cn/lit/gpn/sn74f175"
+   },
+   "key": "sn74f175n_c2868638",
+   "name": "SN74F175N (PDIP-16_L19.3-W6.4-P2.54-LS7.9-BL)",
+   "aliases": [
+    "c2868638",
+    "sn74f175n"
+   ],
+   "lib_id": "LCSC_C2868638:SN74F175N",
+   "footprint": "LCSC_C2868638:PDIP-16_L19.3-W6.4-P2.54-LS7.9-BL",
+   "category": "fetched",
+   "value": "SN74F175N",
+   "spice": {
+    "prefix": "R",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "passive"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C2868638/LCSC_C2868638.3dshapes/PDIP-16_L19.3-W6.4-P2.54-LS7.9-BL.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16"
+   ],
+   "pin_names": {
+    "1": "~{CLR}",
+    "2": "1Q",
+    "3": "~{1Q}",
+    "4": "1D",
+    "5": "2D",
+    "6": "~{2Q}",
+    "7": "2Q",
+    "8": "GND",
+    "9": "CLK",
+    "10": "3Q",
+    "11": "~{3Q}",
+    "12": "3D",
+    "13": "4D",
+    "14": "~{4Q}",
+    "15": "4Q",
+    "16": "VCC"
+   },
+   "source": "LCSC via easyeda2kicad",
+   "lcsc": "C2868638",
+   "mpn": "SN74F175",
+   "manufacturer": "Texas Instruments",
+   "datasheet": "https://www.ti.com/cn/lit/gpn/sn74f175",
+   "spice_note": "D modelled as a two-pin passive"
   }
  ]
 }

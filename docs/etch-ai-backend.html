@@ -1,0 +1,132 @@
+<title>Etch AI Backend</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* layout: one reading column, a full-width flowchart, then a stage-by-stage reference and a model table */
+:root{
+  --bg:#fbfbf9; --fg:#141414; --muted:#5d5d58; --rule:#d9d9d2; --panel:#f1f1ec; --accent:#1f4fd1;
+  --llm:#e7edff; --code:#eef3ea; --ext:#fff1e0;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121212; --fg:#ececea; --muted:#a3a39c; --rule:#33332f; --panel:#1b1b19; --accent:#8fb0ff;
+  --llm:#1d2740; --code:#1d281b; --ext:#33261a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121212; --fg:#ececea; --muted:#a3a39c; --rule:#33332f; --panel:#1b1b19; --accent:#8fb0ff;
+  --llm:#1d2740; --code:#1d281b; --ext:#33261a; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:17px/1.6 var(--serif);padding-inline:16px;padding-block:32px 64px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+.read{max-width:68ch}
+h1{font-size:2.1rem;line-height:1.15;margin:0;font-weight:600;text-wrap:balance}
+h2{font-size:1.3rem;margin:0 0 8px;font-weight:600}
+p{margin:0}
+.eyebrow{font:500 .75rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font:.8rem var(--mono)}
+.legend span{padding:4px 10px;border:1px solid var(--rule);border-radius:3px}
+.k-llm{background:var(--llm)} .k-code{background:var(--code)} .k-ext{background:var(--ext)}
+.chart{overflow-x:auto;border:1px solid var(--rule);background:var(--panel);padding:16px;border-radius:4px}
+.chart pre{margin:0;min-width:760px}
+ol.stages{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:12px}
+ol.stages li{padding-left:4px}
+ol.stages b{font-weight:600}
+code,.m{font:.85em var(--mono)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.95rem;min-width:560px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:500 .75rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.note{color:var(--muted);font-size:.9rem}
+</style>
+
+<div class="wrap">
+  <header class="read" style="display:flex;flex-direction:column;gap:10px">
+    <div class="eyebrow">Etch · text to PCB · backend as of 17 Oct 2026</div>
+    <h1>How Etch turns a sentence into a board</h1>
+    <p>The AI models write and repair the design. Plain code builds and checks every board, so a model never gets the last word on whether a board works.</p>
+    <div class="legend"><span class="k-llm">AI model</span><span class="k-code">plain code (KiCad, ngspice, rules)</span><span class="k-ext">outside service</span></div>
+  </header>
+
+  <section class="chart" aria-label="Backend flowchart">
+<pre class="mermaid">
+%%{init: {"theme":"neutral","flowchart":{"curve":"basis","nodeSpacing":28,"rankSpacing":38}}}%%
+flowchart TD
+  U([User types or speaks a board idea]) --> STT[Speech to text<br/>local Parakeet server]
+  U --> API
+  STT --> API[Backend etch_public.py<br/>rate limits, job queue]
+  API --> PF{Prefilter<br/>is this a board ask?}
+  PF -- injection, emoji, not a board --> NO([Polite refusal or ask again])
+  PF -- yes --> RT[NVIDIA prompt classifier<br/>DeBERTa, local CPU<br/>scores complexity]
+  RT --> LANE{Lane}
+  LANE -- known recipe or simple edit --> FAST[Fast lane]
+  LANE -- everything else --> FULL[Full lane]
+  FAST --> STORE
+  FULL --> STORE{Built this before?}
+  STORE -- yes --> DONE
+  STORE -- no --> SCREEN[Screen parts<br/>KiCad 223 libs + 10 extra libs<br/>3D model per part]
+  SCREEN --> REC{Recipe match?<br/>keyboard, soil sensor, blinker...}
+  REC -- yes --> GATES
+  REC -- no --> PICK[Picker: Nemotron 3 Super<br/>chooses parts, wiring, benchmarks]
+  PICK -- slow past 12 s --> HEDGE[Same call on Crusoe key 2<br/>first answer wins]
+  HEDGE --> PICK
+  PICK -- timeout --> LITE[Retry once on<br/>Nemotron 3.5 Lightning]
+  LITE -- fails --> MISS
+  PICK -- part not in library --> MISS[Missing parts<br/>You.com, LCSC, GitHub STEP<br/>stronger model, ETA shown]
+  MISS --> PICK
+  LITE --> GATES
+  PICK --> GATES[Code gates<br/>pin names, refs, parallel copies,<br/>wiring lint, sound-source check]
+  GATES -- synth with no sound source --> PICK
+  GATES --> ASM[Assemble<br/>KiCad place and route]
+  ASM --> CHK[Checks<br/>ERC, DRC, parity,<br/>ngspice and analog solver,<br/>model-written benchmarks]
+  CHK -- all pass --> OUT[Export Gerbers, BOM, fab zip<br/>3D render, thumbnail, save to store]
+  CHK -- some fail --> REP[Repair: Nemotron 3 Super<br/>reads the failed checks]
+  REP -- up to 4 tries --> ASM
+  REP -- still failing --> FAIL([Report which checks failed])
+  OUT --> DONE([Board in the studio<br/>events streamed to the dock])
+  DONE --> EDIT[User asks for a change]
+  EDIT --> ED{Known edit?<br/>recolour, add buzzer, swap power}
+  ED -- yes --> ASM
+  ED -- no --> PICK
+
+  classDef llm fill:#e7edff,stroke:#1f4fd1,color:#141414;
+  classDef code fill:#eef3ea,stroke:#4a7a3a,color:#141414;
+  classDef ext fill:#fff1e0,stroke:#b8742a,color:#141414;
+  class PICK,LITE,REP,RT,HEDGE llm;
+  class PF,STORE,SCREEN,REC,GATES,ASM,CHK,OUT,ED,LANE,FAST,FULL,API code;
+  class STT,MISS ext;
+</pre>
+  </section>
+
+  <section class="read">
+    <h2>Stage by stage</h2>
+    <ol class="stages">
+      <li><b>Input.</b> Text, or voice through a local Parakeet speech-to-text server. Spoken replies use OpenAI text to speech.</li>
+      <li><b>Prefilter.</b> Rules reject prompt injection, scripts, emoji, huge pastes and asks that are not a board, before any model runs.</li>
+      <li><b>Router.</b> NVIDIA's prompt task-and-complexity classifier runs on the CPU in one long-lived process. Simple asks start on the small model, harder ones on the large model.</li>
+      <li><b>Board store.</b> A prompt Etch has already built returns the stored board instantly.</li>
+      <li><b>Parts screen.</b> Etch narrows the catalog to parts that fit the ask: the full KiCad library (22,860 symbols) plus 10 open-source libraries with 1,021 extra 3D models. Wiring the full catalog into every prompt is landing now.</li>
+      <li><b>Recipe or picker.</b> Known device types (keyboards, soil sensors, blinkers) use a tested recipe with no model call. Everything else goes to the picker model, which returns the parts, the wiring and the checks the board should pass.</li>
+      <li><b>Speed and reliability.</b> If Crusoe has not answered in 12 s, the same call goes to a second Crusoe key and the first answer wins. A timeout retries once on the fast model; if that fails, the user sees which components are missing instead of a timeout.</li>
+      <li><b>Missing parts.</b> Parts outside the library are sourced from real published files (LCSC through easyeda2kicad, GitHub STEP models, You.com search) with provenance. Nothing is generated.</li>
+      <li><b>Code gates.</b> Plain code fixes pin names and reference letters, folds parallel copies, lints the wiring, and sends a synth with no sound source back to the picker.</li>
+      <li><b>Assemble and check.</b> KiCad places and routes the board, then ERC, DRC, schematic to board parity, ngspice and an analog solver check it, along with the benchmarks the picker wrote. A benchmark the circuit can never move is marked not checkable instead of failing forever.</li>
+      <li><b>Repair loop.</b> Failed checks go back to the large model as feedback, up to 4 tries.</li>
+      <li><b>Output.</b> Gerbers, BOM, a fab zip, a 3D model and a thumbnail. Progress streams to the dock in the studio as it happens.</li>
+      <li><b>Edits.</b> A change to a built board takes a known-edit shortcut when it can, and otherwise re-picks from the existing design and rebuilds.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Models</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Model</th><th>Where it runs</th><th>Job</th></tr></thead>
+      <tbody>
+        <tr><td>Nemotron 3 Super 120B</td><td class="m">Crusoe, key 1</td><td>Picker for hard asks, repair loop, edits</td></tr>
+        <tr><td>Nemotron 3.5 Lightning 30B</td><td class="m">Crusoe, key 1</td><td>Simple asks, sub-agents, the timeout retry</td></tr>
+        <tr><td>Both of the above</td><td class="m">Crusoe, key 2</td><td>Backup: hedged calls after 12 s, and 10 minutes of fallback when key 1 errors</td></tr>
+        <tr><td>NVIDIA prompt classifier (DeBERTa v3)</td><td class="m">Local CPU</td><td>Scores task type and complexity to choose the first model</td></tr>
+        <tr><td>Parakeet</td><td class="m">Local</td><td>Speech to text</td></tr>
+        <tr><td>gpt-4o-mini-tts</td><td class="m">OpenAI</td><td>Spoken replies</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note" style="margin-top:10px">Model thinking is off by default: about 8 times faster on a picker-sized call, and the analog solver does the numbers.</p>
+  </section>
+</div>
