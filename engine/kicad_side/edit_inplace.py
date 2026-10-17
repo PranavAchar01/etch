@@ -1104,16 +1104,19 @@ def apply(pcb_path, job_path, result_path):
                 anchor = [(c[0] + c[2]) / 2, (c[1] + c[3]) / 2]
         # a part on a net made only of new parts (the resistor of an added LED) goes next to its partner
         fresh = set(job.get("new_nets") or [])
+        partner_side = None
         for other, (px, py) in placed_at.items():
             theirs = set((next(x for x in job["add"] if x["ref"] == other).get("pads") or {}).values())
             if set(nets.values()) & theirs & fresh:
                 anchor = [px, py]
+                partner_side = res["placed"][other]["side"]
                 break
         bb = f0["board"]["bbox"]
         if not anchor:
             anchor = [(bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2]
         toward = a.get("toward")
-        sides = ("top", "bottom") if a.get("side") != "bottom" else ("bottom", "top")
+        side = partner_side or a.get("side")  # next to its partner means on the same side as it
+        sides = ("top", "bottom") if side != "bottom" else ("bottom", "top")
         # the planned footprint first, then the same symbol in smaller footprints (same pads, same meaning)
         alts = []
         for c in a.get("alternatives") or []:

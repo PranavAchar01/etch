@@ -1035,8 +1035,8 @@ def run(request: str, out: Path, stream: Stream, board_id: str | None = None, ba
                 sw = (res.get("placed", {}).get(a["ref"]) or {}).get("swapped_to")
                 alt = next((o for o in cat.values() if sw and o["footprint"] == sw and o["lib_id"] == a["entry"]["lib_id"]), None)
                 if alt:
-                    stream.emit("lead", "say", text=f"{a['ref']} did not fit as {a['entry']['footprint'].split(':')[-1]}, "
-                                                    f"so it is the smaller {sw.split(':')[-1]}.")
+                    stream.emit("lead", "say", text=f"{a['ref']} had no room close by as {a['entry']['footprint'].split(':')[-1]}, "
+                                                    f"so it is {sw.split(':')[-1]}, which fits next to the part it joins.")
                     a["entry"], a["key"] = alt, alt["key"]
         else:
             res = {"placed": {}, "not_placed": [], "routes": [], "new_tracks": 0, "new_vias": 0, "seconds": {},
