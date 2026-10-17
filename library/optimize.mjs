@@ -1,11 +1,12 @@
 // Shrink a kicad-cli GLB for the web while keeping one node per footprint, named by refdes.
 //
-//   node library/optimize.mjs in.glb out.glb [simplifyError=0.0005]
+//   node library/optimize.mjs in.glb out.glb
 //
 // kicad-cli writes one primitive (with its own accessors) per STEP face: a 60 x 55 mm board is ~50k accessors
-// and ~17 MB. Here: dedup -> join primitives that share a material inside each mesh -> weld -> simplify ->
-// quantize -> meshopt. The scene graph is kept as is (no flatten/join across nodes, no instancing), so
-// footprint nodes keep their names and transforms. Needs the libs installed in library/cache/node
+// and ~17 MB. Here: dedup -> join primitives that share a material inside each mesh -> weld -> quantize ->
+// meshopt. No simplification (library/PLAN.md, identical rendering rule 2): every triangle stays.
+// The scene graph is kept as is (no flatten/join across nodes, no instancing), so footprint nodes keep
+// their names and transforms. Needs the libs installed in library/cache/node
 // (render.py installs them).
 
 import { createRequire } from 'node:module';
@@ -19,12 +20,11 @@ const load = (m) => import(pathToFileURL(req.resolve(m)).href);
 const { NodeIO } = await load('@gltf-transform/core');
 const { ALL_EXTENSIONS } = await load('@gltf-transform/extensions');
 const F = await load('@gltf-transform/functions');
-const { MeshoptEncoder, MeshoptDecoder, MeshoptSimplifier } = await load('meshoptimizer');
+const { MeshoptEncoder, MeshoptDecoder } = await load('meshoptimizer');
 
-const [, , input, output, errArg] = process.argv;
-const error = Number(errArg ?? 0.0005);
+const [, , input, output] = process.argv;
 
-await Promise.all([MeshoptEncoder.ready, MeshoptDecoder.ready, MeshoptSimplifier.ready]);
+await Promise.all([MeshoptEncoder.ready, MeshoptDecoder.ready]);
 const io = new NodeIO()
   .registerExtensions(ALL_EXTENSIONS)
   .registerDependencies({ 'meshopt.encoder': MeshoptEncoder, 'meshopt.decoder': MeshoptDecoder });
@@ -65,8 +65,6 @@ await doc.transform(
   F.dedup(),
   F.prune({ keepLeaves: false, keepAttributes: false }),
   F.weld({}),
-  F.simplify({ simplifier: MeshoptSimplifier, error, lockBorder: false }),
-  F.prune({ keepLeaves: false }),
   F.quantize({ quantizePosition: 14, quantizeNormal: 8 }),
   F.meshopt({ encoder: MeshoptEncoder, level: 'high' }),
 );

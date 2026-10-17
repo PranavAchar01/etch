@@ -41,7 +41,7 @@
 /deploy/*
 !/deploy/*.md
 !/deploy/etch_public.py
-!/deploy/explore_api.py
+!/deploy/explore.py
 !/deploy/tests/
 !/deploy/redeploy.sh
 !/deploy/restart.sh

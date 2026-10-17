@@ -16,6 +16,10 @@ studio/flux_server.py it does NOT serve the pcb-loop folder: only the endpoints 
   GET  /etch/zip?id=live-N               a build's fab zip (KiCad project, Gerbers, BOM)
   GET  /etch/layers?id=live-N            the board's copper pours (zone fills) for the 3D view
   GET  /etch/piece/<16 hex>.png          one KiCad library part, pre-rendered (engine/parts/piece_renders)
+  POST /etch/ask    {board, ref?, question, thread?}  ask about a board or part -> {answer, mentions, thoughts}
+  GET  /etch/comments?board=ID           comment threads pinned to parts (deploy/explore.py, EXPLORE_API.md)
+  POST /etch/comments {board, ref, anchor, text}, /etch/comments/reply {id, text}, /etch/comments/delete {id}
+  POST /etch/change {board, ref?, text}  change a board: live-* -> modify run; gh: -> copied into a live-* run
 
 Every POST and job poll needs the header X-Etch-Code. The code lives in the macOS Keychain
 (service etch-app-access-code) or ETCH_ACCESS_CODE; it is never in the repo or the page bundle.
@@ -41,6 +45,8 @@ from collections import defaultdict, deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import explore
+
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "engine" / "out"
 PORT = int(os.environ.get("ETCH_PUBLIC_PORT", "3439"))
@@ -61,6 +67,7 @@ AUTH_FAILS_PER_IP_10MIN = 10
 QUEUE_MAX = 3
 RUN_TIMEOUT_S = 15 * 60
 MAX_TEXT = 400
+ASKS_PER_IP_10MIN = int(os.environ.get("ETCH_ASKS_PER_IP_10MIN", "40"))
 MAX_STT_BYTES = 16000 * 4 * 45  # 45 s of audio
 
 
@@ -665,15 +672,6 @@ FILE_RE = re.compile(
 )
 BASE_RE = re.compile(r"^/?engine/out/(live-\d+)/?$")
 
-# ---- explore: board view routes (/etch/ask, /etch/comments*, /etch/change) live in deploy/explore_api.py
-import sys  # noqa: E402
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import explore_api  # noqa: E402
-
-explore_api.bind(sys.modules[__name__])
-# ---- end explore
-
 
 class H(BaseHTTPRequestHandler):
     server_version = "etch"
@@ -734,6 +732,15 @@ class H(BaseHTTPRequestHandler):
                     "stt": stt_up(),
                 }
             )
+        if u.path == "/etch/comments":
+            if not self.authed():
+                return self.send_json({"error": "code"}, 401)
+            q = urllib.parse.parse_qs(u.query)
+            try:
+                board = explore.load_board((q.get("board") or [""])[0])
+            except explore.ExploreError as e:
+                return self.send_json({"error": str(e)}, e.status)
+            return self.send_json({"ok": True, "comments": comments().list(board.id)})
         if u.path == "/etch/job":
             if not self.authed():
                 return self.send_json({"error": "code"}, 401)
@@ -843,8 +850,6 @@ class H(BaseHTTPRequestHandler):
             )
         if u.path.startswith("/etch/files/"):
             return self.file(u.path[len("/etch/files") :])
-        if explore_api.owns(u.path):  # explore: board view routes
-            return explore_api.do_GET(self, u)
         return self.send_json({"error": "not found"}, 404)
 
     def blob(self, data: bytes, ctype: str, cache: str, name: str | None = None):
@@ -900,8 +905,6 @@ class H(BaseHTTPRequestHandler):
         if not self.authed():
             LIM.allow("authfail:" + ip, AUTH_FAILS_PER_IP_10MIN, 600)
             return self.send_json({"error": "code"}, 401)
-        if explore_api.owns(self.path):  # explore: board view routes
-            return explore_api.do_POST(self, ip)
         if self.path == "/etch/cancel":
             try:
                 body = json.loads(self.body(4096) or b"{}")
@@ -1015,27 +1018,168 @@ class H(BaseHTTPRequestHandler):
                         400,
                     )
                 args += ["--base", str(base)]
-            if len(WAITING) >= QUEUE_MAX:
-                return self.send_json(
-                    {"error": "I am busy with other builds. Try again in a minute."},
-                    429,
-                )
-            if not LIM.allow(
-                "runs:" + ip, RUNS_PER_IP_HOUR, 3600, take=False
-            ) or not LIM.allow("runs:day", RUNS_PER_DAY, 86400, take=False):
-                return self.send_json(
-                    {
-                        "error": "That is all the builds I can do for now. Try again later."
-                    },
-                    429,
-                )
-            LIM.allow("runs:" + ip, RUNS_PER_IP_HOUR, 3600)
-            LIM.allow("runs:day", RUNS_PER_DAY, 86400)
-            job = Job(args, ip, mode, text)
-            JOBS[job.id] = job
-            threading.Thread(target=worker, args=(job,), daemon=True).start()
-            return self.send_json({"job": job.id, "token": job.token})
+            return self.start_build(ip, args, mode, text)
+        if self.path in EXPLORE_POST:
+            try:
+                return EXPLORE_POST[self.path](self, ip)
+            except explore.ExploreError as e:
+                return self.send_json({"error": str(e)}, e.status)
         return self.send_json({"error": "not found"}, 404)
+
+    def start_build(self, ip: str, args: list[str], mode: str, text: str, room: bool = False):
+        """Queue an engine run. room=True only checks capacity (nothing is started)."""
+        if len(WAITING) >= QUEUE_MAX:
+            return self.send_json(
+                {"error": "I am busy with other builds. Try again in a minute."},
+                429,
+            )
+        if not LIM.allow(
+            "runs:" + ip, RUNS_PER_IP_HOUR, 3600, take=False
+        ) or not LIM.allow("runs:day", RUNS_PER_DAY, 86400, take=False):
+            return self.send_json(
+                {
+                    "error": "That is all the builds I can do for now. Try again later."
+                },
+                429,
+            )
+        if room:
+            return None
+        LIM.allow("runs:" + ip, RUNS_PER_IP_HOUR, 3600)
+        LIM.allow("runs:day", RUNS_PER_DAY, 86400)
+        job = Job(args, ip, mode, text)
+        JOBS[job.id] = job
+        threading.Thread(target=worker, args=(job,), daemon=True).start()
+        return self.send_json({"ok": True, "job": job.id, "token": job.token})
+
+    # ---- Explore + board view (EXPLORE_API.md section 2)
+    def json_body(self, cap: int = 8192) -> dict:
+        try:
+            body = json.loads(self.body(cap) or b"{}")
+        except (json.JSONDecodeError, TypeError, ValueError):
+            raise explore.ExploreError("bad request")
+        if not isinstance(body, dict):
+            raise explore.ExploreError("bad request")
+        return body
+
+    def ask_allowed(self, ip: str) -> None:
+        if not LIM.allow("ask:" + ip, ASKS_PER_IP_10MIN, 600):
+            raise explore.ExploreError("Too many questions. Wait a few minutes, then ask again.", 429)
+
+    def post_ask(self, ip: str):
+        body = self.json_body()
+        board = explore.load_board(body.get("board"))
+        ref = explore.check_ref(board, body.get("ref"))
+        question = user_text(body.get("question"))
+        history = []
+        tid = body.get("thread")
+        if isinstance(tid, str) and explore.COMMENT_RE.match(tid):
+            c = comments().get(tid)
+            if c and c["board"] == board.id:
+                history = c["messages"]
+                ref = ref or c["ref"]
+        self.ask_allowed(ip)
+        res = explore.ask(board, question, ref, history)
+        return self.send_json({"ok": True, **res})
+
+    def post_comment(self, ip: str):
+        body = self.json_body()
+        board = explore.load_board(body.get("board"))
+        ref = explore.check_ref(board, body.get("ref"))
+        anchor = explore.check_anchor(body.get("anchor"))
+        text = user_text(body.get("text"))
+        store = comments()
+        if store.count(board.id) >= explore.MAX_COMMENTS_PER_BOARD:
+            raise explore.ExploreError("This board has as many comments as it can hold.", 409)
+        self.ask_allowed(ip)
+        now = int(time.time())
+        res = explore.ask(board, text, ref)
+        msgs = [
+            {"role": "user", "text": text, "at": now},
+            {"role": "assistant", "text": res["answer"], "at": int(time.time()), "mentions": res["mentions"],
+             "thoughts": res["thoughts"], "seconds": res["seconds"]},
+        ]
+        return self.send_json({"ok": True, "comment": store.create(board.id, ref, anchor, msgs)})
+
+    def post_reply(self, ip: str):
+        body = self.json_body()
+        cid = body.get("id")
+        store = comments()
+        c = store.get(cid) if isinstance(cid, str) and explore.COMMENT_RE.match(cid) else None
+        if not c:
+            raise explore.ExploreError("That comment is gone.", 404)
+        text = user_text(body.get("text"))
+        if len(c["messages"]) + 2 > explore.MAX_MESSAGES:
+            raise explore.ExploreError("This thread is full. Start a new comment.", 409)
+        board = explore.load_board(c["board"])
+        ref = c["ref"] if c["ref"] in board.parts else None
+        self.ask_allowed(ip)
+        now = int(time.time())
+        res = explore.ask(board, text, ref, c["messages"])
+        msgs = [
+            {"role": "user", "text": text, "at": now},
+            {"role": "assistant", "text": res["answer"], "at": int(time.time()), "mentions": res["mentions"],
+             "thoughts": res["thoughts"], "seconds": res["seconds"]},
+        ]
+        updated = store.append(cid, msgs)
+        if not updated:
+            raise explore.ExploreError("That comment is gone.", 404)
+        return self.send_json({"ok": True, "comment": updated})
+
+    def post_delete(self, ip: str):
+        body = self.json_body()
+        cid = body.get("id")
+        if not (isinstance(cid, str) and explore.COMMENT_RE.match(cid) and comments().delete(cid)):
+            raise explore.ExploreError("That comment is gone.", 404)
+        return self.send_json({"ok": True})
+
+    def post_change(self, ip: str):
+        body = self.json_body()
+        board = explore.load_board(body.get("board"))
+        ref = explore.check_ref(board, body.get("ref"))
+        text = re.sub(r"\s+", " ", str(body.get("text") or "")).strip()[:MAX_TEXT]
+        if not text:
+            raise explore.ExploreError("Tell me what to change.")
+        if ref:
+            text = f"{ref}: {text}"[:MAX_TEXT]
+        if board.kind == "live":
+            base = board.run_dir
+        else:
+            design = explore.import_design(board)  # 403 / 409 / 422 with the reason
+            if (busy := self.start_build(ip, [], "modify", text, room=True)) is not None:
+                return busy
+            base = explore.seed_run(board, design)
+        args = ["uv", "run", "--quiet", "--project", "engine", "--with", "openai", "python", "-m", "agent.live",
+                "modify", text, "--events", "--base", str(base)]
+        return self.start_build(ip, args, "modify", text)
+
+
+_COMMENTS: list = []
+_COMMENTS_LOCK = threading.Lock()
+
+
+def comments() -> explore.Comments:
+    with _COMMENTS_LOCK:
+        if not _COMMENTS:
+            _COMMENTS.append(explore.Comments(explore.comments_path()))
+        return _COMMENTS[0]
+
+
+def user_text(v) -> str:
+    text = re.sub(r"[\x00-\x08\x0b-\x1f\x7f]", "", str(v or "")).strip()
+    if not text:
+        raise explore.ExploreError("Type a question first.")
+    if len(text) > MAX_TEXT:
+        raise explore.ExploreError(f"Keep it under {MAX_TEXT} characters.")
+    return text
+
+
+EXPLORE_POST = {
+    "/etch/ask": H.post_ask,
+    "/etch/comments": H.post_comment,
+    "/etch/comments/reply": H.post_reply,
+    "/etch/comments/delete": H.post_delete,
+    "/etch/change": H.post_change,
+}
 
 
 TTS_VOICE = os.environ.get("ETCH_TTS_VOICE", "ballad")
