@@ -35,14 +35,15 @@ import time
 from pathlib import Path
 from typing import Any
 
-from etchlib.kicad import FOOTPRINT_DIR, MODEL_DIR, PARTS_CACHE, SYMBOL_DIR, VENDOR_LIBS
+from etchlib.kicad import FOOTPRINT_DIR, MODEL_DIR, PARTS_CACHE, SYMBOL_DIR, VENDOR_LIBS, _extra_paths, footprint_root
 
 from . import config
+from .piece_tags import tags_for
 
 OUT = config.ENGINE / "parts/kicad_library.json"
 # where the build finds the symbol / footprint libraries that are not KiCad's own (read by etchlib.kicad)
 LIB_PATHS = config.ENGINE / "parts/lib_paths.json"
-VERSION = 6  # bump when the record format changes: load() rebuilds an older file
+VERSION = 7  # 7: tags + fp_ok on every piece. bump when the record format changes: load() rebuilds an older file
 
 
 def _extra_dir() -> Path:
@@ -674,6 +675,7 @@ def _add(pieces, seen, skipped, fps, src, lib, name, s, fid) -> None:
             },
         }
     )
+    pieces[-1]["tags"] = tags_for(pieces[-1])
 
 
 # Footprint-only libraries (kiswitch, marbastlib footprints with no symbol of their own) are paired with the KiCad
@@ -753,6 +755,20 @@ def _pair_footprints(pieces, seen, skipped, fps, kisyms) -> int:
     return n
 
 
+def _fp_ok(fid: str) -> bool:
+    """True when the footprint file this piece names exists where the pipeline will look for it."""
+    lib, _, name = fid.partition(":")
+    return bool(lib and name) and (footprint_root(lib) / f"{lib}.pretty" / f"{name}.kicad_mod").is_file()
+
+
+_PACKAGE_TAGS = frozenset({"tht", "smd"})
+
+
+def _function_tags(p: dict[str, Any]) -> list[str]:
+    """A piece's tags that say what it does (package tags only say how it is soldered)."""
+    return [t for t in p.get("tags", ()) if t not in _PACKAGE_TAGS]
+
+
 def build() -> dict[str, Any]:
     t0 = time.time()
     sources = _sources()
@@ -808,6 +824,21 @@ def build() -> dict[str, Any]:
                     _add(pieces, seen, skipped, fps, src, lib, name, s, fid)
     paired = _pair_footprints(pieces, seen, skipped, fps, kisyms)
     with_model = sum(1 for p in pieces if p["model"])
+    # the footprint paths the pipeline will open (etchlib.kicad.footprint_root reads lib_paths.json): write them
+    # first, then record per piece whether its footprint file really resolves there
+    paths: dict[str, dict[str, str]] = {"symbols": {}, "footprints": {}}
+    for src in sources:
+        if src["name"].startswith("extra:"):
+            for sf in src["symbols"]:
+                paths["symbols"].setdefault(sf.stem, str(sf))
+            for lib, root in src["fp_roots"].items():
+                paths["footprints"].setdefault(lib, str(root))
+    tmp = LIB_PATHS.with_suffix(f".{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(paths, indent=1))
+    tmp.replace(LIB_PATHS)
+    _extra_paths.cache_clear()
+    for p in pieces:
+        p["fp_ok"] = _fp_ok(p["footprint"])
     data = {
         "version": VERSION,
         "built_s": round(time.time() - t0, 2),
@@ -824,6 +855,9 @@ def build() -> dict[str, Any]:
             "pieces": len(pieces),
             "footprint_only_paired": paired,
             "with_3d_model": with_model,
+            "footprint_resolves": sum(1 for p in pieces if p["fp_ok"]),
+            "tagged": sum(1 for p in pieces if _function_tags(p)),
+            "tags": len({t for p in pieces for t in p["tags"]}),
             "skipped": skipped,
         },
         "pieces": pieces,
@@ -832,16 +866,6 @@ def build() -> dict[str, Any]:
     tmp = OUT.with_suffix(f".{os.getpid()}.tmp")
     tmp.write_text(json.dumps(data, separators=(",", ":")))
     tmp.replace(OUT)
-    paths: dict[str, dict[str, str]] = {"symbols": {}, "footprints": {}}
-    for src in sources:
-        if src["name"].startswith("extra:"):
-            for sf in src["symbols"]:
-                paths["symbols"].setdefault(sf.stem, str(sf))
-            for lib, root in src["fp_roots"].items():
-                paths["footprints"].setdefault(lib, str(root))
-    tmp = LIB_PATHS.with_suffix(f".{os.getpid()}.tmp")
-    tmp.write_text(json.dumps(paths, indent=1))
-    tmp.replace(LIB_PATHS)
     load.cache_clear()
     return data
 
@@ -872,6 +896,12 @@ def load() -> dict[str, Any]:
     pieces = [cur.get(p["key"], p) for p in data["pieces"]]
     have = {p["key"] for p in pieces}
     pieces += [p for k, p in cur.items() if k not in have]
+    for p in pieces:
+        # curated pieces come from kicad_catalog without the build's tags and footprint check
+        if "tags" not in p:
+            p["tags"] = tags_for(p)
+        if "fp_ok" not in p:
+            p["fp_ok"] = _fp_ok(p["footprint"])
     by_key = {p["key"]: p for p in pieces}
     inv: dict[str, set[int]] = {}
     by_fp: dict[str, list[int]] = {}
@@ -891,14 +921,60 @@ def load() -> dict[str, Any]:
         for w in words:
             inv.setdefault(w, set()).add(i)
         by_fp.setdefault(_compact(fpn), []).append(i)
+    by_tag = _tag_index(pieces)
     return {
         **data,
         "pieces": pieces,
+        "by_tag": by_tag,
         "by_key": by_key,
         "inv": inv,
         "vocab": sorted(inv),
         "by_fp": by_fp,
         "by_name": by_name,
+    }
+
+
+def _tag_index(pieces: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """tag -> piece keys, best first: usable pieces (3D model, pads match, SPICE, footprint resolves), then pieces
+    whose library or family says the tag (a relay in Relay before a relay driver IC), then hobby / through-hole
+    footprints first (_hobby_rank), then by key so the order never changes between runs."""
+    from .piece_tags import primary_tags
+
+    rows: dict[str, list[tuple[int, int, int, str]]] = {}
+    for p in pieces:
+        prim = primary_tags(p)
+        use = 0 if _usable(p) else 1
+        hob = _hobby_rank(p["footprint"])
+        for t in p["tags"]:
+            rows.setdefault(t, []).append((use, 0 if t in prim else 1, hob, p["key"]))
+    return {t: [r[3] for r in sorted(v)] for t, v in sorted(rows.items())}
+
+
+def tagged(tag: str, k: int = 20, usable: bool = True) -> list[dict[str, Any]]:
+    """The best k pieces carrying this tag (see _tag_index for the order)."""
+    L = load()
+    out = []
+    for key in L["by_tag"].get(tag, ()):
+        p = L["by_key"][key]
+        if usable and not _usable(p):
+            break  # usable pieces sort first: the rest are not
+        out.append(p)
+        if len(out) >= k:
+            break
+    return out
+
+
+def tag_stats() -> dict[str, Any]:
+    L = load()
+    n = len(L["pieces"])
+    tagged_n = sum(1 for p in L["pieces"] if _function_tags(p))
+    return {
+        "pieces": n,
+        "tagged": tagged_n,
+        "coverage": round(tagged_n / n, 4) if n else 0.0,
+        "tags": len(L["by_tag"]),
+        "fp_ok": sum(1 for p in L["pieces"] if p.get("fp_ok")),
+        "usable": sum(1 for p in L["pieces"] if _usable(p)),
     }
 
 
@@ -910,7 +986,7 @@ def _compact(s: str) -> str:
 
 
 def _usable(p: dict[str, Any]) -> bool:
-    return bool(p.get("model") and p.get("pads_ok") and p.get("spice"))
+    return bool(p.get("model") and p.get("pads_ok") and p.get("spice") and p.get("fp_ok"))
 
 
 def _prefixed(L: dict[str, Any], t: str, cap: int = 60) -> set[int]:
