@@ -1499,6 +1499,9 @@ _GENERIC = (  # plain words -> the stock through-hole part with a SPICE model
     (r"\bpnp\b", "2N3906"),
     (r"flyback|rectifier|\b1n400\d", "1N4001"),
     (r"n-?channel|\bmosfet\b", "BS170"),
+    # the KiCad library's Pico modules (sweep 10-17: "Raspberry Pi Pico" went to web sourcing instead)
+    (r"\bpico[ _-]?w\b", "RaspberryPi_Pico_W"),
+    (r"raspberry[ _-]?pi[ _-]?pico|\bpico\b|\brp2040\b", "RaspberryPi_Pico"),
 )
 
 
