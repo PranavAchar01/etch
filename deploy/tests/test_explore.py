@@ -447,13 +447,34 @@ class ExploreRoutes(unittest.TestCase):
             (prov["board"], prov["commit"], prov["license"]), (GH, "abc123", "MIT")
         )
 
-    def test_change_gh_refuses_parts_outside_the_library(self):
+    def test_change_gh_outside_the_library_is_edited_in_place(self):
         with mock.patch.object(explore, "CATALOG", TMP / "missing.json"):
             explore._CATALOG["mtime"] = None
-            s, data = self.call("POST", "/etch/change", {"board": GH, "text": "blue"})
+            s, data = self.call("POST", "/etch/change", {"board": GH, "ref": "D1", "text": "add a buzzer"})
         explore._CATALOG["mtime"] = None
-        self.assertEqual(s, 422)
-        self.assertIn("own library", data["error"])
+        self.assertEqual(s, 200, data)
+        job = etch_public.JOBS[data["job"]]
+        self.assertEqual(job.mode, "modify")
+        self.assertIn("agent.import_edit", job.args)
+        self.assertEqual(job.args[job.args.index("--board") + 1], GH)
+        self.assertIn("D1: add a buzzer", job.args)
+
+    def test_change_gh_without_sources_is_edited_in_place(self):
+        with mock.patch.object(explore, "LIB_SRC", TMP / "no-src"):
+            s, data = self.call("POST", "/etch/change", {"board": GH, "text": "add a buzzer"})
+        self.assertEqual(s, 200, data)
+        self.assertIn("agent.import_edit", etch_public.JOBS[data["job"]].args)
+
+    def test_change_of_an_in_place_edit_stays_in_place(self):
+        run = TMP / "out" / "live-1792256559990"
+        run.mkdir(parents=True, exist_ok=True)
+        (run / "design.json").write_text(json.dumps({"title": "T", "parts": []}))
+        (run / "imported.json").write_text(json.dumps({"board": GH, "inplace": True}))
+        s, data = self.call("POST", "/etch/change", {"board": run.name, "text": "make it black"})
+        self.assertEqual(s, 200, data)
+        args = etch_public.JOBS[data["job"]].args
+        self.assertIn("agent.import_edit", args)
+        self.assertEqual(Path(args[args.index("--base") + 1]), run)
 
     def test_change_gh_not_copyable_is_403(self):
         meta = TMP / "world" / "boards" / SLUG / "meta.json"
