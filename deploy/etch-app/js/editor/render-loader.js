@@ -6,7 +6,7 @@
 import { pixelLoader } from "../ui/trace.js";
 import { createEyes } from "../ui/eyes.js";
 
-export function createRenderLoader(stage, { label = "Rendering your board" } = {}) {
+export function createRenderLoader(stage, { label = "Rendering your board", onCancel = null } = {}) {
   const root = document.createElement("div");
   root.className = "rl";
   const card = document.createElement("div");
@@ -17,16 +17,21 @@ export function createRenderLoader(stage, { label = "Rendering your board" } = {
   const err = document.createElement("p");
   err.className = "rl-err";
   err.setAttribute("role", "alert");
-  card.append(eyesHost, loader.el, err);
+  const stop = document.createElement("button");
+  stop.type = "button"; stop.className = "rl-cancel"; stop.textContent = "Cancel build";
+  stop.addEventListener("click", () => { stop.disabled = true; stop.textContent = "Cancelling"; onCancel?.(); });
+  card.append(eyesHost, loader.el, err, stop);
   root.append(card);
   stage.append(root);
   let eyes = null, gen = 0, failT = 0;
 
   const api = {
     get shown() { return root.classList.contains("on"); },
-    show(text) {
+    // show(text, { cancel: true }) puts the Cancel button on the card (a build, not a plain render)
+    show(text, { cancel = false } = {}) {
       gen++; clearTimeout(failT);
       root.classList.remove("fail"); err.textContent = "";
+      root.classList.toggle("can-cancel", !!cancel); stop.disabled = false; stop.textContent = "Cancel build";
       loader.start(text || label);
       if (!eyes) eyes = createEyes(eyesHost, { label: "" });
       eyes.setState("working"); eyes.setActivity?.("render");
@@ -40,7 +45,7 @@ export function createRenderLoader(stage, { label = "Rendering your board" } = {
       const g = gen;
       const go = () => {
         if (g !== gen || !root.classList.contains("on")) return;
-        root.classList.remove("on");
+        root.classList.remove("on", "can-cancel");
         loader.stop(); eyes?.setActivity?.(null); eyes?.setState("idle");
       };
       requestAnimationFrame(() => requestAnimationFrame(go));
@@ -51,6 +56,7 @@ export function createRenderLoader(stage, { label = "Rendering your board" } = {
       loader.stop();
       err.textContent = text;
       eyes?.setActivity?.(null); eyes?.setState("confused");
+      root.classList.remove("can-cancel");
       root.classList.add("on", "fail");
       failT = setTimeout(() => { if (g === gen) root.classList.remove("on"); }, 6000);
     },

@@ -149,6 +149,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
   if (!dock) throw new Error("createAgentBridge needs a dock");
   const timers = new Set();
   let disposed = false, jobGen = 0, askGen = 0;
+  let current = null; // { id, sim } of the build being followed, for cancel()
   // read each time: a new board (kind "new") becomes a live-* or library board once its design build is loaded
   const kindOf = () => board?.kind || (/^live-/.test(String(board?.id)) ? "live" : "gh");
   const partCount = () => Object.keys(board?.parts || {}).length;
@@ -330,6 +331,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
   const FOLLOW_GRACE_MS = 90000;
   async function follow(jobId, sim, gen, req) {
     const map = mapper(jobId, { design: !!req?.design });
+    current = { id: jobId, sim, gen };
     let since = 0, down = 0, last = null, stage = "", ended = false;
     const lost = (msg) => {
       dock.step({ id: jobId + ":lost", kind: "step", title: "Lost track of this build", detail: msg, status: "failed" });
@@ -556,6 +558,17 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     };
   }
 
+  // the cancel button: a real build is stopped on the engine (its lead:cancelled event then ends the follow); a mock
+  // build just stops being followed
+  async function cancel() {
+    const c = current;
+    if (!c || c.gen !== jobGen) return { ok: false };
+    if (c.sim) { jobGen++; current = null; dock.loader(false); dock.setState("idle"); dock.setStatus("Cancelled"); return { ok: true }; }
+    const r = await api.cancel(c.id);
+    if (r && r.ok === false && r.error) throw new Error(r.error);
+    return { ok: true };
+  }
+
   function dispose() {
     disposed = true; jobGen++; askGen++;
     for (const t of timers) { clearTimeout(t); clearInterval(t); }
@@ -563,5 +576,5 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     try { dock.loader(false); } catch (e) { /* dock already gone */ }
   }
 
-  return { ask, change, design, resume, onLoad, dispose };
+  return { ask, change, design, resume, onLoad, cancel, dispose };
 }

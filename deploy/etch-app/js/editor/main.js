@@ -70,7 +70,7 @@ for (const b of document.querySelectorAll(".top .btn, .tools .ib, .seg button, .
 
 const viewer = createBoardViewer($("cw"));
 // "Rendering your board" over the stage from the moment a build is done (or the page opens a board) until its model is in the scene
-const rl = createRenderLoader($("stage"));
+const rl = createRenderLoader($("stage"), { onCancel: () => cancelBuild() });
 const overlay = createSelectionOverlay($("selOv"), viewer);
 let sel = [];
 
@@ -504,10 +504,17 @@ function finishBuildAnim() {
 let buildLoader = false;
 function buildLoaderOn(text) {
   if (BUILD_ANIM) return;
-  if (!buildLoader) rl.show(text); else rl.label(text);
+  if (!buildLoader) rl.show(text, { cancel: true }); else rl.label(text);
   buildLoader = true;
   // nothing but the loader until the real board is in (his call 10-17): the start screen's parts leave
   if (backdrop) { backdrop.remove(); backdrop = null; }
+}
+// the loader's Cancel button: the engine stops the run, its lead:cancelled event then ends the build as usual
+async function cancelBuild() {
+  try {
+    const r = await bridge.cancel();
+    if (r.ok) { board.building = false; buildLoaderFail("Build cancelled."); lastEnd = "That build was cancelled. Tell me what your board should do and I'll start a new one."; }
+  } catch (e) { toast("Couldn't cancel the build: " + e.message); rl.show("Still building", { cancel: true }); }
 }
 function buildLoaderFail(text = "The build stopped without a board.") {
   if (BUILD_ANIM || !buildLoader) return;
@@ -545,7 +552,7 @@ function startDesign(text) {
   const failed = () => { board.building = false; backdrop?.building(false); buildLoaderFail(); };
   bridge.design(text).then((r) => {
     if (!r || !r.ok) failed();
-    if (!r) lastEnd = "I lost track of that build, so it did not finish. Tell me what your board should do and I'll start a new one.";
+    if (!r && !/cancelled/.test(lastEnd)) lastEnd = "I lost track of that build, so it did not finish. Tell me what your board should do and I'll start a new one.";
   }).catch(failed);
 }
 // the hero's text goes through the dock's own composer, so it shows up there as the person's turn
