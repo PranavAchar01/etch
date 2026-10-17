@@ -1,0 +1,61 @@
+{
+ "id": "gh:FutureSharks/preamp-two/PCBs/mcu-board",
+ "slug": "futuresharks__preamp-two__pcbs__mcu-board",
+ "title": "Preamp Two · MCU Board",
+ "owner": "FutureSharks",
+ "repo": "preamp-two",
+ "category": "audio",
+ "stars": 45,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  50.5,
+  49.0
+ ],
+ "parts": 22,
+ "glb_bytes": 554864,
+ "url": "https://github.com/FutureSharks/preamp-two",
+ "commit": "6001f142f6b35608b6ad879fad4a7894daf67b02",
+ "pcb_path": "PCBs/mcu-board/mcu-board.kicad_pcb",
+ "description": "An digitally controlled hi fi preamplifier 🔈🎵",
+ "license_url": "https://github.com/FutureSharks/preamp-two/blob/6001f14/LICENSE",
+ "author_url": "https://github.com/FutureSharks",
+ "topics": [
+  "audio",
+  "circuitpython",
+  "hifi",
+  "kicad",
+  "micro-controller",
+  "neopixel",
+  "preamplifier",
+  "schematics"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 15,
+  "resolved": 15,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -827.19309,
+   -250.00654,
+   -802.74384
+  ],
+  "max": [
+   827.54059,
+   250.01787,
+   802.90384
+  ]
+ },
+ "rendered": "2026-10-17T17:58:33Z",
+ "kicad": "10.0.7"
+}

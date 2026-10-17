@@ -1,0 +1,58 @@
+{
+ "id": "gh:siderakb/pmw3360-pcb/pmw3360_pcb_jst",
+ "slug": "siderakb__pmw3360-pcb__pmw3360_pcb_jst",
+ "title": "PMW3360 PCB · PMW3360 PCB Jst",
+ "owner": "siderakb",
+ "repo": "pmw3360-pcb",
+ "category": "keyboards",
+ "stars": 194,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  27.0,
+  28.0
+ ],
+ "parts": 20,
+ "glb_bytes": 256700,
+ "url": "https://github.com/siderakb/pmw3360-pcb",
+ "commit": "cd8874d863a454403262b8525a7f16351b66f0b8",
+ "pcb_path": "pmw3360_pcb_jst/pmw3360_pcb_jst.kicad_pcb",
+ "description": "PMW3360 optical mouse sensor breakout board, support both 3.3V and 1.8V logic",
+ "license_url": "https://github.com/siderakb/pmw3360-pcb/blob/cd8874d/LICENSE-CERN-OHL-P",
+ "author_url": "https://github.com/siderakb",
+ "topics": [
+  "kicad",
+  "oshw",
+  "pcb",
+  "pmw3360",
+  "qmk"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 11,
+  "resolved": 11,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.17364,
+   -8e-05,
+   0.11453
+  ],
+  "max": [
+   0.20064,
+   0.00584,
+   0.14253
+  ]
+ },
+ "rendered": "2026-10-17T18:10:05Z",
+ "kicad": "10.0.7"
+}

@@ -1,0 +1,58 @@
+{
+ "id": "gh:rschenk/re-gret/pcb",
+ "slug": "rschenk__re-gret__pcb",
+ "title": "Re Gret · Regret",
+ "owner": "rschenk",
+ "repo": "re-gret",
+ "category": "keyboards",
+ "stars": 64,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  228.14,
+  103.48
+ ],
+ "parts": 131,
+ "glb_bytes": 1349560,
+ "url": "https://github.com/rschenk/re-gret",
+ "commit": "7bc7908e7579d462b8eebd255a90dd71fe2e64b8",
+ "pcb_path": "pcb/regret.kicad_pcb",
+ "description": "34 key choc hotswap keyboard, wireless",
+ "license_url": "https://github.com/rschenk/re-gret/blob/7bc7908/LICENSE.md",
+ "author_url": "https://github.com/rschenk",
+ "topics": [
+  "ergogen",
+  "keyboard",
+  "kicad",
+  "pcb",
+  "zmk"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "None",
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -3737.44432,
+   -26.95973,
+   -1695.03837
+  ],
+  "max": [
+   3737.88052,
+   26.96124,
+   1695.28734
+  ]
+ },
+ "rendered": "2026-10-17T17:56:34Z",
+ "kicad": "10.0.7"
+}

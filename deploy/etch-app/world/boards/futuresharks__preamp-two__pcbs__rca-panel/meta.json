@@ -1,0 +1,61 @@
+{
+ "id": "gh:FutureSharks/preamp-two/PCBs/rca-panel",
+ "slug": "futuresharks__preamp-two__pcbs__rca-panel",
+ "title": "Preamp Two · Rca Panel",
+ "owner": "FutureSharks",
+ "repo": "preamp-two",
+ "category": "audio",
+ "stars": 45,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  140.97,
+  52.07
+ ],
+ "parts": 27,
+ "glb_bytes": 391920,
+ "url": "https://github.com/FutureSharks/preamp-two",
+ "commit": "6001f142f6b35608b6ad879fad4a7894daf67b02",
+ "pcb_path": "PCBs/rca-panel/rca-panel.kicad_pcb",
+ "description": "An digitally controlled hi fi preamplifier 🔈🎵",
+ "license_url": "https://github.com/FutureSharks/preamp-two/blob/6001f14/LICENSE",
+ "author_url": "https://github.com/FutureSharks",
+ "topics": [
+  "audio",
+  "circuitpython",
+  "hifi",
+  "kicad",
+  "micro-controller",
+  "neopixel",
+  "preamplifier",
+  "schematics"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 7,
+  "resolved": 7,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -2309.44279,
+   -189.06122,
+   -852.8494
+  ],
+  "max": [
+   2309.72092,
+   189.06995,
+   853.02847
+  ]
+ },
+ "rendered": "2026-10-17T17:58:06Z",
+ "kicad": "10.0.7"
+}

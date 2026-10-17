@@ -1,0 +1,62 @@
+{
+ "id": "gh:Ladniy/TK44/case/fr-4-plate",
+ "slug": "ladniy__tk44__case__fr-4-plate",
+ "title": "TK44 · Plate",
+ "owner": "Ladniy",
+ "repo": "TK44",
+ "category": "keyboards",
+ "stars": 45,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  289.92,
+  99.61
+ ],
+ "parts": 52,
+ "glb_bytes": 693872,
+ "url": "https://github.com/Ladniy/TK44",
+ "commit": "b4f470cccce0f2e080851dd49cce4b4010973f2a",
+ "pcb_path": "case/fr-4-plate/plate.kicad_pcb",
+ "description": "TK44 - is a wireless unibody 40% keyboard",
+ "license_url": "https://github.com/Ladniy/TK44/blob/b4f470c/LICENSE",
+ "author_url": "https://github.com/Ladniy",
+ "topics": [
+  "ble",
+  "bluetooth",
+  "ergonomics",
+  "holyiot18010",
+  "keyboard",
+  "kicad",
+  "nrf52840",
+  "tk44",
+  "zmk"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "None",
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -4750.1046,
+   -26.22152,
+   -1631.82007
+  ],
+  "max": [
+   4750.51415,
+   26.22303,
+   1632.08768
+  ]
+ },
+ "rendered": "2026-10-17T17:57:56Z",
+ "kicad": "10.0.7"
+}

@@ -1,0 +1,92 @@
+{
+ "id": "gh:crmaykish/mackerel-68k/hardware/mackerel-08-v1",
+ "slug": "crmaykish__mackerel-68k__hardware__mackerel-08-v1",
+ "title": "Mackerel 68K · Mackerel 08 V1",
+ "owner": "crmaykish",
+ "repo": "mackerel-68k",
+ "category": "retro",
+ "stars": 96,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  180.0,
+  120.0
+ ],
+ "parts": 85,
+ "glb_bytes": 3288192,
+ "url": "https://github.com/crmaykish/mackerel-68k",
+ "commit": "50786ed64897e037c57989c3322f02ea375584b7",
+ "pcb_path": "hardware/mackerel-08-v1/mackerel-08-v1.kicad_pcb",
+ "description": "A series of single-board Motorola 68k computers with support for modern Linux",
+ "license_url": "https://github.com/crmaykish/mackerel-68k/blob/50786ed/LICENSE",
+ "author_url": "https://github.com/crmaykish",
+ "topics": [
+  "68000",
+  "68008",
+  "68010",
+  "68030",
+  "embedded",
+  "homebrew",
+  "homebrew-computer",
+  "kicad",
+  "linux",
+  "m68k",
+  "motorola-68000",
+  "motorola-680x0",
+  "oshw",
+  "retrobrew",
+  "retrocomputing",
+  "sbc",
+  "single-board-computers",
+  "uclinux"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 4.69
+ },
+ "models": {
+  "total": 81,
+  "resolved": 77,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "U1",
+    "path": "${KICAD6_3DMODEL_DIR}/Package_LCC.3dshapes/PLCC-52_THT-Socket.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "HS1",
+    "path": "${KICAD8_3DMODEL_DIR}/Heatsink.3dshapes/Heatsink_Stonecold_HS-S02_13.21x9.53mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "U14",
+    "path": "${KICAD6_3DMODEL_DIR}/Package_LCC.3dshapes/PLCC-44_THT-Socket.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "U13",
+    "path": "${KICAD8_3DMODEL_DIR}/Socket.3dshapes/DIP_Socket-32_W11.9_W12.7_W15.24_W17.78_W18.5_3M_232-1285-00-0602J.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.02,
+   -0.00064,
+   0.04
+  ],
+  "max": [
+   0.2,
+   0.02554,
+   0.16
+  ]
+ },
+ "rendered": "2026-10-17T18:16:53Z",
+ "kicad": "10.0.7"
+}

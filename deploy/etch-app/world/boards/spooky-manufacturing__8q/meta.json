@@ -1,0 +1,96 @@
+{
+ "id": "gh:Spooky-Manufacturing/8Q",
+ "slug": "spooky-manufacturing__8q",
+ "title": "8Q",
+ "owner": "Spooky-Manufacturing",
+ "repo": "8Q",
+ "category": "computing",
+ "stars": 101,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  482.5,
+  711.0
+ ],
+ "parts": 157,
+ "glb_bytes": 3249348,
+ "url": "https://github.com/Spooky-Manufacturing/8Q",
+ "commit": "2486cbb12a36b3b838bc3fd7c7fed4ba99274242",
+ "pcb_path": "8Q/8Q.kicad_pcb",
+ "description": "General Purpose 8 Qubit Optical Quantum Computer",
+ "license_url": "https://github.com/Spooky-Manufacturing/8Q/blob/2486cbb/LICENSE",
+ "author_url": "https://github.com/Spooky-Manufacturing",
+ "topics": [
+  "hardware",
+  "kicad",
+  "open-core",
+  "open-source-hardware",
+  "quantum",
+  "quantum-computer",
+  "quantum-computing-initiative"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 104,
+  "resolved": 97,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "J12",
+    "path": "${KISYS3DMOD}/Connector_RJ.3dshapes/RJ45_Amphenol_54602-x08_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J21",
+    "path": "${KISYS3DMOD}/Connector_USB.3dshapes/USB3_A_Molex_48393-001.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J24",
+    "path": "${KISYS3DMOD}/Connector_USB.3dshapes/USB3_A_Molex_48393-001.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J25",
+    "path": "${KISYS3DMOD}/Connector_USB.3dshapes/USB3_A_Molex_48393-001.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J26",
+    "path": "${KISYS3DMOD}/Connector_USB.3dshapes/USB3_A_Molex_48393-001.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J27",
+    "path": "${KISYS3DMOD}/Connector_USB.3dshapes/USB3_A_Molex_48393-001.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J28",
+    "path": "${KISYS3DMOD}/Connector_USB.3dshapes/USB3_A_Molex_48393-001.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.12013,
+   -0.00191,
+   0.0362
+  ],
+  "max": [
+   1.12403,
+   0.01159,
+   0.7472
+  ]
+ },
+ "rendered": "2026-10-17T18:16:10Z",
+ "kicad": "10.0.7"
+}

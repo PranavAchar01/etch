@@ -1,0 +1,58 @@
+{
+ "id": "gh:Gekkio/gb-hardware/GB-MBCTEST",
+ "slug": "gekkio__gb-hardware__gb-mbctest",
+ "title": "Gb Hardware · GB MBCTEST",
+ "owner": "Gekkio",
+ "repo": "gb-hardware",
+ "category": "retro",
+ "stars": 378,
+ "license": "CC-BY-4.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  51.4,
+  61.0
+ ],
+ "parts": 36,
+ "glb_bytes": 1118984,
+ "url": "https://github.com/Gekkio/gb-hardware",
+ "commit": "b5ade559bd988fd6c4f5941615d4d6d79dec9098",
+ "pcb_path": "GB-MBCTEST/GB-MBCTEST.kicad_pcb",
+ "description": "Game Boy -related custom hardware by gekkio",
+ "license_url": "https://github.com/Gekkio/gb-hardware/blob/b5ade55/LICENSE",
+ "author_url": "https://github.com/Gekkio",
+ "topics": [
+  "game-boy-hardware",
+  "gameboy",
+  "hardware-designs",
+  "kicad",
+  "kicad-schematics"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.0
+ },
+ "models": {
+  "total": 32,
+  "resolved": 32,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.0743,
+   -8e-05,
+   0.039
+  ],
+  "max": [
+   0.1257,
+   0.01029,
+   0.1
+  ]
+ },
+ "rendered": "2026-10-17T18:06:13Z",
+ "kicad": "10.0.7"
+}

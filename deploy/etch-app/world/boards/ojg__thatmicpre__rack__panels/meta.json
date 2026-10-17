@@ -1,0 +1,59 @@
+{
+ "id": "gh:ojg/thatmicpre/rack/panels",
+ "slug": "ojg__thatmicpre__rack__panels",
+ "title": "Thatmicpre · Thatmicpre Panels",
+ "owner": "ojg",
+ "repo": "thatmicpre",
+ "category": "audio",
+ "stars": 193,
+ "license": "CC-BY-SA-4.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  87.94,
+  78.01
+ ],
+ "parts": 1,
+ "glb_bytes": 129260,
+ "url": "https://github.com/ojg/thatmicpre",
+ "commit": "c9735275db939b22bd7b8fc5899793add46f3683",
+ "pcb_path": "rack/panels/thatmicpre-panels.kicad_pcb",
+ "description": "Microphone Pre-amplifier",
+ "license_url": "https://github.com/ojg/thatmicpre/blob/c973527/LICENSE.txt",
+ "author_url": "https://github.com/ojg",
+ "topics": [
+  "amplifier",
+  "audio",
+  "diy",
+  "kicad",
+  "microphone",
+  "open-source-hardware"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.10269,
+   -8e-05,
+   0.05442
+  ],
+  "max": [
+   0.19063,
+   0.00158,
+   0.13243
+  ]
+ },
+ "rendered": "2026-10-17T18:10:15Z",
+ "kicad": "10.0.7"
+}

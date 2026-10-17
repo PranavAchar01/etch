@@ -1,6 +1,180 @@
 {
- "count": 309,
+ "generated": "2026-10-17T18:21:10Z",
+ "count": 292,
+ "counts": {
+  "rendered": 135,
+  "skipped": 105,
+  "queued": 52
+ },
  "boards": [
+  {
+   "id": "gh:OLIMEX/ESP32-POE/HARDWARE/ESP32-PoE-hardware-revision-M2",
+   "slug": "olimex__esp32-poe__hardware__esp32-poe-hardware-revision-m2",
+   "owner": "OLIMEX",
+   "repo": "ESP32-POE",
+   "commit": "deb38a377d50eadb04ddc7118a17a5ae58b1ee53",
+   "pcb_path": "HARDWARE/ESP32-PoE-hardware-revision-M2/ESP32-PoE_Rev_M2.kicad_pcb",
+   "license": "Apache-2.0",
+   "copyable": true,
+   "category": "dev-boards",
+   "stars": 411,
+   "url": "https://github.com/OLIMEX/ESP32-POE/tree/deb38a377d50eadb04ddc7118a17a5ae58b1ee53",
+   "glb_bytes": 2122640,
+   "bytes": 2165446,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 144,
+    "resolved": 144,
+    "hidden": 0,
+    "missing": 0
+   }
+  },
+  {
+   "id": "gh:OLIMEX/ESP32-POE/HARDWARE/ESP32-PoE-hardware-revision-M1",
+   "slug": "olimex__esp32-poe__hardware__esp32-poe-hardware-revision-m1",
+   "owner": "OLIMEX",
+   "repo": "ESP32-POE",
+   "commit": "deb38a377d50eadb04ddc7118a17a5ae58b1ee53",
+   "pcb_path": "HARDWARE/ESP32-PoE-hardware-revision-M1/ESP32-PoE_Rev_M1.kicad_pcb",
+   "license": "Apache-2.0",
+   "copyable": true,
+   "category": "dev-boards",
+   "stars": 411,
+   "url": "https://github.com/OLIMEX/ESP32-POE/tree/deb38a377d50eadb04ddc7118a17a5ae58b1ee53",
+   "glb_bytes": 2121880,
+   "bytes": 2164430,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 143,
+    "resolved": 143,
+    "hidden": 0,
+    "missing": 0
+   }
+  },
+  {
+   "id": "gh:OLIMEX/ESP32-POE/HARDWARE/ESP32-PoE-hardware-revision-M",
+   "slug": "olimex__esp32-poe__hardware__esp32-poe-hardware-revision-m",
+   "owner": "OLIMEX",
+   "repo": "ESP32-POE",
+   "commit": "deb38a377d50eadb04ddc7118a17a5ae58b1ee53",
+   "pcb_path": "HARDWARE/ESP32-PoE-hardware-revision-M/ESP32-PoE_Rev_M.kicad_pcb",
+   "license": "Apache-2.0",
+   "copyable": true,
+   "category": "dev-boards",
+   "stars": 411,
+   "url": "https://github.com/OLIMEX/ESP32-POE/tree/deb38a377d50eadb04ddc7118a17a5ae58b1ee53",
+   "glb_bytes": 2121880,
+   "bytes": 2164490,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 143,
+    "resolved": 143,
+    "hidden": 0,
+    "missing": 0
+   }
+  },
+  {
+   "id": "gh:kazkojima/esp32-phy/hardware/esp32-wslan8720",
+   "slug": "kazkojima__esp32-phy__hardware__esp32-wslan8720",
+   "owner": "kazkojima",
+   "repo": "esp32-phy",
+   "commit": "3ba6b004d38aac7a3eaba2ac62df26bf4e1f1c5d",
+   "pcb_path": "hardware/esp32-wslan8720/esp32-wslan8720.kicad_pcb",
+   "license": "GPL-3.0",
+   "copyable": true,
+   "category": "dev-boards",
+   "stars": 34,
+   "url": "https://github.com/kazkojima/esp32-phy/tree/3ba6b004d38aac7a3eaba2ac62df26bf4e1f1c5d",
+   "glb_bytes": 783980,
+   "bytes": 804403,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 9,
+    "resolved": 9,
+    "hidden": 0,
+    "missing": 0
+   }
+  },
+  {
+   "id": "gh:kazkojima/esp32-phy/hardware/esp32-tlk110",
+   "slug": "kazkojima__esp32-phy__hardware__esp32-tlk110",
+   "owner": "kazkojima",
+   "repo": "esp32-phy",
+   "commit": "3ba6b004d38aac7a3eaba2ac62df26bf4e1f1c5d",
+   "pcb_path": "hardware/esp32-tlk110/esp32-tlk110.kicad_pcb",
+   "license": "GPL-3.0",
+   "copyable": true,
+   "category": "dev-boards",
+   "stars": 34,
+   "url": "https://github.com/kazkojima/esp32-phy/tree/3ba6b004d38aac7a3eaba2ac62df26bf4e1f1c5d",
+   "glb_bytes": 819700,
+   "bytes": 844147,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 44,
+    "resolved": 44,
+    "hidden": 0,
+    "missing": 0
+   }
+  },
+  {
+   "id": "gh:Hans-Beerman/Deurnode_ESP32-PoE",
+   "slug": "hans-beerman__deurnode_esp32-poe",
+   "owner": "Hans-Beerman",
+   "repo": "Deurnode_ESP32-PoE",
+   "commit": "baca7e444b0a3d8e897e5b63934500fda8a65a46",
+   "pcb_path": "Deurnode nieuw.kicad_pcb",
+   "license": "Apache-2.0",
+   "copyable": true,
+   "category": "dev-boards",
+   "stars": 4,
+   "url": "https://github.com/Hans-Beerman/Deurnode_ESP32-PoE/tree/baca7e444b0a3d8e897e5b63934500fda8a65a46",
+   "glb_bytes": 862544,
+   "bytes": 888253,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 36,
+    "resolved": 27,
+    "hidden": 0,
+    "missing": 9
+   }
+  },
+  {
+   "id": "gh:enkhbold470/iron-node",
+   "slug": "enkhbold470__iron-node",
+   "owner": "enkhbold470",
+   "repo": "iron-node",
+   "commit": "56e0a536a21dbfde9d77e6d3ac8e058a00866d16",
+   "pcb_path": "kicad/iron_node.kicad_pcb",
+   "license": "CERN-OHL-S-2.0",
+   "copyable": true,
+   "category": "dev-boards",
+   "stars": 0,
+   "url": "https://github.com/enkhbold470/iron-node/tree/56e0a536a21dbfde9d77e6d3ac8e058a00866d16",
+   "glb_bytes": 1250264,
+   "bytes": 1282789,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 79,
+    "resolved": 79,
+    "hidden": 0,
+    "missing": 0
+   }
+  },
   {
    "id": "gh:KiCad/kicad-source-mirror/tools/newstroke",
    "slug": "kicad__kicad-source-mirror__tools__newstroke",
@@ -13,8 +187,15 @@
    "category": "computing",
    "stars": 3041,
    "url": "https://github.com/KiCad/kicad-source-mirror/tree/65a2918b01dfbc413a95e80898d6db4b1743504f",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:KiCad/kicad-source-mirror/demos/video",
@@ -28,8 +209,15 @@
    "category": "computing",
    "stars": 3041,
    "url": "https://github.com/KiCad/kicad-source-mirror/tree/65a2918b01dfbc413a95e80898d6db4b1743504f",
-   "status": "queued",
-   "unresolved_models": 5
+   "status": "skipped",
+   "reason": "not identical: 2 of 175 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 175,
+    "resolved": 173,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:KiCad/kicad-source-mirror/demos/tiny_tapeout",
@@ -43,8 +231,17 @@
    "category": "computing",
    "stars": 3041,
    "url": "https://github.com/KiCad/kicad-source-mirror/tree/65a2918b01dfbc413a95e80898d6db4b1743504f",
-   "status": "queued",
-   "unresolved_models": 1
+   "glb_bytes": 3854004,
+   "bytes": 3918630,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 130,
+    "resolved": 130,
+    "hidden": 1,
+    "missing": 0
+   }
   },
   {
    "id": "gh:freerouting/freerouting/fixtures/Issue742-tastexx-pcb",
@@ -58,8 +255,15 @@
    "category": "everything-else",
    "stars": 2111,
    "url": "https://github.com/freerouting/freerouting/tree/5aa1b24dc8e5af7f950c551c1e53de9077a84cd5",
-   "status": "queued",
-   "unresolved_models": 5
+   "status": "skipped",
+   "reason": "not identical: 1 of 5 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 5,
+    "resolved": 4,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:freerouting/freerouting/fixtures/Issue718-Allow_Net-Ties",
@@ -73,8 +277,15 @@
    "category": "everything-else",
    "stars": 2111,
    "url": "https://github.com/freerouting/freerouting/tree/5aa1b24dc8e5af7f950c551c1e53de9077a84cd5",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 2 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 2,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:freerouting/freerouting/fixtures/Issue632-MiniAutoPilot",
@@ -88,8 +299,15 @@
    "category": "everything-else",
    "stars": 2111,
    "url": "https://github.com/freerouting/freerouting/tree/5aa1b24dc8e5af7f950c551c1e53de9077a84cd5",
-   "status": "queued",
-   "unresolved_models": 26
+   "status": "skipped",
+   "reason": "not identical: 26 of 35 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 35,
+    "resolved": 9,
+    "hidden": 0,
+    "missing": 26
+   }
   },
   {
    "id": "gh:stack-chan/stack-chan",
@@ -103,8 +321,17 @@
    "category": "dev-boards",
    "stars": 1784,
    "url": "https://github.com/stack-chan/stack-chan/tree/ad876ea36e7ef13f08de2982fe8d15a6ffda5cc7",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 801804,
+   "bytes": 833285,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 33,
+    "resolved": 32,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:skot/bitaxe",
@@ -118,8 +345,17 @@
    "category": "everything-else",
    "stars": 1374,
    "url": "https://github.com/skot/bitaxe/tree/942bbd97aab09b12d826c6e82c64f3fb91246c4c",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1603136,
+   "bytes": 1647140,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 88,
+    "resolved": 88,
+    "hidden": 2,
+    "missing": 0
+   }
   },
   {
    "id": "gh:tzarc/keyboards/Kobold/R1",
@@ -133,8 +369,15 @@
    "category": "keyboards",
    "stars": 988,
    "url": "https://github.com/tzarc/keyboards/tree/21dd586153f70b0247c3c38f8a8070891e49041d",
-   "status": "queued",
-   "unresolved_models": 16
+   "status": "skipped",
+   "reason": "not identical: 16 of 94 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 94,
+    "resolved": 76,
+    "hidden": 0,
+    "missing": 18
+   }
   },
   {
    "id": "gh:tzarc/keyboards/Ghoul/v1.0",
@@ -148,8 +391,17 @@
    "category": "keyboards",
    "stars": 988,
    "url": "https://github.com/tzarc/keyboards/tree/21dd586153f70b0247c3c38f8a8070891e49041d",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 5007348,
+   "bytes": 5060133,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 216,
+    "resolved": 214,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:tzarc/keyboards/Djinn/Rev2a",
@@ -163,8 +415,17 @@
    "category": "keyboards",
    "stars": 988,
    "url": "https://github.com/tzarc/keyboards/tree/21dd586153f70b0247c3c38f8a8070891e49041d",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 9611476,
+   "bytes": 9691443,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 266,
+    "resolved": 264,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:beekeeb/piantor/pcb/right",
@@ -178,8 +439,15 @@
    "category": "keyboards",
    "stars": 868,
    "url": "https://github.com/beekeeb/piantor/tree/cd847afb4f9a86e8c1c8e36f243140644013afb2",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 4 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 4,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:beekeeb/piantor/pcb/left",
@@ -193,8 +461,15 @@
    "category": "keyboards",
    "stars": 868,
    "url": "https://github.com/beekeeb/piantor/tree/cd847afb4f9a86e8c1c8e36f243140644013afb2",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 4 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 4,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:gcormier/megadesk",
@@ -208,8 +483,17 @@
    "category": "dev-boards",
    "stars": 819,
    "url": "https://github.com/gcormier/megadesk/tree/2d1bf8d30337841dc9f5c1ef0724701185f99c39",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 475632,
+   "bytes": 500128,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 22,
+    "resolved": 22,
+    "hidden": 1,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Hanqaqa/Easyduino/STM32F103 Bluepill",
@@ -223,8 +507,17 @@
    "category": "dev-boards",
    "stars": 753,
    "url": "https://github.com/Hanqaqa/Easyduino/tree/53b14b66d64f25c55f88971c1c1b51656126bd30",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 820956,
+   "bytes": 843783,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 30,
+    "resolved": 30,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Hanqaqa/Easyduino/Raspberry Pi Pico 2040",
@@ -238,8 +531,17 @@
    "category": "dev-boards",
    "stars": 753,
    "url": "https://github.com/Hanqaqa/Easyduino/tree/53b14b66d64f25c55f88971c1c1b51656126bd30",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 971952,
+   "bytes": 1000742,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 47,
+    "resolved": 47,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Hanqaqa/Easyduino/ESP32S3",
@@ -253,8 +555,17 @@
    "category": "dev-boards",
    "stars": 753,
    "url": "https://github.com/Hanqaqa/Easyduino/tree/53b14b66d64f25c55f88971c1c1b51656126bd30",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1179004,
+   "bytes": 1200299,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 34,
+    "resolved": 34,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:aderusha/HASwitchPlate",
@@ -268,8 +579,15 @@
    "category": "iot",
    "stars": 738,
    "url": "https://github.com/aderusha/HASwitchPlate/tree/8d086bcc3545c85f6193ab016deee03608b11a94",
-   "status": "queued",
-   "unresolved_models": 6
+   "status": "skipped",
+   "reason": "not identical: 6 of 8 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 8,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 6
+   }
   },
   {
    "id": "gh:pointhi/kicad-color-schemes",
@@ -283,8 +601,15 @@
    "category": "computing",
    "stars": 719,
    "url": "https://github.com/pointhi/kicad-color-schemes/tree/68ea0402f334bdbae175f6ca924743640c07183d",
-   "status": "queued",
-   "unresolved_models": 8
+   "status": "skipped",
+   "reason": "not identical: 1 of 162 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 162,
+    "resolved": 161,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:Ottercast/OtterCastAudioV2/OtterCastAudioV2",
@@ -298,8 +623,15 @@
    "category": "computing",
    "stars": 668,
    "url": "https://github.com/Ottercast/OtterCastAudioV2/tree/199395d7249aaf12432e42bff828dd665546d6a4",
-   "status": "queued",
-   "unresolved_models": 21
+   "status": "skipped",
+   "reason": "not identical: 20 of 220 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 220,
+    "resolved": 199,
+    "hidden": 0,
+    "missing": 21
+   }
   },
   {
    "id": "gh:Ottercast/OtterCastAudioV2/Edgerails",
@@ -313,8 +645,15 @@
    "category": "computing",
    "stars": 668,
    "url": "https://github.com/Ottercast/OtterCastAudioV2/tree/199395d7249aaf12432e42bff828dd665546d6a4",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:pcbreflux/espressif/esp32/kicad/ESP32-wroover-adapter",
@@ -328,8 +667,15 @@
    "category": "tools",
    "stars": 608,
    "url": "https://github.com/pcbreflux/espressif/tree/fb147ec49807592c2ac480791f7006dd69263fea",
-   "status": "queued",
-   "unresolved_models": 4
+   "status": "skipped",
+   "reason": "not identical: 4 of 6 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 6,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:pcbreflux/espressif/esp32/kicad/ESP32-wroover-adapter/ESP32-wroover-adapter-pan",
@@ -343,8 +689,15 @@
    "category": "tools",
    "stars": 608,
    "url": "https://github.com/pcbreflux/espressif/tree/fb147ec49807592c2ac480791f7006dd69263fea",
-   "status": "queued",
-   "unresolved_models": 28
+   "status": "skipped",
+   "reason": "not identical: 28 of 42 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 42,
+    "resolved": 14,
+    "hidden": 0,
+    "missing": 28
+   }
   },
   {
    "id": "gh:pcbreflux/espressif/esp32/kicad/ESP32-li-ion-cell-monitor",
@@ -358,8 +711,15 @@
    "category": "tools",
    "stars": 608,
    "url": "https://github.com/pcbreflux/espressif/tree/fb147ec49807592c2ac480791f7006dd69263fea",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 35 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 35,
+    "resolved": 32,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:duckyb/urchin/main",
@@ -373,8 +733,15 @@
    "category": "keyboards",
    "stars": 602,
    "url": "https://github.com/duckyb/urchin/tree/02b1ab1315f3560f637eeaa8f375541f4fa621b9",
-   "status": "queued",
-   "unresolved_models": 80
+   "status": "skipped",
+   "reason": "not identical: 80 of 82 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 82,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 80
+   }
   },
   {
    "id": "gh:duckyb/urchin/plate-case/switch-plate",
@@ -388,8 +755,15 @@
    "category": "keyboards",
    "stars": 602,
    "url": "https://github.com/duckyb/urchin/tree/02b1ab1315f3560f637eeaa8f375541f4fa621b9",
-   "status": "queued",
-   "unresolved_models": 17
+   "status": "skipped",
+   "reason": "not identical: 17 of 17 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 17,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 17
+   }
   },
   {
    "id": "gh:duckyb/urchin/plate-case/base-plate",
@@ -403,8 +777,17 @@
    "category": "keyboards",
    "stars": 602,
    "url": "https://github.com/duckyb/urchin/tree/02b1ab1315f3560f637eeaa8f375541f4fa621b9",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 38460,
+   "bytes": 44145,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:iandchasse/silkscreen-pcb",
@@ -418,8 +801,17 @@
    "category": "displays",
    "stars": 579,
    "url": "https://github.com/iandchasse/silkscreen-pcb/tree/6941e64567ef795ed46843e99aad00ffaf855051",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 2632452,
+   "bytes": 2683251,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 177,
+    "resolved": 176,
+    "hidden": 4,
+    "missing": 1
+   }
   },
   {
    "id": "gh:adamws/kicad-kbplacer",
@@ -433,8 +825,15 @@
    "category": "keyboards",
    "stars": 542,
    "url": "https://github.com/adamws/kicad-kbplacer/tree/24746a25b84041eda7ee5d03f75d672db57820ed",
-   "status": "queued",
-   "unresolved_models": 16
+   "status": "skipped",
+   "reason": "not identical: 16 of 48 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 48,
+    "resolved": 16,
+    "hidden": 0,
+    "missing": 32
+   }
   },
   {
    "id": "gh:drandyhaas/KiCadRoutingTools/kicad_files",
@@ -448,8 +847,15 @@
    "category": "tools",
    "stars": 540,
    "url": "https://github.com/drandyhaas/KiCadRoutingTools/tree/b118ad48a8e647eabaaef298b2949adad4f6cd95",
-   "status": "queued",
-   "unresolved_models": 10
+   "status": "skipped",
+   "reason": "not identical: 10 of 75 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 75,
+    "resolved": 65,
+    "hidden": 0,
+    "missing": 10
+   }
   },
   {
    "id": "gh:drandyhaas/KiCadRoutingTools/kicad_files/ulx3s",
@@ -463,8 +869,15 @@
    "category": "tools",
    "stars": 540,
    "url": "https://github.com/drandyhaas/KiCadRoutingTools/tree/b118ad48a8e647eabaaef298b2949adad4f6cd95",
-   "status": "queued",
-   "unresolved_models": 18
+   "status": "skipped",
+   "reason": "not identical: 18 of 225 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 225,
+    "resolved": 191,
+    "hidden": 0,
+    "missing": 34
+   }
   },
   {
    "id": "gh:drandyhaas/KiCadRoutingTools/kicad_files/tigard",
@@ -478,8 +891,15 @@
    "category": "tools",
    "stars": 540,
    "url": "https://github.com/drandyhaas/KiCadRoutingTools/tree/b118ad48a8e647eabaaef298b2949adad4f6cd95",
-   "status": "queued",
-   "unresolved_models": 3
+   "status": "skipped",
+   "reason": "not identical: 3 of 84 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 84,
+    "resolved": 79,
+    "hidden": 0,
+    "missing": 5
+   }
   },
   {
    "id": "gh:Chrismettal/EleLab_v2/PCB_CAD/EleLab_v2_PowerFeed",
@@ -493,8 +913,17 @@
    "category": "everything-else",
    "stars": 530,
    "url": "https://github.com/Chrismettal/EleLab_v2/tree/9306cddca1e8b6b14c4f6a4f572579d2eedd44df",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 519872,
+   "bytes": 549280,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 10,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 8
+   }
   },
   {
    "id": "gh:Chrismettal/EleLab_v2/PCB_CAD/EleLab_v2_Frontpanel_a",
@@ -508,8 +937,17 @@
    "category": "everything-else",
    "stars": 530,
    "url": "https://github.com/Chrismettal/EleLab_v2/tree/9306cddca1e8b6b14c4f6a4f572579d2eedd44df",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 277384,
+   "bytes": 296097,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 20,
+    "resolved": 20,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Chrismettal/EleLab_v2/PCB_CAD/EleLab_v2_Bus150",
@@ -523,8 +961,17 @@
    "category": "everything-else",
    "stars": 530,
    "url": "https://github.com/Chrismettal/EleLab_v2/tree/9306cddca1e8b6b14c4f6a4f572579d2eedd44df",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 544720,
+   "bytes": 567088,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 36,
+    "resolved": 36,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:yaqwsx/Pinion",
@@ -538,8 +985,15 @@
    "category": "everything-else",
    "stars": 506,
    "url": "https://github.com/yaqwsx/Pinion/tree/4094f36dffb234e4676ee36d4ccad46f53043535",
-   "status": "queued",
-   "unresolved_models": 30
+   "status": "skipped",
+   "reason": "not identical: 22 of 69 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 69,
+    "resolved": 47,
+    "hidden": 0,
+    "missing": 22
+   }
   },
   {
    "id": "gh:raeedcho/temper/pcb",
@@ -553,8 +1007,15 @@
    "category": "keyboards",
    "stars": 484,
    "url": "https://github.com/raeedcho/temper/tree/08b23b021fcec6c2ae355cade7e0e473530afb85",
-   "status": "queued",
-   "unresolved_models": 19
+   "status": "skipped",
+   "reason": "not identical: 19 of 20 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 20,
+    "resolved": 1,
+    "hidden": 0,
+    "missing": 19
+   }
   },
   {
    "id": "gh:raeedcho/temper/case/top-plate",
@@ -568,8 +1029,17 @@
    "category": "keyboards",
    "stars": 484,
    "url": "https://github.com/raeedcho/temper/tree/08b23b021fcec6c2ae355cade7e0e473530afb85",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 41696,
+   "bytes": 53482,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:OpenDrone-hw/OpenRX",
@@ -583,8 +1053,15 @@
    "category": "dev-boards",
    "stars": 461,
    "url": "https://github.com/OpenDrone-hw/OpenRX/tree/985eded2eccbb1c69d310a83999b3c96b5519dd7",
-   "status": "queued",
-   "unresolved_models": 21
+   "status": "skipped",
+   "reason": "not identical: 21 of 221 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 221,
+    "resolved": 200,
+    "hidden": 0,
+    "missing": 21
+   }
   },
   {
    "id": "gh:thpoll83/PolyKybd/poly_kybd",
@@ -598,8 +1075,15 @@
    "category": "keyboards",
    "stars": 409,
    "url": "https://github.com/thpoll83/PolyKybd/tree/8dbe8ff5e12ee72e684d7896206d0839d624b86c",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 682 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 682,
+    "resolved": 681,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:thpoll83/PolyKybd/poly_kybd/poly_kybd_split72_plate_right",
@@ -613,8 +1097,15 @@
    "category": "keyboards",
    "stars": 409,
    "url": "https://github.com/thpoll83/PolyKybd/tree/8dbe8ff5e12ee72e684d7896206d0839d624b86c",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:thpoll83/PolyKybd/poly_kybd/poly_kybd_split72_plate_left",
@@ -628,8 +1119,15 @@
    "category": "keyboards",
    "stars": 409,
    "url": "https://github.com/thpoll83/PolyKybd/tree/8dbe8ff5e12ee72e684d7896206d0839d624b86c",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Hanqaqa/PCB_Business_Card",
@@ -643,8 +1141,15 @@
    "category": "everything-else",
    "stars": 405,
    "url": "https://github.com/Hanqaqa/PCB_Business_Card/tree/2eb394ff22972c76fd30c81c2e9216d68e584469",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:bbogush/nand_programmer/kicad",
@@ -658,8 +1163,17 @@
    "category": "tools",
    "stars": 389,
    "url": "https://github.com/bbogush/nand_programmer/tree/4d840b7afff7c1a1c02eacce3a72761cd0f58c93",
-   "status": "queued",
-   "unresolved_models": 2
+   "glb_bytes": 816456,
+   "bytes": 860956,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 40,
+    "resolved": 39,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:bbogush/nand_programmer/kicad/adapter_tsop48_solder",
@@ -673,8 +1187,17 @@
    "category": "tools",
    "stars": 389,
    "url": "https://github.com/bbogush/nand_programmer/tree/4d840b7afff7c1a1c02eacce3a72761cd0f58c93",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 286228,
+   "bytes": 301701,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 3,
+    "resolved": 3,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:bbogush/nand_programmer/kicad/adapter_tsop48",
@@ -688,8 +1211,17 @@
    "category": "tools",
    "stars": 389,
    "url": "https://github.com/bbogush/nand_programmer/tree/4d840b7afff7c1a1c02eacce3a72761cd0f58c93",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 417908,
+   "bytes": 436947,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 2,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Gekkio/gb-hardware/GB-MBCTEST",
@@ -703,8 +1235,17 @@
    "category": "retro",
    "stars": 378,
    "url": "https://github.com/Gekkio/gb-hardware/tree/b5ade559bd988fd6c4f5941615d4d6d79dec9098",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1118984,
+   "bytes": 1150302,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 32,
+    "resolved": 32,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Gekkio/gb-hardware/GB-LIVE32",
@@ -718,8 +1259,17 @@
    "category": "retro",
    "stars": 378,
    "url": "https://github.com/Gekkio/gb-hardware/tree/b5ade559bd988fd6c4f5941615d4d6d79dec9098",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 752416,
+   "bytes": 789581,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 45,
+    "resolved": 43,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:Gekkio/gb-hardware/GB-CARTPP-XC",
@@ -733,8 +1283,17 @@
    "category": "retro",
    "stars": 378,
    "url": "https://github.com/Gekkio/gb-hardware/tree/b5ade559bd988fd6c4f5941615d4d6d79dec9098",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 712412,
+   "bytes": 733607,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 19,
+    "resolved": 17,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:im-tomu/tomu-hardware/pcb",
@@ -748,8 +1307,17 @@
    "category": "robotics",
    "stars": 365,
    "url": "https://github.com/im-tomu/tomu-hardware/tree/82dee8e32ebf79712f4e99fa3542675b8a289a3f",
-   "status": "queued",
-   "unresolved_models": 9
+   "glb_bytes": 187452,
+   "bytes": 204869,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 10,
+    "resolved": 10,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:im-tomu/tomu-hardware/releases/v0.3/gerber",
@@ -763,8 +1331,17 @@
    "category": "robotics",
    "stars": 365,
    "url": "https://github.com/im-tomu/tomu-hardware/tree/82dee8e32ebf79712f4e99fa3542675b8a289a3f",
-   "status": "queued",
-   "unresolved_models": 9
+   "glb_bytes": 175624,
+   "bytes": 191821,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 10,
+    "resolved": 10,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:im-tomu/tomu-hardware/releases/v0.2/gerbers",
@@ -778,8 +1355,15 @@
    "category": "robotics",
    "stars": 365,
    "url": "https://github.com/im-tomu/tomu-hardware/tree/82dee8e32ebf79712f4e99fa3542675b8a289a3f",
-   "status": "queued",
-   "unresolved_models": 14
+   "status": "skipped",
+   "reason": "not identical: 2 of 14 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 14,
+    "resolved": 12,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:KCORES/OCP2PCIe/OCP2PCIe-H-F-4/OCP2PCIe-H-F-4-V2.0Beta",
@@ -793,8 +1377,17 @@
    "category": "computing",
    "stars": 363,
    "url": "https://github.com/KCORES/OCP2PCIe/tree/4d2b9eb8e4dc02ff2dccc568d7ee06ad82f97e78",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 738356,
+   "bytes": 757709,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 6,
+    "resolved": 6,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:KCORES/OCP2PCIe/OCP2PCIe-H-F-4/OCP2PCIe-H-F-4-V2.0Beta/V1-cut10x10",
@@ -808,8 +1401,17 @@
    "category": "computing",
    "stars": 363,
    "url": "https://github.com/KCORES/OCP2PCIe/tree/4d2b9eb8e4dc02ff2dccc568d7ee06ad82f97e78",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 750120,
+   "bytes": 771414,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 6,
+    "resolved": 6,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:KCORES/OCP2PCIe/OCP2PCIe-H-F-4/OCP2PCIe-H-F-4-V1.1Beta",
@@ -823,8 +1425,17 @@
    "category": "computing",
    "stars": 363,
    "url": "https://github.com/KCORES/OCP2PCIe/tree/4d2b9eb8e4dc02ff2dccc568d7ee06ad82f97e78",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 564040,
+   "bytes": 580858,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 8,
+    "resolved": 8,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:zhiayang/mikoto/mikoto",
@@ -838,8 +1449,17 @@
    "category": "iot",
    "stars": 357,
    "url": "https://github.com/zhiayang/mikoto/tree/86318f6c69495b8308354b6393d85229177b26ae",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 965340,
+   "bytes": 996169,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 53,
+    "resolved": 51,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:zhiayang/mikoto/flashbed",
@@ -853,8 +1473,17 @@
    "category": "iot",
    "stars": 357,
    "url": "https://github.com/zhiayang/mikoto/tree/86318f6c69495b8308354b6393d85229177b26ae",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 589292,
+   "bytes": 619894,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 41,
+    "resolved": 41,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:FPGAwars/icezum",
@@ -868,8 +1497,17 @@
    "category": "computing",
    "stars": 357,
    "url": "https://github.com/FPGAwars/icezum/tree/dbad423670419b82018bf6e33c418fc35558c1be",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 2958688,
+   "bytes": 3029711,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 189,
+    "resolved": 189,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:SimonMerrett/SOICbite/adaptors/SOICbite_USB",
@@ -883,8 +1521,17 @@
    "category": "tools",
    "stars": 354,
    "url": "https://github.com/SimonMerrett/SOICbite/tree/ef1ad26febff8ace92e256f7026b4203fd2161e5",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 188412,
+   "bytes": 203007,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 3,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:SimonMerrett/SOICbite/adaptors/SOICbite_SWD",
@@ -898,8 +1545,17 @@
    "category": "tools",
    "stars": 354,
    "url": "https://github.com/SimonMerrett/SOICbite/tree/ef1ad26febff8ace92e256f7026b4203fd2161e5",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 207132,
+   "bytes": 218645,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 4,
+    "resolved": 4,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:KCORES/KCORES-FlexibleLOM-Adapter",
@@ -913,8 +1569,17 @@
    "category": "tools",
    "stars": 316,
    "url": "https://github.com/KCORES/KCORES-FlexibleLOM-Adapter/tree/2401923550d467905b3312f506ad84a59c6e1417",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 725748,
+   "bytes": 737618,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 1,
+    "resolved": 1,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:jpconstantineau/ErgoTravel/PCB_Choc_RGB",
@@ -928,8 +1593,15 @@
    "category": "keyboards",
    "stars": 283,
    "url": "https://github.com/jpconstantineau/ErgoTravel/tree/e9be40f69359cc593c21303f7be7bc1916a83468",
-   "status": "queued",
-   "unresolved_models": 54
+   "status": "skipped",
+   "reason": "not identical: 54 of 124 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 124,
+    "resolved": 70,
+    "hidden": 0,
+    "missing": 54
+   }
   },
   {
    "id": "gh:jpconstantineau/ErgoTravel/PCB_Choc_LED",
@@ -943,8 +1615,15 @@
    "category": "keyboards",
    "stars": 283,
    "url": "https://github.com/jpconstantineau/ErgoTravel/tree/e9be40f69359cc593c21303f7be7bc1916a83468",
-   "status": "queued",
-   "unresolved_models": 54
+   "status": "skipped",
+   "reason": "not identical: 54 of 180 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 180,
+    "resolved": 126,
+    "hidden": 0,
+    "missing": 54
+   }
   },
   {
    "id": "gh:jpconstantineau/ErgoTravel/PCB_Choc",
@@ -958,8 +1637,15 @@
    "category": "keyboards",
    "stars": 283,
    "url": "https://github.com/jpconstantineau/ErgoTravel/tree/e9be40f69359cc593c21303f7be7bc1916a83468",
-   "status": "queued",
-   "unresolved_models": 54
+   "status": "skipped",
+   "reason": "not identical: 54 of 63 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 63,
+    "resolved": 9,
+    "hidden": 0,
+    "missing": 54
+   }
   },
   {
    "id": "gh:GuitarML/FunBox/hardware/funbox_v3_midi_exp",
@@ -973,8 +1659,15 @@
    "category": "audio",
    "stars": 283,
    "url": "https://github.com/GuitarML/FunBox/tree/c0409dde8e381027688f3cc212951c605247a18f",
-   "status": "queued",
-   "unresolved_models": 5
+   "status": "skipped",
+   "reason": "not identical: 5 of 56 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 56,
+    "resolved": 50,
+    "hidden": 0,
+    "missing": 6
+   }
   },
   {
    "id": "gh:GuitarML/FunBox/hardware/funbox_v2_midi",
@@ -988,8 +1681,15 @@
    "category": "audio",
    "stars": 283,
    "url": "https://github.com/GuitarML/FunBox/tree/c0409dde8e381027688f3cc212951c605247a18f",
-   "status": "queued",
-   "unresolved_models": 5
+   "status": "skipped",
+   "reason": "not identical: 5 of 56 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 56,
+    "resolved": 50,
+    "hidden": 0,
+    "missing": 6
+   }
   },
   {
    "id": "gh:GuitarML/FunBox/hardware/funbox_v1",
@@ -1003,8 +1703,15 @@
    "category": "audio",
    "stars": 283,
    "url": "https://github.com/GuitarML/FunBox/tree/c0409dde8e381027688f3cc212951c605247a18f",
-   "status": "queued",
-   "unresolved_models": 3
+   "status": "skipped",
+   "reason": "not identical: 3 of 47 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 47,
+    "resolved": 43,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:justbuchanan/oasis/pcb/main",
@@ -1018,8 +1725,17 @@
    "category": "iot",
    "stars": 270,
    "url": "https://github.com/justbuchanan/oasis/tree/3462f162f80e11c78705218441af37639d87bfdc",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 751452,
+   "bytes": 774306,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 45,
+    "resolved": 44,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:justbuchanan/oasis/pcb/ledboard",
@@ -1033,8 +1749,17 @@
    "category": "iot",
    "stars": 270,
    "url": "https://github.com/justbuchanan/oasis/tree/3462f162f80e11c78705218441af37639d87bfdc",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 60212,
+   "bytes": 69132,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 5,
+    "resolved": 5,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:justbuchanan/oasis/pcb/fabricated-boards/v0.2/kicad",
@@ -1048,8 +1773,17 @@
    "category": "iot",
    "stars": 270,
    "url": "https://github.com/justbuchanan/oasis/tree/3462f162f80e11c78705218441af37639d87bfdc",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 852336,
+   "bytes": 877452,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 52,
+    "resolved": 51,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:OpenDrone-hw/OpenESC-20x20",
@@ -1063,8 +1797,17 @@
    "category": "robotics",
    "stars": 269,
    "url": "https://github.com/OpenDrone-hw/OpenESC-20x20/tree/dba7828a01f42e33fbe03574baa23c97961fb8b7",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 3801224,
+   "bytes": 3877251,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 182,
+    "resolved": 182,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:newdigate/teensy-eurorack/hardware/boards",
@@ -1078,8 +1821,17 @@
    "category": "audio",
    "stars": 259,
    "url": "https://github.com/newdigate/teensy-eurorack/tree/237c0e698e3afaa43a0606a6f96fa6ea0d4e08a0",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 70484,
+   "bytes": 79863,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 2,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:newdigate/teensy-eurorack/hardware/boards/teensy-eurorack",
@@ -1093,8 +1845,17 @@
    "category": "audio",
    "stars": 259,
    "url": "https://github.com/newdigate/teensy-eurorack/tree/237c0e698e3afaa43a0606a6f96fa6ea0d4e08a0",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 2740084,
+   "bytes": 2797165,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 99,
+    "resolved": 99,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:newdigate/teensy-eurorack/hardware/boards/teensy-eurorack-breakout",
@@ -1108,8 +1869,17 @@
    "category": "audio",
    "stars": 259,
    "url": "https://github.com/newdigate/teensy-eurorack/tree/237c0e698e3afaa43a0606a6f96fa6ea0d4e08a0",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 2163240,
+   "bytes": 2208019,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 76,
+    "resolved": 76,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:mecparts/RetroWiFiModem",
@@ -1123,8 +1893,15 @@
    "category": "retro",
    "stars": 258,
    "url": "https://github.com/mecparts/RetroWiFiModem/tree/93ae395d948b36fcf846eda8158dcae77d6c4593",
-   "status": "queued",
-   "unresolved_models": 21
+   "status": "skipped",
+   "reason": "not identical: 17 of 27 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 27,
+    "resolved": 10,
+    "hidden": 0,
+    "missing": 17
+   }
   },
   {
    "id": "gh:Miceuz/i2c-moisture-sensor/i2c-moist-sensor",
@@ -1138,8 +1915,17 @@
    "category": "iot",
    "stars": 257,
    "url": "https://github.com/Miceuz/i2c-moisture-sensor/tree/c687328d2fdbe45b1b6c9d6b92627460e9f3167d",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 266512,
+   "bytes": 276577,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 20,
+    "resolved": 20,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Miceuz/i2c-moisture-sensor/i2c-moist-sensor-pannel",
@@ -1153,8 +1939,15 @@
    "category": "iot",
    "stars": 257,
    "url": "https://github.com/Miceuz/i2c-moisture-sensor/tree/c687328d2fdbe45b1b6c9d6b92627460e9f3167d",
-   "status": "queued",
-   "unresolved_models": 85
+   "status": "skipped",
+   "reason": "not identical: 80 of 85 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 85,
+    "resolved": 5,
+    "hidden": 0,
+    "missing": 80
+   }
   },
   {
    "id": "gh:CRImier/MyKiCad/Wearables/hapticbelt_driver",
@@ -1168,8 +1961,17 @@
    "category": "everything-else",
    "stars": 253,
    "url": "https://github.com/CRImier/MyKiCad/tree/4f01eaa6b3b0a269570c711e58ba4bf0f8446d11",
-   "status": "queued",
-   "unresolved_models": 1
+   "glb_bytes": 271120,
+   "bytes": 298355,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 12,
+    "resolved": 12,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:CRImier/MyKiCad/Reverse-engineering/usbc_debug_finder",
@@ -1183,8 +1985,15 @@
    "category": "everything-else",
    "stars": 253,
    "url": "https://github.com/CRImier/MyKiCad/tree/4f01eaa6b3b0a269570c711e58ba4bf0f8446d11",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 22 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 22,
+    "resolved": 21,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:CRImier/MyKiCad/Reverse-engineering/typec_interposer",
@@ -1198,8 +2007,17 @@
    "category": "everything-else",
    "stars": 253,
    "url": "https://github.com/CRImier/MyKiCad/tree/4f01eaa6b3b0a269570c711e58ba4bf0f8446d11",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 187276,
+   "bytes": 202300,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 10,
+    "resolved": 8,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:Open-Smartwatch/open-smartwatch-light",
@@ -1213,8 +2031,17 @@
    "category": "wearables",
    "stars": 247,
    "url": "https://github.com/Open-Smartwatch/open-smartwatch-light/tree/55ce0ec0e0254e03b575917788cb001507b01619",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 826424,
+   "bytes": 867601,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 43,
+    "resolved": 43,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:AzonInc/Doorman/pcb_slot_programmer",
@@ -1228,8 +2055,17 @@
    "category": "iot",
    "stars": 246,
    "url": "https://github.com/AzonInc/Doorman/tree/fdec5c030e77bb8e0219d745cc0282139c96836c",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 187316,
+   "bytes": 203325,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 1,
+    "resolved": 1,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:AzonInc/Doorman/pcb_slot",
@@ -1243,8 +2079,17 @@
    "category": "iot",
    "stars": 246,
    "url": "https://github.com/AzonInc/Doorman/tree/fdec5c030e77bb8e0219d745cc0282139c96836c",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 524272,
+   "bytes": 547021,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 26,
+    "resolved": 26,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:AzonInc/Doorman/pcb",
@@ -1258,8 +2103,17 @@
    "category": "iot",
    "stars": 246,
    "url": "https://github.com/AzonInc/Doorman/tree/fdec5c030e77bb8e0219d745cc0282139c96836c",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 968184,
+   "bytes": 999847,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 35,
+    "resolved": 35,
+    "hidden": 1,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Open-Smartwatch/open-smartwatch-gps",
@@ -1273,8 +2127,17 @@
    "category": "wearables",
    "stars": 242,
    "url": "https://github.com/Open-Smartwatch/open-smartwatch-gps/tree/744b1f4074e90fff00ded519dc4430f6050fd8d2",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1128184,
+   "bytes": 1175475,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 57,
+    "resolved": 56,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:Jana-Marie/ligra/ligra_front",
@@ -1288,8 +2151,17 @@
    "category": "lighting",
    "stars": 215,
    "url": "https://github.com/Jana-Marie/ligra/tree/8a98f3938c20fe3ed07bfb34e7d43f243e21f519",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 605120,
+   "bytes": 626485,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Jana-Marie/ligra/ligra_back",
@@ -1303,8 +2175,15 @@
    "category": "lighting",
    "stars": 215,
    "url": "https://github.com/Jana-Marie/ligra/tree/8a98f3938c20fe3ed07bfb34e7d43f243e21f519",
-   "status": "queued",
-   "unresolved_models": 30
+   "status": "skipped",
+   "reason": "not identical: 2 of 52 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 52,
+    "resolved": 44,
+    "hidden": 0,
+    "missing": 8
+   }
   },
   {
    "id": "gh:siderakb/pmw3360-pcb/pmw3360_pcb_pinheader",
@@ -1318,8 +2197,17 @@
    "category": "keyboards",
    "stars": 194,
    "url": "https://github.com/siderakb/pmw3360-pcb/tree/cd8874d863a454403262b8525a7f16351b66f0b8",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 263432,
+   "bytes": 285368,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 11,
+    "resolved": 11,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:siderakb/pmw3360-pcb/pmw3360_pcb_jst",
@@ -1333,8 +2221,17 @@
    "category": "keyboards",
    "stars": 194,
    "url": "https://github.com/siderakb/pmw3360-pcb/tree/cd8874d863a454403262b8525a7f16351b66f0b8",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 256700,
+   "bytes": 283104,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 11,
+    "resolved": 11,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:siderakb/pmw3360-pcb/pmw3360_pcb_ffc",
@@ -1348,8 +2245,17 @@
    "category": "keyboards",
    "stars": 194,
    "url": "https://github.com/siderakb/pmw3360-pcb/tree/cd8874d863a454403262b8525a7f16351b66f0b8",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 238324,
+   "bytes": 261602,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 10,
+    "resolved": 10,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:ojg/thatmicpre/rack",
@@ -1363,8 +2269,15 @@
    "category": "audio",
    "stars": 193,
    "url": "https://github.com/ojg/thatmicpre/tree/c9735275db939b22bd7b8fc5899793add46f3683",
-   "status": "queued",
-   "unresolved_models": 7
+   "status": "skipped",
+   "reason": "not identical: 7 of 83 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 83,
+    "resolved": 73,
+    "hidden": 2,
+    "missing": 10
+   }
   },
   {
    "id": "gh:ojg/thatmicpre/desktop",
@@ -1378,8 +2291,15 @@
    "category": "audio",
    "stars": 193,
    "url": "https://github.com/ojg/thatmicpre/tree/c9735275db939b22bd7b8fc5899793add46f3683",
-   "status": "queued",
-   "unresolved_models": 7
+   "status": "skipped",
+   "reason": "not identical: 7 of 79 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 79,
+    "resolved": 68,
+    "hidden": 6,
+    "missing": 11
+   }
   },
   {
    "id": "gh:ojg/thatmicpre/rack/panels",
@@ -1393,8 +2313,17 @@
    "category": "audio",
    "stars": 193,
    "url": "https://github.com/ojg/thatmicpre/tree/c9735275db939b22bd7b8fc5899793add46f3683",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 129260,
+   "bytes": 141488,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:tebl/RC6502-Apple-1-Replica/RC6502 VDU",
@@ -1408,8 +2337,15 @@
    "category": "retro",
    "stars": 193,
    "url": "https://github.com/tebl/RC6502-Apple-1-Replica/tree/a13002e0397823f2b020dad08ad8a417129f75d0",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 32 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 32,
+    "resolved": 31,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:tebl/RC6502-Apple-1-Replica/RC6502 VDU Color Amplifier",
@@ -1424,7 +2360,14 @@
    "stars": 193,
    "url": "https://github.com/tebl/RC6502-Apple-1-Replica/tree/a13002e0397823f2b020dad08ad8a417129f75d0",
    "status": "queued",
-   "unresolved_models": 1
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 22,
+    "resolved": 22,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:tebl/RC6502-Apple-1-Replica/RC6502 VDU Amplifier",
@@ -1439,7 +2382,14 @@
    "stars": 193,
    "url": "https://github.com/tebl/RC6502-Apple-1-Replica/tree/a13002e0397823f2b020dad08ad8a417129f75d0",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 9,
+    "resolved": 9,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:duckyb/eternal-keypad/switch-plate-kicad",
@@ -1453,8 +2403,15 @@
    "category": "keyboards",
    "stars": 191,
    "url": "https://github.com/duckyb/eternal-keypad/tree/bf11c1d50ead127c25401d262d73834e8438f3ca",
-   "status": "queued",
-   "unresolved_models": 37
+   "status": "skipped",
+   "reason": "not identical: 37 of 37 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 37,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 37
+   }
   },
   {
    "id": "gh:duckyb/eternal-keypad/pcb-kicad",
@@ -1468,8 +2425,15 @@
    "category": "keyboards",
    "stars": 191,
    "url": "https://github.com/duckyb/eternal-keypad/tree/bf11c1d50ead127c25401d262d73834e8438f3ca",
-   "status": "queued",
-   "unresolved_models": 40
+   "status": "skipped",
+   "reason": "not identical: 4 of 159 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 159,
+    "resolved": 82,
+    "hidden": 36,
+    "missing": 77
+   }
   },
   {
    "id": "gh:duckyb/eternal-keypad/bottom-plate-kicad",
@@ -1483,8 +2447,15 @@
    "category": "keyboards",
    "stars": 191,
    "url": "https://github.com/duckyb/eternal-keypad/tree/bf11c1d50ead127c25401d262d73834e8438f3ca",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:ZSWatch/Watch-DevKit-HW",
@@ -1498,8 +2469,15 @@
    "category": "wearables",
    "stars": 188,
    "url": "https://github.com/ZSWatch/Watch-DevKit-HW/tree/e3102a3bb5b75f46a0e20edbc5e3a159150383d2",
-   "status": "queued",
-   "unresolved_models": 23
+   "status": "skipped",
+   "reason": "not identical: 23 of 102 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 102,
+    "resolved": 79,
+    "hidden": 0,
+    "missing": 23
+   }
   },
   {
    "id": "gh:jkramarz/TheTick",
@@ -1513,8 +2491,17 @@
    "category": "dev-boards",
    "stars": 184,
    "url": "https://github.com/jkramarz/TheTick/tree/74d8d6b81eab4fd260727502a72f293ef94791cf",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 487884,
+   "bytes": 514418,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 31,
+    "resolved": 31,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:siderakb/ergo-snm-keyboard/ErgoSNM_Keyboard/rev1",
@@ -1528,8 +2515,17 @@
    "category": "keyboards",
    "stars": 171,
    "url": "https://github.com/siderakb/ergo-snm-keyboard/tree/20e9e51e9f52749140369968b2bf5e741bf063b0",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 2381004,
+   "bytes": 2420284,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 46,
+    "resolved": 46,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:siderakb/ergo-snm-keyboard/ErgoSNM_Keyboard/rev3/right",
@@ -1543,8 +2539,17 @@
    "category": "keyboards",
    "stars": 171,
    "url": "https://github.com/siderakb/ergo-snm-keyboard/tree/20e9e51e9f52749140369968b2bf5e741bf063b0",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1493856,
+   "bytes": 1531007,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 52,
+    "resolved": 51,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:siderakb/ergo-snm-keyboard/ErgoSNM_Keyboard/rev3/receiver",
@@ -1558,8 +2563,17 @@
    "category": "keyboards",
    "stars": 171,
    "url": "https://github.com/siderakb/ergo-snm-keyboard/tree/20e9e51e9f52749140369968b2bf5e741bf063b0",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 505376,
+   "bytes": 527292,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 14,
+    "resolved": 14,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:RespiraWorks/Ventilator/pcb",
@@ -1573,8 +2587,15 @@
    "category": "everything-else",
    "stars": 169,
    "url": "https://github.com/RespiraWorks/Ventilator/tree/6165c82de293d66b71f43040a2f145ab70bb49c0",
-   "status": "queued",
-   "unresolved_models": 42
+   "status": "skipped",
+   "reason": "not identical: 42 of 658 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 658,
+    "resolved": 557,
+    "hidden": 0,
+    "missing": 101
+   }
   },
   {
    "id": "gh:RespiraWorks/Ventilator/pcb/indicator-board",
@@ -1588,8 +2609,15 @@
    "category": "dev-boards",
    "stars": 169,
    "url": "https://github.com/RespiraWorks/Ventilator/tree/6165c82de293d66b71f43040a2f145ab70bb49c0",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 16 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 16,
+    "resolved": 14,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:RespiraWorks/Ventilator/pcb/sensor-daughterboards/pressure_XGZP6897A",
@@ -1603,8 +2631,17 @@
    "category": "everything-else",
    "stars": 169,
    "url": "https://github.com/RespiraWorks/Ventilator/tree/6165c82de293d66b71f43040a2f145ab70bb49c0",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 218376,
+   "bytes": 235367,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 7,
+    "resolved": 7,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Hydra-Designs/project-hydra-meshtastic-pcb/meshtastic-diy",
@@ -1618,8 +2655,17 @@
    "category": "rf",
    "stars": 167,
    "url": "https://github.com/Hydra-Designs/project-hydra-meshtastic-pcb/tree/3ff34b532b74792a773c70989041756519516835",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 870500,
+   "bytes": 905917,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 39,
+    "resolved": 39,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Hydra-Designs/project-hydra-meshtastic-pcb/Hydra Base",
@@ -1633,8 +2679,15 @@
    "category": "rf",
    "stars": 167,
    "url": "https://github.com/Hydra-Designs/project-hydra-meshtastic-pcb/tree/3ff34b532b74792a773c70989041756519516835",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 9 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 9,
+    "resolved": 7,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:mzuelch/CATs-Eurosynth/Modules/YuSynth/Improved Steiner VCF/Electronics/Main",
@@ -1648,8 +2701,17 @@
    "category": "audio",
    "stars": 166,
    "url": "https://github.com/mzuelch/CATs-Eurosynth/tree/ee70506817f1fb5fa16a87c3e2a54a6ded8ee441",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 745028,
+   "bytes": 781809,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 67,
+    "resolved": 67,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:mzuelch/CATs-Eurosynth/Modules/YuSynth/Improved Steiner VCF/Electronics/Front",
@@ -1663,8 +2725,15 @@
    "category": "audio",
    "stars": 166,
    "url": "https://github.com/mzuelch/CATs-Eurosynth/tree/ee70506817f1fb5fa16a87c3e2a54a6ded8ee441",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:mzuelch/CATs-Eurosynth/Modules/YuSynth/Improved Steiner VCF/Electronics/Control",
@@ -1678,8 +2747,15 @@
    "category": "audio",
    "stars": 166,
    "url": "https://github.com/mzuelch/CATs-Eurosynth/tree/ee70506817f1fb5fa16a87c3e2a54a6ded8ee441",
-   "status": "queued",
-   "unresolved_models": 5
+   "status": "skipped",
+   "reason": "not identical: 5 of 19 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 19,
+    "resolved": 9,
+    "hidden": 0,
+    "missing": 10
+   }
   },
   {
    "id": "gh:strayer/taira-keyboard/pcb",
@@ -1693,8 +2769,15 @@
    "category": "keyboards",
    "stars": 162,
    "url": "https://github.com/strayer/taira-keyboard/tree/3ed4d2978658386cf189df129f36f1a53dfa545d",
-   "status": "queued",
-   "unresolved_models": 34
+   "status": "skipped",
+   "reason": "not identical: 34 of 35 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 35,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 35
+   }
   },
   {
    "id": "gh:strayer/taira-keyboard/plates/top",
@@ -1708,8 +2791,17 @@
    "category": "keyboards",
    "stars": 162,
    "url": "https://github.com/strayer/taira-keyboard/tree/3ed4d2978658386cf189df129f36f1a53dfa545d",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 55612,
+   "bytes": 78507,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:strayer/taira-keyboard/plates/bottom",
@@ -1723,8 +2815,17 @@
    "category": "keyboards",
    "stars": 162,
    "url": "https://github.com/strayer/taira-keyboard/tree/3ed4d2978658386cf189df129f36f1a53dfa545d",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 36872,
+   "bytes": 44440,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Envious-Data/EnvOpenPico/RP2350/EnvOpenPico2350",
@@ -1738,8 +2839,17 @@
    "category": "dev-boards",
    "stars": 151,
    "url": "https://github.com/Envious-Data/EnvOpenPico/tree/a88e551b400957efdab86bd4c97ebabbf63c78fd",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 956564,
+   "bytes": 987744,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 52,
+    "resolved": 51,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:Envious-Data/EnvOpenPico/RP2040/EnvPicoLiPo",
@@ -1753,8 +2863,17 @@
    "category": "dev-boards",
    "stars": 151,
    "url": "https://github.com/Envious-Data/EnvOpenPico/tree/a88e551b400957efdab86bd4c97ebabbf63c78fd",
-   "status": "queued",
-   "unresolved_models": 1
+   "glb_bytes": 888928,
+   "bytes": 918448,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 53,
+    "resolved": 51,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:Envious-Data/EnvOpenPico/RP2040/EnvOpenPico2040",
@@ -1768,8 +2887,15 @@
    "category": "dev-boards",
    "stars": 151,
    "url": "https://github.com/Envious-Data/EnvOpenPico/tree/a88e551b400957efdab86bd4c97ebabbf63c78fd",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "optimize: oader.moduleStrategy (node:internal/modules/esm/translators:106:18)\n    at #translate (node:internal/modules/esm/loader:534:12)\n    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:581:27)\n    at async ModuleJob._link (node:internal/modules/esm/module_job:116:19)\n\nNode.js",
+   "identical": true,
+   "models": {
+    "total": 52,
+    "resolved": 51,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:mafe72/27c160-tl866-adapter",
@@ -1783,8 +2909,15 @@
    "category": "tools",
    "stars": 148,
    "url": "https://github.com/mafe72/27c160-tl866-adapter/tree/69e890a3e1343cdfb6dcfa98ff267ea0cc7178f2",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "optimize: oader.moduleStrategy (node:internal/modules/esm/translators:106:18)\n    at #translate (node:internal/modules/esm/loader:534:12)\n    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:581:27)\n    at async ModuleJob._link (node:internal/modules/esm/module_job:116:19)\n\nNode.js",
+   "identical": true,
+   "models": {
+    "total": 12,
+    "resolved": 12,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:fxkuehl/mantis/pcb",
@@ -1798,8 +2931,17 @@
    "category": "keyboards",
    "stars": 146,
    "url": "https://github.com/fxkuehl/mantis/tree/c89ad02468c95bb6960cbd860d6abbe0f809cd01",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 900276,
+   "bytes": 919500,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 1,
+    "resolved": 1,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:fxkuehl/mantis/pcb/mantis_reversible_split",
@@ -1813,8 +2955,17 @@
    "category": "keyboards",
    "stars": 146,
    "url": "https://github.com/fxkuehl/mantis/tree/c89ad02468c95bb6960cbd860d6abbe0f809cd01",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 488972,
+   "bytes": 505007,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:fxkuehl/mantis/pcb/mantis_raised_leds",
@@ -1828,8 +2979,17 @@
    "category": "keyboards",
    "stars": 146,
    "url": "https://github.com/fxkuehl/mantis/tree/c89ad02468c95bb6960cbd860d6abbe0f809cd01",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1031200,
+   "bytes": 1052544,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 2,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:dnlbauer/corax-keyboard/corax56/pcbs/pcbs",
@@ -1843,8 +3003,17 @@
    "category": "keyboards",
    "stars": 145,
    "url": "https://github.com/dnlbauer/corax-keyboard/tree/7e01724621f12f1c1099f78c978bcb6aca19b795",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 30796,
+   "bytes": 41068,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:dnlbauer/corax-keyboard/corax56/pcbs/pcbs/keyboard",
@@ -1858,8 +3027,17 @@
    "category": "keyboards",
    "stars": 145,
    "url": "https://github.com/dnlbauer/corax-keyboard/tree/7e01724621f12f1c1099f78c978bcb6aca19b795",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1670384,
+   "bytes": 1698094,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:dnlbauer/corax-keyboard/corax54/pcbs/pcbs",
@@ -1873,8 +3051,17 @@
    "category": "keyboards",
    "stars": 145,
    "url": "https://github.com/dnlbauer/corax-keyboard/tree/7e01724621f12f1c1099f78c978bcb6aca19b795",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 30516,
+   "bytes": 41176,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Spaceboards/SpaceboardsHardware/Keyboards/XLant/kicad",
@@ -1888,8 +3075,15 @@
    "category": "keyboards",
    "stars": 144,
    "url": "https://github.com/Spaceboards/SpaceboardsHardware/tree/dd4fe15e030dee4aa9de2783cbc442bf9e349df2",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 58 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 58,
+    "resolved": 57,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:Spaceboards/SpaceboardsHardware/Keyboards/Waffle/kicad",
@@ -1903,8 +3097,15 @@
    "category": "keyboards",
    "stars": 144,
    "url": "https://github.com/Spaceboards/SpaceboardsHardware/tree/dd4fe15e030dee4aa9de2783cbc442bf9e349df2",
-   "status": "queued",
-   "unresolved_models": 4
+   "status": "skipped",
+   "reason": "not identical: 4 of 59 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 59,
+    "resolved": 51,
+    "hidden": 0,
+    "missing": 8
+   }
   },
   {
    "id": "gh:Spaceboards/SpaceboardsHardware/Keyboards/LongBoi/kicad",
@@ -1918,8 +3119,17 @@
    "category": "keyboards",
    "stars": 144,
    "url": "https://github.com/Spaceboards/SpaceboardsHardware/tree/dd4fe15e030dee4aa9de2783cbc442bf9e349df2",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 2420860,
+   "bytes": 2452033,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Jana-Marie/EF-S-Adapter/hardware/v1",
@@ -1933,8 +3143,15 @@
    "category": "dev-boards",
    "stars": 139,
    "url": "https://github.com/Jana-Marie/EF-S-Adapter/tree/fea1dd99eeb21a772cd7713c1606622355f8a774",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 33 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 33,
+    "resolved": 32,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:Jana-Marie/EF-S-Adapter/hardware/v1.1",
@@ -1948,8 +3165,15 @@
    "category": "dev-boards",
    "stars": 139,
    "url": "https://github.com/Jana-Marie/EF-S-Adapter/tree/fea1dd99eeb21a772cd7713c1606622355f8a774",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 38 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 38,
+    "resolved": 37,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:oaslananka/kicad-mcp-pro/packages/kicad-fixtures/fixtures/multi-sheet-schematic",
@@ -1963,8 +3187,17 @@
    "category": "computing",
    "stars": 135,
    "url": "https://github.com/oaslananka/kicad-mcp-pro/tree/4ec5eec3d615a2280796df1fe3c4d47e4b539852",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 8540,
+   "bytes": 13960,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:oaslananka/kicad-mcp-pro/packages/kicad-fixtures/fixtures/large-board",
@@ -1978,8 +3211,17 @@
    "category": "computing",
    "stars": 135,
    "url": "https://github.com/oaslananka/kicad-mcp-pro/tree/4ec5eec3d615a2280796df1fe3c4d47e4b539852",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 31636,
+   "bytes": 43232,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:OpenDrone-hw/OpenFC-Lite-Mini",
@@ -1993,8 +3235,17 @@
    "category": "robotics",
    "stars": 133,
    "url": "https://github.com/OpenDrone-hw/OpenFC-Lite-Mini/tree/d8a10eee270053f599cd568f0159aa0ace498fd9",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1620824,
+   "bytes": 1676138,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 97,
+    "resolved": 97,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:OpenLightingProject/rp2040-dmxsun/hardware/ioboard_4ports_unisolated",
@@ -2008,8 +3259,17 @@
    "category": "lighting",
    "stars": 128,
    "url": "https://github.com/OpenLightingProject/rp2040-dmxsun/tree/f3b1749c982da85770dc9a11eada035404edc25d",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1228864,
+   "bytes": 1258983,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 46,
+    "resolved": 42,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:OpenLightingProject/rp2040-dmxsun/hardware/ioboard_4ports_isolated",
@@ -2023,8 +3283,17 @@
    "category": "lighting",
    "stars": 128,
    "url": "https://github.com/OpenLightingProject/rp2040-dmxsun/tree/f3b1749c982da85770dc9a11eada035404edc25d",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1315264,
+   "bytes": 1346279,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 50,
+    "resolved": 46,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:OpenLightingProject/rp2040-dmxsun/hardware/ioboard_2ports_rdm_unisolated",
@@ -2038,8 +3307,17 @@
    "category": "lighting",
    "stars": 128,
    "url": "https://github.com/OpenLightingProject/rp2040-dmxsun/tree/f3b1749c982da85770dc9a11eada035404edc25d",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 947812,
+   "bytes": 969400,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 23,
+    "resolved": 21,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:camrbuss/pinci",
@@ -2053,8 +3331,15 @@
    "category": "keyboards",
    "stars": 128,
    "url": "https://github.com/camrbuss/pinci/tree/4956f50cf3902504b41de4bbb62cca7649930eb4",
-   "status": "queued",
-   "unresolved_models": 6
+   "status": "skipped",
+   "reason": "not identical: 6 of 8 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 8,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 6
+   }
   },
   {
    "id": "gh:maxlab-io/tokay-lite-pcb/ai-camera-rev3",
@@ -2068,8 +3353,15 @@
    "category": "dev-boards",
    "stars": 126,
    "url": "https://github.com/maxlab-io/tokay-lite-pcb/tree/fd04d94a332d745ad4c09e4e2da0fbb61fde3218",
-   "status": "queued",
-   "unresolved_models": 25
+   "status": "skipped",
+   "reason": "not identical: 21 of 159 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 159,
+    "resolved": 134,
+    "hidden": 5,
+    "missing": 25
+   }
   },
   {
    "id": "gh:maxlab-io/tokay-lite-pcb/ai-camera-rev3.2",
@@ -2083,8 +3375,15 @@
    "category": "dev-boards",
    "stars": 126,
    "url": "https://github.com/maxlab-io/tokay-lite-pcb/tree/fd04d94a332d745ad4c09e4e2da0fbb61fde3218",
-   "status": "queued",
-   "unresolved_models": 24
+   "status": "skipped",
+   "reason": "not identical: 22 of 160 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 160,
+    "resolved": 134,
+    "hidden": 3,
+    "missing": 26
+   }
   },
   {
    "id": "gh:maxlab-io/tokay-lite-pcb/ai-camera-rev3.1",
@@ -2098,8 +3397,15 @@
    "category": "dev-boards",
    "stars": 126,
    "url": "https://github.com/maxlab-io/tokay-lite-pcb/tree/fd04d94a332d745ad4c09e4e2da0fbb61fde3218",
-   "status": "queued",
-   "unresolved_models": 24
+   "status": "skipped",
+   "reason": "not identical: 22 of 160 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 160,
+    "resolved": 134,
+    "hidden": 3,
+    "missing": 26
+   }
   },
   {
    "id": "gh:siderakb/pmw3610-pcb",
@@ -2113,8 +3419,17 @@
    "category": "keyboards",
    "stars": 121,
    "url": "https://github.com/siderakb/pmw3610-pcb/tree/02658835a74cb683d0237ab21a1538de79452a9e",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 365820,
+   "bytes": 388595,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 13,
+    "resolved": 13,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Franzininho/franzininho-diy-board",
@@ -2128,8 +3443,17 @@
    "category": "dev-boards",
    "stars": 114,
    "url": "https://github.com/Franzininho/franzininho-diy-board/tree/abdb4b48d867190d6b9794280be8b85b81aa1772",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 459024,
+   "bytes": 484096,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 19,
+    "resolved": 19,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:sszczep/Cherry-MX-Breakout-Board/Cherry MX Breakout Board",
@@ -2143,8 +3467,17 @@
    "category": "keyboards",
    "stars": 113,
    "url": "https://github.com/sszczep/Cherry-MX-Breakout-Board/tree/3a203af15e45b09b21ce512d06c5d0275e049c50",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 75316,
+   "bytes": 87401,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 5,
+    "resolved": 5,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:sszczep/Cherry-MX-Breakout-Board/Cherry MX Breakout Board/Cherry MX Breakout Board (Kailh Socket)",
@@ -2158,8 +3491,17 @@
    "category": "keyboards",
    "stars": 113,
    "url": "https://github.com/sszczep/Cherry-MX-Breakout-Board/tree/3a203af15e45b09b21ce512d06c5d0275e049c50",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 139704,
+   "bytes": 151579,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 4,
+    "resolved": 4,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:ChrisChrisLoLo/bancouver40/pcb/bancouver40_cfx",
@@ -2173,8 +3515,17 @@
    "category": "keyboards",
    "stars": 112,
    "url": "https://github.com/ChrisChrisLoLo/bancouver40/tree/ff316e6f3eb91371fda0ae5a82a827710402f296",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 870804,
+   "bytes": 901467,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 58,
+    "resolved": 57,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:ChrisChrisLoLo/bancouver40/minipeg48/pcb/dogema48_cfx",
@@ -2188,8 +3539,17 @@
    "category": "keyboards",
    "stars": 112,
    "url": "https://github.com/ChrisChrisLoLo/bancouver40/tree/ff316e6f3eb91371fda0ae5a82a827710402f296",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 993872,
+   "bytes": 1028140,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 66,
+    "resolved": 65,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:ChrisChrisLoLo/bancouver40/kowgary16/pcb/kowgary16_cfx",
@@ -2203,8 +3563,17 @@
    "category": "keyboards",
    "stars": 112,
    "url": "https://github.com/ChrisChrisLoLo/bancouver40/tree/ff316e6f3eb91371fda0ae5a82a827710402f296",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 612388,
+   "bytes": 637864,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 35,
+    "resolved": 33,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:ChrisChrisLoLo/banime40",
@@ -2218,8 +3587,15 @@
    "category": "keyboards",
    "stars": 112,
    "url": "https://github.com/ChrisChrisLoLo/banime40/tree/f447898e94577a8444246a8539a5e17d64ea6388",
-   "status": "queued",
-   "unresolved_models": 3
+   "status": "skipped",
+   "reason": "not identical: 3 of 47 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 47,
+    "resolved": 42,
+    "hidden": 0,
+    "missing": 5
+   }
   },
   {
    "id": "gh:hackup/Pi1541io",
@@ -2234,7 +3610,14 @@
    "stars": 108,
    "url": "https://github.com/hackup/Pi1541io/tree/8b1f812c6000bd99cd8c51c478cf3033a18ac5b6",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 34,
+    "resolved": 34,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Spooky-Manufacturing/8Q",
@@ -2248,8 +3631,17 @@
    "category": "computing",
    "stars": 101,
    "url": "https://github.com/Spooky-Manufacturing/8Q/tree/2486cbb12a36b3b838bc3fd7c7fed4ba99274242",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 3249348,
+   "bytes": 3294356,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 104,
+    "resolved": 97,
+    "hidden": 0,
+    "missing": 7
+   }
   },
   {
    "id": "gh:portlandhodl/nyan-keys-hardware/board_files/nyan_keys_v09b",
@@ -2263,8 +3655,15 @@
    "category": "keyboards",
    "stars": 96,
    "url": "https://github.com/portlandhodl/nyan-keys-hardware/tree/5a2db5bb63597fcd9e9882b24104364cc11321c0",
-   "status": "queued",
-   "unresolved_models": 4
+   "status": "skipped",
+   "reason": "not identical: 4 of 69 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 69,
+    "resolved": 62,
+    "hidden": 0,
+    "missing": 7
+   }
   },
   {
    "id": "gh:portlandhodl/nyan-keys-hardware/board_files/nyan_keys_v09a",
@@ -2278,8 +3677,15 @@
    "category": "keyboards",
    "stars": 96,
    "url": "https://github.com/portlandhodl/nyan-keys-hardware/tree/5a2db5bb63597fcd9e9882b24104364cc11321c0",
-   "status": "queued",
-   "unresolved_models": 4
+   "status": "skipped",
+   "reason": "not identical: 4 of 68 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 68,
+    "resolved": 61,
+    "hidden": 0,
+    "missing": 7
+   }
   },
   {
    "id": "gh:productize/kicad-automation-scripts/test-projects/warning-project",
@@ -2293,8 +3699,17 @@
    "category": "everything-else",
    "stars": 96,
    "url": "https://github.com/productize/kicad-automation-scripts/tree/1f72db298f73845595a908b9f08266c26f3161f4",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 39320,
+   "bytes": 53626,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 3,
+    "resolved": 3,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:productize/kicad-automation-scripts/test-projects/good-project",
@@ -2308,8 +3723,17 @@
    "category": "everything-else",
    "stars": 96,
    "url": "https://github.com/productize/kicad-automation-scripts/tree/1f72db298f73845595a908b9f08266c26f3161f4",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 28056,
+   "bytes": 39933,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 2,
+    "resolved": 2,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:productize/kicad-automation-scripts/test-projects/fail-project",
@@ -2323,8 +3747,17 @@
    "category": "everything-else",
    "stars": 96,
    "url": "https://github.com/productize/kicad-automation-scripts/tree/1f72db298f73845595a908b9f08266c26f3161f4",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 39804,
+   "bytes": 54235,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 3,
+    "resolved": 3,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:jangtrinh/design-os-3d-blender/docs/reviews/dc-01/r03/cad",
@@ -2338,8 +3771,17 @@
    "category": "robotics",
    "stars": 96,
    "url": "https://github.com/jangtrinh/design-os-3d-blender/tree/8909ac7bfcfed8460e1c291de08113538b2856ff",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 262404,
+   "bytes": 280517,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:jangtrinh/design-os-3d-blender/docs/reviews/dc-01/r02/cad",
@@ -2353,8 +3795,17 @@
    "category": "robotics",
    "stars": 96,
    "url": "https://github.com/jangtrinh/design-os-3d-blender/tree/8909ac7bfcfed8460e1c291de08113538b2856ff",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 262404,
+   "bytes": 280545,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:crmaykish/mackerel-68k/hardware/mackerel-30-proto",
@@ -2368,8 +3819,17 @@
    "category": "retro",
    "stars": 96,
    "url": "https://github.com/crmaykish/mackerel-68k/tree/50786ed64897e037c57989c3322f02ea375584b7",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 5149976,
+   "bytes": 5203037,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 125,
+    "resolved": 119,
+    "hidden": 0,
+    "missing": 6
+   }
   },
   {
    "id": "gh:crmaykish/mackerel-68k/hardware/mackerel-10-v1",
@@ -2383,8 +3843,17 @@
    "category": "retro",
    "stars": 96,
    "url": "https://github.com/crmaykish/mackerel-68k/tree/50786ed64897e037c57989c3322f02ea375584b7",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 4289400,
+   "bytes": 4339183,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 106,
+    "resolved": 101,
+    "hidden": 0,
+    "missing": 5
+   }
   },
   {
    "id": "gh:crmaykish/mackerel-68k/hardware/mackerel-08-v1",
@@ -2398,8 +3867,17 @@
    "category": "retro",
    "stars": 96,
    "url": "https://github.com/crmaykish/mackerel-68k/tree/50786ed64897e037c57989c3322f02ea375584b7",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 3288192,
+   "bytes": 3328068,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 81,
+    "resolved": 77,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:ashpil/Model-M-Type-C",
@@ -2413,8 +3891,15 @@
    "category": "keyboards",
    "stars": 94,
    "url": "https://github.com/ashpil/Model-M-Type-C/tree/c19f9f01808181bb1ac8940741cea57409bee81c",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 18 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 18,
+    "resolved": 16,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:uCAN-LIN/LinUSBConverter",
@@ -2428,8 +3913,15 @@
    "category": "dev-boards",
    "stars": 92,
    "url": "https://github.com/uCAN-LIN/LinUSBConverter/tree/5bc8942f3cd1eca6d8077932b923f1817977f13e",
-   "status": "queued",
-   "unresolved_models": 11
+   "status": "skipped",
+   "reason": "not identical: 1 of 24 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 24,
+    "resolved": 22,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:ZoidTechnology/PCIce",
@@ -2443,8 +3935,15 @@
    "category": "computing",
    "stars": 89,
    "url": "https://github.com/ZoidTechnology/PCIce/tree/d605e736a5d2fd73294d43cc33adf127921dd9a8",
-   "status": "queued",
-   "unresolved_models": 4
+   "status": "skipped",
+   "reason": "not identical: 4 of 19 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 19,
+    "resolved": 15,
+    "hidden": 1,
+    "missing": 4
+   }
   },
   {
    "id": "gh:m1geo/Pi5_PCIe/Pi5_PCIe",
@@ -2458,8 +3957,15 @@
    "category": "computing",
    "stars": 87,
    "url": "https://github.com/m1geo/Pi5_PCIe/tree/3047c9f160eec119d914ec9dab18eb099b6ed4f7",
-   "status": "queued",
-   "unresolved_models": 3
+   "status": "skipped",
+   "reason": "not identical: 3 of 45 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 45,
+    "resolved": 42,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:m1geo/Pi5_PCIe/Pi5_M2_Hat",
@@ -2473,8 +3979,15 @@
    "category": "computing",
    "stars": 87,
    "url": "https://github.com/m1geo/Pi5_PCIe/tree/3047c9f160eec119d914ec9dab18eb099b6ed4f7",
-   "status": "queued",
-   "unresolved_models": 3
+   "status": "skipped",
+   "reason": "not identical: 3 of 40 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 40,
+    "resolved": 37,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:KOEGlike/meko/hardware/pcb_touchpad",
@@ -2488,8 +4001,17 @@
    "category": "audio",
    "stars": 87,
    "url": "https://github.com/KOEGlike/meko/tree/19e8bf6483dc50f256ca904f2e421b848d1de6c6",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 409836,
+   "bytes": 422085,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 6,
+    "resolved": 6,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:KOEGlike/meko/hardware/pcb",
@@ -2503,8 +4025,17 @@
    "category": "audio",
    "stars": 87,
    "url": "https://github.com/KOEGlike/meko/tree/19e8bf6483dc50f256ca904f2e421b848d1de6c6",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 4129388,
+   "bytes": 4203492,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 213,
+    "resolved": 210,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:jbtronics/PCBruler",
@@ -2518,8 +4049,17 @@
    "category": "tools",
    "stars": 83,
    "url": "https://github.com/jbtronics/PCBruler/tree/0279b6a3a5303696c480797475c67ae86b7d8d7b",
-   "status": "queued",
-   "unresolved_models": 4
+   "glb_bytes": 678028,
+   "bytes": 689719,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 23,
+    "resolved": 22,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:buganini/Kikakuka/samples",
@@ -2533,8 +4073,15 @@
    "category": "everything-else",
    "stars": 80,
    "url": "https://github.com/buganini/Kikakuka/tree/632278ea29288f00418e89aa9bf3d441b6d5eb57",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:buganini/Kikakuka/samples/rect",
@@ -2548,8 +4095,15 @@
    "category": "everything-else",
    "stars": 80,
    "url": "https://github.com/buganini/Kikakuka/tree/632278ea29288f00418e89aa9bf3d441b6d5eb57",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:buganini/Kikakuka/samples/maze_radius_skewed",
@@ -2563,8 +4117,15 @@
    "category": "everything-else",
    "stars": 80,
    "url": "https://github.com/buganini/Kikakuka/tree/632278ea29288f00418e89aa9bf3d441b6d5eb57",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:nerdyscout/kicad-exports",
@@ -2578,8 +4139,17 @@
    "category": "tools",
    "stars": 79,
    "url": "https://github.com/nerdyscout/kicad-exports/tree/0e69837f0fd3a7804ad752a6f7fa7b32c72473bf",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 94884,
+   "bytes": 112432,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 6,
+    "resolved": 6,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:OpenDrone-hw/OpenESC-30x30/hardware",
@@ -2593,8 +4163,17 @@
    "category": "robotics",
    "stars": 76,
    "url": "https://github.com/OpenDrone-hw/OpenESC-30x30/tree/bf306934b5decc130ab1df6b653563ea16165e8e",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 5298744,
+   "bytes": 5379864,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 213,
+    "resolved": 213,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:OpenDrone-hw/OpenESC-30x30/hardware/4in1-panel",
@@ -2608,8 +4187,15 @@
    "category": "robotics",
    "stars": 76,
    "url": "https://github.com/OpenDrone-hw/OpenESC-30x30/tree/bf306934b5decc130ab1df6b653563ea16165e8e",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 386 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 386,
+    "resolved": 384,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:embeddedalpha/PCB-Design/XESC v1",
@@ -2623,8 +4209,17 @@
    "category": "everything-else",
    "stars": 76,
    "url": "https://github.com/embeddedalpha/PCB-Design/tree/a6170a87b2f39b09be0f116fe120563eab830cb1",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 301812,
+   "bytes": 349519,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 86,
+    "resolved": 86,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:embeddedalpha/PCB-Design/Teseo GNSS Breakout",
@@ -2638,8 +4233,15 @@
    "category": "everything-else",
    "stars": 76,
    "url": "https://github.com/embeddedalpha/PCB-Design/tree/a6170a87b2f39b09be0f116fe120563eab830cb1",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 13 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 13,
+    "resolved": 11,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:embeddedalpha/PCB-Design/Teseo GNSS Breakout/copy1",
@@ -2653,8 +4255,15 @@
    "category": "everything-else",
    "stars": 76,
    "url": "https://github.com/embeddedalpha/PCB-Design/tree/a6170a87b2f39b09be0f116fe120563eab830cb1",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 13 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 13,
+    "resolved": 11,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:tzarc/ghoul/v1.0",
@@ -2668,8 +4277,17 @@
    "category": "keyboards",
    "stars": 75,
    "url": "https://github.com/tzarc/ghoul/tree/895c4d3bcf7e9b969828ce3d9fdd27389a92d861",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 5007440,
+   "bytes": 5060145,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 216,
+    "resolved": 214,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:tzarc/ghoul/v1.0/half-plate",
@@ -2683,8 +4301,17 @@
    "category": "keyboards",
    "stars": 75,
    "url": "https://github.com/tzarc/ghoul/tree/895c4d3bcf7e9b969828ce3d9fdd27389a92d861",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 124188,
+   "bytes": 141506,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:OpenDrone-hw/OpenFC-Lite",
@@ -2698,8 +4325,17 @@
    "category": "robotics",
    "stars": 74,
    "url": "https://github.com/OpenDrone-hw/OpenFC-Lite/tree/9dcb4c081408a8e2b4881be5cc6a7f0976764d75",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 2361068,
+   "bytes": 2424436,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 107,
+    "resolved": 107,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Jana-Marie/analog-toolkit/analog-toolkit",
@@ -2713,8 +4349,15 @@
    "category": "power",
    "stars": 74,
    "url": "https://github.com/Jana-Marie/analog-toolkit/tree/c97bcc3512fb96a0b8f981e363db583b22aa6423",
-   "status": "queued",
-   "unresolved_models": 13
+   "status": "skipped",
+   "reason": "not identical: 12 of 84 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 84,
+    "resolved": 71,
+    "hidden": 0,
+    "missing": 13
+   }
   },
   {
    "id": "gh:Jana-Marie/analog-toolkit/analog-toolkit-lid",
@@ -2728,8 +4371,15 @@
    "category": "power",
    "stars": 74,
    "url": "https://github.com/Jana-Marie/analog-toolkit/tree/c97bcc3512fb96a0b8f981e363db583b22aa6423",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Miceuz/rs485-moist-sensor/rs485-moist-sensor",
@@ -2744,7 +4394,14 @@
    "stars": 74,
    "url": "https://github.com/Miceuz/rs485-moist-sensor/tree/8cba0cd29e35b25de832e92b6521192ec9c6ec69",
    "status": "queued",
-   "unresolved_models": 3
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 27,
+    "resolved": 27,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Miceuz/rs485-moist-sensor/rs485-moist-sensor-pannel",
@@ -2759,7 +4416,14 @@
    "stars": 74,
    "url": "https://github.com/Miceuz/rs485-moist-sensor/tree/8cba0cd29e35b25de832e92b6521192ec9c6ec69",
    "status": "queued",
-   "unresolved_models": 40
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 140,
+    "resolved": 140,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Miceuz/rs485-moist-sensor/interconnect",
@@ -2773,8 +4437,17 @@
    "category": "iot",
    "stars": 74,
    "url": "https://github.com/Miceuz/rs485-moist-sensor/tree/8cba0cd29e35b25de832e92b6521192ec9c6ec69",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 233208,
+   "bytes": 242947,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 4,
+    "resolved": 4,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Pakequis/ProtoConn",
@@ -2788,8 +4461,15 @@
    "category": "computing",
    "stars": 70,
    "url": "https://github.com/Pakequis/ProtoConn/tree/ffd7c437a89f6b5c9abed5efc0b30509473ba5fd",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 147 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 147,
+    "resolved": 144,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:leomanangka/esp32-4-channel-relays",
@@ -2803,8 +4483,15 @@
    "category": "dev-boards",
    "stars": 70,
    "url": "https://github.com/leomanangka/esp32-4-channel-relays/tree/3c7d3b1eb80e781737f5ec5bed8cc10faca1ca0c",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "export glb: oads/CODE/etch/library/cache/work/leomanangka__esp32-4-channel-relays/raw.glb, NSURL=file://library/cache/work/leomanangka__esp32-4-channel-relays/raw.glb, NSUnderlyingError=0x7faba0b34d00 {Error Domain=NSPOSIXErrorDomain Code=2 \"No such file or directory\"}}",
+   "identical": true,
+   "models": {
+    "total": 59,
+    "resolved": 59,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:transistorfet/computie/hardware/k30-SBC",
@@ -2819,7 +4506,14 @@
    "stars": 69,
    "url": "https://github.com/transistorfet/computie/tree/760e1b8046cc8e6e2dc9e471a0c6300c68ef26fe",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 75,
+    "resolved": 73,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:transistorfet/computie/hardware/68k-Supervisor",
@@ -2833,8 +4527,17 @@
    "category": "retro",
    "stars": 69,
    "url": "https://github.com/transistorfet/computie/tree/760e1b8046cc8e6e2dc9e471a0c6300c68ef26fe",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 959324,
+   "bytes": 979211,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 5,
+    "resolved": 5,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:transistorfet/computie/hardware/68k-SMT",
@@ -2849,7 +4552,14 @@
    "stars": 69,
    "url": "https://github.com/transistorfet/computie/tree/760e1b8046cc8e6e2dc9e471a0c6300c68ef26fe",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 63,
+    "resolved": 59,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:neggles/cfxsx/cfxsx",
@@ -2863,8 +4573,15 @@
    "category": "tools",
    "stars": 69,
    "url": "https://github.com/neggles/cfxsx/tree/4a3f01c83f23216ed0fae90ac7fff194f62540df",
-   "status": "queued",
-   "unresolved_models": 3
+   "status": "skipped",
+   "reason": "not identical: 3 of 7 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 7,
+    "resolved": 4,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:neggles/cfxsx/cfxsx/cfxsx-2280",
@@ -2878,8 +4595,15 @@
    "category": "tools",
    "stars": 69,
    "url": "https://github.com/neggles/cfxsx/tree/4a3f01c83f23216ed0fae90ac7fff194f62540df",
-   "status": "queued",
-   "unresolved_models": 5
+   "status": "skipped",
+   "reason": "not identical: 5 of 9 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 9,
+    "resolved": 4,
+    "hidden": 0,
+    "missing": 5
+   }
   },
   {
    "id": "gh:MakersAsylumIndia/M19O2",
@@ -2893,8 +4617,17 @@
    "category": "everything-else",
    "stars": 68,
    "url": "https://github.com/MakersAsylumIndia/M19O2/tree/19fe5d6db049e2199ca5744df195c1c65db2c71a",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 179092,
+   "bytes": 194453,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 4,
+    "resolved": 4,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Jana-Marie/OtterScreenAdapter/OtterScreen",
@@ -2909,7 +4642,14 @@
    "stars": 68,
    "url": "https://github.com/Jana-Marie/OtterScreenAdapter/tree/efadd7f7d8cf9624ea5f18d1de172201ba90ad74",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 27,
+    "resolved": 25,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:Jana-Marie/OtterScreenAdapter/USB-C-Screen-Adapter",
@@ -2924,7 +4664,14 @@
    "stars": 68,
    "url": "https://github.com/Jana-Marie/OtterScreenAdapter/tree/efadd7f7d8cf9624ea5f18d1de172201ba90ad74",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 57,
+    "resolved": 55,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:Jana-Marie/OtterScreenAdapter/USB-C-Screen-Adapter-LDR6023SS",
@@ -2939,7 +4686,14 @@
    "stars": 68,
    "url": "https://github.com/Jana-Marie/OtterScreenAdapter/tree/efadd7f7d8cf9624ea5f18d1de172201ba90ad74",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 37,
+    "resolved": 35,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:b-karl/KBIC65/kicad/plate",
@@ -2953,8 +4707,15 @@
    "category": "keyboards",
    "stars": 67,
    "url": "https://github.com/b-karl/KBIC65/tree/d024555ba0272be7171bddea51452245b6200383",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:b-karl/KBIC65/kicad/pcb",
@@ -2968,8 +4729,15 @@
    "category": "keyboards",
    "stars": 67,
    "url": "https://github.com/b-karl/KBIC65/tree/d024555ba0272be7171bddea51452245b6200383",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 71 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 71,
+    "resolved": 70,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:b-karl/KBIC65/kicad/bottom",
@@ -2983,8 +4751,15 @@
    "category": "keyboards",
    "stars": 67,
    "url": "https://github.com/b-karl/KBIC65/tree/d024555ba0272be7171bddea51452245b6200383",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Allegra42/ZEReader-KiCad",
@@ -2998,8 +4773,17 @@
    "category": "dev-boards",
    "stars": 67,
    "url": "https://github.com/Allegra42/ZEReader-KiCad/tree/08c0682c11b4d0c3c5c2b0c4e7cad1d863d2261f",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 12186204,
+   "bytes": 12226762,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 64,
+    "resolved": 64,
+    "hidden": 3,
+    "missing": 0
+   }
   },
   {
    "id": "gh:stonedDiscord/nonSNES/SNSP-CPU-1CHIP",
@@ -3014,7 +4798,14 @@
    "stars": 66,
    "url": "https://github.com/stonedDiscord/nonSNES/tree/cf2e70b35b141b551b1683b0fac1c4b29f9ed0d6",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 174,
+    "resolved": 173,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:stonedDiscord/nonSNES/SNSP-CPU-01",
@@ -3029,7 +4820,14 @@
    "stars": 66,
    "url": "https://github.com/stonedDiscord/nonSNES/tree/cf2e70b35b141b551b1683b0fac1c4b29f9ed0d6",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 283,
+    "resolved": 280,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:siderakb/rp-micro",
@@ -3043,8 +4841,17 @@
    "category": "dev-boards",
    "stars": 65,
    "url": "https://github.com/siderakb/rp-micro/tree/a7baf36025b974ed55b4676ad1e9f7e79f16bba1",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 663244,
+   "bytes": 689925,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 37,
+    "resolved": 37,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:ravinrabbid/DonCon2040/pcb/DonConPad",
@@ -3058,8 +4865,17 @@
    "category": "dev-boards",
    "stars": 65,
    "url": "https://github.com/ravinrabbid/DonCon2040/tree/f6edcc2edcf1ff30bb5ebe515b26a70f7afb1d83",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 537744,
+   "bytes": 559688,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 25,
+    "resolved": 25,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:ravinrabbid/DonCon2040/pcb/DonConIOmini",
@@ -3073,8 +4889,17 @@
    "category": "dev-boards",
    "stars": 65,
    "url": "https://github.com/ravinrabbid/DonCon2040/tree/f6edcc2edcf1ff30bb5ebe515b26a70f7afb1d83",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 841288,
+   "bytes": 890610,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 88,
+    "resolved": 88,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:ravinrabbid/DonCon2040/pcb/DonConIO",
@@ -3088,8 +4913,17 @@
    "category": "dev-boards",
    "stars": 65,
    "url": "https://github.com/ravinrabbid/DonCon2040/tree/f6edcc2edcf1ff30bb5ebe515b26a70f7afb1d83",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1432072,
+   "bytes": 1472234,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 99,
+    "resolved": 99,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:rschenk/re-gret/pcb",
@@ -3103,8 +4937,17 @@
    "category": "keyboards",
    "stars": 64,
    "url": "https://github.com/rschenk/re-gret/tree/7bc7908e7579d462b8eebd255a90dd71fe2e64b8",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 1349560,
+   "bytes": 1379893,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:rschenk/re-gret/ergogen/output/pcbs",
@@ -3118,8 +4961,17 @@
    "category": "keyboards",
    "stars": 64,
    "url": "https://github.com/rschenk/re-gret/tree/7bc7908e7579d462b8eebd255a90dd71fe2e64b8",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 330968,
+   "bytes": 359392,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:markh-de/KiVar",
@@ -3133,8 +4985,17 @@
    "category": "everything-else",
    "stars": 64,
    "url": "https://github.com/markh-de/KiVar/tree/0abe3c4f04875c09667829af8ae0f86b3306a368",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 333552,
+   "bytes": 364440,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 59,
+    "resolved": 59,
+    "hidden": 1,
+    "missing": 0
+   }
   },
   {
    "id": "gh:mecparts/PicoWiFiModem",
@@ -3148,8 +5009,15 @@
    "category": "retro",
    "stars": 64,
    "url": "https://github.com/mecparts/PicoWiFiModem/tree/12148fc6f5a816a76dc473e19f7c6679ca7caa85",
-   "status": "queued",
-   "unresolved_models": 28
+   "status": "skipped",
+   "reason": "not identical: 15 of 28 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 28,
+    "resolved": 13,
+    "hidden": 0,
+    "missing": 15
+   }
   },
   {
    "id": "gh:aronreid/ups-to-esp32",
@@ -3164,7 +5032,14 @@
    "stars": 62,
    "url": "https://github.com/aronreid/ups-to-esp32/tree/c2d437bb4595fb507ab83c8b625447ef82412bb2",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 38,
+    "resolved": 34,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:YC-Lam/IP5328P-powerbank_design",
@@ -3179,7 +5054,14 @@
    "stars": 59,
    "url": "https://github.com/YC-Lam/IP5328P-powerbank_design/tree/5ee7f8beab0850d2a474630bbdaf65c30a711808",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 45,
+    "resolved": 41,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:DuPAL-PAL-DUmper/DuPAL_Board/board/DuPal_V3",
@@ -3194,7 +5076,14 @@
    "stars": 57,
    "url": "https://github.com/DuPAL-PAL-DUmper/DuPAL_Board/tree/a8e19a8700ddf113d743d13a2920727c53209b01",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 125,
+    "resolved": 124,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:DuPAL-PAL-DUmper/DuPAL_Board/board/DuPal_DIP",
@@ -3209,7 +5098,14 @@
    "stars": 57,
    "url": "https://github.com/DuPAL-PAL-DUmper/DuPAL_Board/tree/a8e19a8700ddf113d743d13a2920727c53209b01",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 51,
+    "resolved": 48,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:DuPAL-PAL-DUmper/DuPAL_Board/board/dupico_pods/pod_pal",
@@ -3224,7 +5120,14 @@
    "stars": 57,
    "url": "https://github.com/DuPAL-PAL-DUmper/DuPAL_Board/tree/a8e19a8700ddf113d743d13a2920727c53209b01",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 8,
+    "resolved": 7,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:Goga64/ULK/KiCad/ULK_ulp_Stealth_Silkscreen",
@@ -3238,8 +5141,15 @@
    "category": "keyboards",
    "stars": 57,
    "url": "https://github.com/Goga64/ULK/tree/32fccf4621cc56d1907aa7889cb8d95d5e8625b5",
-   "status": "queued",
-   "unresolved_models": 46
+   "status": "skipped",
+   "reason": "not identical: 4 of 90 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 90,
+    "resolved": 86,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:Goga64/ULK/KiCad/ULK_ulp_Original_Silkscreen",
@@ -3253,8 +5163,15 @@
    "category": "keyboards",
    "stars": 57,
    "url": "https://github.com/Goga64/ULK/tree/32fccf4621cc56d1907aa7889cb8d95d5e8625b5",
-   "status": "queued",
-   "unresolved_models": 46
+   "status": "skipped",
+   "reason": "not identical: 4 of 90 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 90,
+    "resolved": 86,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:Goga64/ULK/KiCad/ULK_pg1316s_Stealth_Silkscreen",
@@ -3268,8 +5185,15 @@
    "category": "keyboards",
    "stars": 57,
    "url": "https://github.com/Goga64/ULK/tree/32fccf4621cc56d1907aa7889cb8d95d5e8625b5",
-   "status": "queued",
-   "unresolved_models": 88
+   "status": "skipped",
+   "reason": "not identical: 46 of 90 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 90,
+    "resolved": 44,
+    "hidden": 0,
+    "missing": 46
+   }
   },
   {
    "id": "gh:buildwithtrace/trace-public/tools/newstroke",
@@ -3283,8 +5207,15 @@
    "category": "everything-else",
    "stars": 57,
    "url": "https://github.com/buildwithtrace/trace-public/tree/e48d9a7f52d65e900a801369903e3484ecf3e114",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:buildwithtrace/trace-public/demos/video",
@@ -3298,8 +5229,15 @@
    "category": "everything-else",
    "stars": 57,
    "url": "https://github.com/buildwithtrace/trace-public/tree/e48d9a7f52d65e900a801369903e3484ecf3e114",
-   "status": "queued",
-   "unresolved_models": 5
+   "status": "skipped",
+   "reason": "not identical: 2 of 175 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 175,
+    "resolved": 173,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:buildwithtrace/trace-public/demos/tiny_tapeout",
@@ -3314,7 +5252,14 @@
    "stars": 57,
    "url": "https://github.com/buildwithtrace/trace-public/tree/e48d9a7f52d65e900a801369903e3484ecf3e114",
    "status": "queued",
-   "unresolved_models": 1
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 130,
+    "resolved": 130,
+    "hidden": 1,
+    "missing": 0
+   }
   },
   {
    "id": "gh:vul-os/sirboard/Boards/Microcontrollers/SirMighty",
@@ -3329,7 +5274,14 @@
    "stars": 56,
    "url": "https://github.com/vul-os/sirboard/tree/d8cf54d452867eb5fca43e35d5bb63d60c618511",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 38,
+    "resolved": 38,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:vul-os/sirboard/Boards/Interface/SirDuke",
@@ -3343,8 +5295,17 @@
    "category": "iot",
    "stars": 56,
    "url": "https://github.com/vul-os/sirboard/tree/d8cf54d452867eb5fca43e35d5bb63d60c618511",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 407844,
+   "bytes": 433166,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 23,
+    "resolved": 23,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:vul-os/sirboard/Boards/Breakout/WROOM02",
@@ -3358,8 +5319,17 @@
    "category": "iot",
    "stars": 56,
    "url": "https://github.com/vul-os/sirboard/tree/d8cf54d452867eb5fca43e35d5bb63d60c618511",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 332440,
+   "bytes": 357919,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 4,
+    "resolved": 4,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:0xjmux/ESP-PROG-Adapter",
@@ -3373,8 +5343,17 @@
    "category": "tools",
    "stars": 55,
    "url": "https://github.com/0xjmux/ESP-PROG-Adapter/tree/4a74ef898489da83ddcd2ad42852188cf0471b6c",
-   "status": "queued",
-   "unresolved_models": 1
+   "glb_bytes": 404628,
+   "bytes": 424398,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 6,
+    "resolved": 6,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:TweetyDaBird/Little-Big-Scroll/Little Big Scroll 6/v1.1.1/Rear Plate",
@@ -3388,8 +5367,17 @@
    "category": "keyboards",
    "stars": 55,
    "url": "https://github.com/TweetyDaBird/Little-Big-Scroll/tree/97dc5f4876bb283ea938eaba5a553b861abf4b4e",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 46756,
+   "bytes": 54382,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:TweetyDaBird/Little-Big-Scroll/Little Big Scroll 6/v1.1.1/PCB",
@@ -3403,8 +5391,15 @@
    "category": "keyboards",
    "stars": 55,
    "url": "https://github.com/TweetyDaBird/Little-Big-Scroll/tree/97dc5f4876bb283ea938eaba5a553b861abf4b4e",
-   "status": "queued",
-   "unresolved_models": 17
+   "status": "skipped",
+   "reason": "not identical: 17 of 21 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 21,
+    "resolved": 4,
+    "hidden": 0,
+    "missing": 17
+   }
   },
   {
    "id": "gh:TweetyDaBird/Little-Big-Scroll/Little Big Scroll 6/v1.1.1/Front Plate",
@@ -3418,8 +5413,17 @@
    "category": "keyboards",
    "stars": 55,
    "url": "https://github.com/TweetyDaBird/Little-Big-Scroll/tree/97dc5f4876bb283ea938eaba5a553b861abf4b4e",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 95756,
+   "bytes": 108442,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Ladniy/jiran-ble-lite/pcb/jiran-ble-lite",
@@ -3433,8 +5437,15 @@
    "category": "keyboards",
    "stars": 54,
    "url": "https://github.com/Ladniy/jiran-ble-lite/tree/c2a5ef422c265f0d4e3d38f81c557ca802eab125",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 142 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 142,
+    "resolved": 140,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:Ladniy/jiran-ble-lite/case/fr-4/underplate",
@@ -3448,8 +5459,17 @@
    "category": "keyboards",
    "stars": 54,
    "url": "https://github.com/Ladniy/jiran-ble-lite/tree/c2a5ef422c265f0d4e3d38f81c557ca802eab125",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 51076,
+   "bytes": 56547,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Ladniy/jiran-ble-lite/case/fr-4/plate",
@@ -3463,8 +5483,17 @@
    "category": "keyboards",
    "stars": 54,
    "url": "https://github.com/Ladniy/jiran-ble-lite/tree/c2a5ef422c265f0d4e3d38f81c557ca802eab125",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 449052,
+   "bytes": 464764,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:psobot/musicboy",
@@ -3479,7 +5508,14 @@
    "stars": 52,
    "url": "https://github.com/psobot/musicboy/tree/1e519a5575c34e877ff07fff4381bf3609988033",
    "status": "queued",
-   "unresolved_models": 5
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 15,
+    "resolved": 15,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:sebastienroy/shutter_speed_tester",
@@ -3494,7 +5530,14 @@
    "stars": 51,
    "url": "https://github.com/sebastienroy/shutter_speed_tester/tree/ad143684c8c91a640fd3bbec05ae9ec45f74c4d8",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 13,
+    "resolved": 12,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:DoImant/TP4056-Power-Path-PCB",
@@ -3509,7 +5552,14 @@
    "stars": 51,
    "url": "https://github.com/DoImant/TP4056-Power-Path-PCB/tree/70636f5a07e788547c378111c31cbf150b7c1de7",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 8,
+    "resolved": 3,
+    "hidden": 0,
+    "missing": 5
+   }
   },
   {
    "id": "gh:Durburz/interphase",
@@ -3524,7 +5574,14 @@
    "stars": 50,
    "url": "https://github.com/Durburz/interphase/tree/112a1c44b9a8e5c5d298e1f39321c2272380ad86",
    "status": "queued",
-   "unresolved_models": 6
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 79,
+    "resolved": 79,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:GuitarML/GuitarPedalSTM32",
@@ -3538,8 +5595,15 @@
    "category": "dev-boards",
    "stars": 50,
    "url": "https://github.com/GuitarML/GuitarPedalSTM32/tree/72dfd26114fa515f8440eb86c7d32173be304a98",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 90 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 90,
+    "resolved": 87,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:openeew/openeew-sensor",
@@ -3554,7 +5618,14 @@
    "stars": 50,
    "url": "https://github.com/openeew/openeew-sensor/tree/b1fae4e89ca090c37aefb8ce166741464834da3f",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 100,
+    "resolved": 97,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:pinguz97/Zynq-SoM",
@@ -3568,8 +5639,17 @@
    "category": "computing",
    "stars": 49,
    "url": "https://github.com/pinguz97/Zynq-SoM/tree/ad96951a225fbf9f263b555ef070a536b09ff710",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 5929340,
+   "bytes": 6004689,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 266,
+    "resolved": 266,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:dilshan/12v-automatic-ups",
@@ -3584,7 +5664,14 @@
    "stars": 49,
    "url": "https://github.com/dilshan/12v-automatic-ups/tree/54fbb47b807d09cc0663b313c108919bbdafeb8c",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 72,
+    "resolved": 61,
+    "hidden": 0,
+    "missing": 11
+   }
   },
   {
    "id": "gh:cester-ino/OTTO-hardware/OTTO-power",
@@ -3598,8 +5685,15 @@
    "category": "audio",
    "stars": 49,
    "url": "https://github.com/cester-ino/OTTO-hardware/tree/0381fe6cdd12a34116f1508a3e4bf068d7713391",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 46 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 46,
+    "resolved": 43,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:cester-ino/OTTO-hardware/OTTO-main",
@@ -3614,7 +5708,14 @@
    "stars": 49,
    "url": "https://github.com/cester-ino/OTTO-hardware/tree/0381fe6cdd12a34116f1508a3e4bf068d7713391",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 60,
+    "resolved": 60,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:cester-ino/OTTO-hardware/OTTO-dac",
@@ -3629,7 +5730,14 @@
    "stars": 49,
    "url": "https://github.com/cester-ino/OTTO-hardware/tree/0381fe6cdd12a34116f1508a3e4bf068d7713391",
    "status": "queued",
-   "unresolved_models": 1
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 35,
+    "resolved": 34,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:mbtaylor1982/ReSDMAC",
@@ -3644,7 +5752,14 @@
    "stars": 49,
    "url": "https://github.com/mbtaylor1982/ReSDMAC/tree/c0baf6ea76f5461e51e91cbff2602c5771047beb",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 42,
+    "resolved": 40,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:tmarhguy/alu/schematics/kicad/boards/main_logic",
@@ -3659,7 +5774,14 @@
    "stars": 48,
    "url": "https://github.com/tmarhguy/alu/tree/5545c67f7027008068e7385954e8dc7d158062fc",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 122,
+    "resolved": 120,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:tmarhguy/alu/schematics/kicad/boards/main_control",
@@ -3674,7 +5796,14 @@
    "stars": 48,
    "url": "https://github.com/tmarhguy/alu/tree/5545c67f7027008068e7385954e8dc7d158062fc",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 42,
+    "resolved": 40,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:tmarhguy/alu/schematics/kicad/boards/flags",
@@ -3689,7 +5818,14 @@
    "stars": 48,
    "url": "https://github.com/tmarhguy/alu/tree/5545c67f7027008068e7385954e8dc7d158062fc",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 26,
+    "resolved": 24,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:galopago/misistemita/MISISTEMITA",
@@ -3703,8 +5839,17 @@
    "category": "everything-else",
    "stars": 47,
    "url": "https://github.com/galopago/misistemita/tree/4ff8ffb8ad80d6836cf9cbfcf74dfce9c9a24ba3",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 186544,
+   "bytes": 239735,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:galopago/misistemita/d-electronics/d06",
@@ -3719,7 +5864,14 @@
    "stars": 47,
    "url": "https://github.com/galopago/misistemita/tree/4ff8ffb8ad80d6836cf9cbfcf74dfce9c9a24ba3",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 5,
+    "resolved": 3,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:galopago/misistemita/d-electronics/d05",
@@ -3734,7 +5886,14 @@
    "stars": 47,
    "url": "https://github.com/galopago/misistemita/tree/4ff8ffb8ad80d6836cf9cbfcf74dfce9c9a24ba3",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 10,
+    "resolved": 9,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:RainbowLabsDE/USB2Speakon",
@@ -3748,8 +5907,15 @@
    "category": "audio",
    "stars": 47,
    "url": "https://github.com/RainbowLabsDE/USB2Speakon/tree/69c398a24398514b7fbed54ed7135db6eff4d0b0",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 48 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 48,
+    "resolved": 44,
+    "hidden": 4,
+    "missing": 4
+   }
   },
   {
    "id": "gh:martinribelotta/h730duino",
@@ -3764,7 +5930,14 @@
    "stars": 46,
    "url": "https://github.com/martinribelotta/h730duino/tree/d8f03b62cdc8adddc411dcd4d9bba60abc2dcfea",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 104,
+    "resolved": 104,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Pakequis/Bad-Thing-of-the-Edge-keyboard/Hardware/Panel-board",
@@ -3778,8 +5951,17 @@
    "category": "keyboards",
    "stars": 45,
    "url": "https://github.com/Pakequis/Bad-Thing-of-the-Edge-keyboard/tree/f7e73685d0bc05957b2d3bedc635b2414c79a013",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 69428,
+   "bytes": 83752,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Pakequis/Bad-Thing-of-the-Edge-keyboard/Hardware/Main-board",
@@ -3793,8 +5975,15 @@
    "category": "keyboards",
    "stars": 45,
    "url": "https://github.com/Pakequis/Bad-Thing-of-the-Edge-keyboard/tree/f7e73685d0bc05957b2d3bedc635b2414c79a013",
-   "status": "queued",
-   "unresolved_models": 39
+   "status": "skipped",
+   "reason": "not identical: 22 of 57 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 57,
+    "resolved": 32,
+    "hidden": 34,
+    "missing": 25
+   }
   },
   {
    "id": "gh:Ladniy/TK44/pcb/TK44",
@@ -3808,8 +5997,15 @@
    "category": "keyboards",
    "stars": 45,
    "url": "https://github.com/Ladniy/TK44/tree/b4f470cccce0f2e080851dd49cce4b4010973f2a",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 106 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 106,
+    "resolved": 105,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:Ladniy/TK44/case/fr-4-plate",
@@ -3823,8 +6019,17 @@
    "category": "keyboards",
    "stars": 45,
    "url": "https://github.com/Ladniy/TK44/tree/b4f470cccce0f2e080851dd49cce4b4010973f2a",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 693872,
+   "bytes": 710590,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Ladniy/TK44/case/fr-4-bottom",
@@ -3838,8 +6043,15 @@
    "category": "keyboards",
    "stars": 45,
    "url": "https://github.com/Ladniy/TK44/tree/b4f470cccce0f2e080851dd49cce4b4010973f2a",
-   "status": "queued",
-   "unresolved_models": 0
+   "status": "skipped",
+   "reason": "no footprints",
+   "identical": true,
+   "models": {
+    "total": 0,
+    "resolved": 0,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:FutureSharks/preamp-two/PCBs/rca-panel",
@@ -3853,8 +6065,17 @@
    "category": "audio",
    "stars": 45,
    "url": "https://github.com/FutureSharks/preamp-two/tree/6001f142f6b35608b6ad879fad4a7894daf67b02",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 391920,
+   "bytes": 410599,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 7,
+    "resolved": 7,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:FutureSharks/preamp-two/PCBs/mdac-attenuator",
@@ -3868,8 +6089,17 @@
    "category": "audio",
    "stars": 45,
    "url": "https://github.com/FutureSharks/preamp-two/tree/6001f142f6b35608b6ad879fad4a7894daf67b02",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 467680,
+   "bytes": 499822,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 28,
+    "resolved": 28,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:FutureSharks/preamp-two/PCBs/mcu-board",
@@ -3883,8 +6113,17 @@
    "category": "audio",
    "stars": 45,
    "url": "https://github.com/FutureSharks/preamp-two/tree/6001f142f6b35608b6ad879fad4a7894daf67b02",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 554864,
+   "bytes": 586989,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 15,
+    "resolved": 15,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:stas2k/galspanic",
@@ -3898,8 +6137,17 @@
    "category": "retro",
    "stars": 44,
    "url": "https://github.com/stas2k/galspanic/tree/b90ae3bb29a3ca4bceba48cc3b01dd7f7ca8adb1",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 791076,
+   "bytes": 805583,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 13,
+    "resolved": 13,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:RandomDelta6/USB-Mouse",
@@ -3913,8 +6161,17 @@
    "category": "everything-else",
    "stars": 44,
    "url": "https://github.com/RandomDelta6/USB-Mouse/tree/403dc37bdf09aad633af2cb44b4aff8dad6c8bdb",
-   "status": "queued",
-   "unresolved_models": 0
+   "glb_bytes": 298828,
+   "bytes": 321596,
+   "status": "rendered",
+   "reason": null,
+   "identical": false,
+   "models": {
+    "total": 24,
+    "resolved": 24,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:sssata/fluxpad",
@@ -3928,8 +6185,15 @@
    "category": "keyboards",
    "stars": 43,
    "url": "https://github.com/sssata/fluxpad/tree/8b2e752136033a81b9da01566e2e36ccafb966d6",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 59 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 59,
+    "resolved": 56,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:ricaflops/Jupiter-II/Jupiter-II",
@@ -3943,8 +6207,15 @@
    "category": "retro",
    "stars": 43,
    "url": "https://github.com/ricaflops/Jupiter-II/tree/8cb4a10d521768cb993a4b854effbe3bf3ac2b78",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 131 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 131,
+    "resolved": 130,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:ricaflops/Jupiter-II/Jupiter-II_keyboard",
@@ -3959,7 +6230,14 @@
    "stars": 43,
    "url": "https://github.com/ricaflops/Jupiter-II/tree/8cb4a10d521768cb993a4b854effbe3bf3ac2b78",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 43,
+    "resolved": 43,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:PTALTS-LK/RKD-OLD/PCB/stand/Type-C",
@@ -3974,7 +6252,14 @@
    "stars": 42,
    "url": "https://github.com/PTALTS-LK/RKD-OLD/tree/6de58651df272a850bf6061d888790c9b974a8fd",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 51,
+    "resolved": 49,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
    "id": "gh:PTALTS-LK/RKD-OLD/PCB/stand/MicroUSB",
@@ -3988,8 +6273,15 @@
    "category": "keyboards",
    "stars": 42,
    "url": "https://github.com/PTALTS-LK/RKD-OLD/tree/6de58651df272a850bf6061d888790c9b974a8fd",
-   "status": "queued",
-   "unresolved_models": 2
+   "status": "skipped",
+   "reason": "not identical: 2 of 50 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 50,
+    "resolved": 47,
+    "hidden": 0,
+    "missing": 3
+   }
   },
   {
    "id": "gh:PTALTS-LK/RKD-OLD/PCB/stand+sdvx/Type-C",
@@ -4004,7 +6296,14 @@
    "stars": 42,
    "url": "https://github.com/PTALTS-LK/RKD-OLD/tree/6de58651df272a850bf6061d888790c9b974a8fd",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 64,
+    "resolved": 60,
+    "hidden": 0,
+    "missing": 4
+   }
   },
   {
    "id": "gh:Open-Authenticator/hardware-design",
@@ -4019,7 +6318,14 @@
    "stars": 42,
    "url": "https://github.com/Open-Authenticator/hardware-design/tree/792f274383caa4e85a81012677b7e58904024db6",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 56,
+    "resolved": 56,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:badjeff/paw3395-pcb",
@@ -4033,8 +6339,15 @@
    "category": "power",
    "stars": 42,
    "url": "https://github.com/badjeff/paw3395-pcb/tree/b71e346fc04ef18c26e0e8638ce0333395d41a14",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 18 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 18,
+    "resolved": 17,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:ChrisChrisLoLo/loongcat40",
@@ -4049,7 +6362,14 @@
    "stars": 41,
    "url": "https://github.com/ChrisChrisLoLo/loongcat40/tree/6743b568de3bde1e57653c039e094765f6d76285",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 41,
+    "resolved": 41,
+    "hidden": 6,
+    "missing": 0
+   }
   },
   {
    "id": "gh:MAKERSUN99/MAUS",
@@ -4063,8 +6383,15 @@
    "category": "dev-boards",
    "stars": 40,
    "url": "https://github.com/MAKERSUN99/MAUS/tree/2a0f67fd5d7019ed0700338097b1e45ad997bf16",
-   "status": "queued",
-   "unresolved_models": 1
+   "status": "skipped",
+   "reason": "not identical: 1 of 13 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 13,
+    "resolved": 12,
+    "hidden": 0,
+    "missing": 1
+   }
   },
   {
    "id": "gh:h0lad/SolarMeshtasticNode",
@@ -4079,7 +6406,14 @@
    "stars": 39,
    "url": "https://github.com/h0lad/SolarMeshtasticNode/tree/84a856f61c059745d9ac1f0b26ea4f7c7c8f25a3",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 46,
+    "resolved": 46,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Cimos/kicad-druid/PCBWay",
@@ -4094,7 +6428,14 @@
    "stars": 38,
    "url": "https://github.com/Cimos/kicad-druid/tree/8af046d6a1839320a360a4b6790ac11eb27a78ae",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 5,
+    "resolved": 5,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:Cimos/kicad-druid/JLCPCB",
@@ -4109,7 +6450,14 @@
    "stars": 38,
    "url": "https://github.com/Cimos/kicad-druid/tree/8af046d6a1839320a360a4b6790ac11eb27a78ae",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 5,
+    "resolved": 5,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:nu31hackerspace/prismo",
@@ -4124,7 +6472,14 @@
    "stars": 38,
    "url": "https://github.com/nu31hackerspace/prismo/tree/b78fa689edef1efe667b1825329f3670445d0975",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 27,
+    "resolved": 27,
+    "hidden": 0,
+    "missing": 0
+   }
   },
   {
    "id": "gh:jsanpe/c2c-64",
@@ -4138,8 +6493,15 @@
    "category": "retro",
    "stars": 38,
    "url": "https://github.com/jsanpe/c2c-64/tree/a22c28a1d0cbe6d09777bfaa18ec926540366fab",
-   "status": "queued",
-   "unresolved_models": 13
+   "status": "skipped",
+   "reason": "not identical: 13 of 110 3D models not found",
+   "identical": false,
+   "models": {
+    "total": 110,
+    "resolved": 96,
+    "hidden": 0,
+    "missing": 14
+   }
   },
   {
    "id": "gh:aslak3/MAXI030/spreadout",
@@ -4154,7 +6516,14 @@
    "stars": 38,
    "url": "https://github.com/aslak3/MAXI030/tree/22ecace2ac17e8802fb8fa876d4e2d54cbd8b771",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 189,
+    "resolved": 171,
+    "hidden": 0,
+    "missing": 18
+   }
   },
   {
    "id": "gh:aslak3/MAXI030/MAXI030",
@@ -4169,7 +6538,14 @@
    "stars": 38,
    "url": "https://github.com/aslak3/MAXI030/tree/22ecace2ac17e8802fb8fa876d4e2d54cbd8b771",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 196,
+    "resolved": 178,
+    "hidden": 0,
+    "missing": 18
+   }
   },
   {
    "id": "gh:aslak3/MAXI030/ExpansionCards/Video+Sound",
@@ -4184,457 +6560,104 @@
    "stars": 38,
    "url": "https://github.com/aslak3/MAXI030/tree/22ecace2ac17e8802fb8fa876d4e2d54cbd8b771",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null,
+   "identical": true,
+   "models": {
+    "total": 102,
+    "resolved": 100,
+    "hidden": 0,
+    "missing": 2
+   }
   },
   {
-   "id": "gh:kazkojima/esp32-phy/hardware/esp32-wslan8720",
-   "slug": "kazkojima__esp32-phy__hardware__esp32-wslan8720",
-   "owner": "kazkojima",
-   "repo": "esp32-phy",
-   "commit": "3ba6b004d38aac7a3eaba2ac62df26bf4e1f1c5d",
-   "pcb_path": "hardware/esp32-wslan8720/esp32-wslan8720.kicad_pcb",
+   "id": "gh:valerionew/omega-dock-new",
+   "slug": "valerionew__omega-dock-new",
+   "owner": "valerionew",
+   "repo": "omega-dock-new",
+   "commit": "f77fd2ca72c673a5513c2a53b436009b4664c9dd",
+   "pcb_path": "omega-dock-new.kicad_pcb",
+   "license": "CC-BY-SA-4.0",
+   "copyable": true,
+   "category": "power",
+   "stars": 37,
+   "url": "https://github.com/valerionew/omega-dock-new/tree/f77fd2ca72c673a5513c2a53b436009b4664c9dd",
+   "status": "queued",
+   "reason": null
+  },
+  {
+   "id": "gh:Fabien-Chouteau/Wee-Noise-Maker/hardware/Mk-I",
+   "slug": "fabien-chouteau__wee-noise-maker__hardware__mk-i",
+   "owner": "Fabien-Chouteau",
+   "repo": "Wee-Noise-Maker",
+   "commit": "cbd540a98bec4f6060f9afb18a742b9219d9b0f8",
+   "pcb_path": "hardware/Mk-I/wnm_mk_1.kicad_pcb",
    "license": "GPL-3.0",
    "copyable": true,
-   "category": "dev-boards",
-   "stars": 34,
-   "url": "https://github.com/kazkojima/esp32-phy/tree/3ba6b004d38aac7a3eaba2ac62df26bf4e1f1c5d",
-   "status": "rendered",
-   "unresolved_models": 9
+   "category": "audio",
+   "stars": 37,
+   "url": "https://github.com/Fabien-Chouteau/Wee-Noise-Maker/tree/cbd540a98bec4f6060f9afb18a742b9219d9b0f8",
+   "status": "queued",
+   "reason": null
   },
   {
-   "id": "gh:kazkojima/esp32-phy/hardware/esp32-tlk110",
-   "slug": "kazkojima__esp32-phy__hardware__esp32-tlk110",
-   "owner": "kazkojima",
-   "repo": "esp32-phy",
-   "commit": "3ba6b004d38aac7a3eaba2ac62df26bf4e1f1c5d",
-   "pcb_path": "hardware/esp32-tlk110/esp32-tlk110.kicad_pcb",
+   "id": "gh:Fabien-Chouteau/Wee-Noise-Maker/hardware/discovery",
+   "slug": "fabien-chouteau__wee-noise-maker__hardware__discovery",
+   "owner": "Fabien-Chouteau",
+   "repo": "Wee-Noise-Maker",
+   "commit": "cbd540a98bec4f6060f9afb18a742b9219d9b0f8",
+   "pcb_path": "hardware/discovery/wnm_discovery.kicad_pcb",
    "license": "GPL-3.0",
    "copyable": true,
-   "category": "dev-boards",
-   "stars": 34,
-   "url": "https://github.com/kazkojima/esp32-phy/tree/3ba6b004d38aac7a3eaba2ac62df26bf4e1f1c5d",
+   "category": "audio",
+   "stars": 37,
+   "url": "https://github.com/Fabien-Chouteau/Wee-Noise-Maker/tree/cbd540a98bec4f6060f9afb18a742b9219d9b0f8",
    "status": "queued",
-   "unresolved_models": 43
+   "reason": null
   },
   {
-   "id": "gh:Hans-Beerman/Deurnode_ESP32-PoE",
-   "slug": "hans-beerman__deurnode_esp32-poe",
-   "owner": "Hans-Beerman",
-   "repo": "Deurnode_ESP32-PoE",
-   "commit": "baca7e444b0a3d8e897e5b63934500fda8a65a46",
-   "pcb_path": "Deurnode nieuw.kicad_pcb",
-   "license": "Apache-2.0",
+   "id": "gh:Fabien-Chouteau/Wee-Noise-Maker/hardware/Mk-I/Rev_D",
+   "slug": "fabien-chouteau__wee-noise-maker__hardware__mk-i__rev_d",
+   "owner": "Fabien-Chouteau",
+   "repo": "Wee-Noise-Maker",
+   "commit": "cbd540a98bec4f6060f9afb18a742b9219d9b0f8",
+   "pcb_path": "hardware/Mk-I/Rev_D/wnm_mk_1_rev_D.kicad_pcb",
+   "license": "GPL-3.0",
    "copyable": true,
-   "category": "dev-boards",
-   "stars": 4,
-   "url": "https://github.com/Hans-Beerman/Deurnode_ESP32-PoE/tree/baca7e444b0a3d8e897e5b63934500fda8a65a46",
+   "category": "audio",
+   "stars": 37,
+   "url": "https://github.com/Fabien-Chouteau/Wee-Noise-Maker/tree/cbd540a98bec4f6060f9afb18a742b9219d9b0f8",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null
   },
   {
-   "id": "gh:HeyPCB/moon-light",
-   "slug": "heypcb__moon-light",
-   "owner": "HeyPCB",
-   "repo": "moon-light",
-   "commit": "91365bd1806934f3080edb40a07849537ada176b",
-   "pcb_path": "kicad/moon_light.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
+   "id": "gh:martinribelotta/imxrt1020-module",
+   "slug": "martinribelotta__imxrt1020-module",
+   "owner": "martinribelotta",
+   "repo": "imxrt1020-module",
+   "commit": "a646d002f71b7f1c0d381ff3554fc97f177b4aa4",
+   "pcb_path": "imxrt1020-board.kicad_pcb",
+   "license": "BSD-3-Clause",
    "copyable": true,
-   "category": "lighting",
-   "stars": 1,
-   "url": "https://github.com/HeyPCB/moon-light/tree/91365bd1806934f3080edb40a07849537ada176b",
-   "status": "rendered",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/knuckle",
-   "slug": "heypcb__knuckle",
-   "owner": "HeyPCB",
-   "repo": "knuckle",
-   "commit": "a7c93033ecfdf9919e4c7d74c7db050669e47edf",
-   "pcb_path": "kicad/knuckle.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/knuckle/tree/a7c93033ecfdf9919e4c7d74c7db050669e47edf",
+   "category": "computing",
+   "stars": 37,
+   "url": "https://github.com/martinribelotta/imxrt1020-module/tree/a646d002f71b7f1c0d381ff3554fc97f177b4aa4",
    "status": "queued",
-   "unresolved_models": 0
+   "reason": null
   },
   {
-   "id": "gh:HeyPCB/quack-face",
-   "slug": "heypcb__quack-face",
-   "owner": "HeyPCB",
-   "repo": "quack-face",
-   "commit": "8b69f9d79f4f88131778bd108efbd205de1471d4",
-   "pcb_path": "kicad/quack_face.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/quack-face/tree/8b69f9d79f4f88131778bd108efbd205de1471d4",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/whisker",
-   "slug": "heypcb__whisker",
-   "owner": "HeyPCB",
-   "repo": "whisker",
-   "commit": "6d604528bce0c5a0815f07460dd50ae280726756",
-   "pcb_path": "kicad/whisker.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/whisker/tree/6d604528bce0c5a0815f07460dd50ae280726756",
-   "status": "rendered",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/quack-core",
-   "slug": "heypcb__quack-core",
-   "owner": "HeyPCB",
-   "repo": "quack-core",
-   "commit": "370e20a48c832f71cab569c5ff9b427f218dbd98",
-   "pcb_path": "kicad/quack_core.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/quack-core/tree/370e20a48c832f71cab569c5ff9b427f218dbd98",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/iris-cortex",
-   "slug": "heypcb__iris-cortex",
-   "owner": "HeyPCB",
-   "repo": "iris-cortex",
-   "commit": "8874ddc227f7b4bc9455967f8ef6ffcaab879b6f",
-   "pcb_path": "kicad/iris_cortex.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/iris-cortex/tree/8874ddc227f7b4bc9455967f8ef6ffcaab879b6f",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/iris-brainstem",
-   "slug": "heypcb__iris-brainstem",
-   "owner": "HeyPCB",
-   "repo": "iris-brainstem",
-   "commit": "71bc3de6f48fc7424a0bce6f3c16a88955ef9465",
-   "pcb_path": "kicad/iris_brainstem.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/iris-brainstem/tree/71bc3de6f48fc7424a0bce6f3c16a88955ef9465",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/iris-ring",
-   "slug": "heypcb__iris-ring",
-   "owner": "HeyPCB",
-   "repo": "iris-ring",
-   "commit": "5d6f794d15235968c7b3095f140400baa9bf4354",
-   "pcb_path": "kicad/iris_ring.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/iris-ring/tree/5d6f794d15235968c7b3095f140400baa9bf4354",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/iris-brow",
-   "slug": "heypcb__iris-brow",
-   "owner": "HeyPCB",
-   "repo": "iris-brow",
-   "commit": "9f6f47409800d6dfca2e99710d82a5821669c90d",
-   "pcb_path": "kicad/iris_brow.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/iris-brow/tree/9f6f47409800d6dfca2e99710d82a5821669c90d",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/plant-buddy",
-   "slug": "heypcb__plant-buddy",
-   "owner": "HeyPCB",
-   "repo": "plant-buddy",
-   "commit": "b31d08319a72ffc5bb140eca70c5b8c9e4d3f7c5",
-   "pcb_path": "kicad/plant_buddy.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
+   "id": "gh:hubertciebiada/open-ambient-sensor",
+   "slug": "hubertciebiada__open-ambient-sensor",
+   "owner": "hubertciebiada",
+   "repo": "open-ambient-sensor",
+   "commit": "0dc4ba3e15b7ca3c501d51521c54ee53f4cef2f1",
+   "pcb_path": "hardware/kicad/oas.kicad_pcb",
+   "license": "GPL-3.0",
    "copyable": true,
    "category": "iot",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/plant-buddy/tree/b31d08319a72ffc5bb140eca70c5b8c9e4d3f7c5",
+   "stars": 37,
+   "url": "https://github.com/hubertciebiada/open-ambient-sensor/tree/0dc4ba3e15b7ca3c501d51521c54ee53f4cef2f1",
    "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/pomodoro-pal",
-   "slug": "heypcb__pomodoro-pal",
-   "owner": "HeyPCB",
-   "repo": "pomodoro-pal",
-   "commit": "1d6e50ff9998978e6f4521895042ae240fff7c42",
-   "pcb_path": "kicad/pomodoro_pal.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "dev-boards",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/pomodoro-pal/tree/1d6e50ff9998978e6f4521895042ae240fff7c42",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/torch-cat",
-   "slug": "heypcb__torch-cat",
-   "owner": "HeyPCB",
-   "repo": "torch-cat",
-   "commit": "86c862b861a0884fec02e29d28ecaca86940fb6c",
-   "pcb_path": "kicad/torch_cat.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "lighting",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/torch-cat/tree/86c862b861a0884fec02e29d28ecaca86940fb6c",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/cable-bunny",
-   "slug": "heypcb__cable-bunny",
-   "owner": "HeyPCB",
-   "repo": "cable-bunny",
-   "commit": "bccffea3690be7a491da7f43c8a317ea58ecc437",
-   "pcb_path": "kicad/cable_bunny.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "tools",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/cable-bunny/tree/bccffea3690be7a491da7f43c8a317ea58ecc437",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/air-ghost",
-   "slug": "heypcb__air-ghost",
-   "owner": "HeyPCB",
-   "repo": "air-ghost",
-   "commit": "7df82cd84ea9817f5c5102faff72dce197c02802",
-   "pcb_path": "kicad/air_ghost.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "dev-boards",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/air-ghost/tree/7df82cd84ea9817f5c5102faff72dce197c02802",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/ruler-dino",
-   "slug": "heypcb__ruler-dino",
-   "owner": "HeyPCB",
-   "repo": "ruler-dino",
-   "commit": "52bbddfba7e88fb2c2978236b2a748e3b2091e5b",
-   "pcb_path": "kicad/ruler_dino.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "tools",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/ruler-dino/tree/52bbddfba7e88fb2c2978236b2a748e3b2091e5b",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/fridge-owl",
-   "slug": "heypcb__fridge-owl",
-   "owner": "HeyPCB",
-   "repo": "fridge-owl",
-   "commit": "4957e237f2c5ee853605a96db5fed0f9826f52a2",
-   "pcb_path": "kicad/fridge_owl.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "everything-else",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/fridge-owl/tree/4957e237f2c5ee853605a96db5fed0f9826f52a2",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/phone-robot",
-   "slug": "heypcb__phone-robot",
-   "owner": "HeyPCB",
-   "repo": "phone-robot",
-   "commit": "57905ec70118d4a4e41cdfb83feb106bb9740ef9",
-   "pcb_path": "kicad/phone_robot.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "dev-boards",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/phone-robot/tree/57905ec70118d4a4e41cdfb83feb106bb9740ef9",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/badge-blob",
-   "slug": "heypcb__badge-blob",
-   "owner": "HeyPCB",
-   "repo": "badge-blob",
-   "commit": "f1716529428ec81e735eb93de31bd28a64145928",
-   "pcb_path": "kicad/badge_blob.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "wearables",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/badge-blob/tree/f1716529428ec81e735eb93de31bd28a64145928",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/kestrel-fc",
-   "slug": "heypcb__kestrel-fc",
-   "owner": "HeyPCB",
-   "repo": "kestrel-fc",
-   "commit": "9e370c05d372b8d8f995d30928ccacb0b7d2404b",
-   "pcb_path": "kicad/kestrel_fc.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/kestrel-fc/tree/9e370c05d372b8d8f995d30928ccacb0b7d2404b",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/kestrel-esc",
-   "slug": "heypcb__kestrel-esc",
-   "owner": "HeyPCB",
-   "repo": "kestrel-esc",
-   "commit": "17336298ad9ef5892a67da1f8a6ad5fae46acf03",
-   "pcb_path": "kicad/kestrel_esc.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/kestrel-esc/tree/17336298ad9ef5892a67da1f8a6ad5fae46acf03",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/kestrel-gps",
-   "slug": "heypcb__kestrel-gps",
-   "owner": "HeyPCB",
-   "repo": "kestrel-gps",
-   "commit": "56fec74c0ae30e39a63c2bbe670f0ae79d5909c1",
-   "pcb_path": "kicad/kestrel_gps.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "robotics",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/kestrel-gps/tree/56fec74c0ae30e39a63c2bbe670f0ae79d5909c1",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/senswear-kicad/boards/touch",
-   "slug": "heypcb__senswear-kicad__boards__touch",
-   "owner": "HeyPCB",
-   "repo": "senswear-kicad",
-   "commit": "47a6a7f9e8ef6d8324e5bfe27504a89b688d8773",
-   "pcb_path": "boards/touch/SensWear-V1R1-Touch.kicad_pcb",
-   "license": "MIT",
-   "copyable": true,
-   "category": "wearables",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/senswear-kicad/tree/47a6a7f9e8ef6d8324e5bfe27504a89b688d8773",
-   "status": "queued",
-   "unresolved_models": 5
-  },
-  {
-   "id": "gh:HeyPCB/senswear-kicad/boards/temperature",
-   "slug": "heypcb__senswear-kicad__boards__temperature",
-   "owner": "HeyPCB",
-   "repo": "senswear-kicad",
-   "commit": "47a6a7f9e8ef6d8324e5bfe27504a89b688d8773",
-   "pcb_path": "boards/temperature/SensWear-V1R1-Temperature.kicad_pcb",
-   "license": "MIT",
-   "copyable": true,
-   "category": "wearables",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/senswear-kicad/tree/47a6a7f9e8ef6d8324e5bfe27504a89b688d8773",
-   "status": "queued",
-   "unresolved_models": 2
-  },
-  {
-   "id": "gh:HeyPCB/senswear-kicad/boards/ppg",
-   "slug": "heypcb__senswear-kicad__boards__ppg",
-   "owner": "HeyPCB",
-   "repo": "senswear-kicad",
-   "commit": "47a6a7f9e8ef6d8324e5bfe27504a89b688d8773",
-   "pcb_path": "boards/ppg/SensWear-V1R1-PPG.kicad_pcb",
-   "license": "MIT",
-   "copyable": true,
-   "category": "wearables",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/senswear-kicad/tree/47a6a7f9e8ef6d8324e5bfe27504a89b688d8773",
-   "status": "queued",
-   "unresolved_models": 8
-  },
-  {
-   "id": "gh:HeyPCB/esp32-s3-devkit",
-   "slug": "heypcb__esp32-s3-devkit",
-   "owner": "HeyPCB",
-   "repo": "esp32-s3-devkit",
-   "commit": "4b01b335b4ec1e0c9e189e1b368ceb6301be8c96",
-   "pcb_path": "esp32-s3-devkit.kicad_pcb",
-   "license": "MIT",
-   "copyable": true,
-   "category": "dev-boards",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/esp32-s3-devkit/tree/4b01b335b4ec1e0c9e189e1b368ceb6301be8c96",
-   "status": "queued",
-   "unresolved_models": 0
-  },
-  {
-   "id": "gh:HeyPCB/hello-8051",
-   "slug": "heypcb__hello-8051",
-   "owner": "HeyPCB",
-   "repo": "hello-8051",
-   "commit": "4e7012c4ee22ade59bbd5d0e9979c046df4ae71a",
-   "pcb_path": "hello.kicad_pcb",
-   "license": "MIT",
-   "copyable": true,
-   "category": "retro",
-   "stars": 0,
-   "url": "https://github.com/HeyPCB/hello-8051/tree/4e7012c4ee22ade59bbd5d0e9979c046df4ae71a",
-   "status": "queued",
-   "unresolved_models": 7
-  },
-  {
-   "id": "gh:enkhbold470/iron-node",
-   "slug": "enkhbold470__iron-node",
-   "owner": "enkhbold470",
-   "repo": "iron-node",
-   "commit": "56e0a536a21dbfde9d77e6d3ac8e058a00866d16",
-   "pcb_path": "kicad/iron_node.kicad_pcb",
-   "license": "CERN-OHL-S-2.0",
-   "copyable": true,
-   "category": "dev-boards",
-   "stars": 0,
-   "url": "https://github.com/enkhbold470/iron-node/tree/56e0a536a21dbfde9d77e6d3ac8e058a00866d16",
-   "status": "queued",
-   "unresolved_models": 0
+   "reason": null
   }
  ]
 }

@@ -1,0 +1,69 @@
+{
+ "id": "gh:zhiayang/mikoto/mikoto",
+ "slug": "zhiayang__mikoto__mikoto",
+ "title": "Mikoto · Mikoto",
+ "owner": "zhiayang",
+ "repo": "mikoto",
+ "category": "iot",
+ "stars": 357,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  18.04,
+  33.3
+ ],
+ "parts": 67,
+ "glb_bytes": 965340,
+ "url": "https://github.com/zhiayang/mikoto",
+ "commit": "86318f6c69495b8308354b6393d85229177b26ae",
+ "pcb_path": "mikoto.kicad_pcb",
+ "description": "Bluetooth LE nRF52840 microcontroller in a pro-micro footprint.",
+ "license_url": "https://github.com/zhiayang/mikoto/blob/86318f6/LICENSE",
+ "author_url": "https://github.com/zhiayang",
+ "topics": [
+  "bluetooth",
+  "electronics",
+  "kicad",
+  "nrf52840",
+  "wireless"
+ ],
+ "board": {
+  "mask": "#0d0d0de8",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.59
+ },
+ "models": {
+  "total": 53,
+  "resolved": 51,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "Y2",
+    "path": "${KISYS3DMOD}/Crystal.3dshapes/Crystal_SMD_2012-2Pin_2.0x1.2mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "U6",
+    "path": "${KICAD7_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/WDFN-8_2x2mm_P0.5mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -0.00902,
+   -8e-05,
+   -0.01755
+  ],
+  "max": [
+   0.00902,
+   0.00317,
+   0.01665
+  ]
+ },
+ "rendered": "2026-10-17T18:07:05Z",
+ "kicad": "10.0.7"
+}

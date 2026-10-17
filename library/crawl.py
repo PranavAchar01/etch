@@ -10,6 +10,7 @@ library/cache/boards.json (one record per .kicad_pcb to fetch and render).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import time
 import urllib.parse
@@ -24,10 +25,26 @@ SEARCHES = [
     "topic:kicad-project",
     "topic:keyboard topic:kicad",
 ]
-OWNERS = ["HeyPCB"]  # always included, first
+OWNERS: list[str] = []  # orgs/users whose public repos are always included, first
+# owners never crawled, stored as sha256 of the lower-case login so the names stay out of the repo
+DENY_OWNER_SHA256 = {"e574c641d65c0913772ca9bc92622b76df3f2e5ee4427c6f691731ed550e444e"}
+
+
+def denied(owner: str) -> bool:
+    return hashlib.sha256(owner.lower().encode()).hexdigest() in DENY_OWNER_SHA256
 # hand-picked extras (always included): ESP32 boards with Ethernet/RJ45 + USB, for the board view demo
 PINNED_REPOS = ["yellobyte/YB-ESP32-S3-ETH", "Hans-Beerman/Deurnode_ESP32-PoE", "kazkojima/esp32-phy",
                 "enkhbold470/iron-node"]
+# boards pinned by hand to an exact commit and pcb list (reference boards for the board view)
+PINNED_BOARDS = {
+    "OLIMEX/ESP32-POE": {
+        "commit": "deb38a377d50eadb04ddc7118a17a5ae58b1ee53",
+        "pcbs": ["HARDWARE/ESP32-PoE-hardware-revision-M2/ESP32-PoE_Rev_M2.kicad_pcb",
+                 "HARDWARE/ESP32-PoE-hardware-revision-M1/ESP32-PoE_Rev_M1.kicad_pcb",
+                 "HARDWARE/ESP32-PoE-hardware-revision-M/ESP32-PoE_Rev_M.kicad_pcb"],
+        "category": "dev-boards",
+    },
+}
 MAX_BOARDS_PER_REPO = 3
 MAX_PCB_BYTES = 25_000_000
 
@@ -42,7 +59,7 @@ SKIP_FILE = re.compile(r"(_autosave|\.bak$|-bak\.|^_|-backup|_backup|-old\.|_old
 # repos that are libraries/tools rather than boards
 SKIP_REPO = re.compile(
     r"(awesome|footprint|symbol[s-]|[-_]lib(s|rary)?$|^lib[-_]|librar|plugin|kicad[-_]?(action|tools?|scripts?|templates?)|"
-    r"interactivehtmlbom|kibot|kikit|cookbook|tutorial|workshop|course)",
+    r"interactivehtmlbom|kibot|kikit|cookbook|tutorial|workshop|course|kicad-source|^kicad$)",
     re.I,
 )
 
@@ -179,23 +196,31 @@ def repo_record(item: dict) -> dict:
 def inspect_repo(rec: dict) -> None:
     """Fill commit, license path and pcbs for one repo (3 core API calls)."""
     o, r = rec["owner"], rec["repo"]
-    br = gh(f"repos/{o}/{r}/branches/{urllib.parse.quote(rec['default_branch'], safe='')}")
-    if not br:
-        rec["status"] = "skip: no default branch"
-        return
-    rec["commit"] = br["commit"]["sha"]
+    pin = PINNED_BOARDS.get(rec["full_name"])
+    if pin:
+        rec["commit"] = pin["commit"]
+    else:
+        br = gh(f"repos/{o}/{r}/branches/{urllib.parse.quote(rec['default_branch'], safe='')}")
+        if not br:
+            rec["status"] = "skip: no default branch"
+            return
+        rec["commit"] = br["commit"]["sha"]
     tree = gh(f"repos/{o}/{r}/git/trees/{rec['commit']}?recursive=1")
     if not tree:
         rec["status"] = "skip: no tree"
         return
     entries = tree.get("tree") or []
     rec["tree_truncated"] = bool(tree.get("truncated"))
-    pcbs = pick_pcbs(entries)
+    if pin:
+        sizes = {e["path"]: e.get("size", 0) for e in entries}
+        pcbs = [{"path": p, "size": sizes.get(p, 0)} for p in pin["pcbs"] if p in sizes]
+    else:
+        pcbs = pick_pcbs(entries)
     if not pcbs:
         rec["status"] = "skip: no .kicad_pcb"
         return
     # keep only the tree paths fetch.py may need (3D models, project/schematic files) to keep the cache small
-    keep = re.compile(r"\.(kicad_pro|kicad_sch|pro|sch|step|stp|wrl|vrml)$", re.I)
+    keep = re.compile(r"\.(kicad_pro|kicad_sch|pro|sch|step|stp|stpz|wrl|wrz|vrml)$", re.I)
     rec["files"] = {e["path"]: e.get("size", 0) for e in entries if e.get("type") == "blob" and keep.search(e["path"])}
     rec["pcbs"] = [{"path": e["path"], "size": e.get("size", 0)} for e in pcbs]
     lic = gh(f"repos/{o}/{r}/license")
@@ -228,7 +253,8 @@ def board_records(rec: dict) -> list[dict]:
             "commit": rec["commit"],
             "pcb_path": path,
             "pcb_bytes": p["size"],
-            "category": categorize(rec["repo"] + " " + stem, rec["description"], rec["topics"]),
+            "category": PINNED_BOARDS.get(rec["full_name"], {}).get("category")
+            or categorize(rec["repo"] + " " + stem, rec["description"], rec["topics"]),
             "stars": rec["stars"],
             "license": rec["license"],
             "copyable": copyable(rec["license"]),
@@ -252,7 +278,7 @@ def main() -> None:
     cand: dict[str, dict] = {}
     for o in OWNERS:
         cand.update(owner_repos(o))
-    for full in PINNED_REPOS:
+    for full in [*PINNED_BOARDS, *PINNED_REPOS]:
         it = gh(f"repos/{full}")
         if it:
             cand[it["full_name"]] = it
@@ -260,17 +286,21 @@ def main() -> None:
     if not args.no_search:
         cand.update(search_repos(args.pages))
 
+    cand = {k: v for k, v in cand.items() if not denied(v["owner"]["login"])}
+    cache = {k: v for k, v in cache.items() if not denied(v["owner"])}
     recs = []
     if args.no_search:
         recs = [r for n, r in cache.items() if n not in cand]
     for name, item in cand.items():
         rec = repo_record(item)
         old = cache.get(name)
-        if old and not args.refresh and old.get("status") and old.get("pushed_at") == rec["pushed_at"]:
+        pin = PINNED_BOARDS.get(name)
+        if old and not args.refresh and old.get("status") and old.get("pushed_at") == rec["pushed_at"] \
+                and (not pin or old.get("commit") == pin["commit"]):
             old.update({k: rec[k] for k in ("stars", "topics", "description")})
             rec = old
         recs.append(rec)
-    recs.sort(key=lambda r: (r["full_name"] not in pinned, -r["stars"]))
+    recs.sort(key=lambda r: (r["full_name"] not in PINNED_BOARDS, r["full_name"] not in pinned, -r["stars"]))
 
     kept = 0
     for rec in recs:

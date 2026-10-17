@@ -1,0 +1,71 @@
+{
+ "id": "gh:Envious-Data/EnvOpenPico/RP2040/EnvPicoLiPo",
+ "slug": "envious-data__envopenpico__rp2040__envpicolipo",
+ "title": "EnvOpenPico · EnvPicoLiPo",
+ "owner": "Envious-Data",
+ "repo": "EnvOpenPico",
+ "category": "dev-boards",
+ "stars": 151,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  21.2,
+  51.55
+ ],
+ "parts": 57,
+ "glb_bytes": 888928,
+ "url": "https://github.com/Envious-Data/EnvOpenPico",
+ "commit": "a88e551b400957efdab86bd4c97ebabbf63c78fd",
+ "pcb_path": "RP2040/EnvPicoLiPo/EnvPicoLiPo.kicad_pcb",
+ "description": "An open source RP2040 MCU Board Family",
+ "license_url": "https://github.com/Envious-Data/EnvOpenPico/blob/a88e551/LICENSE",
+ "author_url": "https://github.com/Envious-Data",
+ "topics": [
+  "design",
+  "hardware",
+  "kicad",
+  "mcu",
+  "microcontroller",
+  "pico",
+  "rp2040"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 53,
+  "resolved": 51,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "FLASH1",
+    "path": "${KISYS3DMOD}/Package_SON.3dshapes/SON-8-1EP_3x2mm_P0.5mm_EP1.4x1.6mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "U1",
+    "path": "${KISYS3DMOD}/Package_DFN_QFN.3dshapes/VQFN-16-1EP_3x3mm_P0.5mm_EP1.6x1.6mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.09129,
+   -0.00863,
+   0.05693
+  ],
+  "max": [
+   0.116,
+   0.01013,
+   0.10877
+  ]
+ },
+ "rendered": "2026-10-17T18:12:26Z",
+ "kicad": "10.0.7"
+}

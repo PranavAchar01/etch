@@ -1,0 +1,58 @@
+{
+ "id": "gh:Allegra42/ZEReader-KiCad",
+ "slug": "allegra42__zereader-kicad",
+ "title": "ZEReader KiCad",
+ "owner": "Allegra42",
+ "repo": "ZEReader-KiCad",
+ "category": "dev-boards",
+ "stars": 67,
+ "license": "CERN-OHL-S-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  110.0,
+  110.0
+ ],
+ "parts": 96,
+ "glb_bytes": 12186204,
+ "url": "https://github.com/Allegra42/ZEReader-KiCad",
+ "commit": "08c0682c11b4d0c3c5c2b0c4e7cad1d863d2261f",
+ "pcb_path": "ZEReader-Pico.kicad_pcb",
+ "description": "ZEReader is an open source hardware and software E-Book Reader platform. Originally developed as a bachelor's thesis in electrical engineering, the project now evolves as a hobby initiative dedicated to further develop this hackable and customizable platform.",
+ "license_url": "https://github.com/Allegra42/ZEReader-KiCad/blob/08c0682/LICENSE",
+ "author_url": "https://github.com/Allegra42",
+ "topics": [
+  "book",
+  "ebook",
+  "ebook-reader",
+  "kicad",
+  "openhardware"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "HAL lead-free",
+  "thickness_mm": 1.579
+ },
+ "models": {
+  "total": 64,
+  "resolved": 64,
+  "hidden": 3,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -1802.11055,
+   -189.06127,
+   -1802.16555
+  ],
+  "max": [
+   1802.41055,
+   189.0699,
+   1802.35555
+  ]
+ },
+ "rendered": "2026-10-17T17:58:34Z",
+ "kicad": "10.0.7"
+}

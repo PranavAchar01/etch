@@ -1,0 +1,98 @@
+{
+ "id": "gh:Chrismettal/EleLab_v2/PCB_CAD/EleLab_v2_PowerFeed",
+ "slug": "chrismettal__elelab_v2__pcb_cad__elelab_v2_powerfeed",
+ "title": "EleLab V2 · EleLab V2 PowerFeed",
+ "owner": "Chrismettal",
+ "repo": "EleLab_v2",
+ "category": "everything-else",
+ "stars": 530,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  68.0,
+  50.0
+ ],
+ "parts": 15,
+ "glb_bytes": 519872,
+ "url": "https://github.com/Chrismettal/EleLab_v2",
+ "commit": "9306cddca1e8b6b14c4f6a4f572579d2eedd44df",
+ "pcb_path": "PCB_CAD/EleLab_v2_PowerFeed/EleLab_v2_PowerFeed.kicad_pcb",
+ "description": "Cheap DIY lab system for hobbyists and the tinkering folk",
+ "license_url": "https://github.com/Chrismettal/EleLab_v2/blob/9306cdd/LICENSE",
+ "author_url": "https://github.com/Chrismettal",
+ "topics": [
+  "electronics",
+  "freecad",
+  "kicad",
+  "lab"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 10,
+  "resolved": 2,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "J1",
+    "path": "${KISYS3DMOD}/Connector_Molex.3dshapes/Molex_Mini-Fit_Jr_5566-24A_2x12_P4.20mm_Vertical.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J2",
+    "path": "${KISYS3DMOD}/Connector_Molex.3dshapes/Molex_Mini-Fit_Jr_5566-08A_2x04_P4.20mm_Vertical.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J5",
+    "path": "${KISYS3DMOD}/Terminal_Blocks.3dshapes/TerminalBlock_bornier-2_P5.08mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J6",
+    "path": "${KISYS3DMOD}/Terminal_Blocks.3dshapes/TerminalBlock_bornier-2_P5.08mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J7",
+    "path": "${KISYS3DMOD}/Terminal_Blocks.3dshapes/TerminalBlock_bornier-2_P5.08mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J8",
+    "path": "${KISYS3DMOD}/Terminal_Blocks.3dshapes/TerminalBlock_bornier-2_P5.08mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J9",
+    "path": "${KISYS3DMOD}/Terminal_Blocks.3dshapes/TerminalBlock_bornier-2_P5.08mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J10",
+    "path": "${KISYS3DMOD}/Terminal_Blocks.3dshapes/TerminalBlock_bornier-2_P5.08mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.132,
+   -0.00131,
+   0.08
+  ],
+  "max": [
+   0.20403,
+   0.00668,
+   0.13
+  ]
+ },
+ "rendered": "2026-10-17T18:04:26Z",
+ "kicad": "10.0.7"
+}

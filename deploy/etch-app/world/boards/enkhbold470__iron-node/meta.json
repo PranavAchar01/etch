@@ -1,0 +1,60 @@
+{
+ "id": "gh:enkhbold470/iron-node",
+ "slug": "enkhbold470__iron-node",
+ "title": "Iron Node",
+ "owner": "enkhbold470",
+ "repo": "iron-node",
+ "category": "dev-boards",
+ "stars": 0,
+ "license": "CERN-OHL-S-2.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  90.0,
+  66.0
+ ],
+ "parts": 83,
+ "glb_bytes": 1250264,
+ "url": "https://github.com/enkhbold470/iron-node",
+ "commit": "56e0a536a21dbfde9d77e6d3ac8e058a00866d16",
+ "pcb_path": "kicad/iron_node.kicad_pcb",
+ "description": "ESP32-S3 industrial gateway: W5500 Ethernet, isolated RS-485 (ADM2587E), CAN, 9-36 V input. 4-layer KiCad 10 board.",
+ "license_url": "https://github.com/enkhbold470/iron-node/blob/56e0a53/LICENSE",
+ "author_url": "https://github.com/enkhbold470",
+ "topics": [
+  "can-bus",
+  "esp32",
+  "ethernet",
+  "kicad",
+  "open-hardware",
+  "pcb",
+  "rs485"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 79,
+  "resolved": 79,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.09939,
+   -8e-05,
+   0.094
+  ],
+  "max": [
+   0.19,
+   0.01489,
+   0.16601
+  ]
+ },
+ "rendered": "2026-10-17T18:02:22Z",
+ "kicad": "10.0.7"
+}

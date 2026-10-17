@@ -1,0 +1,69 @@
+{
+ "id": "gh:Gekkio/gb-hardware/GB-LIVE32",
+ "slug": "gekkio__gb-hardware__gb-live32",
+ "title": "Gb Hardware · GB LIVE32",
+ "owner": "Gekkio",
+ "repo": "gb-hardware",
+ "category": "retro",
+ "stars": 378,
+ "license": "CC-BY-4.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  51.4,
+  61.0
+ ],
+ "parts": 61,
+ "glb_bytes": 752416,
+ "url": "https://github.com/Gekkio/gb-hardware",
+ "commit": "b5ade559bd988fd6c4f5941615d4d6d79dec9098",
+ "pcb_path": "GB-LIVE32/GB-LIVE32.kicad_pcb",
+ "description": "Game Boy -related custom hardware by gekkio",
+ "license_url": "https://github.com/Gekkio/gb-hardware/blob/b5ade55/LICENSE",
+ "author_url": "https://github.com/Gekkio",
+ "topics": [
+  "game-boy-hardware",
+  "gameboy",
+  "hardware-designs",
+  "kicad",
+  "kicad-schematics"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.0
+ },
+ "models": {
+  "total": 45,
+  "resolved": 43,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "U3",
+    "path": "${KISYS3DMOD}/Gekkio_Package_SO.3dshapes/TSOP-I-28_11.8x8mm_P0.55mm_Pin1Middle.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J1",
+    "path": "${KISYS3DMOD}/Connector_Molex.3dshapes/Molex_Pico-Lock_504050-0591_1x05-1MP_P1.50mm_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.0743,
+   -5e-05,
+   0.039
+  ],
+  "max": [
+   0.1257,
+   0.00251,
+   0.1
+  ]
+ },
+ "rendered": "2026-10-17T18:06:11Z",
+ "kicad": "10.0.7"
+}

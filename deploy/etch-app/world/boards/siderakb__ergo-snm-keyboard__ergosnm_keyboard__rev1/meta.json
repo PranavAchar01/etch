@@ -1,0 +1,60 @@
+{
+ "id": "gh:siderakb/ergo-snm-keyboard/ErgoSNM_Keyboard/rev1",
+ "slug": "siderakb__ergo-snm-keyboard__ergosnm_keyboard__rev1",
+ "title": "Ergo Snm Keyboard · ErgoSNM Keyboard",
+ "owner": "siderakb",
+ "repo": "ergo-snm-keyboard",
+ "category": "keyboards",
+ "stars": 171,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  174.53,
+  138.62
+ ],
+ "parts": 98,
+ "glb_bytes": 2381004,
+ "url": "https://github.com/siderakb/ergo-snm-keyboard",
+ "commit": "20e9e51e9f52749140369968b2bf5e741bf063b0",
+ "pcb_path": "ErgoSNM_Keyboard/rev1/ErgoSNM_keyboard.kicad_pcb",
+ "description": "ErgoSNM is a split ergonomic keyboard integrated with trackball, wireless is in beta",
+ "license_url": "https://github.com/siderakb/ergo-snm-keyboard/blob/20e9e51/LICENSE",
+ "author_url": "https://github.com/siderakb",
+ "topics": [
+  "keyboard",
+  "kicad",
+  "nrf52840",
+  "oshw",
+  "pcb",
+  "pmw3360",
+  "rp2040"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 46,
+  "resolved": 46,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.06045,
+   -0.00609,
+   0.02388
+  ],
+  "max": [
+   0.23499,
+   0.01013,
+   0.16249
+  ]
+ },
+ "rendered": "2026-10-17T18:11:52Z",
+ "kicad": "10.0.7"
+}

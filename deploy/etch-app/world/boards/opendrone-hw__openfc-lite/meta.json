@@ -1,0 +1,57 @@
+{
+ "id": "gh:OpenDrone-hw/OpenFC-Lite",
+ "slug": "opendrone-hw__openfc-lite",
+ "title": "OpenFC Lite",
+ "owner": "OpenDrone-hw",
+ "repo": "OpenFC-Lite",
+ "category": "robotics",
+ "stars": 74,
+ "license": "CERN-OHL-S-2.0",
+ "copyable": true,
+ "layers": 6,
+ "size_mm": [
+  37.94,
+  37.94
+ ],
+ "parts": 164,
+ "glb_bytes": 2361068,
+ "url": "https://github.com/OpenDrone-hw/OpenFC-Lite",
+ "commit": "9dcb4c081408a8e2b4881be5cc6a7f0976764d75",
+ "pcb_path": "hardware/OpenFC.kicad_pcb",
+ "description": "Open-source Betaflight flight controller. RP2354B, 30.5x30.5 mm, 6-layer, 3-8S, CERN-OHL-S-2.0.",
+ "license_url": "https://github.com/OpenDrone-hw/OpenFC-Lite/blob/9dcb4c0/LICENSE",
+ "author_url": "https://github.com/OpenDrone-hw",
+ "topics": [
+  "flight-controller",
+  "kicad",
+  "open-hardware",
+  "status-beta"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.0
+ },
+ "models": {
+  "total": 107,
+  "resolved": 107,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.13412,
+   -0.00338,
+   0.06819
+  ],
+  "max": [
+   0.17206,
+   0.00202,
+   0.10613
+  ]
+ },
+ "rendered": "2026-10-17T18:18:58Z",
+ "kicad": "10.0.7"
+}

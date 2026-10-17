@@ -86,7 +86,7 @@ def board_info(pcb: Path, sch_dir: Path | None = None) -> dict[str, Any]:
             if name == "dielectric 1" or (child(ly, "type") and "core" in str(child(ly, "type")[1]).lower()):
                 pass
         cf = child(stack, "copper_finish")
-        if cf and len(cf) > 1:
+        if cf and len(cf) > 1 and str(cf[1]).strip().lower() not in ("none", ""):
             finish = cf[1]
     if mask.startswith("#"):
         mask = mask  # custom colour as hex
@@ -119,6 +119,33 @@ def board_info(pcb: Path, sch_dir: Path | None = None) -> dict[str, Any]:
             pts = child(g, "pts")
             for p in children(pts, "xy") if pts else []:
                 add_pt(p)
+
+    # Edge.Cuts drawn inside footprints (board outlines and cut-outs shipped as footprints)
+    import math
+
+    for fp in children(tree, "footprint") + children(tree, "module"):
+        at = child(fp, "at") or ["at", 0, 0]
+        fx, fy = _f(at[1]), _f(at[2])
+        rot = math.radians(_f(at[3]) if len(at) > 3 else 0.0)
+        c, sn = math.cos(rot), math.sin(rot)
+
+        def fp_pt(n: list | None) -> None:
+            if n and len(n) > 2:
+                lx, ly = _f(n[1]), _f(n[2])
+                # KiCad rotates footprint-local coordinates clockwise on screen (y down)
+                xs.append(fx + lx * c + ly * sn)
+                ys.append(fy - lx * sn + ly * c)
+
+        for tag in ("fp_line", "fp_rect", "fp_arc", "fp_poly", "fp_circle"):
+            for g in children(fp, tag):
+                lay = child(g, "layer")
+                if not lay or lay[1] != "Edge.Cuts":
+                    continue
+                for k in ("start", "end", "mid", "center"):
+                    fp_pt(child(g, k))
+                pts = child(g, "pts")
+                for pt in children(pts, "xy") if pts else []:
+                    fp_pt(pt)
 
     parts: dict[str, dict] = {}
     descs = schematic_descriptions(sch_dir) if sch_dir else {}
@@ -233,6 +260,9 @@ def glb_nodes(path: Path) -> dict[str, list[float]]:
     return out
 
 
+NORM = {5120: 127.0, 5121: 255.0, 5122: 32767.0, 5123: 65535.0}
+
+
 def glb_bounds(path: Path) -> tuple[list[float], list[float]]:
     """World AABB from accessor min/max of every mesh primitive (no vertex decode)."""
     g = glb_json(path)
@@ -249,9 +279,13 @@ def glb_bounds(path: Path) -> tuple[list[float], list[float]]:
                 a = accs[p["attributes"]["POSITION"]]
                 if "min" not in a:
                     continue
-                for cx in (a["min"][0], a["max"][0]):
-                    for cy in (a["min"][1], a["max"][1]):
-                        for cz in (a["min"][2], a["max"][2]):
+                # KHR_mesh_quantization: normalized integer positions; min/max are in raw integer units
+                k = NORM.get(a.get("componentType"), 1.0) if a.get("normalized") else 1.0
+                amin = [v / k for v in a["min"]]
+                amax = [v / k for v in a["max"]]
+                for cx in (amin[0], amax[0]):
+                    for cy in (amin[1], amax[1]):
+                        for cz in (amin[2], amax[2]):
                             for k in range(3):
                                 v = m[k][0] * cx + m[k][1] * cy + m[k][2] * cz + m[k][3]
                                 lo[k] = min(lo[k], v)
@@ -272,3 +306,32 @@ if __name__ == "__main__":
     parts = info.pop("parts")
     print(json.dumps(info, indent=1))
     print(len(parts), "parts;", json.dumps(list(parts.values())[:3], indent=1))
+
+
+def glb_clear_names(path: Path, pattern: str = r"^=>\[") -> int:
+    """In place: blank node names matching pattern (kicad-cli's "=>[0:1:1:94]" board-layer nodes) and make the
+    asset metadata neutral (generator "Etch", no copyright/extras). Returns the number of changes."""
+    data = path.read_bytes()
+    clen = struct.unpack_from("<I", data, 12)[0]
+    g = json.loads(data[20 : 20 + clen])
+    n = 0
+    for node in g.get("nodes", []):
+        if node.get("name") and re.match(pattern, node["name"]):
+            del node["name"]
+            n += 1
+    asset = g.setdefault("asset", {"version": "2.0"})
+    if asset.get("generator") != "Etch" or "copyright" in asset or "extras" in asset:
+        asset["generator"] = "Etch"
+        asset.pop("copyright", None)
+        asset.pop("extras", None)
+        n += 1
+    if not n:
+        return 0
+    js = json.dumps(g, separators=(",", ":")).encode()
+    js += b" " * ((4 - len(js) % 4) % 4)
+    rest = data[20 + clen :]
+    out = struct.pack("<4sII", b"glTF", 2, 12 + 8 + len(js) + len(rest)) + struct.pack("<I4s", len(js), b"JSON") + js + rest
+    tmp = path.with_suffix(".tmp")
+    tmp.write_bytes(out)
+    tmp.replace(path)
+    return n

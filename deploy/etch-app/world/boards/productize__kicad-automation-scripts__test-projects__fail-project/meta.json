@@ -1,0 +1,56 @@
+{
+ "id": "gh:productize/kicad-automation-scripts/test-projects/fail-project",
+ "slug": "productize__kicad-automation-scripts__test-projects__fail-project",
+ "title": "Kicad Automation Scripts · Fail Project",
+ "owner": "productize",
+ "repo": "kicad-automation-scripts",
+ "category": "everything-else",
+ "stars": 96,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  14.0,
+  9.0
+ ],
+ "parts": 3,
+ "glb_bytes": 39804,
+ "url": "https://github.com/productize/kicad-automation-scripts",
+ "commit": "1f72db298f73845595a908b9f08266c26f3161f4",
+ "pcb_path": "test-projects/fail-project/fail-project.kicad_pcb",
+ "description": "A bunch of scripts to automate KiCad processes",
+ "license_url": "https://github.com/productize/kicad-automation-scripts/blob/1f72db2/LICENSE",
+ "author_url": "https://github.com/productize",
+ "topics": [
+  "automation",
+  "dodays",
+  "kicad"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 3,
+  "resolved": 3,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.139,
+   -0.00141,
+   0.102
+  ],
+  "max": [
+   0.153,
+   0.01013,
+   0.111
+  ]
+ },
+ "rendered": "2026-10-17T18:15:17Z",
+ "kicad": "10.0.7"
+}

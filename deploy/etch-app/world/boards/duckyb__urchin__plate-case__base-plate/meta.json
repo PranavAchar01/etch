@@ -1,0 +1,55 @@
+{
+ "id": "gh:duckyb/urchin/plate-case/base-plate",
+ "slug": "duckyb__urchin__plate-case__base-plate",
+ "title": "Urchin · Base Plate",
+ "owner": "duckyb",
+ "repo": "urchin",
+ "category": "keyboards",
+ "stars": 602,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  109.53,
+  89.59
+ ],
+ "parts": 4,
+ "glb_bytes": 38460,
+ "url": "https://github.com/duckyb/urchin",
+ "commit": "02b1ab1315f3560f637eeaa8f375541f4fa621b9",
+ "pcb_path": "plate-case/base-plate/base-plate.kicad_pcb",
+ "description": "34 key ZMK keyboard, nice!view, nice!nano & hotswap supported.",
+ "license_url": "https://github.com/duckyb/urchin/blob/02b1ab1/LICENSE",
+ "author_url": "https://github.com/duckyb",
+ "topics": [
+  "keyboard",
+  "kicad"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.0176,
+   -5e-05,
+   0.01617
+  ],
+  "max": [
+   0.12713,
+   0.00156,
+   0.10579
+  ]
+ },
+ "rendered": "2026-10-17T18:04:13Z",
+ "kicad": "10.0.7"
+}

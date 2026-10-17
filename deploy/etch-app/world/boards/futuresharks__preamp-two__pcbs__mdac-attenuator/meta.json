@@ -1,0 +1,61 @@
+{
+ "id": "gh:FutureSharks/preamp-two/PCBs/mdac-attenuator",
+ "slug": "futuresharks__preamp-two__pcbs__mdac-attenuator",
+ "title": "Preamp Two · Mdac Attenuator",
+ "owner": "FutureSharks",
+ "repo": "preamp-two",
+ "category": "audio",
+ "stars": 45,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  45.72,
+  52.07
+ ],
+ "parts": 34,
+ "glb_bytes": 467680,
+ "url": "https://github.com/FutureSharks/preamp-two",
+ "commit": "6001f142f6b35608b6ad879fad4a7894daf67b02",
+ "pcb_path": "PCBs/mdac-attenuator/mdac-attenuator.kicad_pcb",
+ "description": "An digitally controlled hi fi preamplifier 🔈🎵",
+ "license_url": "https://github.com/FutureSharks/preamp-two/blob/6001f14/LICENSE",
+ "author_url": "https://github.com/FutureSharks",
+ "topics": [
+  "audio",
+  "circuitpython",
+  "hifi",
+  "kicad",
+  "micro-controller",
+  "neopixel",
+  "preamplifier",
+  "schematics"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 28,
+  "resolved": 28,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -748.90682,
+   -250.00654,
+   -852.98902
+  ],
+  "max": [
+   749.19892,
+   250.01787,
+   853.18841
+  ]
+ },
+ "rendered": "2026-10-17T17:58:18Z",
+ "kicad": "10.0.7"
+}

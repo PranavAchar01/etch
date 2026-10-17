@@ -1,0 +1,67 @@
+{
+ "id": "gh:ChrisChrisLoLo/bancouver40/pcb/bancouver40_cfx",
+ "slug": "chrischrislolo__bancouver40__pcb__bancouver40_cfx",
+ "title": "Bancouver40 · Bancouver40 Cfx",
+ "owner": "ChrisChrisLoLo",
+ "repo": "bancouver40",
+ "category": "keyboards",
+ "stars": 112,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  170.0,
+  69.42
+ ],
+ "parts": 104,
+ "glb_bytes": 870804,
+ "url": "https://github.com/ChrisChrisLoLo/bancouver40",
+ "commit": "ff316e6f3eb91371fda0ae5a82a827710402f296",
+ "pcb_path": "pcb/bancouver40_cfx/bancouver40_cfx.kicad_pcb",
+ "description": "A 4x10 CFX spaced low-profile mechanical keyboard.",
+ "license_url": "https://github.com/ChrisChrisLoLo/bancouver40/blob/ff316e6/LICENSE",
+ "author_url": "https://github.com/ChrisChrisLoLo",
+ "topics": [
+  "4x10",
+  "choc-switches",
+  "hotswap",
+  "keyboard",
+  "kicad",
+  "ortholinear",
+  "ortholinear-keyboard",
+  "pcb"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 58,
+  "resolved": 57,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "J1",
+    "path": "${KICAD6_3DMODEL_DIR}/Connector_USB.3dshapes/USB_C_Receptacle_XKB_U262-16XN-4BVC11.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.07437,
+   -0.0012,
+   0.01346
+  ],
+  "max": [
+   0.24437,
+   0.00158,
+   0.08288
+  ]
+ },
+ "rendered": "2026-10-17T18:14:57Z",
+ "kicad": "10.0.7"
+}

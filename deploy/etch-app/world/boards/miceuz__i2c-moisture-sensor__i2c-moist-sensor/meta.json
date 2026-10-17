@@ -1,0 +1,59 @@
+{
+ "id": "gh:Miceuz/i2c-moisture-sensor/i2c-moist-sensor",
+ "slug": "miceuz__i2c-moisture-sensor__i2c-moist-sensor",
+ "title": "I2C Moisture Sensor · I2C Moist Sensor",
+ "owner": "Miceuz",
+ "repo": "i2c-moisture-sensor",
+ "category": "iot",
+ "stars": 257,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  18.0,
+  149.0
+ ],
+ "parts": 22,
+ "glb_bytes": 266512,
+ "url": "https://github.com/Miceuz/i2c-moisture-sensor",
+ "commit": "c687328d2fdbe45b1b6c9d6b92627460e9f3167d",
+ "pcb_path": "i2c-moist-sensor.kicad_pcb",
+ "description": "I2C based soil moisture sensor",
+ "license_url": "https://github.com/Miceuz/i2c-moisture-sensor/blob/c687328/LICENSE",
+ "author_url": "https://github.com/Miceuz",
+ "topics": [
+  "avr",
+  "i2c",
+  "kicad",
+  "sensor",
+  "soil-moisture",
+  "soil-moisture-sensor"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 20,
+  "resolved": 20,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.08601,
+   -8e-05,
+   0.013
+  ],
+  "max": [
+   0.10399,
+   0.00334,
+   0.162
+  ]
+ },
+ "rendered": "2026-10-17T18:09:08Z",
+ "kicad": "10.0.7"
+}
