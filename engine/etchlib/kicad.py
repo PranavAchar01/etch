@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import contextlib
+import functools
+import json
 import os
 import subprocess
 import sys
@@ -37,11 +39,24 @@ VENDOR_DIR = ENGINE_DIR.parent / "vendor"
 VENDOR_LIBS = {"Espressif": VENDOR_DIR / "espressif-kicad-libraries"}
 
 
+@functools.lru_cache(maxsize=1)
+def _extra_paths() -> dict[str, dict[str, str]]:
+    """Open-source libraries ingested from parts/extra_libs (written by agent/kicad_library.py)."""
+    f = ENGINE_DIR / "parts/lib_paths.json"
+    try:
+        return json.loads(f.read_text())
+    except (OSError, ValueError):
+        return {"symbols": {}, "footprints": {}}
+
+
 def symbol_lib_path(lib: str) -> Path:
     if lib.startswith(CACHE_PREFIXES):
         return PARTS_CACHE / lib / f"{lib}.kicad_sym"
     if lib in VENDOR_LIBS:
         return VENDOR_LIBS[lib] / "symbols" / f"{lib}.kicad_sym"
+    extra = _extra_paths()["symbols"].get(lib)
+    if extra and not (SYMBOL_DIR / f"{lib}.kicad_sym").exists():
+        return Path(extra)
     return SYMBOL_DIR / f"{lib}.kicad_sym"
 
 
@@ -49,7 +64,12 @@ def footprint_root(lib: str) -> Path:
     """Folder that holds <lib>.pretty."""
     if lib in VENDOR_LIBS:
         return VENDOR_LIBS[lib] / "footprints"
-    return PARTS_CACHE / lib if lib.startswith(CACHE_PREFIXES) else FOOTPRINT_DIR
+    if lib.startswith(CACHE_PREFIXES):
+        return PARTS_CACHE / lib
+    extra = _extra_paths()["footprints"].get(lib)
+    if extra and not (FOOTPRINT_DIR / f"{lib}.pretty").exists():
+        return Path(extra)
+    return FOOTPRINT_DIR
 
 
 # Every export runs at lowest priority, as the heavy-job protocol asks.
