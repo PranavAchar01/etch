@@ -1,0 +1,66 @@
+{
+ "id": "gh:Envious-Data/EnvOpenPico/RP2350/EnvOpenPico2350",
+ "slug": "envious-data__envopenpico__rp2350__envopenpico2350",
+ "title": "EnvOpenPico · EnvOpenPico2350",
+ "owner": "Envious-Data",
+ "repo": "EnvOpenPico",
+ "category": "dev-boards",
+ "stars": 151,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  21.0,
+  51.0
+ ],
+ "parts": 56,
+ "glb_bytes": 956564,
+ "url": "https://github.com/Envious-Data/EnvOpenPico",
+ "commit": "a88e551b400957efdab86bd4c97ebabbf63c78fd",
+ "pcb_path": "RP2350/EnvOpenPico2350/EnvOpenPico2350.kicad_pcb",
+ "description": "An open source RP2040 MCU Board Family",
+ "license_url": "https://github.com/Envious-Data/EnvOpenPico/blob/a88e551/LICENSE",
+ "author_url": "https://github.com/Envious-Data",
+ "topics": [
+  "design",
+  "hardware",
+  "kicad",
+  "mcu",
+  "microcontroller",
+  "pico",
+  "rp2040"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 52,
+  "resolved": 51,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "J1",
+    "path": "${KICAD6_3DMODEL_DIR}/Connector_USB.3dshapes/USB_C_Receptacle_HRO_TYPE-C-31-M-12.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.09129,
+   -0.00863,
+   0.05727
+  ],
+  "max": [
+   0.116,
+   0.01013,
+   0.10827
+  ]
+ },
+ "rendered": "2026-10-17T18:12:24Z",
+ "kicad": "10.0.7"
+}

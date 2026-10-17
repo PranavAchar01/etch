@@ -39,12 +39,20 @@
 
 !/deploy/
 /deploy/*
+!/deploy/*.md
 !/deploy/etch_public.py
+!/deploy/explore.py
+!/deploy/tests/
 !/deploy/redeploy.sh
 !/deploy/restart.sh
 !/deploy/tunnel.sh
 !/deploy/stt.sh
+!/deploy/EXPLORE_API.md
 !/deploy/etch-app/
+
+# open-source board library: crawler + offline prerender (output goes to deploy/etch-app/world/)
+!/library/
+/library/cache/
 
 # Espressif KiCad library 3.2.1, sparse (see its PROVENANCE.md)
 !/vendor/

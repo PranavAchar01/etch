@@ -1,0 +1,98 @@
+{
+ "id": "gh:Hans-Beerman/Deurnode_ESP32-PoE",
+ "slug": "hans-beerman__deurnode_esp32-poe",
+ "title": "Deurnode ESP32 PoE",
+ "owner": "Hans-Beerman",
+ "repo": "Deurnode_ESP32-PoE",
+ "category": "dev-boards",
+ "stars": 4,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  224.79,
+  60.32
+ ],
+ "parts": 38,
+ "glb_bytes": 862544,
+ "url": "https://github.com/Hans-Beerman/Deurnode_ESP32-PoE",
+ "commit": "baca7e444b0a3d8e897e5b63934500fda8a65a46",
+ "pcb_path": "Deurnode nieuw.kicad_pcb",
+ "description": "KiCad design Deurnode for the MakerSpace Leiden, based on the Olimex ESP32-PoE",
+ "license_url": "https://github.com/Hans-Beerman/Deurnode_ESP32-PoE/blob/baca7e4/LICENSE",
+ "author_url": "https://github.com/Hans-Beerman",
+ "topics": [],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 36,
+  "resolved": 27,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "J9",
+    "path": "${KISYS3DMOD}/TerminalBlock_RND.3dshapes/TerminalBlock_RND_205-00288_1x03_P5.08mm_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J18",
+    "path": "${KISYS3DMOD}/Connector_BarrelJack.3dshapes/BarrelJack_Wuerth_6941xx301002.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J15",
+    "path": "${KISYS3DMOD}/TerminalBlock_RND.3dshapes/TerminalBlock_RND_205-00287_1x02_P5.08mm_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J14",
+    "path": "${KISYS3DMOD}/TerminalBlock_RND.3dshapes/TerminalBlock_RND_205-00287_1x02_P5.08mm_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J12",
+    "path": "${KISYS3DMOD}/TerminalBlock_RND.3dshapes/TerminalBlock_RND_205-00288_1x03_P5.08mm_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J8",
+    "path": "${KISYS3DMOD}/TerminalBlock_RND.3dshapes/TerminalBlock_RND_205-00289_1x04_P5.08mm_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J7",
+    "path": "${KISYS3DMOD}/TerminalBlock_RND.3dshapes/TerminalBlock_RND_205-00287_1x02_P5.08mm_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J4",
+    "path": "${KISYS3DMOD}/TerminalBlock_RND.3dshapes/TerminalBlock_RND_205-00288_1x03_P5.08mm_Horizontal.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "A1",
+    "path": "${KISYS3DMOD}/Module.3dshapes/Pololu_Breakout-16_15.2x20.3mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.03746,
+   -0.00816,
+   0.07112
+  ],
+  "max": [
+   0.26226,
+   0.02037,
+   0.13144
+  ]
+ },
+ "rendered": "2026-10-17T18:00:01Z",
+ "kicad": "10.0.7"
+}

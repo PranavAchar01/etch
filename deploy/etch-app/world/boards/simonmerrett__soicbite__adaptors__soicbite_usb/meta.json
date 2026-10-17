@@ -1,0 +1,69 @@
+{
+ "id": "gh:SimonMerrett/SOICbite/adaptors/SOICbite_USB",
+ "slug": "simonmerrett__soicbite__adaptors__soicbite_usb",
+ "title": "SOICbite · SOICbite USB",
+ "owner": "SimonMerrett",
+ "repo": "SOICbite",
+ "category": "tools",
+ "stars": 354,
+ "license": "BSD-2-Clause",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  37.5,
+  25.12
+ ],
+ "parts": 3,
+ "glb_bytes": 188412,
+ "url": "https://github.com/SimonMerrett/SOICbite",
+ "commit": "ef1ad26febff8ace92e256f7026b4203fd2161e5",
+ "pcb_path": "adaptors/SOICbite_USB/SOICbite_USB.kicad_pcb",
+ "description": "A compact PCB footprint which allows SOIC test clips to be used as a space-efficient programming and debugging connector",
+ "license_url": "https://github.com/SimonMerrett/SOICbite/blob/ef1ad26/LICENSE",
+ "author_url": "https://github.com/SimonMerrett",
+ "topics": [
+  "connector",
+  "debugging",
+  "eagle-cad",
+  "eagle-pcb",
+  "electronics-tools",
+  "embedded",
+  "hardware",
+  "kicad",
+  "kicad-footprints",
+  "programmer-hardware"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 3,
+  "resolved": 2,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "J1",
+    "path": "${KISYS3DMOD}/Connector_USB.3dshapes/USB_Micro-B_Wuerth_614105150721_Vertical.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.1049,
+   -0.00141,
+   0.0834
+  ],
+  "max": [
+   0.1426,
+   0.0107,
+   0.1086
+  ]
+ },
+ "rendered": "2026-10-17T18:07:20Z",
+ "kicad": "10.0.7"
+}

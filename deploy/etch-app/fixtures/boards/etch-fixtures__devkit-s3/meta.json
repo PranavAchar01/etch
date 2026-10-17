@@ -1,0 +1,37 @@
+{
+ "id": "gh:etch-fixtures/devkit-s3",
+ "slug": "etch-fixtures__devkit-s3",
+ "title": "ESP32-S3 DevKit (fixture)",
+ "owner": "etch-fixtures",
+ "repo": "devkit-s3",
+ "category": "dev-boards",
+ "stars": 128,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  60.0,
+  32.0
+ ],
+ "parts": 6,
+ "glb_bytes": 41956,
+ "url": "https://github.com/etch-fixtures/devkit-s3",
+ "commit": "0000000000000000000000000000000000000000",
+ "pcb_path": "hardware/devkit-s3.kicad_pcb",
+ "description": "A tiny generated fixture board for testing the Etch board view: ESP32-S3 module, 40-pin socket, USB-UART bridge.",
+ "license_url": "https://opensource.org/license/mit",
+ "author_url": "https://github.com/etch-fixtures",
+ "topics": [
+  "kicad",
+  "esp32",
+  "fixture"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "HASL",
+  "thickness_mm": 1.6
+ },
+ "rendered": "2026-10-17T18:00:00Z",
+ "kicad": "10.0.1"
+}

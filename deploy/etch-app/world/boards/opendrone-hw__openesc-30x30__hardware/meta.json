@@ -1,0 +1,57 @@
+{
+ "id": "gh:OpenDrone-hw/OpenESC-30x30/hardware",
+ "slug": "opendrone-hw__openesc-30x30__hardware",
+ "title": "OpenESC 30X30 · 4IN1",
+ "owner": "OpenDrone-hw",
+ "repo": "OpenESC-30x30",
+ "category": "robotics",
+ "stars": 76,
+ "license": "CERN-OHL-S-2.0",
+ "copyable": true,
+ "layers": 6,
+ "size_mm": [
+  41.58,
+  42.5
+ ],
+ "parts": 196,
+ "glb_bytes": 5298744,
+ "url": "https://github.com/OpenDrone-hw/OpenESC-30x30",
+ "commit": "bf306934b5decc130ab1df6b653563ea16165e8e",
+ "pcb_path": "hardware/4in1.kicad_pcb",
+ "description": "Open-source 4-in-1 AM32 ESC for FPV drones. 30.5x30.5 mm, 2-8S, one MCU per motor, CERN-OHL-S-2.0.",
+ "license_url": "https://github.com/OpenDrone-hw/OpenESC-30x30/blob/bf30693/LICENSE",
+ "author_url": "https://github.com/OpenDrone-hw",
+ "topics": [
+  "esc",
+  "kicad",
+  "open-hardware",
+  "status-beta"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "ENIG",
+  "thickness_mm": 1.69
+ },
+ "models": {
+  "total": 213,
+  "resolved": 213,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.05362,
+   -0.00308,
+   0.0253
+  ],
+  "max": [
+   0.09764,
+   0.00325,
+   0.07105
+  ]
+ },
+ "rendered": "2026-10-17T18:17:57Z",
+ "kicad": "10.0.7"
+}

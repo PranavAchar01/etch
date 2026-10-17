@@ -1,0 +1,59 @@
+{
+ "id": "gh:mzuelch/CATs-Eurosynth/Modules/YuSynth/Improved Steiner VCF/Electronics/Main",
+ "slug": "mzuelch__cats-eurosynth__modules__yusynth__improved-steiner-vcf__electronics__main",
+ "title": "CATs Eurosynth · YuSynth Improved Steiner VCF Main",
+ "owner": "mzuelch",
+ "repo": "CATs-Eurosynth",
+ "category": "audio",
+ "stars": 166,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  38.1,
+  101.6
+ ],
+ "parts": 68,
+ "glb_bytes": 745028,
+ "url": "https://github.com/mzuelch/CATs-Eurosynth",
+ "commit": "ee70506817f1fb5fa16a87c3e2a54a6ded8ee441",
+ "pcb_path": "Modules/YuSynth/Improved Steiner VCF/Electronics/Main/YuSynth Improved Steiner VCF Main.kicad_pcb",
+ "description": "Analog Synth Eurorack Modules",
+ "license_url": "https://github.com/mzuelch/CATs-Eurosynth/blob/ee70506/LICENSE",
+ "author_url": "https://github.com/mzuelch",
+ "topics": [
+  "eurorack",
+  "eurorack-diy",
+  "eurorack-synth",
+  "kicad",
+  "music",
+  "synthesizer"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 67,
+  "resolved": 67,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -2e-05,
+   -0.00863,
+   -2e-05
+  ],
+  "max": [
+   0.03812,
+   0.01013,
+   0.10163
+  ]
+ },
+ "rendered": "2026-10-17T18:11:51Z",
+ "kicad": "10.0.7"
+}

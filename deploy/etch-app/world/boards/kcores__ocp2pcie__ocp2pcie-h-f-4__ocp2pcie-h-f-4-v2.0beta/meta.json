@@ -1,0 +1,57 @@
+{
+ "id": "gh:KCORES/OCP2PCIe/OCP2PCIe-H-F-4/OCP2PCIe-H-F-4-V2.0Beta",
+ "slug": "kcores__ocp2pcie__ocp2pcie-h-f-4__ocp2pcie-h-f-4-v2.0beta",
+ "title": "OCP2PCIe · V1",
+ "owner": "KCORES",
+ "repo": "OCP2PCIe",
+ "category": "computing",
+ "stars": 363,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  112.05,
+  82.75
+ ],
+ "parts": 11,
+ "glb_bytes": 738356,
+ "url": "https://github.com/KCORES/OCP2PCIe",
+ "commit": "4d2b9eb8e4dc02ff2dccc568d7ee06ad82f97e78",
+ "pcb_path": "OCP2PCIe-H-F-4/OCP2PCIe-H-F-4-V2.0Beta/V1.kicad_pcb",
+ "description": "OCP Mezzanine card V2.0 to standard PCIe slot adapter design",
+ "license_url": "https://github.com/KCORES/OCP2PCIe/blob/4d2b9eb/LICENSE",
+ "author_url": "https://github.com/KCORES",
+ "topics": [
+  "kicad",
+  "ocp",
+  "ocp-mezz-card",
+  "pcie"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 6,
+  "resolved": 6,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.088,
+   -0.00141,
+   0.05125
+  ],
+  "max": [
+   0.20005,
+   0.01013,
+   0.134
+  ]
+ },
+ "rendered": "2026-10-17T18:06:39Z",
+ "kicad": "10.0.7"
+}

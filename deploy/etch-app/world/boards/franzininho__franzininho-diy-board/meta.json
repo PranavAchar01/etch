@@ -1,0 +1,62 @@
+{
+ "id": "gh:Franzininho/franzininho-diy-board",
+ "slug": "franzininho__franzininho-diy-board",
+ "title": "Franzininho Diy Board",
+ "owner": "Franzininho",
+ "repo": "franzininho-diy-board",
+ "category": "dev-boards",
+ "stars": 114,
+ "license": "CC-BY-SA-4.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  51.07,
+  30.03
+ ],
+ "parts": 23,
+ "glb_bytes": 459024,
+ "url": "https://github.com/Franzininho/franzininho-diy-board",
+ "commit": "abdb4b48d867190d6b9794280be8b85b81aa1772",
+ "pcb_path": "Franzininho DIY/Franzininho.kicad_pcb",
+ "description": "Placa Franzininho DIY - Placa compatível com Arduino no formato DIY para oficinas de soldagem",
+ "license_url": "https://github.com/Franzininho/franzininho-diy-board/blob/abdb4b4/LICENSE",
+ "author_url": "https://github.com/Franzininho",
+ "topics": [
+  "arduino",
+  "attiny85",
+  "diy",
+  "eagle-cad",
+  "kicad",
+  "openhardware",
+  "oshw",
+  "pcb-layout",
+  "placa-franzininho-diy"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 19,
+  "resolved": 19,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.10805,
+   -0.0039,
+   0.08999
+  ],
+  "max": [
+   0.17403,
+   0.01014,
+   0.12002
+  ]
+ },
+ "rendered": "2026-10-17T18:14:41Z",
+ "kicad": "10.0.7"
+}

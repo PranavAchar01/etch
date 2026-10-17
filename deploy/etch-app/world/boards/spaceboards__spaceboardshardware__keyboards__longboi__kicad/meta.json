@@ -1,0 +1,56 @@
+{
+ "id": "gh:Spaceboards/SpaceboardsHardware/Keyboards/LongBoi/kicad",
+ "slug": "spaceboards__spaceboardshardware__keyboards__longboi__kicad",
+ "title": "SpaceboardsHardware · Keyboard",
+ "owner": "Spaceboards",
+ "repo": "SpaceboardsHardware",
+ "category": "keyboards",
+ "stars": 144,
+ "license": "CERN-OHL-W-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  415.5,
+  73.0
+ ],
+ "parts": 135,
+ "glb_bytes": 2420860,
+ "url": "https://github.com/Spaceboards/SpaceboardsHardware",
+ "commit": "dd4fe15e030dee4aa9de2783cbc442bf9e349df2",
+ "pcb_path": "Keyboards/LongBoi/kicad/keyboard.kicad_pcb",
+ "description": "A collection of open source hardware that has been designed by Spaceboards",
+ "license_url": "https://github.com/Spaceboards/SpaceboardsHardware/blob/dd4fe15/LICENSE",
+ "author_url": "https://github.com/Spaceboards",
+ "topics": [
+  "keyboard",
+  "kicad",
+  "open-source"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.0145,
+   -8e-05,
+   0.02799
+  ],
+  "max": [
+   0.43,
+   0.00159,
+   0.10099
+  ]
+ },
+ "rendered": "2026-10-17T18:14:14Z",
+ "kicad": "10.0.7"
+}

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Explore boards · Etch</title>
+<meta name="description" content="Open-source circuit boards from GitHub, rendered in 3D. Open one to ask Etch about any part.">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Crect width='20' height='20' rx='5' fill='%23111'/%3E%3Cpath d='M5 13.5h4l3-3.5V6' stroke='%23fff' stroke-width='1.7' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='5.4' r='1.6' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/editor.css?v=3">
+<link rel="modulepreload" href="js/explore.js">
+<link rel="modulepreload" href="js/common.js">
+<script>
+  // start the library download before any module loads
+  (function () { var w = (new URLSearchParams(location.search).get("world") || "world").replace(/[^a-z0-9_-]/gi, "") || "world";
+    window.__index = fetch(w + "/index.json").then(function (r) { if (!r.ok) throw new Error("index " + r.status); return r.json(); }); window.__index.catch(function () {}); })();
+</script>
+</head>
+<body class="ex">
+<header class="topbar">
+  <div class="tb-left">
+    <nav class="crumb" aria-label="Breadcrumb"><a class="brand" id="homeL" href="/"><span id="logo"></span>etch</a><span class="sep">/</span><b>explore</b></nav>
+  </div>
+  <div class="tb-right"><a class="btn outline" id="buildL" href="/">Build a board</a></div>
+</header>
+<main class="ex-wrap">
+  <div class="ex-head">
+    <div>
+      <h1>Open-source boards</h1>
+      <p>Real KiCad projects from GitHub, rendered in 3D. Open one, click any part and ask Etch what it does.</p>
+    </div>
+    <label class="ex-search"><span id="sIc"></span><input id="q" type="search" placeholder="Search boards, owners, repos" autocomplete="off" aria-label="Search boards"></label>
+  </div>
+  <div class="cats" id="cats" role="tablist" aria-label="Categories"></div>
+  <div class="ex-bar">
+    <div class="count" id="count">Loading boards…</div>
+    <div class="opts">
+      <label class="toggle"><input type="checkbox" id="copyable"> Copyable only</label>
+      <select class="sel" id="sort" aria-label="Sort"><option value="popular">Popular</option><option value="recent">Recent</option></select>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="ex-empty" id="empty" hidden></div>
+  <div class="sentinel" id="more"></div>
+</main>
+<script type="module" src="js/explore.js"></script>
+</body>
+</html>

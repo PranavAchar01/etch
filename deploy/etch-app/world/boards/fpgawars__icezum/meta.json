@@ -1,0 +1,60 @@
+{
+ "id": "gh:FPGAwars/icezum",
+ "slug": "fpgawars__icezum",
+ "title": "Icezum",
+ "owner": "FPGAwars",
+ "repo": "icezum",
+ "category": "computing",
+ "stars": 357,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  68.58,
+  53.34
+ ],
+ "parts": 211,
+ "glb_bytes": 2958688,
+ "url": "https://github.com/FPGAwars/icezum",
+ "commit": "dbad423670419b82018bf6e33c418fc35558c1be",
+ "pcb_path": "src-kicad/icezum.kicad_pcb",
+ "description": ":star2: IceZUM Alhambra: an Arduino-like Open FPGA electronic board",
+ "license_url": "https://github.com/FPGAwars/icezum/blob/dbad423/LICENSE",
+ "author_url": "https://github.com/FPGAwars",
+ "topics": [
+  "alhambra",
+  "board",
+  "fpga",
+  "ice40",
+  "icezum",
+  "kicad",
+  "lattice"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 189,
+  "resolved": 189,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.09443,
+   -0.0024,
+   0.08856
+  ],
+  "max": [
+   0.16593,
+   0.01279,
+   0.14423
+  ]
+ },
+ "rendered": "2026-10-17T18:09:02Z",
+ "kicad": "10.0.7"
+}

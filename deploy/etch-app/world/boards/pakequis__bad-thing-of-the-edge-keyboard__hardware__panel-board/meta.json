@@ -1,0 +1,60 @@
+{
+ "id": "gh:Pakequis/Bad-Thing-of-the-Edge-keyboard/Hardware/Panel-board",
+ "slug": "pakequis__bad-thing-of-the-edge-keyboard__hardware__panel-board",
+ "title": "Bad Thing Of The Edge Keyboard · Panel",
+ "owner": "Pakequis",
+ "repo": "Bad-Thing-of-the-Edge-keyboard",
+ "category": "keyboards",
+ "stars": 45,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  118.62,
+  145.85
+ ],
+ "parts": 6,
+ "glb_bytes": 69428,
+ "url": "https://github.com/Pakequis/Bad-Thing-of-the-Edge-keyboard",
+ "commit": "f7e73685d0bc05957b2d3bedc635b2414c79a013",
+ "pcb_path": "Hardware/Panel-board/panel.kicad_pcb",
+ "description": "Mechanical keyboard for left hand with Raspberry Pi Pico for games.",
+ "license_url": "https://github.com/Pakequis/Bad-Thing-of-the-Edge-keyboard/blob/f7e7368/LICENSE",
+ "author_url": "https://github.com/Pakequis",
+ "topics": [
+  "electronics",
+  "hardware",
+  "kicad",
+  "mechanical-keyboard",
+  "open-hardware",
+  "platformio",
+  "raspberry-pi-pico"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 0,
+  "resolved": 0,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -1943.38396,
+   -25.95904,
+   -2389.383
+  ],
+  "max": [
+   1943.57928,
+   25.96055,
+   2389.5793
+  ]
+ },
+ "rendered": "2026-10-17T17:56:58Z",
+ "kicad": "10.0.7"
+}

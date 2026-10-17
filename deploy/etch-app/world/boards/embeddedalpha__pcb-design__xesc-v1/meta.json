@@ -1,0 +1,57 @@
+{
+ "id": "gh:embeddedalpha/PCB-Design/XESC v1",
+ "slug": "embeddedalpha__pcb-design__xesc-v1",
+ "title": "PCB Design · XESC",
+ "owner": "embeddedalpha",
+ "repo": "PCB-Design",
+ "category": "everything-else",
+ "stars": 76,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  30.0,
+  46.0
+ ],
+ "parts": 93,
+ "glb_bytes": 301812,
+ "url": "https://github.com/embeddedalpha/PCB-Design",
+ "commit": "a6170a87b2f39b09be0f116fe120563eab830cb1",
+ "pcb_path": "XESC v1/XESC.kicad_pcb",
+ "description": "Repository for PCB Design Projects",
+ "license_url": "https://github.com/embeddedalpha/PCB-Design/blob/a6170a8/LICENSE",
+ "author_url": "https://github.com/embeddedalpha",
+ "topics": [
+  "kicad",
+  "kicad-breakout-board",
+  "pcb-design",
+  "pcb-layout"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 86,
+  "resolved": 86,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.0678,
+   -0.0024,
+   0.0108
+  ],
+  "max": [
+   0.24314,
+   0.0266,
+   0.1027
+  ]
+ },
+ "rendered": "2026-10-17T18:17:12Z",
+ "kicad": "10.0.7"
+}

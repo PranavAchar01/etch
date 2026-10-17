@@ -1,0 +1,68 @@
+{
+ "id": "gh:ravinrabbid/DonCon2040/pcb/DonConPad",
+ "slug": "ravinrabbid__doncon2040__pcb__donconpad",
+ "title": "DonCon2040 · DonConPad",
+ "owner": "ravinrabbid",
+ "repo": "DonCon2040",
+ "category": "dev-boards",
+ "stars": 65,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  78.74,
+  40.64
+ ],
+ "parts": 31,
+ "glb_bytes": 537744,
+ "url": "https://github.com/ravinrabbid/DonCon2040",
+ "commit": "f6edcc2edcf1ff30bb5ebe515b26a70f7afb1d83",
+ "pcb_path": "pcb/DonConPad/DonConPad.kicad_pcb",
+ "description": "RP2040 based firmware and hardware for DIY Taiko no Tatsujin Drum Controllers",
+ "license_url": "https://github.com/ravinrabbid/DonCon2040/blob/f6edcc2/LICENSE",
+ "author_url": "https://github.com/ravinrabbid",
+ "topics": [
+  "arcade-controller",
+  "controller",
+  "drum",
+  "dualshock3",
+  "dualshock4",
+  "game-controller",
+  "gamepad",
+  "kicad",
+  "midi-controller",
+  "rp2040",
+  "rp2350",
+  "switch-controller",
+  "taiko",
+  "taiko-no-tatsujin",
+  "xinput-controller"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "None",
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 25,
+  "resolved": 25,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -1289.89595,
+   -189.06122,
+   -665.80773
+  ],
+  "max": [
+   1290.17789,
+   189.06995,
+   666.00077
+  ]
+ },
+ "rendered": "2026-10-17T17:54:49Z",
+ "kicad": "10.0.7"
+}

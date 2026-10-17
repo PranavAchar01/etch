@@ -1,0 +1,71 @@
+{
+ "id": "gh:newdigate/teensy-eurorack/hardware/boards/teensy-eurorack",
+ "slug": "newdigate__teensy-eurorack__hardware__boards__teensy-eurorack",
+ "title": "Teensy Eurorack · Boards",
+ "owner": "newdigate",
+ "repo": "teensy-eurorack",
+ "category": "audio",
+ "stars": 259,
+ "license": "MIT",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  118.11,
+  101.6
+ ],
+ "parts": 100,
+ "glb_bytes": 2740084,
+ "url": "https://github.com/newdigate/teensy-eurorack",
+ "commit": "237c0e698e3afaa43a0606a6f96fa6ea0d4e08a0",
+ "pcb_path": "hardware/boards/teensy-eurorack.kicad_pcb",
+ "description": "Hardware Design: Eurorack shield for teensy 4.1 with 14 in / 16 out analog channels",
+ "license_url": "https://github.com/newdigate/teensy-eurorack/blob/237c0e6/LICENSE",
+ "author_url": "https://github.com/newdigate",
+ "topics": [
+  "analog",
+  "audio",
+  "control-voltage",
+  "design",
+  "diy",
+  "eurorack",
+  "eurorack-diy",
+  "eurorack-shield",
+  "hardware",
+  "kicad",
+  "maker",
+  "microcontroller",
+  "panel",
+  "pcb",
+  "printed-circuit-boards",
+  "synth",
+  "synthesizer",
+  "teensy"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 99,
+  "resolved": 99,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.08966,
+   -0.00863,
+   0.04369
+  ],
+  "max": [
+   0.20777,
+   0.02933,
+   0.14529
+  ]
+ },
+ "rendered": "2026-10-17T18:09:00Z",
+ "kicad": "10.0.7"
+}

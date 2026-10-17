@@ -1,0 +1,63 @@
+{
+ "id": "gh:RespiraWorks/Ventilator/pcb/sensor-daughterboards/pressure_XGZP6897A",
+ "slug": "respiraworks__ventilator__pcb__sensor-daughterboards__pressure_xgzp6897a",
+ "title": "Ventilator · Pressure XGZP6897A",
+ "owner": "RespiraWorks",
+ "repo": "Ventilator",
+ "category": "everything-else",
+ "stars": 169,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  42.0,
+  25.0
+ ],
+ "parts": 12,
+ "glb_bytes": 218376,
+ "url": "https://github.com/RespiraWorks/Ventilator",
+ "commit": "6165c82de293d66b71f43040a2f145ab70bb49c0",
+ "pcb_path": "pcb/sensor-daughterboards/pressure_XGZP6897A/pressure_XGZP6897A.kicad_pcb",
+ "description": "Fully-featured ICU ventilator design, optimized for manufacture using commonly available components and free to license. Repository tracks all mechanical, electrical and systems design, software, requirements and regulatory documentation.",
+ "license_url": "https://github.com/RespiraWorks/Ventilator/blob/6165c82/LICENSE",
+ "author_url": "https://github.com/RespiraWorks",
+ "topics": [
+  "cad",
+  "covid-19",
+  "kicad",
+  "manufacturing",
+  "medical-devices",
+  "open-source",
+  "pcb-design",
+  "software",
+  "ventilator",
+  "ventilator-designs"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 7,
+  "resolved": 7,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.119,
+   -5e-05,
+   0.0775
+  ],
+  "max": [
+   0.161,
+   0.009,
+   0.1025
+  ]
+ },
+ "rendered": "2026-10-17T18:11:18Z",
+ "kicad": "10.0.7"
+}

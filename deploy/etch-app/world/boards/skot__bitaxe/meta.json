@@ -1,0 +1,61 @@
+{
+ "id": "gh:skot/bitaxe",
+ "slug": "skot__bitaxe",
+ "title": "Bitaxe",
+ "owner": "skot",
+ "repo": "bitaxe",
+ "category": "everything-else",
+ "stars": 1374,
+ "license": "CERN-OHL-S-2.0",
+ "copyable": true,
+ "layers": 4,
+ "size_mm": [
+  56.54,
+  99.76
+ ],
+ "parts": 135,
+ "glb_bytes": 1603136,
+ "url": "https://github.com/skot/bitaxe",
+ "commit": "942bbd97aab09b12d826c6e82c64f3fb91246c4c",
+ "pcb_path": "bitaxeUltra.kicad_pcb",
+ "description": "Open source ASIC Bitcoin miner hardware",
+ "license_url": "https://github.com/skot/bitaxe/blob/942bbd9/LICENSE",
+ "author_url": "https://github.com/skot",
+ "topics": [
+  "bitaxe",
+  "bitcoin",
+  "bm1366",
+  "bm1387",
+  "bm1397",
+  "hardware",
+  "kicad",
+  "mining"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 88,
+  "resolved": 88,
+  "hidden": 2,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.07719,
+   -0.01467,
+   0.04752
+  ],
+  "max": [
+   0.13374,
+   0.00739,
+   0.14728
+  ]
+ },
+ "rendered": "2026-10-17T18:02:50Z",
+ "kicad": "10.0.7"
+}

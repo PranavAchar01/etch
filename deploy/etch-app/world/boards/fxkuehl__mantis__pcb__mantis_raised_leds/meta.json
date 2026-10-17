@@ -1,0 +1,56 @@
+{
+ "id": "gh:fxkuehl/mantis/pcb/mantis_raised_leds",
+ "slug": "fxkuehl__mantis__pcb__mantis_raised_leds",
+ "title": "Mantis · Mantis Raised Leds",
+ "owner": "fxkuehl",
+ "repo": "mantis",
+ "category": "keyboards",
+ "stars": 146,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  131.46,
+  107.48
+ ],
+ "parts": 59,
+ "glb_bytes": 1031200,
+ "url": "https://github.com/fxkuehl/mantis",
+ "commit": "c89ad02468c95bb6960cbd860d6abbe0f809cd01",
+ "pcb_path": "pcb/mantis_raised_leds.kicad_pcb",
+ "description": "Mantis hex ergo keyboard",
+ "license_url": "https://github.com/fxkuehl/mantis/blob/c89ad02/LICENSE",
+ "author_url": "https://github.com/fxkuehl",
+ "topics": [
+  "ergogen",
+  "keyboard",
+  "kicad"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 2,
+  "resolved": 2,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.18827,
+   -0.00376,
+   0.06031
+  ],
+  "max": [
+   0.31973,
+   0.01013,
+   0.1678
+  ]
+ },
+ "rendered": "2026-10-17T18:13:11Z",
+ "kicad": "10.0.7"
+}

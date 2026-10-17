@@ -1,0 +1,70 @@
+{
+ "id": "gh:CRImier/MyKiCad/Reverse-engineering/typec_interposer",
+ "slug": "crimier__mykicad__reverse-engineering__typec_interposer",
+ "title": "MyKiCad · Typec Interposer",
+ "owner": "CRImier",
+ "repo": "MyKiCad",
+ "category": "everything-else",
+ "stars": 253,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  28.0,
+  10.6
+ ],
+ "parts": 10,
+ "glb_bytes": 187276,
+ "url": "https://github.com/CRImier/MyKiCad",
+ "commit": "4f01eaa6b3b0a269570c711e58ba4bf0f8446d11",
+ "pcb_path": "Reverse-engineering/typec_interposer/typec_interposer.kicad_pcb",
+ "description": "My KiCad boards. Can't be bothered uploading individually anymore, so here you go.",
+ "license_url": "https://github.com/CRImier/MyKiCad/blob/4f01eaa/LICENSE",
+ "author_url": "https://github.com/CRImier",
+ "topics": [
+  "breakouts",
+  "kicad",
+  "pcb",
+  "pcb-design",
+  "pcb-layout",
+  "pcbs"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 10,
+  "resolved": 8,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "J2",
+    "path": "${KISYS3DMOD}/Connector_USB.3dshapes/USB_C_Receptacle_HRO_TYPE-C-31-M-12.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J1",
+    "path": "${KISYS3DMOD}/Connector_USB.3dshapes/USB_C_Receptacle_HRO_TYPE-C-31-M-12.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.121,
+   -0.00141,
+   0.0672
+  ],
+  "max": [
+   0.149,
+   0.01013,
+   0.0778
+  ]
+ },
+ "rendered": "2026-10-17T18:09:18Z",
+ "kicad": "10.0.7"
+}

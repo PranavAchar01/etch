@@ -1,0 +1,75 @@
+{
+ "id": "gh:tzarc/keyboards/Ghoul/v1.0",
+ "slug": "tzarc__keyboards__ghoul__v1.0",
+ "title": "Keyboards · Ghoul",
+ "owner": "tzarc",
+ "repo": "keyboards",
+ "category": "keyboards",
+ "stars": 988,
+ "license": "CERN-OHL-S-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  228.6,
+  79.44
+ ],
+ "parts": 184,
+ "glb_bytes": 5007348,
+ "url": "https://github.com/tzarc/keyboards",
+ "commit": "21dd586153f70b0247c3c38f8a8070891e49041d",
+ "pcb_path": "Ghoul/v1.0/ghoul.kicad_pcb",
+ "description": "@tzarc's custom keyboard designs.",
+ "license_url": "https://github.com/tzarc/keyboards/blob/21dd586/LICENSE",
+ "author_url": "https://github.com/tzarc",
+ "topics": [
+  "diy",
+  "ergonomic-keyboard",
+  "hardware",
+  "keyboard",
+  "kicad",
+  "mechanical-keyboard",
+  "mechanical-keyboards",
+  "pcb",
+  "qmk",
+  "split-keyboard",
+  "split-keyboards"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 216,
+  "resolved": 214,
+  "hidden": 0,
+  "missing": [
+   {
+    "ref": "U9",
+    "path": "${KICAD6_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-8_5.23x5.23mm_P1.27mm.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   },
+   {
+    "ref": "J2",
+    "path": "${KICAD6_3DMODEL_DIR}/Connector_USB.3dshapes/USB_C_Receptacle_HRO_TYPE-C-31-M-12.wrl",
+    "reason": "the KiCad library has no such model (KiCad shows none either)"
+   }
+  ]
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.02143,
+   -0.00258,
+   0.0182
+  ],
+  "max": [
+   0.25003,
+   0.0266,
+   0.09763
+  ]
+ },
+ "rendered": "2026-10-17T18:07:11Z",
+ "kicad": "10.0.7"
+}

@@ -1,0 +1,59 @@
+{
+ "id": "gh:KCORES/KCORES-FlexibleLOM-Adapter",
+ "slug": "kcores__kcores-flexiblelom-adapter",
+ "title": "KCORES FlexibleLOM Adapter",
+ "owner": "KCORES",
+ "repo": "KCORES-FlexibleLOM-Adapter",
+ "category": "tools",
+ "stars": 316,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  96.3,
+  30.25
+ ],
+ "parts": 5,
+ "glb_bytes": 725748,
+ "url": "https://github.com/KCORES/KCORES-FlexibleLOM-Adapter",
+ "commit": "2401923550d467905b3312f506ad84a59c6e1417",
+ "pcb_path": "Electricals/KCORES-FlexibleLOM-Adapter/KCORES-FlexibleLOM-Adapter.kicad_pcb",
+ "description": "KCORES FlexibleLOM to PCIe x8 adapter and baffle model",
+ "license_url": "https://github.com/KCORES/KCORES-FlexibleLOM-Adapter/blob/2401923/LICENSE",
+ "author_url": "https://github.com/KCORES",
+ "topics": [
+  "544flr",
+  "561flr",
+  "flexiblelom",
+  "flr",
+  "kcores",
+  "kicad"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 1,
+  "resolved": 1,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.07935,
+   -0.00291,
+   0.1132
+  ],
+  "max": [
+   0.17565,
+   0.00588,
+   0.15345
+  ]
+ },
+ "rendered": "2026-10-17T18:07:44Z",
+ "kicad": "10.0.7"
+}

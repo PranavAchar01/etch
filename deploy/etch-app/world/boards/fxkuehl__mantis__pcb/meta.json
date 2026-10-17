@@ -1,0 +1,56 @@
+{
+ "id": "gh:fxkuehl/mantis/pcb",
+ "slug": "fxkuehl__mantis__pcb",
+ "title": "Mantis · Mantis Reversible Split Leds",
+ "owner": "fxkuehl",
+ "repo": "mantis",
+ "category": "keyboards",
+ "stars": 146,
+ "license": "GPL-3.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  111.0,
+  130.59
+ ],
+ "parts": 43,
+ "glb_bytes": 900276,
+ "url": "https://github.com/fxkuehl/mantis",
+ "commit": "c89ad02468c95bb6960cbd860d6abbe0f809cd01",
+ "pcb_path": "pcb/mantis_reversible_split_leds.kicad_pcb",
+ "description": "Mantis hex ergo keyboard",
+ "license_url": "https://github.com/fxkuehl/mantis/blob/c89ad02/LICENSE",
+ "author_url": "https://github.com/fxkuehl",
+ "topics": [
+  "ergogen",
+  "keyboard",
+  "kicad"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": null,
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 1,
+  "resolved": 1,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   0.143,
+   -0.00141,
+   0.05102
+  ],
+  "max": [
+   0.25527,
+   0.01013,
+   0.18161
+  ]
+ },
+ "rendered": "2026-10-17T18:13:00Z",
+ "kicad": "10.0.7"
+}

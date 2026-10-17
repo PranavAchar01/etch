@@ -1,0 +1,57 @@
+{
+ "id": "gh:siderakb/rp-micro",
+ "slug": "siderakb__rp-micro",
+ "title": "Rp Micro",
+ "owner": "siderakb",
+ "repo": "rp-micro",
+ "category": "dev-boards",
+ "stars": 65,
+ "license": "CERN-OHL-P-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  17.78,
+  33.02
+ ],
+ "parts": 44,
+ "glb_bytes": 663244,
+ "url": "https://github.com/siderakb/rp-micro",
+ "commit": "a7baf36025b974ed55b4676ad1e9f7e79f16bba1",
+ "pcb_path": "hardware/rp-micro.kicad_pcb",
+ "description": "Pro Micro/Elite-Pi compatible RP2040 board with USB-C, 8MB flash and up to 25 GPIOs",
+ "license_url": "https://github.com/siderakb/rp-micro/blob/a7baf36/LICENSE",
+ "author_url": "https://github.com/siderakb",
+ "topics": [
+  "kicad",
+  "oshw",
+  "pcb",
+  "rp2040"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "None",
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 37,
+  "resolved": 37,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -291.1958,
+   -189.06688,
+   -540.90959
+  ],
+  "max": [
+   291.4752,
+   189.07561,
+   541.05691
+  ]
+ },
+ "rendered": "2026-10-17T17:54:33Z",
+ "kicad": "10.0.7"
+}

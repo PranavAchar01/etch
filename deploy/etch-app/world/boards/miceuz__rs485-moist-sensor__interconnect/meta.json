@@ -1,0 +1,60 @@
+{
+ "id": "gh:Miceuz/rs485-moist-sensor/interconnect",
+ "slug": "miceuz__rs485-moist-sensor__interconnect",
+ "title": "RS485 Moist Sensor · Interconnect",
+ "owner": "Miceuz",
+ "repo": "rs485-moist-sensor",
+ "category": "iot",
+ "stars": 74,
+ "license": "Apache-2.0",
+ "copyable": true,
+ "layers": 2,
+ "size_mm": [
+  37.5,
+  35.5
+ ],
+ "parts": 4,
+ "glb_bytes": 233208,
+ "url": "https://github.com/Miceuz/rs485-moist-sensor",
+ "commit": "8cba0cd29e35b25de832e92b6521192ec9c6ec69",
+ "pcb_path": "interconnect/interconnect.kicad_pcb",
+ "description": "Digital (RS485 - based) soil moisture and temperature sensor ",
+ "license_url": "https://github.com/Miceuz/rs485-moist-sensor/blob/8cba0cd/LICENSE",
+ "author_url": "https://github.com/Miceuz",
+ "topics": [
+  "avr",
+  "electronics",
+  "kicad",
+  "moisture",
+  "rs485",
+  "sensor",
+  "soil-moisture"
+ ],
+ "board": {
+  "mask": "green",
+  "silk": "white",
+  "finish": "HAL lead-free",
+  "thickness_mm": 1.6
+ },
+ "models": {
+  "total": 4,
+  "resolved": 4,
+  "hidden": 0,
+  "missing": []
+ },
+ "identical": true,
+ "glb_bounds_m": {
+  "min": [
+   -614.27052,
+   -265.41078,
+   -581.50902
+  ],
+  "max": [
+   614.49202,
+   265.42325,
+   581.70352
+  ]
+ },
+ "rendered": "2026-10-17T17:53:57Z",
+ "kicad": "10.0.7"
+}
