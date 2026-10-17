@@ -66,11 +66,12 @@
     <nav class="crumb" aria-label="Breadcrumb">
       <a class="brand" id="homeL" href="explore"><span id="logo"></span><span class="hide-sm">etch</span></a>
       <span class="sep hide-sm">/</span><a id="exL" class="hide-sm" href="explore">explore</a>
-      <span class="sep">/</span><h1 class="title" id="crTitle">Board</h1>
+      <span class="sep">/</span><h1 class="title" id="crTitle" title="Click to rename">Board</h1><span class="sv" id="savedDot" role="status" aria-live="polite"></span>
     </nav>
     <div class="top-r">
       <span class="relpos"><button class="btn" id="importB" aria-haspopup="menu">Import</button><div class="pop menu" id="importPop" role="menu"></div></span>
       <span class="relpos"><button class="btn" id="exportB" aria-haspopup="menu">Export</button><div class="pop menu" id="exportPop" role="menu"></div></span>
+      <button class="btn" id="saveB" title="Save to My boards (Ctrl+S). Kept in this browser only.">Save</button>
       <button class="btn dark" id="shareB">Share</button>
     </div>
   </div>

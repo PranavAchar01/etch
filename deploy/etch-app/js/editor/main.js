@@ -19,6 +19,7 @@ import { createBoardList } from "./board-list.js";
 import { createDrop } from "./drop.js";
 import { createNewBoardHero } from "./new-board.js";
 import { createStartBackdrop } from "./start-backdrop.js";
+import * as mine from "../my-boards.js";
 import { bindLiquid, liquidTabs, wobble } from "../ui/goo.js";
 
 registerSW();
@@ -324,9 +325,11 @@ function blockedDrop() { const why = changeBlock(); if (!why) return false; emot
 
 // ---------- credits (required by the boards' licences) ----------
 function showMeta(m) {
-  const title = m.title || ID || "Board";
+  const title = mine.get(board.id)?.title || m.title || board.id || ID || "Board";
+  board.title = title;
   $("crTitle").textContent = title;
   document.title = `${title} · Etch`;
+  paintSaved();
   const c = $("credits"); c.textContent = "";
   if (m.owner && m.repo) {
     const href = (m.url || `https://github.com/${m.owner}/${m.repo}`) + (m.commit ? `/tree/${m.commit}` : "");
@@ -440,6 +443,8 @@ async function loadDesign({ run, done = false } = {}) {
     backdrop?.remove(); backdrop = null;
     arrived();
     if (mock) remember(id);
+    // Etch's build is kept in My boards straight away, named from what was asked (rename it in the title)
+    if (board.prompt) { const t = mine.nameFrom(board.prompt); saveBoard({ quiet: true, title: t }); showMeta(board.meta); toast(`Saved as “${t}” in My boards`); }
     loadedRun = key;
   } catch (e) {
     toast("Couldn't load the new board: " + e.message);
@@ -475,6 +480,7 @@ let hero = null;
 function startDesign(text) {
   if (board.building) { dock.say("I'm still building your board. Give me a minute."); return; }
   board.building = true;
+  board.prompt = text;
   if (hero?.open) hero.collapse();
   document.body.classList.remove("nb-on");
   viewer.lookFrom([0, 1, 0.18], { fitBox: true }); // the camera eases in onto the workplane, still from above
@@ -579,6 +585,8 @@ async function startNew() {
   hero = createNewBoardHero($("stage"), {
     initial: Q.get("from") === "library" ? "library" : "scratch",
     recent: recent(),
+    mine: mine.list(),
+    mineHref: (b) => page("board") + carry({ id: b.id, ...(/^gh:/.test(b.id) ? { remix: 1 } : {}) }),
     boardHref: (b) => page("board") + carry({ id: b.id, remix: 1 }),
     target: dockPill,
     onSubmit: (t) => { sendViaDock(t); dock.nudge?.(); },
@@ -690,6 +698,64 @@ async function main() {
 
 // change requests (typed or spoken) start the change flow; everything else is a question
 const CHANGE = /^(please\s+|can you\s+|could you\s+|etch,?\s+)*(change|make|turn|swap|replace|add|remove|delete|move|rotate|use|switch|recolou?r|paint|shrink|enlarge|widen|route|duplicate)\b/i;
+
+// ---------- rename + save to My boards (this browser only, js/my-boards.js) ----------
+const canSave = () => !!board.id && board.kind !== "new" && !board.local;
+function paintSaved() {
+  const el = $("savedDot"); if (!el) return;
+  $("saveB").disabled = !canSave();
+  if (!canSave()) { el.textContent = ""; el.className = "sv"; return; }
+  const s = mine.get(board.id), ok = !!s && s.title === board.title;
+  el.className = "sv " + (ok ? "saved" : "unsaved");
+  el.textContent = ok ? "Saved" : "Not saved";
+  el.title = ok ? "In My boards, in this browser" : "Save it to My boards with Ctrl+S";
+}
+function saveBoard({ quiet = false, title = board.title } = {}) {
+  if (!canSave()) { if (!quiet) toast("Nothing to save yet."); return false; }
+  const m = board.meta || {};
+  const ok = mine.save({ id: board.id, title: title || m.title || board.id, thumb: mine.thumbFor(board.id, apiBase), owner: m.owner || (board.live ? "Etch build" : ""), repo: m.repo || "", category: m.category || "", license: m.license || "", prompt: board.prompt || undefined });
+  if (ok) { board.title = title; paintSaved(); if (!quiet) { toast("Saved to My boards"); emote("nod"); } }
+  else if (!quiet) toast("This browser won't keep it (storage is full or off).");
+  return ok;
+}
+$("saveB").onclick = () => { saveBoard(); wobble($("saveB")); };
+let renameFrom = null;
+function startRename() {
+  if (!canSave() || renameFrom != null) return;
+  const t = $("crTitle");
+  renameFrom = t.textContent;
+  t.contentEditable = "true"; t.spellcheck = false;
+  t.focus();
+  const r = document.createRange(); r.selectNodeContents(t); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r);
+}
+function endRename(keep) {
+  const t = $("crTitle"); if (renameFrom == null) return;
+  const v = t.textContent.replace(/\s+/g, " ").trim().slice(0, 80);
+  const before = renameFrom; renameFrom = null; // first: turning contentEditable off blurs, and blur ends a rename too
+  t.contentEditable = "false";
+  if (!keep || !v || v === before) { t.textContent = before; return; }
+  t.textContent = v; board.title = v; document.title = `${v} · Etch`;
+  if (mine.get(board.id)) saveBoard({ quiet: true, title: v }); // already in My boards: the new name is kept at once
+  paintSaved();
+  toast(mine.get(board.id) ? "Renamed" : "Renamed. Save to keep it.");
+}
+$("crTitle").addEventListener("click", startRename);
+$("crTitle").addEventListener("keydown", (e) => {
+  if (renameFrom == null) return;
+  if (e.key === "Enter") { e.preventDefault(); endRename(true); $("crTitle").blur(); }
+  else if (e.key === "Escape") { e.preventDefault(); endRename(false); $("crTitle").blur(); }
+  e.stopPropagation();
+});
+$("crTitle").addEventListener("blur", () => endRename(true));
+$("crTitle").addEventListener("paste", (e) => { if (renameFrom == null) return; e.preventDefault(); document.execCommand("insertText", false, (e.clipboardData?.getData("text/plain") || "").replace(/\s+/g, " ")); });
+mine.onChange(() => paintSaved());
+paintSaved();
+// capture phase, registered before the dock's own keys: Esc while renaming cancels instead of blurring (which saves)
+addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); if (renameFrom != null) endRename(true); saveBoard(); }
+  else if (renameFrom != null && e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); endRename(false); $("crTitle").blur(); }
+  else if (renameFrom != null && e.key === "Enter") { e.preventDefault(); e.stopImmediatePropagation(); endRename(true); $("crTitle").blur(); }
+}, true);
 
 // ---------- keyboard ----------
 const typing = () => { const a = document.activeElement; return a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT" || a.isContentEditable); };

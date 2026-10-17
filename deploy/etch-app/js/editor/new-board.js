@@ -50,7 +50,7 @@ const SPARKLE = `<svg class="nb-spark" viewBox="0 0 24 24" aria-hidden="true">${
 // a little stack of white cards, each with a board on it
 const STACK = '<span class="nb-stack" aria-hidden="true">' + [0, 1, 2].map((i) => `<i class="c c${i}"><b></b><s></s><s class="w"></s></i>`).join("") + "</span>";
 
-export function createNewBoardHero(host, { onSubmit, onMic, onPick, boardHref = () => "#", target = () => null, initial = "scratch", recent = [], max = 400 } = {}) {
+export function createNewBoardHero(host, { onSubmit, onMic, onPick, boardHref = () => "#", target = () => null, initial = "scratch", recent = [], mine = [], mineHref = () => "#", max = 400 } = {}) {
   let gone = false, done = null, typeT = 0, mode = initial === "library" ? "library" : "scratch";
   const root = el("div", "nb", { role: "dialog", "aria-modal": "false", "aria-labelledby": "nbT" });
   const veil = el("div", "nb-veil");
@@ -93,6 +93,26 @@ export function createNewBoardHero(host, { onSubmit, onMic, onPick, boardHref = 
   const paneS = el("div", "nb-pane", { id: "nbPane-scratch", role: "tabpanel", "aria-labelledby": "nbTab-scratch" }, form, el("h3", "nb-sl", {}, "Popular starts"), starts);
 
   // ---- pane 2: library ----
+  // "My boards" (saved in this browser) first, when there are any
+  const mineL = el("h3", "nb-sl", { hidden: !mine.length }, "My boards");
+  const mineS = el("div", "nb-strip nb-recent nb-mine", { role: "list", hidden: !mine.length });
+  mine.slice(0, 4).forEach((b) => {
+    const img = b.thumb ? el("img", "", { src: b.thumb, alt: "", loading: "eager", decoding: "async" }) : null;
+    if (img) {
+      img.addEventListener("load", () => { const cv = /^gh:/.test(b.id) ? keyBackdrop(img) : null; if (cv) { cv.className = "in"; img.replaceWith(cv); } else img.classList.add("in"); }, { once: true });
+      img.addEventListener("error", () => img.remove(), { once: true });
+    }
+    const a = el("a", "nb-bc sm", { href: mineHref(b), role: "listitem", "aria-label": `${b.title}, one of your boards` },
+      el("div", "nb-th", {}, img),
+      el("div", "nb-info", {}, el("div", "nb-l1", {}, el("span", "nb-yours", {}, "Yours"), el("span", "who", {}, b.owner || "")), el("div", "nb-l2", {}, el("span", "t", {}, b.title))));
+    if (/^gh:/.test(b.id)) a.addEventListener("click", (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0 || gone) return;
+      e.preventDefault(); a.classList.add("picked");
+      collapse().then(() => onPick && onPick({ id: b.id, title: b.title, slug: b.id.replace(/^gh:/, "").toLowerCase().replace(/\//g, "__").replace(/[^a-z0-9_.-]/g, "-") }));
+    });
+    squish(a, { amount: 0.4 });
+    mineS.append(a);
+  });
   const recentL = el("h3", "nb-sl", {}, recent.length ? "Recently opened" : "Popular boards");
   const recentS = el("div", "nb-strip nb-recent", { role: "list" });
   const q = el("input", "nb-q", { type: "search", placeholder: "Search boards: title, owner, repo…", "aria-label": "Search boards", autocomplete: "off", spellcheck: "false" });
@@ -103,7 +123,7 @@ export function createNewBoardHero(host, { onSubmit, onMic, onPick, boardHref = 
   const note = el("div", "nb-note", { role: "status" }, "Loading the library…");
   const moreB = el("button", "nb-more lq-btn", { type: "button", hidden: true }, "Show more boards");
   const paneL = el("div", "nb-pane", { id: "nbPane-library", role: "tabpanel", "aria-labelledby": "nbTab-library" },
-    recentL, recentS, el("div", "nb-lhead", {}, el("h3", "nb-sl", {}, "Every board you can copy"), qWrap), cats, note, grid, moreB);
+    mineL, mineS, recentL, recentS, el("div", "nb-lhead", {}, el("h3", "nb-sl", {}, "Every board you can copy"), qWrap), cats, note, grid, moreB);
 
   const panes = el("div", "nb-panes", {}, paneS, paneL);
   card.append(title, sub, choices, panes);

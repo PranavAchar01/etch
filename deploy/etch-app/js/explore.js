@@ -1,10 +1,11 @@
 // Explore: the open-source board library (world/index.json). Category chips with a liquid indicator, an
 // expanding search, a licence switch, sort, a lazily filled grid of springy cards, and prefetch: boards near the
 // viewport get their small files warmed into Cache Storage, a hovered or touched board its GLB as well.
-import { Q, $, h, esc, icon, LOGO, carry, page, fmtStars, prefetchBoard, cachedFetch, boardFiles, WORLD, registerSW } from "./common.js";
+import { Q, $, h, esc, icon, LOGO, carry, page, fmtStars, prefetchBoard, cachedFetch, boardFiles, WORLD, registerSW, ago, toast, isLive, slugOf } from "./common.js";
 
 import { spring, reducedMotion } from "./ui/spring.js";
 import { gooFilter } from "./ui/goo.js";
+import * as mine from "./my-boards.js";
 
 registerSW();
 $("logo").innerHTML = LOGO;
@@ -421,3 +422,61 @@ try {
   const em = $("empty"); em.hidden = false;
   em.innerHTML = `<b>The library isn't here yet</b>No <code>${esc(WORLD)}index.json</code> on this server. Try <a href="${page("explore")}?world=fixtures">the fixture library</a>.`;
 }
+
+// ---- My boards: what the person saved in the editor, first, in the same white cards (js/my-boards.js) ----
+const DOTS = '<svg class="ic" width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true"><circle cx="4.5" cy="9" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="13.5" cy="9" r="1.4"/></svg>';
+let apiBase = "";
+fetch("config.json", { cache: "no-store" }).then((r) => r.json()).then((c) => { apiBase = String(Q.get("api") || c.api || "").replace(/\/$/, ""); renderMine(); }).catch(() => {});
+function closeMenus() { for (const m of document.querySelectorAll(".mine-menu")) m.remove(); }
+addEventListener("click", (e) => { if (!e.target.closest(".mine-menu, .mine-more")) closeMenus(); });
+addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenus(); });
+function mineCard(b, i) {
+  const live = isLive(b.id), slug = live ? "" : slugOf(b.id);
+  const src = live ? mine.thumbFor(b.id, apiBase) : boardFiles(slug).thumb;
+  const img = src ? h("img", { src, alt: "", width: "640", height: "400", loading: "lazy", decoding: "async" }) : null;
+  if (img) {
+    img.addEventListener("load", () => (live ? img.classList.add("in") : keyQueue(img, slug)), { once: true });
+    img.addEventListener("error", () => img.remove(), { once: true });
+  }
+  const sub = [b.owner || (live ? "Etch build" : ""), b.updated ? "saved " + ago(b.updated / 1000) : ""].filter(Boolean).join(" · ");
+  const t = h("span", { class: "t" }, b.title);
+  const c = h("article", { class: "card mine-card", "data-id": b.id, style: `--i:${Math.min(i, 12)}` },
+    h("a", { class: "card-main", href: page("board") + carry({ id: b.id }), "aria-label": `${b.title}, one of your boards`, title: b.title },
+      h("div", { class: "th" }, img || h("div", { class: "th-none" })),
+      h("div", { class: "info" },
+        h("div", { class: "l1" }, h("span", { class: "yours" }, "Yours"), h("span", { class: "who" }, sub)),
+        h("div", { class: "l2" }, t))),
+    h("button", { class: "src mine-more", type: "button", "aria-label": `More for ${b.title}`, "aria-haspopup": "menu", html: `<span class="g">${DOTS}</span>` }));
+  const more = c.lastChild;
+  more.addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const open = c.querySelector(".mine-menu"); closeMenus(); if (open) return;
+    const m = h("div", { class: "mine-menu", role: "menu" },
+      h("button", { type: "button", role: "menuitem", onclick: () => { closeMenus(); rename(c, b, t); } }, "Rename"),
+      h("button", { type: "button", role: "menuitem", class: "bad", onclick: () => { closeMenus(); mine.remove(b.id); toast(`Removed “${b.title}” from My boards`); } }, "Remove"));
+    c.append(m); m.firstChild.focus();
+  });
+  springy(c);
+  return c;
+}
+function rename(c, b, t) {
+  const inp = h("input", { class: "mine-in", value: b.title, "aria-label": "Board name", maxlength: "80" });
+  t.replaceWith(inp); inp.focus(); inp.select();
+  let done = false;
+  const end = (keep) => {
+    if (done) return; done = true;
+    const v = inp.value.replace(/\s+/g, " ").trim();
+    if (keep && v && v !== b.title) mine.rename(b.id, v); else inp.replaceWith(t);
+  };
+  inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); end(true); } else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); end(false); } });
+  inp.addEventListener("blur", () => end(true));
+  inp.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); });
+}
+function renderMine() {
+  const ls = mine.list(), g = $("mineGrid");
+  $("mine").hidden = !ls.length;
+  g.textContent = "";
+  ls.slice(0, 8).forEach((b, i) => g.append(mineCard(b, i)));
+}
+renderMine();
+mine.onChange(renderMine);

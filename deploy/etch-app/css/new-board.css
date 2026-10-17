@@ -100,6 +100,8 @@
 .nb-stars { flex: none; display: inline-flex; align-items: center; gap: 3px; align-self: center; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .nb-stars .ic { color: #c98a00; fill: currentColor; }
 .nb-recent .nb-bc { padding: 10px 12px 12px; gap: 6px; }
+.nb-yours { flex: none; margin-right: 6px; padding: 0 7px; border-radius: 999px; background: #e6f2fd; color: #1f7ae0; font-size: 11.5px; font-weight: 600; line-height: 1.6; }
+.nb-l1:has(.nb-yours) { align-items: center; }
 .nb-recent .nb-th { aspect-ratio: 16 / 9; }
 
 /* melting into the dock: the content goes first, the blob follows the dock (js) */
