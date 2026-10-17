@@ -26,6 +26,7 @@ event types can appear, existing ones keep their meaning.
 | GET | `/etch/export.zip` | `?id=live-N` | ZIP when checks pass, else `409 {error, reasons}` |
 | GET | `/etch/piece/<16 hex>.png` | | PNG of one KiCad library part (long cache) |
 | GET | `/etch/files/engine/out/live-*/frames/*.png`, `.../frames.json`, `.../sim.json` | | render frames and sim data |
+| POST | `/etch/change` | `{board, ref?, text}` | `{ok, job, token}`, follow it like `/etch/live`; `403` licence does not allow copying |
 | POST | `/etch/stt` | raw float32 16 kHz mono PCM, < 45 s | transcript JSON from the local STT server, `503` when offline |
 | POST | `/etch/tts` | `{text}` | `audio/mpeg`, `503` when offline |
 
@@ -37,6 +38,10 @@ event types can appear, existing ones keep their meaning.
 - `base`: a build id; required for `modify` and `bench`, and that build must have finished.
 - Errors: `400` missing text or base, `429` queue full or rate limit hit.
 - `token` goes only to the browser that started the run; keep it to cancel.
+
+`/etch/change` changes a board by id (deploy/EXPLORE_API.md section 2): a `live-*` build gets a modify run, an
+imported `gh:` board is copied into a new `live-*` run and changed there (below). `ref` is the part the user
+pointed at; the text becomes `"<ref>: <text>"`.
 
 Polling `/etch/job`: start with `since=0`, then pass the returned `next`. Stop when `done` is true.
 `state` is `queued | running | done | failed | cancelled`; `stage` is a short human label; `run` is the
@@ -118,5 +123,42 @@ the fields below. The server itself adds `queued`, `error` and `cancelled` event
 |---|---|
 | `render start` / `render` / `done` | `quality`; done: `count, frames, seconds, lock_wait_s` |
 | `export done` | `project, gerbers, bom_lines, zip, zip_bytes, seconds` |
+
+### Changing an imported board
+
+A `gh:` board whose parts are not all in Etch's own catalog is edited in place (`agent/import_edit.py`): the author's
+KiCad project at its pinned commit is copied into the new run and only the change is made, inside KiCad's Python
+(`engine/kicad_side/edit_inplace.py`). Nothing the author placed or routed moves. The run goes through the same
+queue, rate limits and run cap as any build. Its events use the types above, with these meanings:
+
+| agent / type | in an in-place edit |
+|---|---|
+| `lead start` | `ask`, `base` (the `gh:` id) |
+| `sourcing start` / `done` | `what: "the board's KiCad files"`, only when they are not on this machine yet; fetched from GitHub at the pinned commit. `ok: false` ends the run. |
+| `picker start` | `kept` (catalog lines shown to the model), `model, effort` |
+| `picker repair` | the plan named a pad, net or part that is not there; `say` lists the problems sent back to the model (at most twice) |
+| `picker pick` | `recipe: "in-place edit"` (or `"board colours"`, no model call), `parts` added (`group: "added"`), `say` |
+| `assembly gate` | `plan matches the board's netlist`, then `placed`, `routed`, `DRC`, `unconnected`, `3D models` (and `3D board` when the GLB export failed) |
+| `assembly built` | `tracks` is the number of NEW tracks; `stages_s` edit, place, route, refill, save |
+| `assembly change` | `added, kept, rewired` (free pins of existing parts that were wired), `dropped` |
+| `lead done` | `route: "in-place edit"`; `ok: false` with `error` when a gate failed |
+
+What the gates mean here:
+
+- `placed`: every new part found a free spot next to the part it should be near: inside the outline with edge
+  clearance, clear of every courtyard on that side (and of through-hole leads from the other side), clear of other
+  nets' copper under its pads, outside rule areas. No room is a fail, never an overlap.
+- `routed`: only the new connections are routed, on the outer layers with vias, each ending on existing copper of
+  its net (a pad, a track, an outer pour, or a via into an inner pour). A connection with no way through stays a
+  ratsnest line and is listed in `value` as unrouted: no track is faked.
+- `DRC` and `unconnected`: `kicad-cli pcb drc` before and after. `value` counts what the change added and says how
+  many the original board already had; the author's own errors do not fail the gate.
+
+Plans are checked against the real netlist before anything is changed: nets and pads must exist, an existing pin that
+is already on a net is never rewired (free pins may be wired), a new net needs two ends, two existing nets are never
+joined, and new parts stay off data, clock, RF and memory nets unless the request names them. A request that only
+names a solder mask or silkscreen colour or a copper finish is applied to the board stackup with no model call and no
+routing. The schematic is left as the author made it; the run's `etch-changes.txt` (also in the fab zip) lists every
+change. `/etch/glb`, `/etch/parts`, `/etch/zip` and `/etch/thumb` work for the run like for any build.
 
 Unknown agent/type pairs should be ignored by clients.

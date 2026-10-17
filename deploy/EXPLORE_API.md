@@ -126,8 +126,9 @@ the clicked point in GLB metres. Comments are kept in SQLite at `engine/out/expl
 
 For a `live-*` board, `/etch/change` is a modify run on that build, the same as `POST /etch/live` with
 `mode: "modify"` and `base` set (the page may call `/etch/live` directly, API.md "Change it"). For an imported `gh:`
-board the backend turns the KiCad project (from `library/cache/src/<slug>/`) into an Etch `design.json`, copies it
-into a new `live-*` run and changes that. This works only when the board is `copyable` (else `403`), its KiCad files
-are on hand (else `409`), and it has at most 40 electrical parts that are all pieces in Etch's KiCad catalog
-(`engine/parts/kicad_catalog.json`, same symbol and footprint; else `422` naming the parts that aren't). Nothing is
-substituted.
+board whose parts are all pieces in Etch's KiCad catalog (`engine/parts/kicad_catalog.json`, at most 40 electrical
+parts), the backend turns the KiCad project into an Etch `design.json`, copies it into a new `live-*` run and changes
+that with a full re-place. Every other copyable board (most real ones) is edited in place by `agent/import_edit.py`:
+the author's own KiCad project is copied into a new `live-*` run and only the change is made on it (docs/API.md
+"Changing an imported board"). Its KiCad files are fetched at the pinned commit first when they are not on hand. Not
+`copyable` is `403`. A later change of that `live-*` run is in place too (its `imported.json` has `inplace: true`).

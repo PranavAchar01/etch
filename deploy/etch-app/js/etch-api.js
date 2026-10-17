@@ -1,6 +1,6 @@
 // Client for Etch's board endpoints (deploy/EXPLORE_API.md section 2). API base: ?api= or config.json.
-// Falls back to mock-api.js with ?mock=1, when no API base is configured, or when an endpoint is missing (404) or
-// the engine cannot be reached, so the board view always works end to end.
+// Falls back to mock-api.js with ?mock=1, when no API base is configured, or when an endpoint is missing (404).
+// When the configured engine can't be reached, calls throw an error marked `offline` instead of answering with demo text.
 import { Q } from "./common.js";
 import * as mock from "./mock-api.js";
 
@@ -42,7 +42,10 @@ async function call(path, body, mockFn) {
   let r;
   try {
     r = await backend(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  } catch (e) { useMock("Etch's engine is not reachable"); return mockFn(); }
+  } catch (e) {
+    // a configured engine that is down is reported as offline, never answered with demo text
+    const err = new Error("Etch's engine is not reachable right now."); err.offline = true; throw err;
+  }
   // only a missing route falls back to the mock: an engine without the board routes answers 404/405 with no JSON
   // error, or a plain "not found". The routes' own 404s ("no such board", "That comment is gone.") and every other
   // error (403, 409, 422, 429, 503…) are real answers, shown as is.
