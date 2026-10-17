@@ -1,0 +1,20 @@
+# only what the backend runs; never outputs, caches, keys or local envs
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+.git
+.vercel
+.stt
+.etch.env
+engine/out
+engine/parts/you_cache
+backups
+qa
+logs
+research
+archive
+node_modules
+*.key
+*.pem
+.env*

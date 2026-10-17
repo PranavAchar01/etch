@@ -4,7 +4,6 @@ The public app (deploy/etch-app on Vercel) talks to this through a Cloudflare qu
 studio/flux_server.py it does NOT serve the pcb-loop folder: only the endpoints below exist.
 
   GET  /etch/health                      engine up?  {ok, busy, queue, stt}
-  POST /etch/auth                        check the access code
   POST /etch/live   {mode, text, base}   start a run -> {job}; one run at a time, small queue
   GET  /etch/job?id=..&since=N           the run's events from index N (polling; quick tunnels do not carry SSE)
   POST /etch/stt    raw f32 16 kHz PCM   local Parakeet speech-to-text (studio/stt/stt_server.cjs on :3421)
@@ -21,9 +20,7 @@ studio/flux_server.py it does NOT serve the pcb-loop folder: only the endpoints 
   POST /etch/comments {board, ref, anchor, text}, /etch/comments/reply {id, text}, /etch/comments/delete {id}
   POST /etch/change {board, ref?, text}  change a board: live-* -> modify run; gh: -> copied into a live-* run
 
-Every POST and job poll needs the header X-Etch-Code. The code lives in the macOS Keychain
-(service etch-app-access-code) or ETCH_ACCESS_CODE; it is never in the repo or the page bundle.
-Per-IP rate limits and a global daily cap protect the API keys the engine spends.
+The API is open (no access code since 2026-10-17). Per-IP rate limits and a global daily cap protect the API keys the engine spends.
 """
 
 from __future__ import annotations
@@ -63,35 +60,12 @@ HEAVY_LOCK = Path(os.environ.get("ETCH_HEAVY_LOCK", str(Path.home() / "helloworl
 RUNS_PER_IP_HOUR = int(os.environ.get("ETCH_RUNS_PER_IP_HOUR", "10"))
 RUNS_PER_DAY = int(os.environ.get("ETCH_RUNS_PER_DAY", "80"))
 STT_PER_IP_10MIN = 60
-AUTH_FAILS_PER_IP_10MIN = 10
 QUEUE_MAX = 3
 RUN_TIMEOUT_S = 15 * 60
 MAX_TEXT = 400
 ASKS_PER_IP_10MIN = int(os.environ.get("ETCH_ASKS_PER_IP_10MIN", "40"))
 MAX_STT_BYTES = 16000 * 4 * 45  # 45 s of audio
 
-
-def access_code() -> str:
-    if os.environ.get("ETCH_ACCESS_CODE"):
-        return os.environ["ETCH_ACCESS_CODE"]
-    return (
-        subprocess.check_output(
-            [
-                "security",
-                "find-generic-password",
-                "-a",
-                os.environ.get("USER", ""),
-                "-s",
-                "etch-app-access-code",
-                "-w",
-            ]
-        )
-        .decode()
-        .strip()
-    )
-
-
-CODE = access_code()
 
 
 # ---------------------------------------------------------------- rate limits
@@ -201,6 +175,58 @@ def stage_of(ev: dict) -> str | None:
     return None
 
 
+class Classifier:
+    """ETCH_CLASSIFIER=1: one long-lived NVIDIA prompt classifier process for the whole backend
+    (agent/task_router.py --serve), so the ~740 MB model loads once, not once per build. classify() returns
+    the scores as a JSON string for the build's ETCH_CLASSIFIED, or None (router off for that build)."""
+
+    ARGS = [
+        "uv", "run", "--quiet", "--project", "engine",
+        "--with", "torch", "--with", "transformers", "--with", "safetensors",
+        "--with", "sentencepiece", "--with", "huggingface_hub",
+        "nice", "-n", "10", "python", "-m", "agent.task_router", "--serve",
+    ]
+
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+        self.proc: subprocess.Popen | None = None
+        self.ready = False
+
+    def _start(self) -> None:
+        self.proc = subprocess.Popen(
+            self.ARGS, cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, text=True, start_new_session=True,
+        )
+        head = json.loads(self.proc.stdout.readline() or "{}")
+        self.ready = bool(head.get("ready"))
+        print(f"classifier: {head}", flush=True)
+
+    def warm(self) -> None:
+        with self.lock:
+            if self.proc is None or self.proc.poll() is not None:
+                self._start()
+
+    def classify(self, text: str) -> str | None:
+        if os.environ.get("ETCH_CLASSIFIER") != "1":
+            return None
+        try:
+            with self.lock:
+                if self.proc is None or self.proc.poll() is not None:
+                    self._start()
+                if not self.ready:
+                    return None
+                self.proc.stdin.write(json.dumps({"ask": text}) + "\n")
+                self.proc.stdin.flush()
+                line = self.proc.stdout.readline()
+            res = json.loads(line)
+            return None if "error" in res else json.dumps(res)
+        except (OSError, ValueError):
+            return None
+
+
+CLASSIFIER = Classifier()
+
+
 JOBS: dict[str, Job] = {}
 WAITING: list[Job] = []
 STATE = {"running": None}
@@ -246,9 +272,14 @@ def worker(job: Job):
         errf = tempfile.TemporaryFile(mode="w+")
         # own session = own process group (pgid == proc.pid): cancel and the timeout signal exactly this
         # run's processes (uv, the engine's python, KiCad, ngspice) and nothing else
+        env = dict(os.environ)
+        scored = CLASSIFIER.classify(job.text) if job.mode == "design" else None
+        if scored:
+            env["ETCH_CLASSIFIED"] = scored
         proc = subprocess.Popen(
             job.args,
             cwd=ROOT,
+            env=env,
             stdout=subprocess.PIPE,
             stderr=errf,
             text=True,
@@ -690,7 +721,7 @@ class H(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", o)
             self.send_header("Vary", "Origin")
             self.send_header(
-                "Access-Control-Allow-Headers", "Content-Type, X-Etch-Code"
+                "Access-Control-Allow-Headers", "Content-Type"
             )
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Max-Age", "600")
@@ -704,10 +735,6 @@ class H(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(b)))
         self.end_headers()
         self.wfile.write(b)
-
-    def authed(self) -> bool:
-        got = self.headers.get("X-Etch-Code", "")
-        return bool(got) and hmac.compare_digest(got.strip().encode(), CODE.encode())
 
     def body(self, cap: int) -> bytes | None:
         n = int(self.headers.get("Content-Length", "0") or 0)
@@ -733,8 +760,6 @@ class H(BaseHTTPRequestHandler):
                 }
             )
         if u.path == "/etch/comments":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             q = urllib.parse.parse_qs(u.query)
             try:
                 board = explore.load_board((q.get("board") or [""])[0])
@@ -742,8 +767,6 @@ class H(BaseHTTPRequestHandler):
                 return self.send_json({"error": str(e)}, e.status)
             return self.send_json({"ok": True, "comments": comments().list(board.id)})
         if u.path == "/etch/job":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             q = urllib.parse.parse_qs(u.query)
             j = JOBS.get(q.get("id", [""])[0])
             if not j:
@@ -763,12 +786,8 @@ class H(BaseHTTPRequestHandler):
                 }
             )
         if u.path == "/etch/builds":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             return self.send_json({"builds": library(), "now": round(time.time(), 1)})
         if u.path == "/etch/run":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             run = urllib.parse.parse_qs(u.query).get("id", [""])[0]
             evs = run_events(run)
             if evs is None:
@@ -781,23 +800,17 @@ class H(BaseHTTPRequestHandler):
                 return self.send_json({"error": "not found"}, 404)
             return self.blob(p.read_bytes(), "image/png", "public, max-age=600")
         if u.path == "/etch/zip":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             run = urllib.parse.parse_qs(u.query).get("id", [""])[0]
             p = zip_path(run) if RUN_RE.match(run) else None
             if not p:
                 return self.send_json({"error": "not found"}, 404)
             return self.blob(p.read_bytes(), "application/zip", "no-store", p.name)
         if u.path == "/etch/layers":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             res = board_layers(urllib.parse.parse_qs(u.query).get("id", [""])[0])
             if res is None:
                 return self.send_json({"error": "not found"}, 404)
             return self.send_json(res)
         if u.path in ("/etch/glb", "/etch/parts", "/etch/export", "/etch/export.zip"):
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             run = urllib.parse.parse_qs(u.query).get("id", [""])[0]
             # already built (a stored board copies them in, a reopened build made them before): send the file,
             # no engine process (that start-up alone was about 3 s)
@@ -889,22 +902,6 @@ class H(BaseHTTPRequestHandler):
 
     def do_POST(self):
         ip = self.ip()
-        if self.path == "/etch/auth":
-            if not LIM.allow(
-                "authfail:" + ip, AUTH_FAILS_PER_IP_10MIN, 600, take=False
-            ):
-                return self.send_json(
-                    {"error": "Too many tries. Wait 10 minutes, then try again."}, 429
-                )
-            if self.authed():
-                return self.send_json({"ok": True})
-            LIM.allow("authfail:" + ip, AUTH_FAILS_PER_IP_10MIN, 600)
-            return self.send_json(
-                {"ok": False, "error": "That code did not work."}, 401
-            )
-        if not self.authed():
-            LIM.allow("authfail:" + ip, AUTH_FAILS_PER_IP_10MIN, 600)
-            return self.send_json({"error": "code"}, 401)
         if self.path == "/etch/cancel":
             try:
                 body = json.loads(self.body(4096) or b"{}")
@@ -1235,7 +1232,7 @@ def tts(text: str) -> bytes:
     import sys
 
     sys.path.insert(0, str(ROOT))
-    from agent.config import api_key
+    from agent.config import key_for  # OpenAI TTS: the OpenAI key, whatever provider the engine's models use
 
     tts_guard()
     tts_meter(text)
@@ -1252,7 +1249,7 @@ def tts(text: str) -> bytes:
             }
         ).encode(),
         headers={
-            "Authorization": "Bearer " + api_key(),
+            "Authorization": "Bearer " + key_for("openai-api-key"),
             "Content-Type": "application/json",
         },
     )
@@ -1272,5 +1269,8 @@ def stt_up() -> bool:
 
 if __name__ == "__main__":
     threading.Thread(target=gc_jobs, daemon=True).start()
+    if os.environ.get("ETCH_CLASSIFIER") == "1":
+        threading.Thread(target=CLASSIFIER.warm, daemon=True).start()
     print(f"etch public backend on http://127.0.0.1:{PORT}", flush=True)
-    ThreadingHTTPServer(("127.0.0.1", PORT), H).serve_forever()
+    # ETCH_BIND=0.0.0.0 inside a container (docs/DEPLOY.md); the Mac keeps loopback behind the tunnel
+    ThreadingHTTPServer((os.environ.get("ETCH_BIND", "127.0.0.1"), PORT), H).serve_forever()

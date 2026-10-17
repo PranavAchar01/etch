@@ -576,32 +576,10 @@ function drawBg(T, calm) {
 const CFG = await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).catch(() => ({}));
 const API = String(Q.get("api") || CFG.api || "").replace(/\/$/, "");
 const FILES = API + "/etch/files";
-let CODE = "";
-try { CODE = localStorage.getItem("etch-code") || ""; } catch (e) { /* private mode: ask each visit */ }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function api(path, opt = {}) {
-  const r = await fetch(API + path, { ...opt, headers: { ...(opt.headers || {}), "X-Etch-Code": CODE } });
-  if (r.status === 401) { askCode("That code did not work. Try again."); throw new Error("access code needed"); }
-  return r;
+  return fetch(API + path, opt);
 }
-// access code, asked once and remembered in this browser
-let gateDone = null;
-function askCode(msg) {
-  $("gate").style.display = "flex"; $("gerr").textContent = msg || ""; setTimeout(() => $("gcode").focus(), 50);
-  return new Promise((ok) => (gateDone = ok));
-}
-$("gform").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const c = $("gcode").value.trim(); if (!c) return;
-  $("gerr").textContent = "Checking...";
-  try {
-    const r = await fetch(API + "/etch/auth", { method: "POST", headers: { "X-Etch-Code": c } });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok || !j.ok) { $("gerr").textContent = j.error || "That code did not work."; return; }
-    CODE = c; try { localStorage.setItem("etch-code", c); } catch (er) { /* not remembered */ }
-    $("gate").style.display = "none"; if (gateDone) gateDone(true);
-  } catch (er) { $("gerr").textContent = "Etch's engine is not reachable right now."; }
-});
 
 const st = { req: null, log: [], setKey: null, setT: 0, base: null, explode: 0, exTarget: 0, sim: null, why: {}, busy: false,
   heard: "", heardT: -9, heardHow: "", sayT: -9, sayText: "", sayDur: 3, idle: 1, idleTarget: 1, queued: null, online: null,
@@ -629,10 +607,10 @@ function pieces(text) {
   if (b) out.push(b);
   return out;
 }
-const tts = (text) => fetch(API + "/etch/tts", { method: "POST", headers: { "Content-Type": "application/json", "X-Etch-Code": CODE }, body: JSON.stringify({ text }) })
+const tts = (text) => fetch(API + "/etch/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) })
   .then((r) => (r.ok ? r.blob() : null)).catch(() => null);
 function say(text) {
-  for (const p of pieces(String(text))) VQ.push({ text: p, t0: now(), audio: VOICE && CODE && TALKED ? tts(p) : null });
+  for (const p of pieces(String(text))) VQ.push({ text: p, t0: now(), audio: VOICE && TALKED ? tts(p) : null });
   while (VQ.length > 4) VQ.shift(); // never fall far behind the build
   pump();
 }
@@ -712,7 +690,6 @@ async function micStart(opt = {}) {
   starting = true;
   let ac = null;
   try {
-    if (!CODE) await askCode();
     stopVoice(); TALKED = true;
     ac = new AudioContext();
     ac.resume().catch(() => {});
@@ -740,7 +717,7 @@ async function micStart(opt = {}) {
   } catch (e) {
     if (ac) ac.close().catch(() => {});
     st.vmode = false;
-    if (e.message !== "access code needed") { say("I can't hear you: the microphone is blocked. You can type instead."); note("microphone: " + e.message); }
+    say("I can't hear you: the microphone is blocked. You can type instead."); note("microphone: " + e.message);
   }
   starting = false;
 }
@@ -800,7 +777,7 @@ for (const w of [$("heroW"), $("bandW")]) {
   w.addEventListener("pointerdown", micDown); w.addEventListener("pointerup", micUp);
   w.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); press(w); if (rec) micStop(); else micStart(); } });
 }
-const typing = () => document.activeElement === ci || document.activeElement === $("ltext") || document.activeElement === $("gcode");
+const typing = () => document.activeElement === ci || document.activeElement === $("ltext");
 addEventListener("keydown", (e) => { if (e.code === "Space" && !typing() && !e.repeat && !document.activeElement?.classList?.contains("etchw")) { e.preventDefault(); downAt = 0; micStart({ held: true }); } if (e.key === "Escape" && st.view === "lib") closeLib(); });
 addEventListener("keyup", (e) => { if (e.code === "Space" && !typing() && !document.activeElement?.classList?.contains("etchw")) { e.preventDefault(); micStop(); } });
 
@@ -1056,7 +1033,7 @@ function runsDraw() {
   put($("lrun"), "html", html);
 }
 for (const box of [$("runl"), $("lrun")]) box.addEventListener("click", (e) => { const r = e.target.closest(".rb"); const b = r && st.runs.find((x) => x.id === r.dataset.id); if (b) openBuild(b); });
-async function pollRuns() { if (!CODE || st.online === false) return; try { await fetchBuilds(); runsDraw(); } catch (e) { /* the next tick tries again */ } }
+async function pollRuns() { if (st.online === false) return; try { await fetchBuilds(); runsDraw(); } catch (e) { /* the next tick tries again */ } }
 setInterval(() => { if (st.view !== "lib") pollRuns(); }, 5000);
 
 // what the words ask for: small talk / expand / enough / benchmarks / a change to the current board / a new board
@@ -1077,7 +1054,6 @@ function chat(t) {
   return st.setKey ? "Hi. This board is ready. Tell me a change, or ask for a new one." : "Hi! Tell me what your board should do, like a light that turns on when it gets dark.";
 }
 async function handle(text, how) {
-  if (!CODE) await askCode();
   TALKED = true; dropSilent();
   if (how !== "spoken") { st.heard = text; st.heardT = now(); st.heardHow = how; }
   if (st.view === "lib") closeLib();
@@ -1313,4 +1289,3 @@ setView("home");
 await document.fonts.ready;
 window.__ready = true;
 frame();
-if (!CODE) askCode();

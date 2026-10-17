@@ -65,3 +65,7 @@ __pycache__/
 .venv/
 .vercel/
 .DS_Store
+
+!/docs/
+!/Dockerfile
+!/.dockerignore

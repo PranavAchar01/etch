@@ -22,10 +22,12 @@ from pathlib import Path
 from typing import Any
 
 from etchlib.kicad import FOOTPRINT_DIR
+from etchlib.kicad import (
+    KICAD_CLI as KICAD,  # macOS app bundle or Linux /usr/bin/kicad-cli
+)
 
 from . import config
 
-KICAD = Path(os.environ.get("ETCH_KICAD_APP", str(Path.home() / "Applications/KiCad/KiCad.app"))) / "Contents/MacOS/kicad-cli"
 CACHE = config.ENGINE / "parts/piece_renders"
 VIEW = ("--rotate", "-40,0,25", "--perspective", "--zoom", "0.62", "--quality", "basic")
 W, H = 480, 380

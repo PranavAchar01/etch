@@ -50,9 +50,9 @@ async function loadBoard() {
       await api.init();
       if (!api.hasBackend()) { fail("This Etch build needs the Etch engine", "No backend is configured for this page. Open it from the Etch app, or add <code>?api=</code>."); return false; }
       const q = encodeURIComponent(ID);
-      const pr = api.authed(`/etch/parts?id=${q}`).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
-      const lr = api.authed(`/etch/layers?id=${q}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-      glb = await api.authed(`/etch/glb?id=${q}`).then((r) => { if (!r.ok) throw new Error(`3D model: error ${r.status}`); return r.arrayBuffer(); });
+      const pr = api.backend(`/etch/parts?id=${q}`).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+      const lr = api.backend(`/etch/layers?id=${q}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      glb = await api.backend(`/etch/glb?id=${q}`).then((r) => { if (!r.ok) throw new Error(`3D model: error ${r.status}`); return r.arrayBuffer(); });
       parts = await pr; layers = await lr;
       meta = { id: ID, title: parts.title || parts.name || `Etch build ${ID.replace("live-", "#")}`, board: {}, copyable: true };
       board.glbUrl = "";
@@ -145,7 +145,7 @@ function renderDownloads(m) {
 }
 async function downloadLive() {
   try {
-    const r = await api.authed(`/etch/glb?id=${encodeURIComponent(ID)}`); if (!r.ok) throw new Error();
+    const r = await api.backend(`/etch/glb?id=${encodeURIComponent(ID)}`); if (!r.ok) throw new Error();
     const a = h("a", { href: URL.createObjectURL(await r.blob()), download: ID + ".glb" }); document.body.append(a); a.click(); a.remove();
   } catch (e) { toast("Couldn't download the model"); }
 }
@@ -509,9 +509,9 @@ async function reloadLive(run) {
   try {
     const q = encodeURIComponent(run);
     const [glb, parts, layers] = await Promise.all([
-      api.authed(`/etch/glb?id=${q}`).then((r) => { if (!r.ok) throw new Error(`3D model: error ${r.status}`); return r.arrayBuffer(); }),
-      api.authed(`/etch/parts?id=${q}`).then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
-      api.authed(`/etch/layers?id=${q}`).then((r) => (r.ok ? r.json() : null)).catch(() => null)]);
+      api.backend(`/etch/glb?id=${q}`).then((r) => { if (!r.ok) throw new Error(`3D model: error ${r.status}`); return r.arrayBuffer(); }),
+      api.backend(`/etch/parts?id=${q}`).then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
+      api.backend(`/etch/layers?id=${q}`).then((r) => (r.ok ? r.json() : null)).catch(() => null)]);
     board.parts = parts.parts || {};
     const res = await viewer.load(glb, { parts: board.parts, meta: board.meta, layers });
     board.refs = new Set([...res.parts, ...Object.keys(board.parts)]);
