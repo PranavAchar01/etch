@@ -151,8 +151,11 @@ def voice_led(ask: str) -> dict[str, Any] | None:
 
 def typed_rgb(ask: str) -> dict[str, Any] | None:
     a = ask.lower()
+    # "an RGB LED controlled by a Pico": no keys named, so the laptop picks the colour with r / g / b (sweep 10-17,
+    # the picker wired the resistors into the GPIO pins three times)
+    rgb_pico = bool(re.search(r"\brgb\b", a) and re.search(r"\b(pico|rp2040|microcontroller)\b", a))
     # typing on a computer, not pressing a button on the board
-    if not re.search(
+    if not rgb_pico and not re.search(
         r"\b(type|types|typing|typed|keyboard|laptop|computer|serial|usb)\b", a
     ):
         return None
@@ -160,6 +163,14 @@ def typed_rgb(ask: str) -> dict[str, Any] | None:
         rf"\b(?:type|types|press|send|hit|enter)\s+(?:a |an |the )?[\"'“]?(\w)\b[\"'”]?[^.;]*?\b({COLOUR_RX})\b",
         a,
     )
+    # "type r for red and g for green": later keys in the same list without their own verb
+    pairs += [
+        (k, c)
+        for k, c in re.findall(
+            rf"[\"'“]?\b(\w)\b[\"'”]?\s+(?:for|=|is|makes it|turns it)\s+({COLOUR_RX})\b", a
+        )
+        if k not in ("a", "i")
+    ]
     seen: dict[str, str] = {}
     for key, col in pairs:
         seen.setdefault(key, col)
@@ -169,6 +180,8 @@ def typed_rgb(ask: str) -> dict[str, Any] | None:
         firsts = [w[0] for w in words]
         if words and len(set(firsts)) == len(set(words)):
             seen = {w[0]: w for w in words}
+    if not seen and rgb_pico:
+        seen = {"r": "red", "g": "green", "b": "blue"}
     if not seen:
         return None
     cmds = [
