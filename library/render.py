@@ -1,13 +1,15 @@
 """Prerender fetched boards into deploy/etch-app/world/boards/<slug>/ (board.glb, thumb.webp, parts.json, meta.json).
 
     python3 library/render.py [--limit N] [--only slug ...] [--workers 3] [--force] [--budget-mb 150]
+    python3 library/render.py --thumbs-only [--only slug ...] [--workers 4]   # thumbnails only
 
 Per board:
   1. kicad-cli pcb export glb (library STEP models, copper, mask, silk; nodes named by refdes)
   2. library/optimize.mjs: dedup + join primitives per material + quantisation + meshopt, no simplification
      (PLAN.md rule 2), with the scene graph kept (no flatten/join/instancing), so every footprint stays its
      own named node; boards over --max-glb-mb (20) after that are skipped, never simplified
-  3. kicad-cli pcb render (raytraced, perspective, 3/4 view) -> 1280x800 PNG -> 640x400 WebP
+  3. kicad-cli pcb render (raytraced, perspective, 3/4 view, one fixed look; zoom/pan from basic-quality probes so
+     every board fills the same share of the frame) -> 1280x800 PNG -> 640x400, +-15% exposure trim -> WebP
   4. parts.json from the .kicad_pcb (+ schematic descriptions), positions measured in the GLB frame
   5. meta.json records models {total, resolved, hidden, missing: [{ref, path, reason}]} (from fetch.py's
      models.json plus every model kicad-cli could not load) and identical (PLAN.md rule 4)
@@ -20,6 +22,7 @@ from __future__ import annotations
 import argparse
 import concurrent.futures as cf
 import datetime as dt
+import json
 import os
 import re
 import shutil
@@ -29,8 +32,12 @@ import time
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+from PIL import Image, ImageFilter
+
 from common import LIB_DIR, BOARDS_JSON, scrub, RENDER_LOG, SRC, WORK, WORLD, kicad_cli, load_json, log, save_json
 from pcbinfo import board_info, footprint_models, glb_bounds, glb_nodes
+from thumbcheck import board_mask, luminance, measure
 
 GLB_FLAGS = [
     "--subst-models",
@@ -91,17 +98,91 @@ def optimize(raw: Path, out: Path, max_bytes: int = MAX_BYTES) -> tuple[bool, st
     return True, ""
 
 
+# One look for every thumbnail: a fixed preset (follow_pcb_editor, read from a canonical .kicad_prl with every
+# layer visible, so no project's own plot or visibility settings leak in), explicit lights, the board's own
+# stackup colours, the same floor/shadow, perspective and camera elevation. Long boards turn 90 degrees about Z
+# so the long axis runs across the frame.
+THUMB_LOOK = ["--side", "top", "--perspective", "--preset", "follow_pcb_editor", "--use-board-stackup-colors",
+              "--background", "opaque", "--floor", "--light-top", "0.30", "--light-bottom", "0.10",
+              "--light-side", "0.17", "--light-camera", "0.22", "--light-side-elevation", "60"]
+THUMB_ROT = ("-40,0,-25", "-40,0,65")
+THUMB_FILL = 0.78    # board bbox / frame, on whichever axis binds
+THUMB_Y = 0.14       # target mean linear luminance of the board pixels
+THUMB_GAIN = 0.15    # exposure normalisation is clamped to +-15%
+PAN_X, PAN_Y = 0.049, -0.040  # image shift (fraction of width / height) per --pan unit at --zoom 1, measured
+CANON_PRL = {"board": {"visible_layers": "ffffffff_ffffffff_ffffffff_ffffffff", "visible_items": [
+    "vias", "footprint_text", "footprints_front", "footprints_back", "footprint_values", "footprint_references",
+    "tracks", "pads", "zones", "shapes", "bitmaps"], "active_layer_preset": ""},
+    "meta": {"filename": "board.kicad_prl", "version": 5}}
+
+
+def _frame(png: Path) -> Image.Image:
+    """Kicad-cli writes 1264x784 for a 1280x800 request; crop the backdrop to 16:10 so the resize keeps shape."""
+    im = Image.open(png).convert("RGB")
+    w, h = im.size
+    cw = min(w, round(h * 1.6))
+    ch = min(h, round(cw / 1.6))
+    x, y = (w - cw) // 2, (h - ch) // 2
+    return im.crop((x, y, x + cw, y + ch))
+
+
 def thumb(cli: Path, env: dict, pcb: Path, work: Path, out: Path, size_mm: list[float]) -> tuple[bool, str]:
+    # a scratch project: the board and its .kicad_pro (text variables), plus the canonical .kicad_prl
+    proj = work / "thumbproj"
+    shutil.rmtree(proj, ignore_errors=True)
+    proj.mkdir(parents=True)
+    (proj / "board.kicad_pcb").symlink_to(pcb.resolve())
+    if (pcb.parent / "board.kicad_pro").exists():
+        shutil.copy2(pcb.parent / "board.kicad_pro", proj / "board.kicad_pro")
+    (proj / "board.kicad_prl").write_text(json.dumps(CANON_PRL))
+    board = proj / "board.kicad_pcb"
+    rot = THUMB_ROT[1] if size_mm[1] > size_mm[0] * 1.25 else THUMB_ROT[0]
     png = work / "thumb.png"
-    png.unlink(missing_ok=True)
-    cmd = [str(cli), "pcb", "render", "-o", str(png), "--width", str(RENDER_W), "--height", str(RENDER_H),
-           "--side", "top", "--perspective", "--quality", "high", "--use-board-stackup-colors", "--background", "opaque",
-           "--rotate", "-40,0,65" if size_mm[1] > size_mm[0] * 1.25 else "-40,0,-25",  # long axis across the frame
-           "--zoom", "0.8", str(pcb)]
-    p = run(cmd, timeout=600, env=env)
-    if not png.exists():
-        return False, "render: " + (p.stderr or p.stdout)[-300:]
-    q = run(["cwebp", "-quiet", "-q", "82", "-resize", "640", "400", str(png), "-o", str(out)], timeout=120)
+
+    def render(quality: str, zoom: float, pan: tuple[float, float]) -> tuple[bool, str]:
+        png.unlink(missing_ok=True)
+        cmd = [str(cli), "pcb", "render", "-o", str(png), "--width", str(RENDER_W), "--height", str(RENDER_H),
+               *THUMB_LOOK, "--quality", quality, "--rotate", rot, "--zoom", f"{zoom:.4f}",
+               "--pan", f"{pan[0]:.4f},{pan[1]:.4f},0", str(board)]
+        p = run(cmd, timeout=600, env=env)
+        return png.exists(), (p.stderr or p.stdout)[-300:]
+
+    # framing: fast basic-quality probes, measured like the final image, set zoom and pan so the board's bbox
+    # fills THUMB_FILL of the binding axis, centred (the image shift per pan unit scales with zoom)
+    zoom, pan = 0.6, [0.0, 0.0]
+    for _ in range(3):
+        ok, err = render("basic", zoom, tuple(pan))
+        if not ok:
+            return False, "render: " + err
+        m = measure(_frame(png))
+        if m["px"] == 0:
+            break
+        pan[0] -= (m["cx"] - 0.5) / (PAN_X * zoom)
+        pan[1] -= (m["cy"] - 0.5) / (PAN_Y * zoom)
+        zoom = min(20.0, max(0.1, zoom * THUMB_FILL / max(m["fill"], 1e-3)))
+        if abs(m["fill"] - THUMB_FILL) < 0.01 and abs(m["cx"] - 0.5) < 0.01 and abs(m["cy"] - 0.5) < 0.01:
+            break
+    ok, err = render("high", zoom, tuple(pan))
+    if not ok:
+        return False, "render: " + err
+
+    # light exposure normalisation on the board pixels only (feathered mask), backdrop untouched
+    im = _frame(png).resize((640, 400), Image.LANCZOS)
+    rgb = np.asarray(im)
+    mask = board_mask(rgb)
+    if mask.any():
+        gain = float(np.clip(THUMB_Y / max(float(luminance(rgb)[mask].mean()), 1e-4), 1 - THUMB_GAIN, 1 + THUMB_GAIN))
+        a = np.asarray(Image.fromarray((mask * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2)),
+                       np.float32)[..., None] / 255
+        f = rgb.astype(np.float32) / 255
+        lin = np.where(f <= 0.04045, f / 12.92, ((f + 0.055) / 1.055) ** 2.4)
+        lin = np.clip(lin * (1 + (gain - 1) * a), 0, 1)
+        f = np.where(lin <= 0.0031308, lin * 12.92, 1.055 * lin ** (1 / 2.4) - 0.055)
+        im = Image.fromarray(np.round(f * 255).astype(np.uint8))
+    small = work / "thumb640.png"
+    im.save(small)
+    q = run(["cwebp", "-quiet", "-q", "82", str(small), "-o", str(out)], timeout=120)
+    shutil.rmtree(proj, ignore_errors=True)
     if q.returncode != 0 or not out.exists():
         return False, "cwebp: " + q.stderr[-200:]
     return True, ""
@@ -241,6 +322,26 @@ def render_board(b: dict, cli: Path, env: dict, kver: str, force: bool, max_byte
             "parts": len(parts), "missing_models": len(models["missing"]), "identical": identical}
 
 
+def rethumb(b: dict, cli: Path, env: dict) -> dict[str, Any]:
+    """--thumbs-only: re-render thumb.webp for an already rendered board; GLB, parts and meta stay as they are."""
+    slug = b["slug"]
+    out = WORLD / "boards" / slug
+    meta = load_json(out / "meta.json", {})
+    pcb = SRC / slug / "board.kicad_pcb"
+    if not meta or not pcb.exists():
+        return {"ok": False, "error": "not rendered yet"}
+    t0 = time.time()
+    work = WORK / (slug + "__thumb")
+    shutil.rmtree(work, ignore_errors=True)
+    work.mkdir(parents=True)
+    th = work / "thumb.webp"
+    ok, msg = thumb(cli, env, pcb, work, th, meta["size_mm"])
+    if ok:
+        shutil.copy2(th, out / "thumb.webp")
+    shutil.rmtree(work, ignore_errors=True)
+    return {"ok": ok, "error": msg, "seconds": round(time.time() - t0, 1)}
+
+
 def world_bytes() -> int:
     return sum(f.stat().st_size for f in WORLD.rglob("*") if f.is_file()) if WORLD.exists() else 0
 
@@ -258,12 +359,22 @@ def main() -> None:
     ap.add_argument("--budget-mb", type=float, default=150.0, help="stop when world/ grows past this")
     ap.add_argument("--max-glb-mb", type=float, default=MAX_BYTES / 1e6,
                     help="skip boards bigger than this after compression")
+    ap.add_argument("--thumbs-only", action="store_true",
+                    help="re-render thumb.webp for boards already in world/ (no GLB, parts or meta changes)")
     args = ap.parse_args()
 
     cli = kicad_cli()
     if not cli:
         raise SystemExit("kicad-cli not found (install KiCad, or set KICAD_CLI)")
     env = kicad_env(cli)
+    if args.thumbs_only:
+        slugs = args.only or sorted(p.parent.name for p in (WORLD / "boards").glob("*/meta.json"))
+        with cf.ThreadPoolExecutor(args.workers) as ex:
+            futs = {ex.submit(rethumb, {"slug": s}, cli, env): s for s in slugs}
+            for fut in cf.as_completed(futs):
+                res = fut.result()
+                log(f"{futs[fut]:55s} " + (f"thumb ok {res['seconds']}s" if res["ok"] else f"SKIP {scrub(res['error'])[:160]}"))
+        return
     ensure_node_libs()
     kver = kicad_version(cli)
     boards = [b for b in load_json(BOARDS_JSON, []) if (SRC / b["slug"] / "board.kicad_pcb").exists()]
