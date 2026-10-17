@@ -5,9 +5,11 @@ against this contract. Two halves:
 
 1. **Static library data** — produced offline by `library/` (crawl GitHub, prerender with KiCad),
    served as plain files from `deploy/etch-app/world/`. No backend needed to browse or view boards.
-2. **Backend endpoints** — new routes in `deploy/etch_public.py` for asking about a board, comments,
-   and changes. Until they exist, the page falls back to `deploy/etch-app/js/mock-api.js`
-   (localStorage comments, answers built from `parts.json`), or always when the URL has `?mock=1`.
+2. **Backend endpoints** — routes for asking about a board, comments, and changes. **Built** in
+   `deploy/explore_api.py` (hooked into `deploy/etch_public.py`); the served shapes are in
+   [API.md](API.md) "Board view". The page still falls back to `deploy/etch-app/js/mock-api.js`
+   (localStorage comments, answers built from `parts.json`) when the backend is unreachable, answers
+   404/501, or the URL has `?mock=1`.
 
 ## Board ids
 
@@ -100,7 +102,13 @@ imported at all.
 `node` is the GLB node name for the part (KiCad names it after the refdes). GLB units are metres,
 Y-up; glTF x = board x, glTF z = board y.
 
-## 2. Backend endpoints (to build in `deploy/etch_public.py`)
+## 2. Backend endpoints (built: `deploy/explore_api.py`, documented in [API.md](API.md) "Board view")
+
+Status: `/etch/ask`, `GET/POST /etch/comments`, `/etch/comments/reply`, `/etch/comments/delete` are built.
+`/etch/change` is built for `live-*` boards; for imported `gh:` boards it answers `501` "Changing imported boards
+isn't available yet." (`403` when the licence doesn't allow copies) until an imported KiCad project can be turned
+into an Etch `design.json` (see below). Differences from the first draft: reply/delete also accept an optional
+`board`; assistant messages carry `thoughts`, `seconds` and `mentions` like the mock.
 
 All take/return JSON, need the `X-Etch-Code` header like the other routes, and accept either board id
 kind. Basics, ids, limits and error handling follow [API.md](API.md): errors are `{"error": "..."}` with a
@@ -161,3 +169,12 @@ answer.
 `POST /etch/change` `{ board, ref?, text }` → `{ ok, job, token }`. For a `live-*` board this is
 `/etch/live` with `mode: "modify"` and `base` set. For an imported board the backend first copies
 it into a new `live-*` run (only if `copyable`). Progress uses the existing `GET /etch/job`.
+
+Not built yet for imported boards: `agent.live` modify mode reads the base run's `design.json` (Etch's own design:
+every part as a KiCad catalog piece key `Lib:Symbol@Lib:Footprint` from `kicad_catalog`, a `pins` map pin → net,
+a `group`, plus `title`/`name`/`voltage`), re-picks with it, then re-places and re-routes the whole board with
+`auto_layout` (`prior=` only seeds a layout Etch made). An imported project has none of that: its symbols and
+footprints are mostly project-local (`Icezum:C_0402`), not catalog pieces; its netlist would have to be parsed from
+the `.kicad_pcb` / schematic; and boards of 100-200+ parts, 4 layers and hand placement are far outside what the
+auto-placer and the 15-minute build can redo. Doing it needs a converter (KiCad project → `design.json` with
+piece-key mapping) and a modify path that edits the imported `.kicad_pcb` in place instead of re-placing it.

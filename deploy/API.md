@@ -1,11 +1,12 @@
 # Etch backend API
 
 What `deploy/etch_public.py` serves today, and how the page (`deploy/etch-app/app.js`) uses each route. UI changes
-should line up with this file. Endpoints that are planned but not built yet (`/etch/ask`, `/etch/comments`,
-`/etch/change`, the static `world/` library) are in [EXPLORE_API.md](EXPLORE_API.md).
+should line up with this file. The board view routes (`/etch/ask`, `/etch/comments*`, `/etch/change`) are written in
+`deploy/explore_api.py`, which `etch_public.py` hands those paths to; they are listed under "Board view" below and
+designed in [EXPLORE_API.md](EXPLORE_API.md) (with the static `world/` library).
 
-If you change a route, an event or a field here, change `etch_public.py` (or the engine that emits the event) in the
-same commit.
+If you change a route, an event or a field here, change `etch_public.py` (or `explore_api.py`, or the engine that
+emits the event) in the same commit.
 
 ## Basics
 
@@ -30,6 +31,8 @@ same commit.
 | Speech-to-text | 60 requests per IP per 10 min, 45 s of audio per request | 429 / 413 |
 | Text-to-speech | 120 requests per IP per 10 min, plus a daily spend guard | 429 / 503 |
 | Wrong access codes | 10 per IP per 10 min | 429 on `/etch/auth` |
+| Questions (`/etch/ask`, new comments, replies) | 60 per IP per 10 min, 1500 per day overall (`ETCH_ASKS_PER_IP_10MIN`, `ETCH_ASKS_PER_DAY`), plus the OpenAI budget guard | 429 / 503 |
+| Comments | 300 per board, 60 messages per thread, 400 characters per message | 409 / cut |
 
 ## Ids
 
@@ -177,6 +180,65 @@ simulation.
 `{"text": "…", "seconds": 0.4}`. `503` "Voice is offline right now. Type instead." when the voice service is down.
 
 `POST /etch/tts` `{"text": "…"}` (400 chars max) → `audio/mpeg`. The page uses it for Etch's spoken replies.
+
+### Board view (`deploy/explore_api.py`)
+
+`board` is either id kind from [EXPLORE_API.md](EXPLORE_API.md): `gh:<owner>/<repo>[/<subdir>]` (an imported board,
+read from `etch-app/world/boards/<slug>/`) or `live-<ms>` (a build with a `design.json`). A bad id is `400` "That board
+id is not valid."; an unknown board `404` "I don't know that board."; a `ref` that is not on the board `400` "That
+part isn't on this board.". Every answer comes from `agent/llm.py` `call_json` with `ETCH_SUB_MODEL`, so it is
+metered and stops at the OpenAI budget.
+
+`POST /etch/ask` — a question about the board, or one part of it
+
+```json
+{ "board": "gh:FPGAwars/icezum", "ref": "U1", "question": "What does this part do?", "thread": "c_8f2a1b3c" }
+```
+
+`ref` and `thread` are optional. `ref` puts that part first in the model's context with its nets and nearest parts;
+`thread` (a comment id on the same board) sends that thread's last messages along. `question` is cut to 400
+characters. →
+
+```json
+{ "ok": true, "answer": "**U1 is the FPGA**, the chip …", "mentions": ["U1", "U3"],
+  "thoughts": ["Finding U1 on the board", "Following its nets"], "seconds": 4.2 }
+```
+
+`answer` is 2-4 sentences of Markdown (bold and inline code only). `mentions`: refdes on this board the answer
+talks about. `thoughts`: 2-3 short step titles. Errors: `400` "Ask me something about this board." (no question),
+`429` "That is a lot of questions…", `503` "Etch has used up its question budget for now…" or "Etch can't answer
+right now…", `502` "Etch could not put an answer together…".
+
+`GET /etch/comments?board=<id>` → `{"ok": true, "comments": [comment, …]}` (oldest first; `[]` for a board with
+none). A comment:
+
+```json
+{ "id": "c_8f2a1b3c", "board": "gh:FPGAwars/icezum", "n": 1, "ref": "U1", "anchor": [0.0123, 0.0016, 0.0081],
+  "author": "You", "created": 1792256901,
+  "messages": [
+    { "role": "user", "text": "What does this part do?", "at": 1792256901 },
+    { "role": "assistant", "text": "**U1 is the FPGA** …", "at": 1792256905,
+      "thoughts": ["…"], "seconds": 4.2, "mentions": ["U1"] } ] }
+```
+
+`n` is the pin number: one more than the highest on the board. `anchor` is the clicked point in GLB metres.
+
+| Route | Body | → |
+| --- | --- | --- |
+| `POST /etch/comments` | `{board, ref, anchor: [x, y, z], text}` | `{ok, comment}` with the question and its answer. `400` no or unknown `ref`, `anchor` not three finite numbers, empty `text`; `409` the board has 300 comments. Same limits and model errors as `/etch/ask`. |
+| `POST /etch/comments/reply` | `{id, text, board?}` | `{ok, comment}` with the reply and its answer appended. `404` "That comment is gone." |
+| `POST /etch/comments/delete` | `{id, board?}` | `{ok}`, also when it was already gone. |
+
+`board` on reply/delete is optional (it skips looking the id up across boards). Comments are stored per board in
+`engine/out/comments/<gh__slug | live-…>.json`.
+
+`POST /etch/change` `{board, ref?, text}` — ask Etch to change a board
+
+For a `live-*` board this is exactly `POST /etch/live` `{mode: "modify", text, base: "/engine/out/<run>"}` (same
+checks, limits, queue and errors), with `ref` put in front of the text ("D1: make it blue") when the text does not
+name it already → `200 {"ok": true, "job", "token"}`; follow it with `/etch/job`. For an imported `gh:` board:
+`403` "This board's licence doesn't allow modified copies." when it isn't `copyable`, otherwise `501` "Changing
+imported boards isn't available yet." (the page falls back to its demo flow on 501).
 
 ## Build events
 
