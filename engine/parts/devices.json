@@ -1832,6 +1832,8 @@
    "variant": null,
    "aliases": [
     "touch pad",
+    "touchpad",
+    "trackpad",
     "touch keypad",
     "capacitive keypad",
     "touch buttons"
@@ -36623,18 +36625,18 @@
     "smart touch pad",
     "connected touch pad",
     "iot touch pad",
-    "wireless touch keypad",
-    "bluetooth touch keypad",
-    "wifi touch keypad",
-    "smart touch keypad",
-    "connected touch keypad",
-    "iot touch keypad",
-    "wireless capacitive keypad",
-    "bluetooth capacitive keypad",
-    "wifi capacitive keypad",
-    "smart capacitive keypad",
-    "connected capacitive keypad",
-    "iot capacitive keypad"
+    "wireless touchpad",
+    "bluetooth touchpad",
+    "wifi touchpad",
+    "smart touchpad",
+    "connected touchpad",
+    "iot touchpad",
+    "wireless trackpad",
+    "bluetooth trackpad",
+    "wifi trackpad",
+    "smart trackpad",
+    "connected trackpad",
+    "iot trackpad"
    ],
    "blocks": [
     [
@@ -36667,14 +36669,14 @@
     "battery powered touch pad",
     "portable touch pad",
     "cordless touch pad",
-    "rechargeable touch keypad",
-    "battery powered touch keypad",
-    "portable touch keypad",
-    "cordless touch keypad",
-    "rechargeable capacitive keypad",
-    "battery powered capacitive keypad",
-    "portable capacitive keypad",
-    "cordless capacitive keypad"
+    "rechargeable touchpad",
+    "battery powered touchpad",
+    "portable touchpad",
+    "cordless touchpad",
+    "rechargeable trackpad",
+    "battery powered trackpad",
+    "portable trackpad",
+    "cordless trackpad"
    ],
    "blocks": [
     [
@@ -36711,14 +36713,14 @@
     "touch pad with screen",
     "touch pad with oled",
     "touch pad with a screen",
-    "touch keypad with display",
-    "touch keypad with screen",
-    "touch keypad with oled",
-    "touch keypad with a screen",
-    "capacitive keypad with display",
-    "capacitive keypad with screen",
-    "capacitive keypad with oled",
-    "capacitive keypad with a screen"
+    "touchpad with display",
+    "touchpad with screen",
+    "touchpad with oled",
+    "touchpad with a screen",
+    "trackpad with display",
+    "trackpad with screen",
+    "trackpad with oled",
+    "trackpad with a screen"
    ],
    "blocks": [
     [
@@ -36753,14 +36755,14 @@
     "touch pad with alarm",
     "touch pad with beeper",
     "beeping touch pad",
-    "touch keypad with buzzer",
-    "touch keypad with alarm",
-    "touch keypad with beeper",
-    "beeping touch keypad",
-    "capacitive keypad with buzzer",
-    "capacitive keypad with alarm",
-    "capacitive keypad with beeper",
-    "beeping capacitive keypad"
+    "touchpad with buzzer",
+    "touchpad with alarm",
+    "touchpad with beeper",
+    "beeping touchpad",
+    "trackpad with buzzer",
+    "trackpad with alarm",
+    "trackpad with beeper",
+    "beeping trackpad"
    ],
    "blocks": [
     [
@@ -36794,16 +36796,16 @@
     "color touch pad",
     "light up touch pad",
     "led touch pad",
-    "rgb touch keypad",
-    "colour touch keypad",
-    "color touch keypad",
-    "light up touch keypad",
-    "led touch keypad",
-    "rgb capacitive keypad",
-    "colour capacitive keypad",
-    "color capacitive keypad",
-    "light up capacitive keypad",
-    "led capacitive keypad"
+    "rgb touchpad",
+    "colour touchpad",
+    "color touchpad",
+    "light up touchpad",
+    "led touchpad",
+    "rgb trackpad",
+    "colour trackpad",
+    "color trackpad",
+    "light up trackpad",
+    "led trackpad"
    ],
    "blocks": [
     [
@@ -36835,12 +36837,12 @@
     "touch pad with knob",
     "touch pad with encoder",
     "touch pad with dial",
-    "touch keypad with knob",
-    "touch keypad with encoder",
-    "touch keypad with dial",
-    "capacitive keypad with knob",
-    "capacitive keypad with encoder",
-    "capacitive keypad with dial"
+    "touchpad with knob",
+    "touchpad with encoder",
+    "touchpad with dial",
+    "trackpad with knob",
+    "trackpad with encoder",
+    "trackpad with dial"
    ],
    "blocks": [
     [
@@ -36872,12 +36874,12 @@
     "touch pad with speaker",
     "talking touch pad",
     "touch pad with sound",
-    "touch keypad with speaker",
-    "talking touch keypad",
-    "touch keypad with sound",
-    "capacitive keypad with speaker",
-    "talking capacitive keypad",
-    "capacitive keypad with sound"
+    "touchpad with speaker",
+    "talking touchpad",
+    "touchpad with sound",
+    "trackpad with speaker",
+    "talking trackpad",
+    "trackpad with sound"
    ],
    "blocks": [
     [
@@ -36909,12 +36911,12 @@
     "usb c touch pad",
     "usb-c touch pad",
     "usb powered touch pad",
-    "usb c touch keypad",
-    "usb-c touch keypad",
-    "usb powered touch keypad",
-    "usb c capacitive keypad",
-    "usb-c capacitive keypad",
-    "usb powered capacitive keypad"
+    "usb c touchpad",
+    "usb-c touchpad",
+    "usb powered touchpad",
+    "usb c trackpad",
+    "usb-c trackpad",
+    "usb powered trackpad"
    ],
    "blocks": [
     [
@@ -36947,14 +36949,14 @@
     "touch pad with sd card",
     "touch pad logger",
     "recording touch pad",
-    "logging touch keypad",
-    "touch keypad with sd card",
-    "touch keypad logger",
-    "recording touch keypad",
-    "logging capacitive keypad",
-    "capacitive keypad with sd card",
-    "capacitive keypad logger",
-    "recording capacitive keypad"
+    "logging touchpad",
+    "touchpad with sd card",
+    "touchpad logger",
+    "recording touchpad",
+    "logging trackpad",
+    "trackpad with sd card",
+    "trackpad logger",
+    "recording trackpad"
    ],
    "blocks": [
     [
@@ -36985,10 +36987,10 @@
    "aliases": [
     "touch pad with gps",
     "gps touch pad",
-    "touch keypad with gps",
-    "gps touch keypad",
-    "capacitive keypad with gps",
-    "gps capacitive keypad"
+    "touchpad with gps",
+    "gps touchpad",
+    "trackpad with gps",
+    "gps trackpad"
    ],
    "blocks": [
     [
@@ -37018,8 +37020,8 @@
    "variant": "wireless+rechargeable",
    "aliases": [
     "wireless rechargeable touch pad",
-    "wireless rechargeable touch keypad",
-    "wireless rechargeable capacitive keypad"
+    "wireless rechargeable touchpad",
+    "wireless rechargeable trackpad"
    ],
    "blocks": [
     [
@@ -37057,8 +37059,8 @@
    "variant": "wireless+display",
    "aliases": [
     "wireless touch pad with display",
-    "wireless touch keypad with display",
-    "wireless capacitive keypad with display"
+    "wireless touchpad with display",
+    "wireless trackpad with display"
    ],
    "blocks": [
     [
@@ -37094,8 +37096,8 @@
    "variant": "rechargeable+display",
    "aliases": [
     "rechargeable touch pad with display",
-    "rechargeable touch keypad with display",
-    "rechargeable capacitive keypad with display"
+    "rechargeable touchpad with display",
+    "rechargeable trackpad with display"
    ],
    "blocks": [
     [
@@ -37135,8 +37137,8 @@
    "variant": "wireless+buzzer",
    "aliases": [
     "wireless touch pad with alarm",
-    "wireless touch keypad with alarm",
-    "wireless capacitive keypad with alarm"
+    "wireless touchpad with alarm",
+    "wireless trackpad with alarm"
    ],
    "blocks": [
     [
@@ -37170,8 +37172,8 @@
    "variant": "rechargeable+rgb",
    "aliases": [
     "rechargeable rgb touch pad",
-    "rechargeable rgb touch keypad",
-    "rechargeable rgb capacitive keypad"
+    "rechargeable rgb touchpad",
+    "rechargeable rgb trackpad"
    ],
    "blocks": [
     [
@@ -37209,8 +37211,8 @@
    "variant": "display+knob",
    "aliases": [
     "touch pad with display and knob",
-    "touch keypad with display and knob",
-    "capacitive keypad with display and knob"
+    "touchpad with display and knob",
+    "trackpad with display and knob"
    ],
    "blocks": [
     [
@@ -37246,8 +37248,8 @@
    "variant": "wireless+rgb",
    "aliases": [
     "wireless rgb touch pad",
-    "wireless rgb touch keypad",
-    "wireless rgb capacitive keypad"
+    "wireless rgb touchpad",
+    "wireless rgb trackpad"
    ],
    "blocks": [
     [

@@ -106,3 +106,38 @@ def test_coverage_report_is_current():
     )
     assert len(rows) == blocks.load_devices()["count"]
     assert sum(r["pass"] for r in rows) / len(rows) >= 0.95
+
+
+def test_block_picker_answer_is_wired_by_code():
+    ans = {"fits": True, "title": "PLANT BUDDY", "blocks": [
+        {"block": "analog_sensor", "params": {"kind": "soil"}}, {"block": "display", "params": {"kind": "oled"}},
+        {"block": "buzzer"}]}  # fmt: skip
+    d = blocks.from_answer(ans, "plant monitor that beeps when dry")
+    assert d is not None and d["parts"][0]["ref"] == "U1"
+
+
+def test_block_picker_answer_that_does_not_fit_goes_to_the_picker():
+    assert blocks.from_answer({"fits": False, "blocks": []}, "555 blinker") is None
+    assert blocks.from_answer({"fits": True, "blocks": [{"block": "warp_drive"}]}, "x") is None
+    assert blocks.from_answer({"fits": True, "blocks": [{"block": "joystick"}, {"block": "joystick"}]}, "x") is None
+
+
+def test_pick_blocks_falls_back_on_model_failure(cat, monkeypatch):
+    from agent import llm
+    from agent.events import Stream
+
+    def boom(*a, **k):
+        raise llm.ModelError("down")
+
+    monkeypatch.setattr(llm, "call_json", boom)
+    assert blocks.pick_blocks(Stream("t", echo=False), "a plant monitor", "m", cat) is None
+
+
+def test_pick_blocks_uses_the_model_answer(cat, monkeypatch):
+    from agent import llm
+    from agent.events import Stream
+
+    ans = {"fits": True, "title": "FAN", "blocks": [{"block": "motor", "params": {"label": "fan"}}, {"block": "ntc"}]}
+    monkeypatch.setattr(llm, "call_json", lambda *a, **k: (ans, None))
+    rec = blocks.pick_blocks(Stream("t", echo=False), "a fan that turns on when hot", "m", cat)
+    assert rec is not None and rec[1] == "blocks"

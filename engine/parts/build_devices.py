@@ -78,7 +78,7 @@ button_box | button box | button box;switch panel;sim racing button box;flight p
 stenography | steno keyboard | steno keyboard;stenography keyboard;chorded keyboard;chording keyboard | km20
 calculator | calculator | calculator;pocket calculator;rpn calculator | kp disp:lcd coin
 remote_control | remote control | remote control;tv remote;universal remote;ir remote | irtx btn6 coin
-touch_pad | touch pad | touch pad;touch keypad;capacitive keypad;touch buttons | i2c:mpr121 leds3
+touch_pad | touch pad | touch pad;touchpad;trackpad;touch keypad;capacitive keypad;touch buttons | i2c:mpr121 leds3
 gesture_controller | gesture controller | gesture controller;gesture sensor;air gesture;hand gesture remote | i2c:apds9960 wl leds3
 dial_pad | rotary dial | rotary dial;dial pad;rotary phone dial | enc disp:oled btn
 morse_key | morse code key | morse key;morse code;telegraph key;cw key | btn buz leds2

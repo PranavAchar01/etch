@@ -2994,6 +2994,10 @@ def design(
     rt = task_router.route(ask, bool(rec), config.MODEL, config.SUB_MODEL)
     if rt:
         stream.emit("lead", "router", **rt)
+    if rec is None and not context:
+        # the model picks blocks, code writes the nets, firmware and benchmarks (qa/crash-trends-1017.md);
+        # an ask that is not a block board (555, transistor-only, named chip) goes on to the netlist picker
+        rec = blocks.pick_blocks(stream, ask, (rt or {}).get("model") or PICKER_MODEL, cat)
     route = "picker"
     if rec:
         d, route, used = rec
@@ -3118,7 +3122,7 @@ def design(
         ask,
         cl["kept"],
         # a device skeleton passed the offline gate; the picker may still repair it once the KiCad build speaks
-        max_iters=1 if route != "picker" and not route.startswith("device:") else MAX_ITERS,
+        max_iters=1 if route != "picker" and route != "blocks" and not route.startswith("device:") else MAX_ITERS,
     )
     t_asm = time.time() - t2
     ex = None

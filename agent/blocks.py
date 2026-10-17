@@ -185,6 +185,8 @@ class Board:
     # -------------------------------------------------------------- pin allocation + MCU part
     def mcu(self) -> dict[str, Any]:
         pins: dict[str, str] = {GND_PIN: "GND", "38": "GND"}
+        wired = {str(v) for p in self.parts for v in p["pins"].values()}
+        self.needs = [(n, k) for n, k in self.needs if n in wired]  # e.g. MISO when only write-only SPI parts
         fixed = {"sda": I2C0["SDA"], "scl": I2C0["SCL"], "miso": SPI0["MISO"], "mosi": SPI0["MOSI"],
                  "sck": SPI0["SCK"], "cs0": SPI0["CS0"], "tx0": UARTS[0][0], "rx0": UARTS[0][1],
                  "tx1": UARTS[1][0], "rx1": UARTS[1][1]}  # fmt: skip
@@ -1171,3 +1173,126 @@ def gate(design: dict[str, Any], ask: str = "", work: Path | None = None) -> str
         spec = live.to_spec(d, "GATE")
         (out / "spec.yaml").write_text(yaml.safe_dump(spec, sort_keys=False, width=110))
         return engine_api.validate(out / "spec.yaml")
+
+
+# ------------------------------------------------------------------ the picker chooses blocks, code wires them
+# crash-trends 10-17 (qa/crash-trends-1017.md): the model as netlist author passes 10/66, recipes 35/41; the repair
+# loop turns 3 % of failures into passes. So before the netlist picker, the model is asked only WHICH blocks a board
+# needs; compose() writes every net, firmware and benchmarks, and gate() checks it before the build.
+BLOCK_HELP = {
+    "status_led": "one LED + resistor on a GPIO (params: colour)",
+    "leds": "n LEDs, each with its resistor (params: n, colours 'red,green')",
+    "rgb_led": "one RGB LED, three resistors",
+    "button": "n push buttons with pull-ups (params: n)",
+    "buzzer": "piezo buzzer on a transistor (beeps, alarms, tones)",
+    "speaker": "class-D amp module + speaker plug (music, voice, audio)",
+    "usb_c": "USB-C power jack",
+    "lipo": "LiPo cell + TP4056 charger (rechargeable)",
+    "coin_cell": "CR2032 coin cell",
+    "battery_pack": "AA battery pack terminal",
+    "i2c_sensor": "I2C breakout (params: chip, one of " + ", ".join(I2C_MODULES) + ")",
+    "display": "display (params: kind = oled | tft | epaper | segment | matrix | lcd)",
+    "key_matrix": "n keys in a diode matrix (params: n, switch = tact | mx)",
+    "encoder": "rotary encoder with push",
+    "pot": "potentiometer knob on an ADC pin",
+    "joystick": "2-axis thumb joystick (uses 2 of the 3 ADC pins)",
+    "ldr": "light sensor",
+    "ntc": "thermistor temperature sensor",
+    "dht": "DHT11 temperature + humidity",
+    "mic": "microphone module",
+    "analog_sensor": "analog module (params: kind, one of " + ", ".join(ANALOG_MODULES) + ")",
+    "digital_sensor": "digital module (params: kind, one of " + ", ".join(DIGITAL_MODULES) + ")",
+    "ultrasonic": "HC-SR04 distance sensor",
+    "relay": "relay module",
+    "servo": "n servo plugs (params: n)",
+    "motor": "n small DC motors on transistors (params: n, label e.g. fan, pump, vibration motor)",
+    "neopixel": "n WS2812B RGB LEDs on the board (params: n up to 16)",
+    "led_strip": "plug for an off-board WS2812B strip",
+    "sd_card": "microSD module",
+    "gps": "NEO-6M GPS module",
+    "uart_module": "serial module (params: kind = hc05 | sim800 | dfplayer | fingerprint | pm25 | lidar)",
+    "lora": "LoRa radio",
+    "nrf24": "nRF24L01 2.4 GHz radio",
+    "rfid": "RC522 RFID reader",
+    "ir": "IR remote send and receive (params: tx, rx booleans)",
+    "keypad": "4x4 membrane keypad",
+    "load_cell": "HX711 load cell (weight)",
+    "wireless": "Wi-Fi / Bluetooth (the Pico W radio, no extra part)",
+}
+
+BLOCKS_FN = {
+    "name": "submit_blocks",
+    "description": "The circuit blocks the board needs. Code wires them to a Raspberry Pi Pico.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "fits": {
+                "type": "boolean",
+                "description": "false when the ask is not a microcontroller board (a 555 or transistor-only "
+                "circuit, a named chip that is not a block, a power supply)",
+            },
+            "title": {"type": "string", "description": "silkscreen title, max 16 characters"},
+            "blocks": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {"block": {"type": "string"}, "params": {"type": "object"}},
+                    "required": ["block"],
+                },
+            },
+        },
+        "required": ["fits", "blocks"],
+    },
+}
+
+
+def block_prompt(ask: str) -> list[dict[str, str]]:
+    lines = "\n".join(f"- {k}: {v}" for k, v in BLOCK_HELP.items())
+    return [
+        {
+            "role": "system",
+            "content": "You are Etch's block picker. A board is a Raspberry Pi Pico plus blocks; code writes every "
+            "net, the firmware and the tests. Choose the fewest blocks that do what the ask says. At most 3 analog "
+            "inputs (pot, joystick axes, ldr, ntc, mic, analog_sensor) and about 24 GPIO in all. A status LED is "
+            "added for you. Blocks:\n" + lines,
+        },
+        {"role": "user", "content": f"Board request: {ask}"},
+    ]
+
+
+def from_answer(ans: dict[str, Any], ask: str) -> dict[str, Any] | None:
+    """The composed design for a block-picker answer, or None when it does not fit blocks or fails the gate."""
+    if not ans.get("fits") or not ans.get("blocks"):
+        return None
+    specs = []
+    for b in ans["blocks"]:
+        name = str(b.get("block", "")).strip()
+        if name not in BLOCKS:
+            return None
+        params = b.get("params") or {}
+        if not isinstance(params, dict):
+            return None
+        specs.append([name, params])
+    title = str(ans.get("title") or ask)[:16] or "ETCH BOARD"
+    try:
+        d = compose(specs, ask, title, re.sub(r"[^a-z0-9]+", "_", title.lower()).strip("_") or "board")
+    except BlockError:
+        return None
+    return None if gate(d, ask) else d
+
+
+def pick_blocks(stream: Any, ask: str, model: str, catalog: dict[str, dict[str, Any]]):
+    """recipes.match's shape for a model-chosen block list: (design, "blocks", pieces) or None (go to the picker)."""
+    from . import llm
+
+    try:
+        ans, _ = llm.call_json(stream, "picker", model, block_prompt(ask), BLOCKS_FN, timeout=60, max_tokens=800)
+    except Exception as e:  # any model failure falls through to the netlist picker, as before blocks existed
+        stream.emit("picker", "blocks_failed", reason=str(e)[:200])
+        return None
+    d = from_answer(ans, ask)
+    stream.emit("picker", "blocks", answer=ans, used=bool(d))
+    if d is None or not all(p["piece"] in catalog for p in d["parts"]):
+        return None
+    used = list({p["piece"]: catalog[p["piece"]] for p in d["parts"]}.values())
+    return d, "blocks", used
