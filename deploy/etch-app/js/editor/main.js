@@ -488,6 +488,22 @@ function finishBuildAnim() {
 }
 
 let hero = null, lastAsk = "";
+// a question or chat typed into a new board's box is never a board description (prod 10-17: "done picking parts?"
+// typed during a build became job ygA7cMfan1ojs9QZ). While a build runs, any text gets the build's status; after
+// one, a status question gets how it ended. The server refuses chat too (agent/prefilter.py is_chat).
+const STATUS_Q = /^\W*(?:(?:are|r)\s+(?:you|u)\s+(?:done|finished|there|stuck|working|still)|(?:is|did)\s+(?:it|this|that|etch|the\s+(?:board|build|job))\s+(?:done|ready|finished|stuck|working|still|taking|broken|frozen|hung|fail|crash)|(?:all\s+)?(?:done|finished)\s+(?:yet|now|already|picking|building|routing|choosing|thinking|with)|how\s+(?:long|much\s+longer|is\s+it\s+going|far\s+along)|how'?s\s+it\s+going|what'?s?\s+(?:is\s+)?(?:taking|happening|going\s+on|the\s+(?:status|hold\s*-?\s*up|progress|eta))|why\s+is\s+(?:it|this|that)\s+(?:taking|so\s+slow|stuck|still)|any\s+(?:status|updates?|progress|news)|still\s+(?:working|building|going|there|picking|loading|thinking))\b[^\n]{0,48}$|^\W*(?:hello|hi|hey|yo|thanks|thank\s+you|thx|ty|ok(?:ay)?|cool|nice|great|lol|hm+|wow|done|finished|ready|status|update|progress|eta|you\s+there)(?:\s+(?:etch|there|again|so\s+much|yet|now))?\W*$/i;
+const BUILD_VERB = /\b(make|build|create|design|draw|want|need|add|give|wire|put|use|turn|light|blink)s?\b/i;
+let lastSay = "", lastEnd = "";
+function isChat(text) { const t = String(text || "").trim(); return t.split(/\s+/).length <= 12 && !BUILD_VERB.test(t) && STATUS_Q.test(t); }
+function statusReply(text) {
+  if (board.building) {
+    dock.say(lastSay ? `Still building. Latest: ${lastSay}` : "Still building your board. I'll show each step here as it happens.");
+    return true;
+  }
+  if (!isChat(text)) return false;
+  dock.say(lastEnd || "Nothing is building right now. Tell me what your board should do and I'll start one.");
+  return true;
+}
 function startDesign(text) {
   if (board.building) { dock.say("I'm still building your board. Give me a minute."); return; }
   board.building = true;
@@ -499,7 +515,10 @@ function startDesign(text) {
   $("crTitle").textContent = "New board";
   // no board came back (checks failed, error, build lost): stop the backdrop's building look too
   const failed = () => { board.building = false; backdrop?.building(false); };
-  bridge.design(text).then((r) => { if (!r || !r.ok) failed(); }).catch(failed);
+  bridge.design(text).then((r) => {
+    if (!r || !r.ok) failed();
+    if (!r) lastEnd = "I lost track of that build, so it did not finish. Tell me what your board should do and I'll start a new one.";
+  }).catch(failed);
 }
 // the hero's text goes through the dock's own composer, so it shows up there as the person's turn
 function sendViaDock(text) {
@@ -644,7 +663,7 @@ async function main() {
   dock = createDock(document.body, {
     onSend(text, { via } = {}) {
       const ref = sel.length === 1 ? sel[0] : null;
-      if (board.kind === "new") startDesign(text);
+      if (board.kind === "new") { if (!statusReply(text)) startDesign(text); }
       else if (CHANGE.test(text)) { if (blockedDrop()) return; bridge.change(text, { ref }); }
       else bridge.ask(text, { ref });
       void via;
@@ -680,6 +699,10 @@ async function main() {
       if (ev.run && /^live-\d+$/.test(ev.run)) { const j = readJob(); if (j && j.run !== ev.run && !j.mock) saveJob({ run: ev.run }); }
       if (k === "lead:error" || (k === "lead:done" && !ev.ok)) emote("wince");
       // My boards (Explore): every board this browser builds or changes; the mock's runs open as the demo board
+      if (k === "lead:say" && ev.text) lastSay = ev.text;
+      if (k === "lead:start") lastEnd = "";
+      else if (k === "lead:done") lastEnd = ev.ok ? "That build finished. Your board is here." : "That build stopped without a board. Tell me what your board should do and I'll start a new one.";
+      else if (k === "lead:error" || k === "lead:cancelled") lastEnd = "That build stopped without a board. Tell me what your board should do and I'll start a new one.";
       if (k === "lead:start") lastAsk = ev.ask || "";
       else if (k === "lead:done" && ev.ok) {
         const id = !api.status.mock && isLive(ev.run) ? ev.run : board.kind === "new" ? DEMO : board.id;
