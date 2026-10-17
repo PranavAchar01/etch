@@ -22,7 +22,6 @@ from __future__ import annotations
 import argparse
 import concurrent.futures as cf
 import datetime as dt
-import json
 import os
 import re
 import shutil
@@ -98,22 +97,19 @@ def optimize(raw: Path, out: Path, max_bytes: int = MAX_BYTES) -> tuple[bool, st
     return True, ""
 
 
-# One look for every thumbnail: a fixed preset (follow_pcb_editor, read from a canonical .kicad_prl with every
-# layer visible, so no project's own plot or visibility settings leak in), explicit lights, the board's own
-# stackup colours, the same floor/shadow, perspective and camera elevation. Long boards turn 90 degrees about Z
-# so the long axis runs across the frame.
+# One look for every thumbnail: the follow_pcb_editor preset on a scratch copy of the board with every layer
+# visible (old boards hide layers in their (layers ...) block, newer ones in a .kicad_prl, which is left out), so
+# no project's own plot or visibility settings leak in; explicit lights, the board's own stackup colours, the same
+# floor/contact shadow, perspective and camera elevation. Long boards turn 90 degrees about Z so the long axis runs
+# across the frame.
 THUMB_LOOK = ["--side", "top", "--perspective", "--preset", "follow_pcb_editor", "--use-board-stackup-colors",
               "--background", "opaque", "--floor", "--light-top", "0.30", "--light-bottom", "0.10",
               "--light-side", "0.17", "--light-camera", "0.22", "--light-side-elevation", "60"]
 THUMB_ROT = ("-40,0,-25", "-40,0,65")
 THUMB_FILL = 0.78    # board bbox / frame, on whichever axis binds
-THUMB_Y = 0.14       # target mean linear luminance of the board pixels
+THUMB_Y = 0.12       # target mean linear luminance of the board pixels
 THUMB_GAIN = 0.15    # exposure normalisation is clamped to +-15%
 PAN_X, PAN_Y = 0.049, -0.040  # image shift (fraction of width / height) per --pan unit at --zoom 1, measured
-CANON_PRL = {"board": {"visible_layers": "ffffffff_ffffffff_ffffffff_ffffffff", "visible_items": [
-    "vias", "footprint_text", "footprints_front", "footprints_back", "footprint_values", "footprint_references",
-    "tracks", "pads", "zones", "shapes", "bitmaps"], "active_layer_preset": ""},
-    "meta": {"filename": "board.kicad_prl", "version": 5}}
 
 
 def _frame(png: Path) -> Image.Image:
@@ -127,14 +123,23 @@ def _frame(png: Path) -> Image.Image:
 
 
 def thumb(cli: Path, env: dict, pcb: Path, work: Path, out: Path, size_mm: list[float]) -> tuple[bool, str]:
-    # a scratch project: the board and its .kicad_pro (text variables), plus the canonical .kicad_prl
+    # a scratch project: the board with its layer "hide" flags dropped and its .kicad_pro (text variables), no
+    # .kicad_prl (kicad-cli also writes one there, never into the source folder)
     proj = work / "thumbproj"
     shutil.rmtree(proj, ignore_errors=True)
     proj.mkdir(parents=True)
-    (proj / "board.kicad_pcb").symlink_to(pcb.resolve())
+    text = pcb.read_text(errors="replace")
+    i = text.find("(layers")  # the board's layer table (the first "(layers" in the file), up to its closing paren
+    j, depth = i, 0
+    while 0 <= j < len(text):
+        depth += {"(": 1, ")": -1}.get(text[j], 0)
+        if depth == 0:
+            text = text[:i] + re.sub(r"\s+hide\)", ")", text[i:j]) + text[j:]
+            break
+        j += 1
+    (proj / "board.kicad_pcb").write_text(text)
     if (pcb.parent / "board.kicad_pro").exists():
         shutil.copy2(pcb.parent / "board.kicad_pro", proj / "board.kicad_pro")
-    (proj / "board.kicad_prl").write_text(json.dumps(CANON_PRL))
     board = proj / "board.kicad_pcb"
     rot = THUMB_ROT[1] if size_mm[1] > size_mm[0] * 1.25 else THUMB_ROT[0]
     png = work / "thumb.png"
@@ -149,22 +154,44 @@ def thumb(cli: Path, env: dict, pcb: Path, work: Path, out: Path, size_mm: list[
 
     # framing: fast basic-quality probes, measured like the final image, set zoom and pan so the board's bbox
     # fills THUMB_FILL of the binding axis, centred (the image shift per pan unit scales with zoom)
+    # first probe sets the zoom; later ones move the pan with a secant estimate of image shift per pan unit
+    # (perspective makes it vary per board), re-zooming only when the fill is off by more than 0.03
     zoom, pan = 0.6, [0.0, 0.0]
-    for _ in range(3):
+    gain = [PAN_X * zoom, PAN_Y * zoom]
+    prev = None
+    for k in range(6):
         ok, err = render("basic", zoom, tuple(pan))
         if not ok:
             return False, "render: " + err
         m = measure(_frame(png))
+        if os.environ.get("THUMB_DEBUG"):
+            log(f"{pcb.parent.name[:40]} probe z {zoom:.3f} pan {pan[0]:.2f},{pan[1]:.2f} -> fill {m['fill']:.3f} "
+                f"c {m['cx']:.3f},{m['cy']:.3f}")
         if m["px"] == 0:
             break
-        pan[0] -= (m["cx"] - 0.5) / (PAN_X * zoom)
-        pan[1] -= (m["cy"] - 0.5) / (PAN_Y * zoom)
-        zoom = min(20.0, max(0.1, zoom * THUMB_FILL / max(m["fill"], 1e-3)))
-        if abs(m["fill"] - THUMB_FILL) < 0.01 and abs(m["cx"] - 0.5) < 0.01 and abs(m["cy"] - 0.5) < 0.01:
+        c = [m["cx"] - 0.5, m["cy"] - 0.5]
+        if abs(m["fill"] - THUMB_FILL) < 0.015 and max(abs(c[0]), abs(c[1])) < 0.01:
             break
+        if prev:
+            for ax in (0, 1):
+                dp = pan[ax] - prev[0][ax]
+                if abs(dp) > 0.05:
+                    g = (c[ax] - prev[1][ax]) / dp
+                    if g * gain[ax] > 0:
+                        gain[ax] = g
+        prev = (list(pan), c)
+        if k > 0:
+            pan = [pan[ax] - c[ax] / gain[ax] for ax in (0, 1)]
+        if k == 0 or abs(m["fill"] - THUMB_FILL) > 0.03:
+            z1 = min(20.0, max(0.1, zoom * THUMB_FILL / max(m["fill"], 1e-3)))
+            gain = [g * z1 / zoom for g in gain]
+            zoom, prev = z1, None
     ok, err = render("high", zoom, tuple(pan))
     if not ok:
         return False, "render: " + err
+    if os.environ.get("THUMB_DEBUG"):
+        m = measure(_frame(png))
+        log(f"{pcb.parent.name[:40]} high  z {zoom:.3f} -> fill {m['fill']:.3f} c {m['cx']:.3f},{m['cy']:.3f}")
 
     # light exposure normalisation on the board pixels only (feathered mask), backdrop untouched
     im = _frame(png).resize((640, 400), Image.LANCZOS)
