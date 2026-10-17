@@ -1179,10 +1179,12 @@ EXPLORE_POST = {
 }
 
 
-TTS_VOICE = os.environ.get("ETCH_TTS_VOICE", "ballad")
+# newest OpenAI speech snapshot; cedar is the male voice OpenAI recommends for best quality
+TTS_MODEL = os.environ.get("ETCH_TTS_MODEL", "gpt-4o-mini-tts-2025-12-15")
+TTS_VOICE = os.environ.get("ETCH_TTS_VOICE", "cedar")
 TTS_PER_IP_10MIN = 120
 TTS_INSTRUCTIONS = (
-    "You are Etch, a friendly, confident hardware engineer. Speak warmly and clearly, "
+    "You are Etch, a friendly, confident American hardware engineer in his twenties. Speak warmly and clearly, "
     "natural conversational pace, light energy, no robotic cadence."
 )
 
@@ -1218,7 +1220,7 @@ def tts_meter(text: str) -> None:
             json.dumps(
                 {
                     "ts": round(time.time(), 1),
-                    "model": "gpt-4o-mini-tts",
+                    "model": TTS_MODEL,
                     "agent": "tts",
                     "chars": len(text),
                     "usd": round(usd, 6),
@@ -1241,7 +1243,7 @@ def tts(text: str) -> bytes:
         "https://api.openai.com/v1/audio/speech",
         data=json.dumps(
             {
-                "model": "gpt-4o-mini-tts",
+                "model": TTS_MODEL,
                 "voice": TTS_VOICE,
                 "input": text,
                 "instructions": TTS_INSTRUCTIONS,
