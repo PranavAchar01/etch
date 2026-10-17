@@ -1,0 +1,52 @@
+name: led_flasher
+title: ETCH LED FLASHER
+description: >
+  A very simple board. When current flows through it, a red LED flashes.
+  Two transistors take turns switching on (an astable multivibrator), so the
+  LED blinks about one and a half times per second.
+prompt: "a very simple PCB: when current flows through it, it flashes a red LED"
+template: astable_led
+
+power:
+  input: JST-PH 2-pin (pin 1 = +, pin 2 = GND)
+  voltage: 5.0
+  source: USB 5 V or a 3xAA pack on a 2-pin lead
+
+board: {w: 24, h: 17, thickness: 1.6, layers: 2}
+rules: {track: 0.3, clearance: 0.2, via_d: 0.6, via_drill: 0.3, edge_clearance: 0.5}
+
+parts:
+  - {ref: J1, part: jst_ph_2, value: "JST PH 2p", pins: {"1": VCC, "2": GND}, edge: left,
+     why: "Brings 5 V in from a battery pack or USB lead."}
+  - {ref: Q1, part: mmbt3904, pins: {"1": Q1_B, "2": GND, "3": Q1_C},
+     why: "First switch of the pair; when it turns on it pushes the other one off."}
+  - {ref: Q2, part: mmbt3904, pins: {"1": Q2_B, "2": GND, "3": Q2_C},
+     why: "Second switch; it sinks the LED current while it is on."}
+  - {ref: C1, part: cap_0805, value: 10u, pins: {"1": Q1_C, "2": Q2_B},
+     why: "Holds Q2 off for a moment after Q1 switches on, which sets the LED off time."}
+  - {ref: C2, part: cap_0805, value: 10u, pins: {"1": Q2_C, "2": Q1_B},
+     why: "Holds Q1 off for a moment after Q2 switches on, which sets the LED on time."}
+  - {ref: R1, part: resistor_0603, value: 1k, pins: {"1": VCC, "2": Q1_C},
+     why: "Collector load for Q1 so its side of the pair can swing."}
+  - {ref: R2, part: resistor_0603, value: "220", pins: {"1": VCC, "2": LED_A},
+     why: "Limits the LED current to a safe level, about 13 mA."}
+  - {ref: R3, part: resistor_0603, value: 47k, pins: {"1": VCC, "2": Q2_B},
+     why: "Recharges C1 and turns Q2 back on; with C1 it sets the blink rate."}
+  - {ref: R4, part: resistor_0603, value: 47k, pins: {"1": VCC, "2": Q1_B},
+     why: "Recharges C2 and turns Q1 back on; with C2 it sets the blink rate."}
+  - {ref: D1, part: led_red_0805, value: RED, pins: {"2": LED_A, "1": Q2_C},
+     why: "The red LED that flashes."}
+
+requirements:
+  - Runs from 5 V on a 2-pin connector.
+  - One red LED blinks on its own, no microcontroller.
+  - Only common parts with KiCad footprints and 3D models.
+
+benchmarks:
+  - {check: blink_hz, min: 1.0, max: 3.0, text: "blink 1-3 Hz"}
+  - {check: led_peak_ma, max: 20.0, text: "LED current under 20 mA"}
+  - {check: duty, min: 0.2, max: 0.8, text: "LED on 20-80 % of the time"}
+  - {check: drc_violations, max: 0, text: "DRC clean"}
+  - {check: unconnected, max: 0, text: "all nets connected"}
+  - {check: erc_errors, max: 0, text: "ERC has no errors"}
+  - {check: parity, max: 0, text: "board matches schematic"}

@@ -1,0 +1,23 @@
+{
+ "name": "local classifier: e5-small embeddings + logistic regression",
+ "embedder": "intfloat/multilingual-e5-small (ONNX, local cache, mean pooling)",
+ "head": "sklearn LogisticRegression (C=20), refit on all rows after the held-out test",
+ "data": "KiCad KiCad.app footprint libraries: descr + tags -> library name",
+ "classes": 128,
+ "rows": 8505,
+ "rows_test": 1701,
+ "max_per_class": 120,
+ "heldout_top1": 0.9647,
+ "heldout_top3": 0.9871,
+ "embed_s": 91.3,
+ "fit_s": 1.0,
+ "total_s": 96.7,
+ "latency": {
+  "calls": 200,
+  "p50_ms": 2.6,
+  "p90_ms": 3.02,
+  "mean_ms": 2.75,
+  "threads": 4,
+  "machine": "this Mac, CPU (onnxruntime)"
+ }
+}

@@ -1,0 +1,2688 @@
+{
+ "kicad": "10.0.6",
+ "count": 101,
+ "parts": [
+  {
+   "key": "resistor_0402",
+   "name": "resistor 0402",
+   "aliases": [
+    "r 0402",
+    "res 0402"
+   ],
+   "lib_id": "Device:R",
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "category": "passive",
+   "value": "10k",
+   "spice": {
+    "prefix": "R",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": "Sets a current or a time constant.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_SMD.3dshapes/R_0402_1005Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "cap_0402",
+   "name": "capacitor 0402",
+   "aliases": [
+    "cap 0402",
+    "ceramic cap 0402",
+    "c 0402"
+   ],
+   "lib_id": "Device:C",
+   "footprint": "Capacitor_SMD:C_0402_1005Metric",
+   "category": "passive",
+   "value": "100n",
+   "spice": {
+    "prefix": "C",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": "Stores charge for timing or decoupling.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_SMD.3dshapes/C_0402_1005Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "resistor_0603",
+   "name": "resistor 0603",
+   "aliases": [
+    "r 0603",
+    "res 0603"
+   ],
+   "lib_id": "Device:R",
+   "footprint": "Resistor_SMD:R_0603_1608Metric",
+   "category": "passive",
+   "value": "10k",
+   "spice": {
+    "prefix": "R",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": "Sets a current or a time constant.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_SMD.3dshapes/R_0603_1608Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "cap_0603",
+   "name": "capacitor 0603",
+   "aliases": [
+    "cap 0603",
+    "ceramic cap 0603",
+    "c 0603"
+   ],
+   "lib_id": "Device:C",
+   "footprint": "Capacitor_SMD:C_0603_1608Metric",
+   "category": "passive",
+   "value": "100n",
+   "spice": {
+    "prefix": "C",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": "Stores charge for timing or decoupling.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_SMD.3dshapes/C_0603_1608Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "resistor_0805",
+   "name": "resistor 0805",
+   "aliases": [
+    "r 0805",
+    "res 0805"
+   ],
+   "lib_id": "Device:R",
+   "footprint": "Resistor_SMD:R_0805_2012Metric",
+   "category": "passive",
+   "value": "10k",
+   "spice": {
+    "prefix": "R",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": "Sets a current or a time constant.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_SMD.3dshapes/R_0805_2012Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "cap_0805",
+   "name": "capacitor 0805",
+   "aliases": [
+    "cap 0805",
+    "ceramic cap 0805",
+    "c 0805"
+   ],
+   "lib_id": "Device:C",
+   "footprint": "Capacitor_SMD:C_0805_2012Metric",
+   "category": "passive",
+   "value": "100n",
+   "spice": {
+    "prefix": "C",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": "Stores charge for timing or decoupling.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_SMD.3dshapes/C_0805_2012Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "resistor_1206",
+   "name": "resistor 1206",
+   "aliases": [
+    "r 1206",
+    "res 1206"
+   ],
+   "lib_id": "Device:R",
+   "footprint": "Resistor_SMD:R_1206_3216Metric",
+   "category": "passive",
+   "value": "10k",
+   "spice": {
+    "prefix": "R",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": "Sets a current or a time constant.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_SMD.3dshapes/R_1206_3216Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "cap_1206",
+   "name": "capacitor 1206",
+   "aliases": [
+    "cap 1206",
+    "ceramic cap 1206",
+    "c 1206"
+   ],
+   "lib_id": "Device:C",
+   "footprint": "Capacitor_SMD:C_1206_3216Metric",
+   "category": "passive",
+   "value": "100n",
+   "spice": {
+    "prefix": "C",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": "Stores charge for timing or decoupling.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_SMD.3dshapes/C_1206_3216Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "resistor_axial",
+   "name": "resistor axial THT",
+   "aliases": [
+    "resistor tht"
+   ],
+   "lib_id": "Device:R",
+   "footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+   "category": "passive",
+   "value": "10k",
+   "spice": {
+    "prefix": "R",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_THT.3dshapes/R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "cap_elec_5x5",
+   "name": "electrolytic cap 5x5.3 SMD",
+   "aliases": [
+    "electrolytic smd"
+   ],
+   "lib_id": "Device:C_Polarized",
+   "footprint": "Capacitor_SMD:CP_Elec_5x5.3",
+   "category": "passive",
+   "value": "47u",
+   "spice": {
+    "prefix": "C",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_SMD.3dshapes/CP_Elec_5x5.3.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "cap_elec_radial_5mm",
+   "name": "electrolytic cap radial 5mm",
+   "aliases": [
+    "electrolytic tht"
+   ],
+   "lib_id": "Device:C_Polarized",
+   "footprint": "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm",
+   "category": "passive",
+   "value": "100u",
+   "spice": {
+    "prefix": "C",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_THT.3dshapes/CP_Radial_D5.0mm_P2.00mm.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "cap_tantalum_a",
+   "name": "tantalum cap case A",
+   "aliases": [
+    "tantalum"
+   ],
+   "lib_id": "Device:C_Polarized",
+   "footprint": "Capacitor_Tantalum_SMD:CP_EIA-3216-18_Kemet-A",
+   "category": "passive",
+   "value": "10u",
+   "spice": {
+    "prefix": "C",
+    "pins": [
+     "1",
+     "2"
+    ]
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Capacitor_Tantalum_SMD.3dshapes/CP_EIA-3216-18_Kemet-A.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "inductor_0805",
+   "name": "inductor 0805",
+   "aliases": [],
+   "lib_id": "Device:L",
+   "footprint": "Inductor_SMD:L_0805_2012Metric",
+   "category": "passive",
+   "value": "2.2u",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Inductor_SMD.3dshapes/L_0805_2012Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "inductor_0603",
+   "name": "inductor 0603",
+   "aliases": [],
+   "lib_id": "Device:L",
+   "footprint": "Inductor_SMD:L_0603_1608Metric",
+   "category": "passive",
+   "value": "1u",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Inductor_SMD.3dshapes/L_0603_1608Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "ferrite_0603",
+   "name": "ferrite bead 0603",
+   "aliases": [
+    "ferrite"
+   ],
+   "lib_id": "Device:FerriteBead_Small",
+   "footprint": "Inductor_SMD:L_0603_1608Metric",
+   "category": "passive",
+   "value": "600R@100MHz",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Inductor_SMD.3dshapes/L_0603_1608Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "ntc_0603",
+   "name": "NTC thermistor 0603",
+   "aliases": [
+    "thermistor"
+   ],
+   "lib_id": "Device:Thermistor_NTC",
+   "footprint": "Resistor_SMD:R_0603_1608Metric",
+   "category": "passive",
+   "value": "10k NTC",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Resistor_SMD.3dshapes/R_0603_1608Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "polyfuse_1206",
+   "name": "PTC polyfuse 1206",
+   "aliases": [
+    "fuse",
+    "ptc"
+   ],
+   "lib_id": "Device:Polyfuse",
+   "footprint": "Fuse:Fuse_1206_3216Metric",
+   "category": "protection",
+   "value": "500mA",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Fuse.3dshapes/Fuse_1206_3216Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "trimpot_3386p",
+   "name": "trimmer potentiometer 3386W",
+   "aliases": [
+    "potentiometer",
+    "trimpot"
+   ],
+   "lib_id": "Device:R_Potentiometer",
+   "footprint": "Potentiometer_THT:Potentiometer_Bourns_3386W_Horizontal",
+   "category": "passive",
+   "value": "10k",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Potentiometer_THT.3dshapes/Potentiometer_Bourns_3386W_Horizontal.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_red_0603",
+   "name": "red LED 0603",
+   "aliases": [
+    "red led",
+    "led red 0603"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_SMD:LED_0603_1608Metric",
+   "category": "led",
+   "value": "RED",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_RED"
+   },
+   "why": "Lights up red when current flows through it.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_0603_1608Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_red_0805",
+   "name": "red LED 0805",
+   "aliases": [
+    "red led",
+    "led red 0805"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_SMD:LED_0805_2012Metric",
+   "category": "led",
+   "value": "RED",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_RED"
+   },
+   "why": "Lights up red when current flows through it.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_0805_2012Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_green_0603",
+   "name": "green LED 0603",
+   "aliases": [
+    "green led",
+    "led green 0603"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_SMD:LED_0603_1608Metric",
+   "category": "led",
+   "value": "GREEN",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_GREEN"
+   },
+   "why": "Lights up green when current flows through it.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_0603_1608Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_green_0805",
+   "name": "green LED 0805",
+   "aliases": [
+    "green led",
+    "led green 0805"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_SMD:LED_0805_2012Metric",
+   "category": "led",
+   "value": "GREEN",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_GREEN"
+   },
+   "why": "Lights up green when current flows through it.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_0805_2012Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_blue_0603",
+   "name": "blue LED 0603",
+   "aliases": [
+    "blue led",
+    "led blue 0603"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_SMD:LED_0603_1608Metric",
+   "category": "led",
+   "value": "BLUE",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_BLUE"
+   },
+   "why": "Lights up blue when current flows through it.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_0603_1608Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_blue_0805",
+   "name": "blue LED 0805",
+   "aliases": [
+    "blue led",
+    "led blue 0805"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_SMD:LED_0805_2012Metric",
+   "category": "led",
+   "value": "BLUE",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_BLUE"
+   },
+   "why": "Lights up blue when current flows through it.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_0805_2012Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_yellow_0603",
+   "name": "yellow LED 0603",
+   "aliases": [
+    "yellow led",
+    "led yellow 0603"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_SMD:LED_0603_1608Metric",
+   "category": "led",
+   "value": "YELLOW",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_YELLOW"
+   },
+   "why": "Lights up yellow when current flows through it.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_0603_1608Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_yellow_0805",
+   "name": "yellow LED 0805",
+   "aliases": [
+    "yellow led",
+    "led yellow 0805"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_SMD:LED_0805_2012Metric",
+   "category": "led",
+   "value": "YELLOW",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_YELLOW"
+   },
+   "why": "Lights up yellow when current flows through it.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_0805_2012Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_white_0603",
+   "name": "white LED 0603",
+   "aliases": [
+    "white led",
+    "led white 0603"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_SMD:LED_0603_1608Metric",
+   "category": "led",
+   "value": "WHITE",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_WHITE"
+   },
+   "why": "Lights up white when current flows through it.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_0603_1608Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_white_0805",
+   "name": "white LED 0805",
+   "aliases": [
+    "white led",
+    "led white 0805"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_SMD:LED_0805_2012Metric",
+   "category": "led",
+   "value": "WHITE",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_WHITE"
+   },
+   "why": "Lights up white when current flows through it.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_0805_2012Metric.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_red_5mm",
+   "name": "red LED 5mm THT",
+   "aliases": [
+    "5mm led"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_THT:LED_D5.0mm",
+   "category": "led",
+   "value": "RED",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_RED"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D5.0mm.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "led_red_3mm",
+   "name": "red LED 3mm THT",
+   "aliases": [
+    "3mm led"
+   ],
+   "lib_id": "Device:LED",
+   "footprint": "LED_THT:LED_D3.0mm",
+   "category": "led",
+   "value": "RED",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "LED_RED"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_THT.3dshapes/LED_D3.0mm.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "ws2812b",
+   "name": "WS2812B RGB LED",
+   "aliases": [
+    "neopixel",
+    "addressable led"
+   ],
+   "lib_id": "LED:WS2812B",
+   "footprint": "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm",
+   "category": "led",
+   "value": "WS2812B RGB LED",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/LED_SMD.3dshapes/LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "mmbt3904",
+   "name": "2N3904 SOT-23",
+   "aliases": [
+    "2n3904",
+    "mmbt3904",
+    "npn sot-23",
+    "npn"
+   ],
+   "lib_id": "Transistor_BJT:MMBT3904",
+   "footprint": "Package_TO_SOT_SMD:SOT-23",
+   "category": "transistor",
+   "value": "MMBT3904",
+   "spice": {
+    "prefix": "Q",
+    "pins": [
+     "3",
+     "1",
+     "2"
+    ],
+    "model": "2N3904"
+   },
+   "why": "Switches current on and off.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "mmbt3906",
+   "name": "2N3906 SOT-23",
+   "aliases": [
+    "2n3906",
+    "pnp sot-23",
+    "pnp"
+   ],
+   "lib_id": "Transistor_BJT:MMBT3906",
+   "footprint": "Package_TO_SOT_SMD:SOT-23",
+   "category": "transistor",
+   "value": "MMBT3906",
+   "spice": {
+    "prefix": "Q",
+    "pins": [
+     "3",
+     "1",
+     "2"
+    ],
+    "model": "2N3906"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "bc847",
+   "name": "BC847 SOT-23",
+   "aliases": [
+    "bc847"
+   ],
+   "lib_id": "Transistor_BJT:BC847",
+   "footprint": "Package_TO_SOT_SMD:SOT-23",
+   "category": "transistor",
+   "value": "BC847",
+   "spice": {
+    "prefix": "Q",
+    "pins": [
+     "3",
+     "1",
+     "2"
+    ],
+    "model": "2N3904"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "bc857",
+   "name": "BC857 SOT-23",
+   "aliases": [
+    "bc857"
+   ],
+   "lib_id": "Transistor_BJT:BC857",
+   "footprint": "Package_TO_SOT_SMD:SOT-23",
+   "category": "transistor",
+   "value": "BC857",
+   "spice": {
+    "prefix": "Q",
+    "pins": [
+     "3",
+     "1",
+     "2"
+    ],
+    "model": "2N3906"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "2n3904_to92",
+   "name": "2N3904 TO-92",
+   "aliases": [
+    "2n3904 tht"
+   ],
+   "lib_id": "Transistor_BJT:2N3904",
+   "footprint": "Package_TO_SOT_THT:TO-92_Inline",
+   "category": "transistor",
+   "value": "2N3904",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "2n3906_to92",
+   "name": "2N3906 TO-92",
+   "aliases": [
+    "2n3906 tht",
+    "pnp tht"
+   ],
+   "lib_id": "Transistor_BJT:2N3906",
+   "footprint": "Package_TO_SOT_THT:TO-92_Inline",
+   "category": "transistor",
+   "value": "2N3906",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-92_Inline.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "2n7002",
+   "name": "2N7002 N-MOSFET SOT-23",
+   "aliases": [
+    "2n7002",
+    "nmos",
+    "n-mosfet"
+   ],
+   "lib_id": "Transistor_FET:2N7002",
+   "footprint": "Package_TO_SOT_SMD:SOT-23",
+   "category": "transistor",
+   "value": "2N7002 N-MOSFET SOT-23",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "bss138",
+   "name": "BSS138 N-MOSFET SOT-23",
+   "aliases": [
+    "bss138",
+    "level shifter fet"
+   ],
+   "lib_id": "Transistor_FET:BSS138",
+   "footprint": "Package_TO_SOT_SMD:SOT-23",
+   "category": "transistor",
+   "value": "BSS138 N-MOSFET SOT-23",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "ao3401a",
+   "name": "AO3401A P-MOSFET SOT-23",
+   "aliases": [
+    "ao3401",
+    "pmos",
+    "p-mosfet"
+   ],
+   "lib_id": "Transistor_FET:AO3401A",
+   "footprint": "Package_TO_SOT_SMD:SOT-23",
+   "category": "transistor",
+   "value": "AO3401A P-MOSFET SOT-23",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "irlz44n",
+   "name": "IRLZ44N MOSFET TO-220",
+   "aliases": [
+    "irlz44n",
+    "power mosfet"
+   ],
+   "lib_id": "Transistor_FET:IRLZ44N",
+   "footprint": "Package_TO_SOT_THT:TO-220-3_Vertical",
+   "category": "transistor",
+   "value": "IRLZ44N MOSFET TO-220",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-220-3_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "1n4148w",
+   "name": "1N4148W SOD-123",
+   "aliases": [
+    "1n4148",
+    "signal diode"
+   ],
+   "lib_id": "Diode:1N4148W",
+   "footprint": "Diode_SMD:D_SOD-123",
+   "category": "diode",
+   "value": "1N4148W SOD-123",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "D1N4148"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_SMD.3dshapes/D_SOD-123.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "1n4148_tht",
+   "name": "1N4148 DO-35",
+   "aliases": [
+    "1n4148 tht"
+   ],
+   "lib_id": "Diode:1N4148",
+   "footprint": "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal",
+   "category": "diode",
+   "value": "1N4148 DO-35",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "D1N4148"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-35_SOD27_P7.62mm_Horizontal.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "ss14",
+   "name": "SS14 Schottky SMA",
+   "aliases": [
+    "ss14",
+    "schottky"
+   ],
+   "lib_id": "Diode:SS14",
+   "footprint": "Diode_SMD:D_SMA",
+   "category": "diode",
+   "value": "SS14 Schottky SMA",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "SS14"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_SMD.3dshapes/D_SMA.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "1n5819ws",
+   "name": "1N5819WS Schottky SOD-323",
+   "aliases": [
+    "b5819w"
+   ],
+   "lib_id": "Diode:1N5819WS",
+   "footprint": "Diode_SMD:D_SOD-323",
+   "category": "diode",
+   "value": "1N5819WS Schottky SOD-323",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "D1N5819"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_SMD.3dshapes/D_SOD-323.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "1n5819",
+   "name": "1N5819 Schottky DO-41",
+   "aliases": [
+    "1n5819"
+   ],
+   "lib_id": "Diode:1N5819",
+   "footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+   "category": "diode",
+   "value": "1N5819 Schottky DO-41",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "D1N5819"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "bat54a",
+   "name": "BAT54A dual Schottky SOT-23",
+   "aliases": [
+    "bat54"
+   ],
+   "lib_id": "Diode:BAT54A",
+   "footprint": "Package_TO_SOT_SMD:SOT-23",
+   "category": "diode",
+   "value": "BAT54A dual Schottky SOT-23",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "1n4007",
+   "name": "1N4007 rectifier DO-41",
+   "aliases": [
+    "1n4007",
+    "rectifier"
+   ],
+   "lib_id": "Diode:1N4007",
+   "footprint": "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal",
+   "category": "diode",
+   "value": "1N4007 rectifier DO-41",
+   "spice": {
+    "prefix": "D",
+    "pins": [
+     "2",
+     "1"
+    ],
+    "model": "D1N4007"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Diode_THT.3dshapes/D_DO-41_SOD81_P10.16mm_Horizontal.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "ne555_soic8",
+   "name": "NE555 SOIC-8",
+   "aliases": [
+    "ne555",
+    "555 timer",
+    "555"
+   ],
+   "lib_id": "Timer:NE555D",
+   "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+   "category": "ic",
+   "value": "NE555",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_SO.3dshapes/SOIC-8_3.9x4.9mm_P1.27mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "ne555_dip8",
+   "name": "NE555 DIP-8",
+   "aliases": [
+    "ne555 dip"
+   ],
+   "lib_id": "Timer:NE555P",
+   "footprint": "Package_DIP:DIP-8_W7.62mm",
+   "category": "ic",
+   "value": "NE555",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-8_W7.62mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "lm358_soic8",
+   "name": "LM358 dual op-amp SOIC-8",
+   "aliases": [
+    "lm358",
+    "op amp"
+   ],
+   "lib_id": "Amplifier_Operational:LM358",
+   "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+   "category": "ic",
+   "value": "LM358 dual op-amp SOIC-8",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_SO.3dshapes/SOIC-8_3.9x4.9mm_P1.27mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "lmv321_sot235",
+   "name": "LMV321 op-amp SOT-23-5",
+   "aliases": [
+    "lmv321"
+   ],
+   "lib_id": "Amplifier_Operational:LMV321",
+   "footprint": "Package_TO_SOT_SMD:SOT-23-5",
+   "category": "ic",
+   "value": "LMV321 op-amp SOT-23-5",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23-5.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "attiny85_soic8",
+   "name": "ATtiny85 SOIC-8",
+   "aliases": [
+    "attiny85"
+   ],
+   "lib_id": "MCU_Microchip_ATtiny:ATtiny85-20S",
+   "footprint": "Package_SO:SOIC-8_5.3x5.3mm_P1.27mm",
+   "category": "mcu",
+   "value": "ATtiny85 SOIC-8",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_SO.3dshapes/SOIC-8_5.3x5.3mm_P1.27mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "atmega328p_tqfp32",
+   "name": "ATmega328P TQFP-32",
+   "aliases": [
+    "atmega328p",
+    "arduino chip"
+   ],
+   "lib_id": "MCU_Microchip_ATmega:ATmega328P-A",
+   "footprint": "Package_QFP:TQFP-32_7x7mm_P0.8mm",
+   "category": "mcu",
+   "value": "ATmega328P TQFP-32",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_QFP.3dshapes/TQFP-32_7x7mm_P0.8mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "rp2040",
+   "name": "RP2040 QFN-56",
+   "aliases": [
+    "rp2040"
+   ],
+   "lib_id": "MCU_RaspberryPi:RP2040",
+   "footprint": "Package_DFN_QFN:QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm",
+   "category": "mcu",
+   "value": "RP2040 QFN-56",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DFN_QFN.3dshapes/QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50",
+    "51",
+    "52",
+    "53",
+    "54",
+    "55",
+    "56",
+    "57"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "stm32f030f4",
+   "name": "STM32F030F4P6 TSSOP-20",
+   "aliases": [
+    "stm32f030"
+   ],
+   "lib_id": "MCU_ST_STM32F0:STM32F030F4Px",
+   "footprint": "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm",
+   "category": "mcu",
+   "value": "STM32F030F4P6 TSSOP-20",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_SO.3dshapes/TSSOP-20_4.4x6.5mm_P0.65mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "ch340c",
+   "name": "CH340C USB-UART SOIC-16",
+   "aliases": [
+    "ch340",
+    "usb uart"
+   ],
+   "lib_id": "Interface_USB:CH340C",
+   "footprint": "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm",
+   "category": "ic",
+   "value": "CH340C USB-UART SOIC-16",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_SO.3dshapes/SOIC-16_3.9x9.9mm_P1.27mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "cd4017_soic16",
+   "name": "CD4017 decade counter SOIC-16",
+   "aliases": [
+    "4017",
+    "decade counter"
+   ],
+   "lib_id": "4xxx:4017",
+   "footprint": "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm",
+   "category": "ic",
+   "value": "CD4017 decade counter SOIC-16",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_SO.3dshapes/SOIC-16_3.9x9.9mm_P1.27mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "74hc595_soic16",
+   "name": "74HC595 shift register SOIC-16",
+   "aliases": [
+    "74hc595",
+    "shift register"
+   ],
+   "lib_id": "74xx:74HC595",
+   "footprint": "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm",
+   "category": "ic",
+   "value": "74HC595 shift register SOIC-16",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_SO.3dshapes/SOIC-16_3.9x9.9mm_P1.27mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "pc817",
+   "name": "PC817 optocoupler DIP-4",
+   "aliases": [
+    "optocoupler"
+   ],
+   "lib_id": "Isolator:PC817",
+   "footprint": "Package_DIP:DIP-4_W7.62mm",
+   "category": "ic",
+   "value": "PC817 optocoupler DIP-4",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DIP.3dshapes/DIP-4_W7.62mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "bme280",
+   "name": "BME280 sensor LGA-8",
+   "aliases": [
+    "bme280",
+    "humidity sensor",
+    "pressure sensor"
+   ],
+   "lib_id": "Sensor:BME280",
+   "footprint": "Package_LGA:Bosch_LGA-8_2.5x2.5mm_P0.65mm_ClockwisePinNumbering",
+   "category": "sensor",
+   "value": "BME280 sensor LGA-8",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_LGA.3dshapes/Bosch_LGA-8_2.5x2.5mm_P0.65mm_ClockwisePinNumbering.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "ams1117_33",
+   "name": "AMS1117-3.3 SOT-223",
+   "aliases": [
+    "ams1117",
+    "3.3v regulator",
+    "ldo"
+   ],
+   "lib_id": "Regulator_Linear:AMS1117-3.3",
+   "footprint": "Package_TO_SOT_SMD:SOT-223-3_TabPin2",
+   "category": "power",
+   "value": "AMS1117-3.3 SOT-223",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-223.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "ap2112k_33",
+   "name": "AP2112K-3.3 SOT-23-5",
+   "aliases": [
+    "ap2112"
+   ],
+   "lib_id": "Regulator_Linear:AP2112K-3.3",
+   "footprint": "Package_TO_SOT_SMD:SOT-23-5",
+   "category": "power",
+   "value": "AP2112K-3.3 SOT-23-5",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23-5.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "mcp1700_33",
+   "name": "MCP1700-3.3 SOT-23",
+   "aliases": [
+    "mcp1700"
+   ],
+   "lib_id": "Regulator_Linear:MCP1700x-330xxTT",
+   "footprint": "Package_TO_SOT_SMD:SOT-23",
+   "category": "power",
+   "value": "MCP1700-3.3 SOT-23",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "xc6206_33",
+   "name": "XC6206P332MR SOT-23",
+   "aliases": [
+    "xc6206"
+   ],
+   "lib_id": "Regulator_Linear:XC6206PxxxMR",
+   "footprint": "Package_TO_SOT_SMD:SOT-23",
+   "category": "power",
+   "value": "XC6206P332MR SOT-23",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "l7805_to220",
+   "name": "L7805 5V regulator TO-220",
+   "aliases": [
+    "7805",
+    "lm7805"
+   ],
+   "lib_id": "Regulator_Linear:L7805",
+   "footprint": "Package_TO_SOT_THT:TO-220-3_Vertical",
+   "category": "power",
+   "value": "L7805 5V regulator TO-220",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_THT.3dshapes/TO-220-3_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "mcp73831",
+   "name": "MCP73831 Li-ion charger SOT-23-5",
+   "aliases": [
+    "lipo charger",
+    "mcp73831"
+   ],
+   "lib_id": "Battery_Management:MCP73831-2-OT",
+   "footprint": "Package_TO_SOT_SMD:SOT-23-5",
+   "category": "power",
+   "value": "MCP73831 Li-ion charger SOT-23-5",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_TO_SOT_SMD.3dshapes/SOT-23-5.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "esp32_wroom_32",
+   "name": "ESP32-WROOM-32 module",
+   "aliases": [
+    "esp32",
+    "wifi module"
+   ],
+   "lib_id": "RF_Module:ESP32-WROOM-32",
+   "footprint": "RF_Module:ESP32-WROOM-32",
+   "category": "module",
+   "value": "ESP32-WROOM-32 module",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/RF_Module.3dshapes/ESP32-WROOM-32.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "esp32_c3_wroom_02",
+   "name": "ESP32-C3-WROOM-02 module",
+   "aliases": [
+    "esp32-c3"
+   ],
+   "lib_id": "RF_Module:ESP32-C3-WROOM-02",
+   "footprint": "RF_Module:ESP32-C3-WROOM-02",
+   "category": "module",
+   "value": "ESP32-C3-WROOM-02 module",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/RF_Module.3dshapes/ESP32-C3-WROOM-02.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "mdbt50q_nrf52840",
+   "name": "nRF52840 module Raytac MDBT50Q",
+   "aliases": [
+    "nrf52840",
+    "nrf52"
+   ],
+   "lib_id": "RF_Module:MDBT50Q-1MV2",
+   "footprint": "RF_Module:Raytac_MDBT50Q",
+   "category": "module",
+   "value": "nRF52840 module Raytac MDBT50Q",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/RF_Module.3dshapes/Raytac_MDBT50Q.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50",
+    "51",
+    "52",
+    "53",
+    "54",
+    "55",
+    "56",
+    "57",
+    "58",
+    "59",
+    "60",
+    "61"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "jst_ph_2",
+   "name": "JST-PH 2-pin vertical",
+   "aliases": [
+    "jst ph 2",
+    "jst-ph 2-pin",
+    "jst 2 pin",
+    "battery connector",
+    "lipo connector"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x02",
+   "footprint": "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical",
+   "category": "connector",
+   "value": "JST PH 2p",
+   "spice": {
+    "prefix": "V",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "power_in"
+   },
+   "why": "Brings power in from a battery or USB lead.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "jst_ph_3",
+   "name": "JST-PH 3-pin vertical",
+   "aliases": [
+    "jst ph 3",
+    "jst-ph 3-pin",
+    "jst 3 pin"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x03",
+   "footprint": "Connector_JST:JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical",
+   "category": "connector",
+   "value": "JST PH 3p",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "jst_ph_4",
+   "name": "JST-PH 4-pin vertical",
+   "aliases": [
+    "jst ph 4",
+    "jst-ph 4-pin",
+    "jst 4 pin"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x04",
+   "footprint": "Connector_JST:JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical",
+   "category": "connector",
+   "value": "JST PH 4p",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_PH_B4B-PH-K_1x04_P2.00mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "jst_ph_5",
+   "name": "JST-PH 5-pin vertical",
+   "aliases": [
+    "jst ph 5",
+    "jst-ph 5-pin",
+    "jst 5 pin"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x05",
+   "footprint": "Connector_JST:JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical",
+   "category": "connector",
+   "value": "JST PH 5p",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_PH_B5B-PH-K_1x05_P2.00mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "jst_ph_6",
+   "name": "JST-PH 6-pin vertical",
+   "aliases": [
+    "jst ph 6",
+    "jst-ph 6-pin",
+    "jst 6 pin"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x06",
+   "footprint": "Connector_JST:JST_PH_B6B-PH-K_1x06_P2.00mm_Vertical",
+   "category": "connector",
+   "value": "JST PH 6p",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_PH_B6B-PH-K_1x06_P2.00mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "jst_ph_2_ra",
+   "name": "JST-PH 2-pin right angle THT",
+   "aliases": [
+    "jst ph smd"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x02",
+   "footprint": "Connector_JST:JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal",
+   "category": "connector",
+   "value": "JST PH 2p",
+   "spice": {
+    "prefix": "V",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "power_in"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "jst_xh_2",
+   "name": "JST-XH 2-pin vertical",
+   "aliases": [
+    "jst xh"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x02",
+   "footprint": "Connector_JST:JST_XH_B2B-XH-A_1x02_P2.50mm_Vertical",
+   "category": "connector",
+   "value": "JST XH 2p",
+   "spice": {
+    "prefix": "V",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "power_in"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_XH_B2B-XH-A_1x02_P2.50mm_Vertical.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "jst_sh_4_qwiic",
+   "name": "JST-SH 4-pin (Qwiic)",
+   "aliases": [
+    "qwiic",
+    "stemma qt"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x04",
+   "footprint": "Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal",
+   "category": "connector",
+   "value": "JST-SH 4-pin (Qwiic)",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_JST.3dshapes/JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "usb_c_power_6p",
+   "name": "USB-C receptacle power only 6P",
+   "aliases": [
+    "usb-c power",
+    "usb c power"
+   ],
+   "lib_id": "Connector:USB_C_Receptacle_PowerOnly_6P",
+   "footprint": "Connector_USB:USB_C_Receptacle_GCT_USB4125-xx-x-0190_6P_TopMnt_Horizontal",
+   "category": "connector",
+   "value": "USB-C",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_USB.3dshapes/USB_C_Receptacle_GCT_USB4125-xx-x-0190_6P_TopMnt_Horizontal.step",
+   "pins": [
+    "A5",
+    "A9",
+    "B5",
+    "B9",
+    "SH",
+    "A12",
+    "B12"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "usb_c_16p",
+   "name": "USB-C receptacle USB 2.0 16P",
+   "aliases": [
+    "usb-c",
+    "usb c receptacle"
+   ],
+   "lib_id": "Connector:USB_C_Receptacle_USB2.0_16P",
+   "footprint": "Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal",
+   "category": "connector",
+   "value": "USB-C",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_USB.3dshapes/USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal.step",
+   "pins": [
+    "A1",
+    "A4",
+    "A5",
+    "A6",
+    "A7",
+    "A8",
+    "A9",
+    "B1",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+    "B9",
+    "SH",
+    "A12",
+    "B12"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "usb_micro_b",
+   "name": "Micro-USB B receptacle",
+   "aliases": [
+    "micro usb"
+   ],
+   "lib_id": "Connector:USB_B_Micro",
+   "footprint": "Connector_USB:USB_Micro-B_Molex_47346-0001",
+   "category": "connector",
+   "value": "Micro-USB B receptacle",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_USB.3dshapes/USB_Micro-B_Molex_47346-0001.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "SH"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "header_1x02",
+   "name": "pin header 1x02 2.54mm",
+   "aliases": [
+    "header 2 pin",
+    "1x2 header"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x02",
+   "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+   "category": "connector",
+   "value": "1x02",
+   "spice": {
+    "prefix": "V",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "power_in"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x02_P2.54mm_Vertical.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "header_1x03",
+   "name": "pin header 1x03 2.54mm",
+   "aliases": [
+    "header 3 pin",
+    "1x3 header"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x03",
+   "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+   "category": "connector",
+   "value": "1x03",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x03_P2.54mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "header_1x04",
+   "name": "pin header 1x04 2.54mm",
+   "aliases": [
+    "header 4 pin",
+    "1x4 header"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x04",
+   "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical",
+   "category": "connector",
+   "value": "1x04",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x04_P2.54mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "header_1x05",
+   "name": "pin header 1x05 2.54mm",
+   "aliases": [
+    "header 5 pin",
+    "1x5 header"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x05",
+   "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical",
+   "category": "connector",
+   "value": "1x05",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x05_P2.54mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "header_1x06",
+   "name": "pin header 1x06 2.54mm",
+   "aliases": [
+    "header 6 pin",
+    "1x6 header"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x06",
+   "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical",
+   "category": "connector",
+   "value": "1x06",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x06_P2.54mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "header_1x07",
+   "name": "pin header 1x07 2.54mm",
+   "aliases": [
+    "header 7 pin",
+    "1x7 header"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x07",
+   "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x07_P2.54mm_Vertical",
+   "category": "connector",
+   "value": "1x07",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x07_P2.54mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "header_1x08",
+   "name": "pin header 1x08 2.54mm",
+   "aliases": [
+    "header 8 pin",
+    "1x8 header"
+   ],
+   "lib_id": "Connector_Generic:Conn_01x08",
+   "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical",
+   "category": "connector",
+   "value": "1x08",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_1x08_P2.54mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "header_2x03_isp",
+   "name": "AVR ISP header 2x03",
+   "aliases": [
+    "isp header"
+   ],
+   "lib_id": "Connector_Generic:Conn_02x03_Odd_Even",
+   "footprint": "Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Vertical",
+   "category": "connector",
+   "value": "AVR ISP header 2x03",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_2.54mm.3dshapes/PinHeader_2x03_P2.54mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "header_2x05_swd",
+   "name": "SWD header 2x05 1.27mm",
+   "aliases": [
+    "swd header",
+    "cortex debug"
+   ],
+   "lib_id": "Connector_Generic:Conn_02x05_Odd_Even",
+   "footprint": "Connector_PinHeader_1.27mm:PinHeader_2x05_P1.27mm_Vertical",
+   "category": "connector",
+   "value": "SWD header 2x05 1.27mm",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_PinHeader_1.27mm.3dshapes/PinHeader_2x05_P1.27mm_Vertical.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "screw_terminal_2",
+   "name": "screw terminal 2-pin 5mm",
+   "aliases": [
+    "screw terminal"
+   ],
+   "lib_id": "Connector:Screw_Terminal_01x02",
+   "footprint": "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal",
+   "category": "connector",
+   "value": "2p",
+   "spice": {
+    "prefix": "V",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "power_in"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/TerminalBlock_Phoenix.3dshapes/TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "barrel_jack",
+   "name": "DC barrel jack",
+   "aliases": [
+    "barrel jack",
+    "dc jack"
+   ],
+   "lib_id": "Connector:Barrel_Jack",
+   "footprint": "Connector_BarrelJack:BarrelJack_Horizontal",
+   "category": "connector",
+   "value": "DC barrel jack",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Connector_BarrelJack.3dshapes/BarrelJack_Horizontal.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "cr2032_holder",
+   "name": "CR2032 coin cell holder",
+   "aliases": [
+    "coin cell",
+    "cr2032"
+   ],
+   "lib_id": "Device:Battery_Cell",
+   "footprint": "Battery:BatteryHolder_Keystone_3034_1x20mm",
+   "category": "power",
+   "value": "CR2032",
+   "spice": {
+    "prefix": "V",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "power_in"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Battery.3dshapes/BatteryHolder_Keystone_3034_1x20mm.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "tact_6mm_tht",
+   "name": "tactile switch 6mm THT",
+   "aliases": [
+    "tactile switch",
+    "pushbutton",
+    "push button",
+    "button"
+   ],
+   "lib_id": "Switch:SW_Push",
+   "footprint": "Button_Switch_THT:SW_PUSH_6mm",
+   "category": "switch",
+   "value": "SW_Push",
+   "spice": {
+    "prefix": "S",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "switch"
+   },
+   "why": "A button you press to close the circuit.",
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Button_Switch_THT.3dshapes/SW_PUSH_6mm.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "tact_smd_tl3342",
+   "name": "tactile switch SMD TL3342",
+   "aliases": [
+    "smd button"
+   ],
+   "lib_id": "Switch:SW_Push",
+   "footprint": "Button_Switch_SMD:SW_SPST_TL3342",
+   "category": "switch",
+   "value": "SW_Push",
+   "spice": {
+    "prefix": "S",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "switch"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Button_Switch_SMD.3dshapes/SW_SPST_TL3342.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "slide_spdt_pcm12",
+   "name": "slide switch SPDT PCM12",
+   "aliases": [
+    "slide switch",
+    "power switch"
+   ],
+   "lib_id": "Switch:SW_SPDT",
+   "footprint": "Button_Switch_SMD:SW_SPDT_PCM12",
+   "category": "switch",
+   "value": "slide switch SPDT PCM12",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Button_Switch_SMD.3dshapes/SW_SPDT_PCM12.step",
+   "pins": [
+    "1",
+    "2",
+    "3"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "crystal_3225",
+   "name": "crystal 3225 4-pin",
+   "aliases": [
+    "crystal",
+    "16mhz crystal"
+   ],
+   "lib_id": "Device:Crystal_GND24",
+   "footprint": "Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm",
+   "category": "timing",
+   "value": "16MHz",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Crystal.3dshapes/Crystal_SMD_3225-4Pin_3.2x2.5mm.step",
+   "pins": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "crystal_hc49",
+   "name": "crystal HC-49/US THT",
+   "aliases": [
+    "hc49"
+   ],
+   "lib_id": "Device:Crystal",
+   "footprint": "Crystal:Crystal_HC49-U_Vertical",
+   "category": "timing",
+   "value": "16MHz",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Crystal.3dshapes/Crystal_HC49-U_Vertical.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "buzzer_12mm",
+   "name": "buzzer 12mm",
+   "aliases": [
+    "buzzer",
+    "beeper"
+   ],
+   "lib_id": "Device:Buzzer",
+   "footprint": "Buzzer_Beeper:Buzzer_12x9.5RM7.6",
+   "category": "sound",
+   "value": "buzzer 12mm",
+   "spice": null,
+   "why": null,
+   "model": "/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Buzzer_Beeper.3dshapes/Buzzer_12x9.5RM7.6.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "mounting_hole_m3",
+   "name": "M3 mounting hole",
+   "aliases": [
+    "mounting hole"
+   ],
+   "lib_id": "Mechanical:MountingHole",
+   "footprint": "MountingHole:MountingHole_3.2mm_M3",
+   "category": "mechanical",
+   "value": "M3 mounting hole",
+   "spice": null,
+   "why": null,
+   "model": null,
+   "pins": [],
+   "source": "kicad-lib"
+  },
+  {
+   "key": "testpoint_pad",
+   "name": "test point pad 1mm",
+   "aliases": [
+    "test point"
+   ],
+   "lib_id": "Connector:TestPoint",
+   "footprint": "TestPoint:TestPoint_Pad_D1.0mm",
+   "category": "mechanical",
+   "value": "test point pad 1mm",
+   "spice": null,
+   "why": null,
+   "model": null,
+   "pins": [
+    "1"
+   ],
+   "source": "kicad-lib"
+  }
+ ],
+ "rejected": [
+  {
+   "key": "mpu6050",
+   "reason": "3D model missing (/Users/pranavachar/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels/Package_DFN_QFN.3dshapes/QFN-24-1EP_4x4mm_P0.5mm_EP2.7x2.6mm.step)"
+  },
+  {
+   "key": "nrf54l15_module",
+   "reason": "symbol RF_Module:nRF54L15 missing"
+  }
+ ]
+}
