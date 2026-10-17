@@ -1,5 +1,7 @@
 // "Rendering your board": Etch's eyes and the dock's pixel loader over the 3D view while a board's model is fetched
-// and put in the scene (straight after a build, after a change, and on a direct board.html?id= load).
+// and put in the scene (straight after a build, after a change, and on a direct board.html?id= load). It is also the
+// build's own progress card: shown from lead:start until the real board is in, its label set from the job's real
+// stage (rl.label("Picking parts")), never a made-up percentage.
 //   const rl = createRenderLoader(stage); rl.show(); ... rl.hide() once viewer.load resolved; rl.fail("...") on error
 import { pixelLoader } from "../ui/trace.js";
 import { createEyes } from "../ui/eyes.js";
@@ -30,6 +32,8 @@ export function createRenderLoader(stage, { label = "Rendering your board" } = {
       eyes.setState("working"); eyes.setActivity?.("render");
       root.classList.add("on");
     },
+    // the build's current stage, while the card is up and has not failed
+    label(text) { if (text && root.classList.contains("on") && !root.classList.contains("fail")) loader.setLabel(text); },
     // after the frame that draws the new model, so the board is on screen before the loader fades; the timer covers
     // a background tab, where frames are paused
     hide() {

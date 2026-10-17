@@ -5,6 +5,10 @@
 // and Etch builds (live-*, through the backend); ?mock=1 runs everything without a backend. board.html?new=1 is a new
 // board: an empty workplane under a start screen (new-board.js); what the person asks for becomes a design build
 // (bridge.design) that streams in the dock and loads in place as board.html?id=live-<ms> when it is done.
+// While any build runs (design or change) the progress shown on the stage is the render loader (Etch's eyes + the
+// dock's pixel loader), labelled from the job's real stage, until the real board is loaded. Behind it, on a new
+// board, the start screen's real KiCad parts keep drifting as b-roll (start-backdrop.js). No board is invented while
+// it builds: the animated assembly (build-anim.js) and the viewer's build preview are off behind BUILD_ANIM.
 import { Q, $, h, esc, LOGO, carry, page, toast, slugOf, isLive, boardFiles, cachedFetch, registerSW, keyBackdrop, WORLD } from "../common.js";
 import { createBoardViewer, MASKS, SILKS, FINISHES } from "../board-viewer.js";
 import * as etch from "../etch-api.js";
@@ -404,9 +408,10 @@ const reloadChange = async ({ run } = {}) => {
     }
     api.setBoard(board.id, board.parts, board.meta);
     renderSettings(); list?.render(); setSel(sel);
+    buildLoader = false;
     rl.hide();
     arrived();
-  } catch (e) { rl.fail("Couldn't render the new version."); toast("Couldn't load the new version: " + e.message); }
+  } catch (e) { buildLoader = false; rl.fail("Couldn't render the new version."); toast("Couldn't load the new version: " + e.message); }
 };
 
 // ---------- a new board: the design build's run, loaded in place (render:done first, then lead:done ok) ----------
@@ -457,6 +462,7 @@ async function loadDesign({ run, done = false } = {}) {
     if (board.prompt) { const t = mine.nameFrom(board.prompt); saveBoard({ quiet: true, title: t }); showMeta(board.meta); toast(`Saved as “${t}” in My boards`); }
     loadedRun = key;
   } catch (e) {
+    buildLoader = false;
     rl.fail("Couldn't render your board. Try opening it again.");
     toast("Couldn't load the new board: " + e.message);
     dock?.setState("confused"); dock?.say("The board is built, but I couldn't load it here. Try opening it again.");
@@ -465,6 +471,10 @@ async function loadDesign({ run, done = false } = {}) {
 }
 
 // ---------- the build animation: js/editor/build-anim.js (loaded the first time a build starts; optional) ----------
+// OFF (Pranav 10-17: "do not hardcode the animation"): it assembles a board from estimated sizes and planned traces,
+// not the real design. true turns it (and the viewer's build preview fallback) back on; with false a build shows the
+// render loader over the start screen's drifting parts instead (buildLoader below).
+const BUILD_ANIM = false;
 // hooks: createBuildAnim({ viewer, stage, board }) -> { start({ mode, board }), event(ev), finish({ glbReady }) }.
 // finish may be called twice (render:done after the GLB is loaded, then lead:done). Without the module the viewer's
 // own preview (viewer.build) draws instead.
@@ -477,17 +487,51 @@ function loadBuildAnim() {
   return buildAnimTried;
 }
 async function startBuildAnim(mode) {
+  if (!BUILD_ANIM) return;
   await loadBuildAnim();
   if (buildAnim) { try { buildAnim.start?.({ mode, board }); } catch (e) { console.warn("build-anim:", e); } }
   else viewer.build.start({ onBoard: mode === "change" });
 }
 // render:done: the new GLB is on screen
 function finishBuildAnim() {
+  buildLoader = false;
+  if (!BUILD_ANIM) return;
   if (buildAnim) { try { buildAnim.finish?.({ glbReady: true }); } catch (e) { console.warn("build-anim:", e); } }
   else viewer.build.finish();
 }
 
+// the build's loader: up from lead:start until the real board is in (finishBuildAnim) or the build ends without one
+let buildLoader = false;
+function buildLoaderOn(text) {
+  if (BUILD_ANIM) return;
+  if (!buildLoader) rl.show(text); else rl.label(text);
+  buildLoader = true;
+  backdrop?.building(true);
+}
+function buildLoaderFail(text = "The build stopped without a board.") {
+  if (BUILD_ANIM || !buildLoader) return;
+  buildLoader = false;
+  rl.fail(text);
+  backdrop?.building(false);
+}
+
 let hero = null, lastAsk = "";
+// a question or chat typed into a new board's box is never a board description (prod 10-17: "done picking parts?"
+// typed during a build became job ygA7cMfan1ojs9QZ). While a build runs, any text gets the build's status; after
+// one, a status question gets how it ended. The server refuses chat too (agent/prefilter.py is_chat).
+const STATUS_Q = /^\W*(?:(?:are|r)\s+(?:you|u)\s+(?:done|finished|there|stuck|working|still)|(?:is|did)\s+(?:it|this|that|etch|the\s+(?:board|build|job))\s+(?:done|ready|finished|stuck|working|still|taking|broken|frozen|hung|fail|crash)|(?:all\s+)?(?:done|finished)\s+(?:yet|now|already|picking|building|routing|choosing|thinking|with)|how\s+(?:long|much\s+longer|is\s+it\s+going|far\s+along)|how'?s\s+it\s+going|what'?s?\s+(?:is\s+)?(?:taking|happening|going\s+on|the\s+(?:status|hold\s*-?\s*up|progress|eta))|why\s+is\s+(?:it|this|that)\s+(?:taking|so\s+slow|stuck|still)|any\s+(?:status|updates?|progress|news)|still\s+(?:working|building|going|there|picking|loading|thinking))\b[^\n]{0,48}$|^\W*(?:hello|hi|hey|yo|thanks|thank\s+you|thx|ty|ok(?:ay)?|cool|nice|great|lol|hm+|wow|done|finished|ready|status|update|progress|eta|you\s+there)(?:\s+(?:etch|there|again|so\s+much|yet|now))?\W*$/i;
+const BUILD_VERB = /\b(make|build|create|design|draw|want|need|add|give|wire|put|use|turn|light|blink)s?\b/i;
+let lastSay = "", lastEnd = "";
+function isChat(text) { const t = String(text || "").trim(); return t.split(/\s+/).length <= 12 && !BUILD_VERB.test(t) && STATUS_Q.test(t); }
+function statusReply(text) {
+  if (board.building) {
+    dock.say(lastSay ? `Still building. Latest: ${lastSay}` : "Still building your board. I'll show each step here as it happens.");
+    return true;
+  }
+  if (!isChat(text)) return false;
+  dock.say(lastEnd || "Nothing is building right now. Tell me what your board should do and I'll start one.");
+  return true;
+}
 function startDesign(text) {
   if (board.building) { dock.say("I'm still building your board. Give me a minute."); return; }
   board.building = true;
@@ -497,7 +541,12 @@ function startDesign(text) {
   viewer.lookFrom([0, 1, 0.18], { fitBox: true }); // the camera eases in onto the workplane, still from above
   dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: text, status: "done" });
   $("crTitle").textContent = "New board";
-  bridge.design(text).then((r) => { if (!r || !r.ok) board.building = false; }).catch(() => { board.building = false; });
+  // no board came back (checks failed, error, build lost): stop the backdrop's building look too
+  const failed = () => { board.building = false; backdrop?.building(false); buildLoaderFail(); };
+  bridge.design(text).then((r) => {
+    if (!r || !r.ok) failed();
+    if (!r) lastEnd = "I lost track of that build, so it did not finish. Tell me what your board should do and I'll start a new one.";
+  }).catch(failed);
 }
 // the hero's text goes through the dock's own composer, so it shows up there as the person's turn
 function sendViaDock(text) {
@@ -591,7 +640,10 @@ function resumeNew(st) {
   document.body.classList.add("ready");
   viewer.lookFrom([0, 1, 0.18], { fitBox: true });
   dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: st.text || "", status: "done" });
-  bridge.resume(st).then((r) => { if (!r || !r.ok) board.building = false; }).catch(() => { board.building = false; });
+  // the start screen's parts drift behind the build's loader here too
+  if (!BUILD_ANIM && !backdrop) { backdrop = createStartBackdrop($("stage")); backdrop.attach(viewer); backdrop.building(true); }
+  const failed = () => { board.building = false; backdrop?.building(false); buildLoaderFail(); };
+  bridge.resume(st).then((r) => { if (!r || !r.ok) failed(); }).catch(failed);
 }
 
 let backdrop = null;
@@ -632,7 +684,7 @@ async function main() {
   if (ID) rl.show();
   await api.init();
   if (!api.status.mock) {
-    const cfg = Q.get("api") ? {} : await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).catch(() => ({}));
+    const cfg = Q.get("api") ? {} : await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).then((c) => (c.config_url ? fetch(c.config_url, { cache: "no-store" }).then((r) => r.json()) : c)).catch(() => ({}));
     apiBase = String(Q.get("api") || cfg.api || "").replace(/\/$/, "");
   }
   createPartsPanel($("paneParts"), { apiBase, onDragStart: (p, e) => ghostDrop.start(p, e), onDragEnd: (p, e) => ghostDrop.end(p, e) });
@@ -642,7 +694,7 @@ async function main() {
   dock = createDock(document.body, {
     onSend(text, { via } = {}) {
       const ref = sel.length === 1 ? sel[0] : null;
-      if (board.kind === "new") startDesign(text);
+      if (board.kind === "new") { if (!statusReply(text)) startDesign(text); }
       else if (CHANGE.test(text)) { if (blockedDrop()) return; bridge.change(text, { ref }); }
       else bridge.ask(text, { ref });
       void via;
@@ -665,7 +717,8 @@ async function main() {
       clearTimeout(main.markT); if (list2.length) main.markT = setTimeout(() => viewer.mark([]), 4000);
     },
     select(ref) { if (ref) setSel([ref], { focus: true }); },
-    // the board taking shape in 3D until the GLB arrives: js/editor/build-anim.js when it is there (buildAnim.start /
+    // until the GLB arrives: the render loader with the job's stage over the drifting start kit (BUILD_ANIM false);
+    // with BUILD_ANIM, the board taking shape in 3D: js/editor/build-anim.js when it is there (buildAnim.start /
     // event / finish), else the viewer's own simple preview (viewer.build, js/build-preview.js)
     // a started build is remembered, so leaving the page and coming back (or the pill on Explore) can follow it
     onJob(info) {
@@ -673,15 +726,29 @@ async function main() {
       saveJob({ ...info, startedAt: Date.now(), title: info.design ? mine.nameFrom(info.text) : board.title || "your board", board: info.design ? "" : board.id });
     },
     onJobEnd() { clearJob(); },
+    onStage(text) { if (buildLoader) rl.label(text); },
+    onLost() { buildLoaderFail("Lost track of this build."); },
     onEvent(ev) {
       const k = `${ev.agent}:${ev.type}`;
       if (ev.run && /^live-\d+$/.test(ev.run)) { const j = readJob(); if (j && j.run !== ev.run && !j.mock) saveJob({ run: ev.run }); }
       if (k === "lead:error" || (k === "lead:done" && !ev.ok)) emote("wince");
       // My boards (Explore): every board this browser builds or changes; the mock's runs open as the demo board
+      if (k === "lead:say" && ev.text) lastSay = ev.text;
+      if (k === "lead:start") lastEnd = "";
+      else if (k === "lead:done") lastEnd = ev.ok ? "That build finished. Your board is here." : "That build stopped without a board. Tell me what your board should do and I'll start a new one.";
+      else if (k === "lead:error" || k === "lead:cancelled") lastEnd = "That build stopped without a board. Tell me what your board should do and I'll start a new one.";
       if (k === "lead:start") lastAsk = ev.ask || "";
       else if (k === "lead:done" && ev.ok) {
         const id = !api.status.mock && isLive(ev.run) ? ev.run : board.kind === "new" ? DEMO : board.id;
         mine.record({ run: id, title: board.id === id ? board.meta?.title : "", prompt: lastAsk });
+      }
+      if (!BUILD_ANIM) {
+        const isNew = board.kind === "new" || viewer.isEmpty;
+        if (k === "lead:queued") buildLoaderOn(`Waiting in line · ${ev.position} ahead`);
+        else if (k === "lead:start") buildLoaderOn(isNew ? "Starting the build" : "Starting the change");
+        else if (k === "picker:pick" && Array.isArray(ev.parts)) backdrop?.parts(ev.parts); // the real picks join the drifting kit
+        else if (k === "lead:error" || k === "lead:cancelled" || (k === "lead:done" && !ev.ok)) buildLoaderFail(k === "lead:cancelled" ? "Build cancelled." : undefined);
+        return;
       }
       if (k === "lead:start") {
         if (backdrop) { backdrop.remove(); backdrop = null; }

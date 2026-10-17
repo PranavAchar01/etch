@@ -11,6 +11,8 @@
 // With ?mock=1, no backend, or a mock job id, change() and design() play a scripted build (the "full successful design
 // run" from API.md, with a failed DRC on the first try) so the whole flow can be shown without the engine. Both hand
 // the finished run to viewer.reload({ run, design, done }): on render:done (the GLB is there) and on lead:done ok.
+// Page hooks besides onEvent: onStage("Picking parts") when the job's own stage changes (the build loader's label),
+// onLost(msg) when the build is lost (gone from the server, or the engine stays unreachable past the grace).
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const cap = (s) => { s = String(s || "").trim(); return s ? s[0].toUpperCase() + s.slice(1) : s; };
@@ -219,7 +221,7 @@ function simulateBench({ text, board }) {
   };
 }
 
-export function createAgentBridge({ dock, api, board, viewer = null, highlight = () => {}, select = () => {}, onEvent = () => {}, onJob = () => {}, onJobEnd = () => {} } = {}) {
+export function createAgentBridge({ dock, api, board, viewer = null, highlight = () => {}, select = () => {}, onEvent = () => {}, onJob = () => {}, onJobEnd = () => {}, onStage = () => {}, onLost = () => {} } = {}) {
   if (!dock) throw new Error("createAgentBridge needs a dock");
   const timers = new Set();
   let disposed = false, jobGen = 0, askGen = 0;
@@ -399,25 +401,44 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     return follow(j.job, sim, gen, { text, ref, at });
   }
 
+  // A backend restart (deploy/restart.sh also bounces the tunnel) takes the engine away for 20 s or so: keep
+  // following through FOLLOW_GRACE_MS of misses. A run that ends with no lead:done / lead:error / cancel (the
+  // job was lost, job gbRVE5w_9kCwfMDt 10-17) gets a failed step, so the trace never reads "Done" over an
+  // empty board.
+  const FOLLOW_GRACE_MS = 90000;
   async function follow(jobId, sim, gen, req) {
     const map = mapper(jobId, { design: !!req?.design, bench: !!req?.bench, simData: sim?.simData || null });
-    let since = 0, misses = 0, last = null, stage = "";
+    let since = 0, down = 0, last = null, stage = "", ended = false;
+    const lost = (msg) => {
+      dock.step({ id: jobId + ":lost", kind: "step", title: "Lost track of this build", detail: msg, status: "failed" });
+      dock.setState("confused"); dock.say(msg); dock.setStatus("Build lost");
+      try { onLost(msg); } catch (e) { /* the page's own business */ }
+    };
     while (!disposed && gen === jobGen) {
       let r;
-      try { r = sim ? sim.poll(since) : await api.job(jobId, since); misses = 0; }
+      try { r = sim ? sim.poll(since) : await api.job(jobId, since); down = 0; }
       catch (e) {
-        if (e?.status === 404) { dock.setState("confused"); dock.say("Etch lost track of this build. Open it from the library instead."); dock.setStatus(""); return null; }
-        if (++misses >= 8) { explain(e, jobId + ":poll", "Following the build"); return null; }
-        await sleep(800); continue;
+        if (e?.status === 404) { map.end(); lost("Etch lost track of this build. Start it again, or open it from the library."); return null; }
+        if (!down) down = Date.now();
+        if (Date.now() - down > FOLLOW_GRACE_MS) {
+          map.end(); explain(e, jobId + ":poll", "Following the build");
+          try { onLost(""); } catch (e2) { /* the page's own business */ }
+          return null;
+        }
+        await sleep(1500); continue;
       }
       if (disposed || gen !== jobGen) break;
       for (const ev of r.events || []) { const out = map(ev); if (out) last = out; }
-      if (r.stage && r.stage !== stage) { stage = r.stage; dock.setStatus(cap(stage)); }
+      if (r.stage && r.stage !== stage) {
+        stage = r.stage; dock.setStatus(cap(stage));
+        try { onStage(cap(stage)); } catch (e) { /* the page's own business */ }
+      }
       since = r.next ?? since + (r.events || []).length;
-      if (r.done) break;
+      if (r.done) { ended = true; break; }
       await sleep(400);
     }
     map.end();
+    if (ended && !map.finished()) lost("The build stopped before it finished a board. Try it again.");
     const out = last ? { ...last, job: jobId, request: req } : null;
     if (!disposed && gen === jobGen) { try { onJobEnd(out); } catch (e) { /* the page's own business */ } }
     return out;
@@ -475,7 +496,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
       dock.flashStatus?.(`Benchmarks ${pass}/${total} ${failed ? "✗" : "✓"}`, 4000);
       setTimeout(() => { if (!disposed) dock.emote?.(failed ? "wince" : "nod"); }, 900);
     }
-    let batches = 0, nb = 0, yes = 0, pieces = 0, queued = false, render = null, picked = [], result = null;
+    let batches = 0, nb = 0, yes = 0, pieces = 0, queued = false, render = null, picked = [], result = null, benched = false;
     const step = (o) => dock.step(o);
     const fn = (ev) => {
       const k = `${ev.agent}:${ev.type}`;
@@ -551,7 +572,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
           if (planned.has(key)) planned.get(key).open = false;
         }
           step({ id: S("bench:" + (ev.check || ev.label)), kind: "task", title: brief(ev.label || ev.said || ev.check), detail: [`${brief(ev.value) || "?"} ${ev.unit || ""}`.trim(), brief(ev.result)].filter(Boolean).join(" · "), status: ev.pass === false ? "failed" : "done" }); break;
-        case "benchmarks:done": if (benchRun) verdict();
+        case "benchmarks:done": benched = true; if (benchRun) verdict();
           step({ id: S("bench"), kind: "task", title: `Checks: ${countOf(ev.passed) || ev.passed || 0} passed, ${countOf(ev.failed) || ev.failed || 0} failed${ev.unmeasured ? `, ${countOf(ev.unmeasured) || ev.unmeasured} not measured` : ""}`, status: ev.failed ? "failed" : "done" }); break;
         case "lead:done":
           if (ev.ok) {
@@ -586,6 +607,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
       return result;
     };
     fn.end = () => { if (render) render(); if (queued) dock.loader(false); };
+    fn.finished = () => result !== null || benched; // a benchmarks run ends on benchmarks:done
     return fn;
   }
 
