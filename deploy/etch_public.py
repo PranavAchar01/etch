@@ -127,7 +127,7 @@ class Job:
     def emit(self, ev: dict):
         now = time.time()
         with self.cond:
-            if self.started and self.first_event is None:
+            if self.started and self.first_event is None and ev.get("type") != "rewrite":  # engine events only
                 self.first_event = now
             self.events.append(ev)
             self.cond.notify_all()
@@ -276,6 +276,35 @@ class Classifier:
 CLASSIFIER = Classifier()
 
 
+def rewriter():
+    """agent/prompt_rewriter.py (stdlib only), imported from the repo root like lane_for's modules."""
+    import sys as _sys
+
+    if str(ROOT) not in _sys.path:
+        _sys.path.insert(0, str(ROOT))
+    from agent import prompt_rewriter
+
+    return prompt_rewriter
+
+
+def router_text(job: "Job", env: dict) -> str:
+    """The text the NVIDIA classifier reads for this design run. With the classifier on and ETCH_REWRITE not 0, one
+    small OpenAI call rewrites the raw ask into one clean sentence first (spelling, device, key parts, question or
+    chat said plainly); the run gets a `lead rewrite` event and the build gets ETCH_REWRITE_RESULT. Fails open to
+    the raw text within ETCH_REWRITE_TIMEOUT (1.5 s). The design itself always keeps the user's own text."""
+    try:
+        rw = rewriter()
+        if not rw.enabled():
+            return job.text
+        res = rw.rewrite(job.text)
+    except Exception:  # noqa: BLE001 - the rewrite is optional; the raw ask is always correct
+        return job.text
+    job.emit(rw.event(res))
+    if res["ok"]:
+        env["ETCH_REWRITE_RESULT"] = json.dumps({k: res[k] for k in ("kind", "device", "text")})
+    return res["text"]
+
+
 JOBS: dict[str, Job] = {}
 # Running engine processes per lane. A fast-lane run (a stored board, a recipe or a code-only edit) has its own,
 # separate count, so a burst of full builds never makes a stored board wait or fail.
@@ -388,7 +417,9 @@ def worker(job: Job):
         # own session = own process group (pgid == proc.pid): cancel and the timeout signal exactly this
         # run's processes (uv, the engine's python, KiCad, ngspice) and nothing else
         env = dict(os.environ)
-        scored = CLASSIFIER.classify(job.text) if job.mode == "design" else None
+        scored = None
+        if job.mode == "design" and os.environ.get("ETCH_CLASSIFIER") == "1":
+            scored = CLASSIFIER.classify(router_text(job, env))
         if scored:
             env["ETCH_CLASSIFIED"] = scored
         proc = subprocess.Popen(
@@ -1445,6 +1476,10 @@ if __name__ == "__main__":
     threading.Thread(target=gc_jobs, daemon=True).start()
     if os.environ.get("ETCH_CLASSIFIER") == "1":
         threading.Thread(target=CLASSIFIER.warm, daemon=True).start()
+        try:
+            rewriter().warm()
+        except Exception:  # noqa: BLE001 - optional
+            pass
     print(f"etch public backend on http://127.0.0.1:{PORT}", flush=True)
     # ETCH_BIND=0.0.0.0 inside a container (docs/DEPLOY.md); the Mac keeps loopback behind the tunnel
     ThreadingHTTPServer((os.environ.get("ETCH_BIND", "127.0.0.1"), PORT), H).serve_forever()
