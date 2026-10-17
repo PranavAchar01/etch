@@ -8,6 +8,9 @@
 //   eyes.lookAt(x, y)        look at a point in viewport px; lookAt(null) lets go
 //   eyes.blink()             one blink
 //   eyes.react(kind)         "nod" | "bounce" | "shake" | "surprise" | "squish" | "tilt" | "blink"
+//   eyes.setActivity(kind)   what Etch is doing, acted out with the eyes (null stops): "scan" | "read" | "pick" |
+//                            "route" | "inspect" | "repair" | "export" | "render" | "wait" | "think"
+//   eyes.emote(kind)         one-shot feeling: "surprise" | "delight" | "wince" | "hop" | "nod" | "shake" | "pleased" | "yawn"
 //
 // Cost: one rAF job that only runs while a spring moves or a state needs continuous motion (thinking, talking,
 // speaking). Settled idle costs a blink timer and a CSS breathing animation on the compositor.
@@ -24,12 +27,34 @@ const STATES = {
   speaking: { happy: 0.18, h: 21 },
   success: { happy: 1, w: 17, h: 23 },
   confused: { sL: 1.12, sR: 0.7, tilt: -10, rLo: 0.34, rLi: 0.12 },
-  error: { flat: 1, dim: 0.55, bsy: 0.97 },
+  error: { h: 15, lLo: 0.55, rLo: 0.55, lLi: 0.1, rLi: 0.1, dim: 0.35, bsy: 0.94, by: 2.5, tilt: 0 },
   offline: { flat: 1, dim: 1, bsy: 0.95, by: 1 },
 };
 // where each state looks when nothing in particular holds its gaze (x, y in -1..1)
-const GAZE = { userTalking: [0, 0.45], thinking: [0, -0.8], working: [0, 0.2], confused: [0.35, -0.4], error: [0, 0.4], offline: [0, 0.55], heard: [0, 0.15] };
-const BLINKS = new Set(["idle", "userTalking", "thinking", "working", "speaking", "confused"]);
+const GAZE = { userTalking: [0, 0.45], thinking: [0, -0.8], working: [0, 0.2], confused: [0.35, -0.4], error: [0, 0.6], offline: [0, 0.55], heard: [0, 0.15] };
+// activities: a shape on top of the state, plus a procedural gaze / body motion in frame()
+const ACT = {
+  scan: { w: 16, h: 20 },
+  read: { h: 18, lLo: 0.16, lLi: 0.16, rLo: 0.16, rLi: 0.16 },
+  pick: { w: 16, h: 23 },
+  route: { h: 15, lLo: 0.3, lLi: 0.42, rLo: 0.3, rLi: 0.42 },
+  inspect: { sR: 0.74, rLo: 0.5, rLi: 0.5, sL: 1.1, h: 21, tilt: 4 },
+  repair: { h: 17, lLo: 0.05, lLi: 0.55, rLo: 0.05, rLi: 0.55 },
+  export: { h: 19, happy: 0.2 },
+  render: { w: 18.5, h: 26 },
+  wait: { h: 20, lLo: 0.6, lLi: 0.6, rLo: 0.6, rLi: 0.6, bsy: 0.97 },
+  think: { h: 20, lLo: 0.18, lLi: 0.3, rLo: 0.18, rLi: 0.3, dots: 1 },
+};
+// states that take over from an activity (the agent talks, listens or reacts)
+const ACT_STATES = new Set(["idle", "working", "thinking"]);
+const EMOTE = {
+  surprise: { w: 18, h: 28, ms: 650 },
+  delight: { happy: 1, w: 17.5, h: 23, ms: 1000 },
+  pleased: { happy: 0.75, h: 19, ms: 1300 },
+  wince: { h: 9, lLo: 0.6, lLi: 0.6, rLo: 0.6, rLi: 0.6, ms: 520 },
+  yawn: { h: 6, w: 16, bsy: 1.14, bsx: 0.94, by: -2, ms: 1500 },
+};
+const BLINKS = new Set(["idle", "userTalking", "thinking", "working", "speaking", "confused", "error"]);
 const LIVE = new Set(["thinking", "userTalking", "speaking"]);
 export const EYE_STATES = Object.keys(STATES);
 
@@ -63,42 +88,66 @@ export function createEyes(host, opts = {}) {
   svg.innerHTML = `<defs><linearGradient id="${id}-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2d3445"/><stop offset="1" stop-color="#151922"/></linearGradient></defs>`
     + `<g class="ag-eyes-body"><rect x="-40" y="-30" width="80" height="60" rx="25" fill="url(#${id}-g)"/>`
     + `<path d="M-26 -24.5 Q0 -30.5 26 -24.5" stroke="#fff" stroke-opacity=".10" stroke-width="3" fill="none" stroke-linecap="round"/>`
-    + `<g class="ag-eyes-pair"><path class="ag-eye"/><path class="ag-eye"/></g></g>`
+    + `<g class="ag-eyes-pair"><path class="ag-eye"/><path class="ag-eye"/></g>`
+    + `<g class="ag-eyes-glint" opacity="0"><circle r="3.4" fill="none" stroke="#9fc0ff" stroke-width="1.4"/><path d="M2.4 2.4 5.4 5.4" stroke="#9fc0ff" stroke-width="1.6" stroke-linecap="round"/><circle cx="-1.1" cy="-1.1" r=".9" fill="#fff"/></g></g>`
     + `<g class="ag-eyes-dots"><circle r="2.6"/><circle r="2.6"/><circle r="2.6"/></g>`;
   host.append(svg);
   const body = svg.querySelector(".ag-eyes-body"), pair = svg.querySelector(".ag-eyes-pair");
   const [eL, eR] = svg.querySelectorAll(".ag-eye");
   const dotsG = svg.querySelector(".ag-eyes-dots"), dots = dotsG.querySelectorAll("circle");
+  const glint = svg.querySelector(".ag-eyes-glint");
 
   let state = "idle", level = 0, lvS = 0, look = null, cursor = null, cursorAt = 0, glance = null;
-  const main = spring({ ...BASE }, { preset: { stiffness: 210, damping: 21 }, precision: 0.002 });
+  // a little softer than before, so moving between states reads as a morph you can follow
+  const main = spring({ ...BASE }, { preset: { stiffness: 170, damping: 19 }, precision: 0.002 });
   const gaze = spring({ x: 0, y: 0 }, { preset: { stiffness: 240, damping: 24 }, precision: 0.002 });
   const kick = spring({ by: 0, sq: 0, rot: 0, ex: 0, es: 0 }, { preset: { stiffness: 320, damping: 12 }, precision: 0.004 });
   const bl = spring(0, { preset: "blink", precision: 0.004 });
-  let job = null, last = "";
+  let job = null, last = "", act = null, actT0 = 0, flashS = null, flashT = 0;
+  const pickT = { at: 0, x: 0, y: 0, cx: 0, cy: 0 };
   const springs = [main, gaze, kick, bl];
 
-  function frame(dt, now) {
-    if (!svg.isConnected) { job = null; return false; }
+  // first: draw even before the host is in the document (the dock builds the pill before attaching it)
+  function frame(dt, now, first = false) {
+    if (!svg.isConnected && !first) { job = null; return false; }
     const red = reducedMotion();
     lvS += (level - lvS) * (1 - Math.exp(-dt * 16));
     if (lvS < 0.002 && level === 0) lvS = 0;
     const t = now / 1000, m = main.value, g = gaze.value, kv = kick.value, lv = red ? 0 : lvS;
     let gx = g.x, gy = g.y;
-    if (state === "thinking" && !red && !look) { gx += 0.55 * Math.sin(t * 1.25); gy += 0.08 * Math.sin(t * 2.1); }
+    if ((state === "thinking" && !act) && !red && !look) { gx += 0.55 * Math.sin(t * 1.25); gy += 0.08 * Math.sin(t * 2.1); }
+    let aBy = 0;
+    const doing = act && ACT_STATES.has(state) && !red;
+    if (doing) {
+      const k = (now - actT0) / 1000;
+      if (act === "scan") { gx = 0.95 * Math.sin(k * 7.5); gy = 0.12 + 0.05 * Math.sin(k * 15); }
+      else if (act === "read") { const p = (k % 0.95) / 0.95, line = Math.floor(k / 0.95) % 4; gx = p < 0.86 ? -0.75 + 1.5 * (p / 0.86) : 0.75 - 1.5 * ((p - 0.86) / 0.14); gy = -0.25 + line * 0.2; }
+      else if (act === "pick") {
+        if (now > pickT.at) { pickT.at = now + 300 + Math.random() * 260; pickT.x = Math.random() * 1.8 - 0.9; pickT.y = Math.random() * 1.2 - 0.45; if (Math.random() < 0.45) setTimeout(blink, 90); }
+        const f = 1 - Math.exp(-dt * 28); pickT.cx += (pickT.x - pickT.cx) * f; pickT.cy += (pickT.y - pickT.cy) * f; gx = pickT.cx; gy = pickT.cy;
+      } else if (act === "route") { gx = 0.8 * Math.sin(k * 1.7); gy = 0.42 * Math.sin(k * 3.4); }
+      else if (act === "inspect") { gx = 0.25 + 0.2 * Math.sin(k * 0.9); gy = 0.35 + 0.08 * Math.sin(k * 1.7); }
+      else if (act === "repair") { if (k < 1.1) { gx = 0.3 * Math.sin(k * 26) * (1.1 - k); gy = 0.1; } else { gx = 0.15 * Math.sin(k * 2); gy = 0.3; } }
+      else if (act === "export") { gx = 0.1 * Math.sin(k * 3); gy = 0.62; aBy = -3.2 * Math.abs(Math.sin(k * 5.2)); }
+      else if (act === "render") { gx = 0.65 * Math.cos(k * 1.15); gy = 0.42 * Math.sin(k * 1.15); }
+      else if (act === "wait") { gx = 0.5 * Math.sin(k * 0.45); gy = 0.25; }
+      else if (act === "think") { gx = 0.55 * Math.sin(k * 1.25); gy = -0.75 + 0.08 * Math.sin(k * 2.1); }
+    }
     const talk = state === "userTalking" ? lv : 0, spk = state === "speaking" ? lv : 0;
     const es = 1 + kv.es + talk * 0.16;
     const flat = m.flat;
-    const w = lerp(m.w, 17, flat) * es, h = lerp(m.h, 3, flat) * es * (1 + spk * 0.14);
+    const w = lerp(m.w, 17, flat) * es * (1 + spk * 0.05), h = lerp(m.h, 3, flat) * es * (1 + spk * 0.24);
     const gap = m.gap - Math.abs(gx) * 3;
-    const ex = gx * 8 + kv.ex, ey = gy * 6 + flat * 2;
+    // activities move a little further than plain gaze so they read at pill size
+    const reach = doing ? 1.35 : 1;
+    const ex = gx * 8 * reach + kv.ex, ey = gy * 6 * reach + flat * 2;
     const sL = m.sL * (1 - gx * 0.08), sR = m.sR * (1 + gx * 0.08);
     const open = 1 - bl.value;
     const dL = eyePath(-gap / 2, m.cy, w * sL, h * sL, m.lLo, m.lLi, m.happy, open);
     const dR = eyePath(gap / 2, m.cy, w * sR, h * sR, m.rLi, m.rLo, m.happy, open);
-    const by = m.by + kv.by - spk * 2.6;
-    const bsy = m.bsy + kv.sq + talk * 0.03 + spk * 0.02, bsx = m.bsx - kv.sq * 0.6 + talk * 0.03;
-    const tilt = m.tilt + kv.rot + gx * 3;
+    const by = m.by + kv.by - spk * 4.5 + aBy;
+    const bsy = m.bsy + kv.sq + talk * 0.05 + spk * 0.05, bsx = m.bsx - kv.sq * 0.6 + talk * 0.03;
+    const tilt = m.tilt + kv.rot + gx * (doing ? 5 : 3);
     const bodyT = `translate(${(gx * 1.5).toFixed(2)} ${(30 + by).toFixed(2)}) rotate(${tilt.toFixed(2)}) scale(${bsx.toFixed(4)} ${bsy.toFixed(4)}) translate(0 -30)`;
     const key = dL + dR + bodyT + m.dim.toFixed(3) + m.dots.toFixed(3) + ex.toFixed(2) + ey.toFixed(2);
     if (key !== last) {
@@ -120,7 +169,11 @@ export function createEyes(host, opts = {}) {
         dots[i].setAttribute("fill-opacity", (m.dots * (0.45 + 0.55 * (z + 1) / 2)).toFixed(3));
       }
     } else dotsG.style.display = "none";
-    const alive = springs.some((s) => s.moving) || (LIVE.has(state) && !red) || lvS > 0 || m.dots > 0.01 && !red;
+    // the glint: a small lens catching the light while Etch screens parts
+    const gl = doing && act === "scan" ? 1 : 0;
+    glint.setAttribute("opacity", String(gl));
+    if (gl) glint.setAttribute("transform", `translate(${(gap / 2 + ex + 6).toFixed(2)} ${(m.cy + ey - 7).toFixed(2)}) scale(${(0.8 + 0.25 * Math.abs(Math.sin(t * 7.5))).toFixed(3)})`);
+    const alive = springs.some((s) => s.moving) || (LIVE.has(state) && !red) || lvS > 0 || m.dots > 0.01 && !red || doing;
     if (!alive) job = null;
     return alive;
   }
@@ -164,7 +217,8 @@ export function createEyes(host, opts = {}) {
   let blinkT = 0, glanceT = 0;
   function blink() {
     bl.set(1); wake();
-    setTimeout(() => { bl.set(0); wake(); }, reducedMotion() ? 120 : 70);
+    // bored blinks are slow
+    setTimeout(() => { bl.set(0); wake(); }, reducedMotion() ? 120 : act === "wait" ? 260 : 70);
   }
   function scheduleBlink() {
     clearTimeout(blinkT);
@@ -186,16 +240,17 @@ export function createEyes(host, opts = {}) {
       scheduleGlance();
     }, 3500 + Math.random() * 4500);
   }
-  scheduleBlink(); scheduleGlance();
+  scheduleBlink(); scheduleGlance(); setTimeout(() => resetIdle(), 0);
 
   function react(kind) {
     switch (kind) {
-      case "nod": kick.impulse({ by: 55, sq: -1.8 }); break;
-      case "bounce": kick.impulse({ by: -110, sq: 1.1 }); break;
-      case "shake": kick.impulse({ ex: 60 }); break;
-      case "surprise": kick.impulse({ es: 2.2 }); break;
-      case "squish": kick.impulse({ sq: -2.2 }); break;
-      case "tilt": kick.impulse({ rot: 140 }); break;
+      case "nod": kick.impulse({ by: 75, sq: -2.4 }); break;
+      case "bounce": kick.impulse({ by: -150, sq: 1.6 }); break;
+      case "hop": kick.impulse({ by: -210, sq: 2.2 }); break;
+      case "shake": kick.impulse({ ex: 85, rot: 40 }); break;
+      case "surprise": kick.impulse({ es: 3, sq: 1.4 }); break;
+      case "squish": kick.impulse({ sq: -3 }); break;
+      case "tilt": kick.impulse({ rot: 180 }); break;
       case "blink": blink(); break;
       default: return;
     }
@@ -205,15 +260,52 @@ export function createEyes(host, opts = {}) {
     svg.dataset.state = state;
     svg.classList.toggle("breathe", state === "idle" && !reducedMotion());
   }
+  // the shape target: the state, then the activity (while Etch is busy or idle), then a one-shot emote on top
+  function shape() {
+    setS(main, { ...BASE, ...STATES[state], ...(act && ACT_STATES.has(state) ? ACT[act] : {}), ...(flashS || {}) });
+  }
+  function flash(sh, ms) {
+    clearTimeout(flashT);
+    const { ms: _ms, ...rest } = sh; void _ms;
+    flashS = rest; shape();
+    flashT = setTimeout(() => { flashS = null; shape(); }, ms);
+  }
+  function setActivity(a) {
+    a = ACT[a] ? a : null;
+    if (a === act) return;
+    act = a; actT0 = performance.now(); pickT.at = 0;
+    if (a) svg.dataset.act = a; else delete svg.dataset.act;
+    shape(); aim(); wake();
+    resetIdle();
+  }
+  function emote(kind) {
+    const e = EMOTE[kind];
+    if (e) flash(e, reducedMotion() ? Math.min(e.ms, 600) : e.ms);
+    if (kind === "surprise") react("surprise");
+    else if (kind === "delight") { react("bounce"); setTimeout(blink, 500); }
+    else if (kind === "pleased") react("nod");
+    else if (kind === "wince") { react("squish"); setTimeout(() => react("shake"), 160); }
+    else if (kind === "hop") react("hop");
+    else if (kind === "nod" || kind === "shake") react(kind);
+    wake();
+  }
+  // long idle: a yawn after a minute with nothing happening
+  let idleT = 0;
+  function resetIdle() {
+    clearTimeout(idleT);
+    if (state !== "idle" || act) return;
+    idleT = setTimeout(() => { if (state === "idle" && !act && svg.isConnected && !document.hidden) { emote("yawn"); resetIdle(); } }, 60000);
+  }
   function setState(s) {
     if (!STATES[s]) s = "idle";
     if (s === state) return;
     const prev = state;
     state = s; glance = null;
-    setS(main, { ...BASE, ...STATES[s] });
+    shape();
+    resetIdle();
     aim(); paintClass();
     if (s === "heard") { react("nod"); setTimeout(blink, 120); }
-    else if (s === "success") react("bounce");
+    else if (s === "success") react("hop");
     else if (s === "confused") react("tilt");
     else if (s === "error" || s === "offline") react("squish");
     else if (s === "userTalking") react("surprise");
@@ -222,7 +314,8 @@ export function createEyes(host, opts = {}) {
   }
   const offRM = onReducedMotion(() => { paintClass(); wake(); });
   paintClass();
-  frame(0, performance.now());
+  frame(0, performance.now(), true);
+  requestAnimationFrame(() => wake());
 
   return {
     el: svg,
@@ -236,8 +329,11 @@ export function createEyes(host, opts = {}) {
     },
     blink,
     react,
+    emote,
+    setActivity,
+    get activity() { return act; },
     destroy() {
-      clearTimeout(blinkT); clearTimeout(glanceT); offRM();
+      clearTimeout(blinkT); clearTimeout(glanceT); clearTimeout(idleT); clearTimeout(flashT); offRM();
       removeEventListener("pointermove", onMove); removeEventListener("scroll", onScroll, { capture: true }); removeEventListener("resize", onScroll);
       springs.forEach((s) => s.stop()); svg.remove();
     },
