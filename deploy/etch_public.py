@@ -71,6 +71,13 @@ MAX_TEXT = 400
 ASKS_PER_IP_10MIN = int(os.environ.get("ETCH_ASKS_PER_IP_10MIN", "40"))
 MAX_STT_BYTES = 16000 * 4 * 45  # 45 s of audio
 LONG_POLL_MAX_S = 25.0  # under Cloudflare's ~100 s idle cut and any proxy's 60 s read timeout
+# Every public job is journalled to disk (one jsonl per job: meta, each event, its end), so a backend restart
+# no longer loses it: a page still following GET /etch/job keeps its event indices, a finished job stays
+# readable, and a job cut off mid-build is started again (or ended with an error once it is too old).
+JOURNAL = Path(os.environ.get("ETCH_JOB_JOURNAL", str(OUT / ".jobs")))
+JOURNAL_KEEP_S = 3600
+RESUME_WINDOW_S = int(os.environ.get("ETCH_RESUME_WINDOW_S", "1200"))
+RESUME_MAX = 2
 
 
 
@@ -123,6 +130,24 @@ class Job:
         self.first_event: float | None = None
         self.last_stage: tuple[str, float] | None = None
         self.stages: list[dict] = []  # [{stage, s}] wall seconds per public stage, for the timing event
+        self.journal: Path | None = None  # this job's on-disk record (JOURNAL), set by start_build
+        self.resumes = 0
+
+    def record(self, row: dict) -> None:
+        """Append one row to this job's journal; a full disk never stops the build."""
+        if not self.journal:
+            return
+        try:
+            with self.journal.open("a") as f:
+                f.write(json.dumps(row, default=str) + "\n")
+        except OSError:
+            pass
+
+    def open_journal(self, d: Path) -> None:
+        d.mkdir(parents=True, exist_ok=True)
+        self.journal = d / f"{self.id}.jsonl"
+        meta = {k: getattr(self, k) for k in ("id", "token", "args", "ip", "mode", "text", "lane", "created")}
+        self.record({"meta": meta})
 
     def emit(self, ev: dict):
         now = time.time()
@@ -130,6 +155,7 @@ class Job:
             if self.started and self.first_event is None:
                 self.first_event = now
             self.events.append(ev)
+            self.record({"ev": ev})
             self.cond.notify_all()
         run = ev.get("run")
         if isinstance(run, str) and RUN_RE.match(run):
@@ -149,6 +175,7 @@ class Job:
         with self.cond:
             self.ended = now
             self.done = True
+            self.record({"end": {"state": self.state, "stage": self.stage, "ended": now}})
             self.cond.notify_all()
 
     def timing(self) -> dict:
@@ -830,6 +857,79 @@ def gc_jobs():
         for k, j in list(JOBS.items()):
             if j.done and time.time() - j.created > 3600:
                 JOBS.pop(k, None)
+        for p in JOURNAL.glob("*.jsonl") if JOURNAL.is_dir() else []:
+            try:
+                if time.time() - p.stat().st_mtime > JOURNAL_KEEP_S:
+                    p.unlink()
+            except OSError:
+                pass
+
+
+RESTARTED_SAY = "Etch restarted while it was building this, so it is starting the build again."
+RESTARTED_ERR = "Etch restarted during this build. Start it again."
+
+
+def restore_jobs(now: float | None = None, start=None) -> list[Job]:
+    """Reload the journalled jobs after a backend restart (job 2026-10-17 gbRVE5w_9kCwfMDt: the backend was
+    restarted one second into a build, JOBS was memory only, the page's next GET /etch/job got 404 and its trace
+    read "Done in 3m 08s" over an empty board). Finished jobs come back as they ended. A job cut off mid-build is
+    run again under the same id and token, its old events kept so the page's `since` index still lines up, or,
+    past RESUME_WINDOW_S or RESUME_MAX restarts, ended with lead:error so the page says so. Returns the jobs
+    started again."""
+    now = time.time() if now is None else now
+    start = start or (lambda j: threading.Thread(target=worker, args=(j,), daemon=True).start())
+    resumed = []
+    for p in sorted(JOURNAL.glob("*.jsonl")) if JOURNAL.is_dir() else []:
+        meta, evs, end, resumes = None, [], None, 0
+        try:
+            if now - p.stat().st_mtime > JOURNAL_KEEP_S:
+                continue
+            for line in p.read_text().splitlines():
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue  # a line cut by the restart itself
+                if "meta" in row:
+                    meta = row["meta"]
+                elif "ev" in row:
+                    evs.append(row["ev"])
+                elif "end" in row:
+                    end = row["end"]
+                elif "resume" in row:
+                    resumes = int(row["resume"])
+        except OSError:
+            continue
+        if not meta or meta.get("id") in JOBS or not isinstance(meta.get("args"), list):
+            continue
+        j = Job(meta["args"], meta.get("ip", ""), meta.get("mode", "design"), meta.get("text", ""))
+        j.id, j.token = meta["id"], meta.get("token") or j.token
+        j.created, j.lane = float(meta.get("created") or now), meta.get("lane") or "full"
+        j.events, j.journal, j.resumes = evs, p, resumes
+        for ev in evs:
+            run = ev.get("run")
+            if isinstance(run, str) and RUN_RE.match(run):
+                j.run = run
+        JOBS[j.id] = j
+        if end:
+            j.state, j.stage = end.get("state") or "done", end.get("stage") or "done"
+            j.ended, j.done = end.get("ended"), True
+            continue
+        if any(e.get("agent") == "lead" and e.get("type") == "cancelled" for e in evs):
+            j.state, j.stage = "cancelled", "cancelled"
+            j.finish()
+            continue
+        if now - j.created > RESUME_WINDOW_S or resumes >= RESUME_MAX:
+            j.emit({"agent": "lead", "type": "error", "t": 0, "error": RESTARTED_ERR})
+            j.state, j.stage = "failed", "stopped with an error"
+            j.finish()
+            continue
+        j.resumes += 1
+        j.record({"resume": j.resumes})
+        j.run = None
+        j.emit({"agent": "lead", "type": "say", "t": 0, "text": RESTARTED_SAY})
+        resumed.append(j)
+        start(j)
+    return resumed
 
 
 PIECE_RE = re.compile(r"^/etch/piece/([0-9a-f]{16})\.png$")
@@ -1204,6 +1304,7 @@ class H(BaseHTTPRequestHandler):
         LIM.allow("runs:day", RUNS_PER_DAY, 86400)
         job = Job(args, ip, mode, text)
         job.lane = lane
+        job.open_journal(JOURNAL)
         JOBS[job.id] = job
         threading.Thread(target=worker, args=(job,), daemon=True).start()
         return self.send_json({"ok": True, "job": job.id, "token": job.token})
@@ -1442,6 +1543,7 @@ def stt_up() -> bool:
 
 
 if __name__ == "__main__":
+    restore_jobs()
     threading.Thread(target=gc_jobs, daemon=True).start()
     if os.environ.get("ETCH_CLASSIFIER") == "1":
         threading.Thread(target=CLASSIFIER.warm, daemon=True).start()

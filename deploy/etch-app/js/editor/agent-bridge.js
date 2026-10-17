@@ -317,32 +317,43 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     return follow(j.job, sim, gen, { text, ref, at });
   }
 
+  // A backend restart (deploy/restart.sh also bounces the tunnel) takes the engine away for 20 s or so: keep
+  // following through FOLLOW_GRACE_MS of misses. A run that ends with no lead:done / lead:error / cancel (the
+  // job was lost, job gbRVE5w_9kCwfMDt 10-17) gets a failed step, so the trace never reads "Done" over an
+  // empty board.
+  const FOLLOW_GRACE_MS = 90000;
   async function follow(jobId, sim, gen, req) {
     const map = mapper(jobId, { design: !!req?.design });
-    let since = 0, misses = 0, last = null, stage = "";
+    let since = 0, down = 0, last = null, stage = "", ended = false;
+    const lost = (msg) => {
+      dock.step({ id: jobId + ":lost", kind: "step", title: "Lost track of this build", detail: msg, status: "failed" });
+      dock.setState("confused"); dock.say(msg); dock.setStatus("Build lost");
+    };
     while (!disposed && gen === jobGen) {
       let r;
-      try { r = sim ? sim.poll(since) : await api.job(jobId, since); misses = 0; }
+      try { r = sim ? sim.poll(since) : await api.job(jobId, since); down = 0; }
       catch (e) {
-        if (e?.status === 404) { dock.setState("confused"); dock.say("Etch lost track of this build. Open it from the library instead."); dock.setStatus(""); return null; }
-        if (++misses >= 8) { explain(e, jobId + ":poll", "Following the build"); return null; }
-        await sleep(800); continue;
+        if (e?.status === 404) { map.end(); lost("Etch lost track of this build. Start it again, or open it from the library."); return null; }
+        if (!down) down = Date.now();
+        if (Date.now() - down > FOLLOW_GRACE_MS) { map.end(); explain(e, jobId + ":poll", "Following the build"); return null; }
+        await sleep(1500); continue;
       }
       if (disposed || gen !== jobGen) break;
       for (const ev of r.events || []) { const out = map(ev); if (out) last = out; }
       if (r.stage && r.stage !== stage) { stage = r.stage; dock.setStatus(cap(stage)); }
       since = r.next ?? since + (r.events || []).length;
-      if (r.done) break;
+      if (r.done) { ended = true; break; }
       await sleep(400);
     }
     map.end();
+    if (ended && !map.finished()) lost("The build stopped before it finished a board. Try it again.");
     return last ? { ...last, job: jobId, request: req } : null;
   }
 
   // one build event -> dock calls (API.md "Build events")
   function mapper(jid, { design = false } = {}) {
     const S = (k) => `${jid}:${k}`;
-    let batches = 0, nb = 0, yes = 0, pieces = 0, queued = false, render = null, picked = [], result = null;
+    let batches = 0, nb = 0, yes = 0, pieces = 0, queued = false, render = null, picked = [], result = null, benched = false;
     const step = (o) => dock.step(o);
     const fn = (ev) => {
       const k = `${ev.agent}:${ev.type}`;
@@ -398,7 +409,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
           viewer?.reload?.({ run: ev.run, frames: ev.frames, design });
           break;
         case "benchmarks:check": step({ id: S("bench:" + (ev.check || ev.label)), kind: "task", title: brief(ev.label || ev.said || ev.check), detail: [`${brief(ev.value) || "?"} ${ev.unit || ""}`.trim(), brief(ev.result)].filter(Boolean).join(" · "), status: ev.pass === false ? "failed" : "done" }); break;
-        case "benchmarks:done": step({ id: S("bench"), kind: "task", title: `Checks: ${countOf(ev.passed) || ev.passed || 0} passed, ${countOf(ev.failed) || ev.failed || 0} failed${ev.unmeasured ? `, ${countOf(ev.unmeasured) || ev.unmeasured} not measured` : ""}`, status: ev.failed ? "failed" : "done" }); break;
+        case "benchmarks:done": benched = true; step({ id: S("bench"), kind: "task", title: `Checks: ${countOf(ev.passed) || ev.passed || 0} passed, ${countOf(ev.failed) || ev.failed || 0} failed${ev.unmeasured ? `, ${countOf(ev.unmeasured) || ev.unmeasured} not measured` : ""}`, status: ev.failed ? "failed" : "done" }); break;
         case "lead:done":
           if (ev.ok) {
             result = { ok: true, board: ev.board, run: ev.run, parts: picked };
@@ -431,6 +442,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
       return result;
     };
     fn.end = () => { if (render) render(); if (queued) dock.loader(false); };
+    fn.finished = () => result !== null || benched; // a benchmarks run ends on benchmarks:done
     return fn;
   }
 
