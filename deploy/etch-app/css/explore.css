@@ -422,6 +422,18 @@ button { font: inherit; color: inherit; }
 .src .g { display: block; }
 .src .g, .src .ic { pointer-events: none; }
 
+/* ---- My boards: this browser's builds, the library's cards with a remove button where the source arrow sits ---- */
+.mine { margin: 4px 0 28px; }
+.mine-bar { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; min-width: 0; }
+.mine-bar h2 { margin: 0; font: 700 24px/1.2 var(--head); color: var(--ink); white-space: nowrap; }
+.mine [hidden] { display: none; }
+.mine-x { border: 0; padding: 0; cursor: pointer; }
+.mine-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mine-ph { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 14px; background: var(--plane); }
+.mine-ph .logo-mark { width: 44px !important; height: 44px !important; opacity: .5; filter: grayscale(1); }
+.mine-empty { margin: 0; color: var(--ink-2); }
+.mine-empty a { color: var(--accent); font-weight: 600; }
+
 /* ---- empty / error ---- */
 .empty { padding: 72px 16px; text-align: center; color: var(--ink-2); }
 .empty b { display: block; margin-bottom: 6px; font: 700 26px/1.2 var(--head); color: var(--ink); }
@@ -443,6 +455,10 @@ button { font: inherit; color: inherit; }
   .cats { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent 100%); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent 100%); }
   .grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .card-main { padding: 16px; gap: 12px; }
+  /* My boards scrolls sideways on phones, so the library stays close */
+  .mine-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 2px 16px 10px; scroll-padding: 0 16px; scrollbar-width: none; }
+  .mine-grid > .card { scroll-snap-align: start; }
+  .mine-bar h2 { font-size: 21px; }
   .top .crumb, .top .here { display: none; }
   .tools { gap: 8px; }
   .sw { gap: 7px; padding: 0 10px 0 6px; font-size: 13px; }

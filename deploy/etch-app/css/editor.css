@@ -98,6 +98,15 @@ body:not(.ready) .bv-labels { opacity: 0; }
 .stage-err.show { display: grid; }
 .stage-err > div { max-width: 420px; text-align: center; color: var(--ink2); }
 .stage-err b { display: block; font: 400 24px/1.25 var(--serif); color: var(--ink); margin-bottom: 8px; }
+/* "Rendering your board": Etch's eyes + the dock's pixel loader over the stage while a board's model loads */
+.rl { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .35s var(--ease); }
+.rl.on { opacity: 1; transition-duration: .2s; }
+.rl-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 22px 16px; border-radius: 20px; background: rgba(255, 255, 255, .82); -webkit-backdrop-filter: saturate(1.4) blur(10px); backdrop-filter: saturate(1.4) blur(10px); box-shadow: var(--shadow); transform: translateY(6px) scale(.97); transition: transform .45s var(--bounce); max-width: calc(100% - 32px); }
+.rl.on .rl-card { transform: none; }
+.rl-eyes { display: block; width: 52px; height: 40px; }
+.rl .ag-loader { display: inline-flex; font-size: 14px; color: var(--ink2); }
+.rl-err { margin: 0; font: 500 14px/1.35 var(--ui); color: var(--bad); text-align: center; }
+.rl-err:empty, .rl.fail .ag-loader { display: none; }
 
 /* view cube + camera buttons */
 .navc { position: absolute; top: 14px; left: 14px; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 10; }
@@ -290,5 +299,6 @@ body.rp-closed .rp-chev .ic { transform: rotate(180deg); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
-  .poster, .bv-canvas { transition: opacity .3s !important; }
+  .poster, .bv-canvas, .rl { transition: opacity .3s !important; }
+  .rl-card { transform: none; }
 }
