@@ -724,10 +724,14 @@ def assemble(
         if unknown := [p for p in design.get("parts", []) if p.get("piece") not in keys]:
             _resolve_unknown(stream, unknown, kept, keys, tried)
         _normalize_pins(design, kept)
+        if joined := _merge_lonely(design, kept):  # before _auto_mcu: a split name is not a reason to add a Pico
+            stream.emit("assembly", "repair", iteration=it, kind="nets", joined=joined)
         if added := _auto_mcu(design, kept, ask):
             keys.add(added["piece"])
             stream.emit("lead", "say", text=added["say"])
         _wire_named_gpio(design, kept)
+        if firmware.mcu_part(design, kept):
+            _wire_hinted(design, kept)
         firmware.tie_grounds(design, kept)
         _wire_mcu_supply(design, kept)
         _drop_lonely_gpio(design, kept)
@@ -755,7 +759,7 @@ def assemble(
             err = f"ref and piece do not match (a capacitor must use a capacitor piece, and so on): {mism}"
         elif lonely:
             where = [
-                f"{n} (only on {p.get('ref')} pin {k})"
+                f"{n} (only on {p.get('ref')} pin {k}{_lonely_hint(design, n)})"
                 for n in lonely
                 for p in design.get("parts", [])
                 for k, v in (p.get("pins") or {}).items()
@@ -1126,8 +1130,13 @@ def _wiring_lint(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str
             for x, y in (("C", "E"), ("B", "E"), ("C", "B")):
                 if nm.get(x) and nm.get(x) == nm.get(y):
                     issues.append(f"{ref} has {x} and {y} on the same net {nm[x]}")
+    fam = {
+        str(p.get("ref")): str((by_key.get(p.get("piece")) or {}).get("family") or "")
+        for p in design.get("parts", [])
+    }
     for (a, b), refs in two.items():
-        if len(refs) > 1 and any(r.startswith("D") for r in refs):
+        # an LED, not any D: a flyback diode across a fan or coil is exactly right (fan board, 10-17)
+        if len(refs) > 1 and any(r.startswith("D") and fam.get(r) != "diode" for r in refs):
             issues.append(
                 f"{' and '.join(refs)} sit side by side across {a} and {b}: an LED's resistor goes in SERIES (its own net between them), never across it"
             )
@@ -1382,6 +1391,145 @@ def _lonely_nets(design: dict[str, Any]) -> list[str]:
     return sorted(n for n, c in count.items() if c == 1)
 
 
+_GND_ALIASES = ("GND", "AGND", "DGND", "VSS", "0V", "GROUND", "GND_PWR")
+_COLOURS = {"R": "RED", "G": "GREEN", "B": "BLUE", "RED": "RED", "GREEN": "GREEN", "BLUE": "BLUE"}
+_GENERIC_TOKENS = {"GPIO", "GP", "PICO", "MCU", "PIN", "NET", "SIG", "IN", "OUT", "LED", "CTRL", "DRV"}
+_MCU_HINT = re.compile(
+    r"(^|_)(GPIO\w*|GP\d+|PICO\w*|MCU\w*|ADC\w*|ALERT|INT|IRQ|PWM\w*|SIG|SENSE|SENSOR\w*|DATA|CTRL|EN|BTN\w*|"
+    r"BUTTON\w*|SDA|SCL|TX|RX|MIC\w*|AUDIO\w*|FAN\w*|TEMP\w*)(_|$)"
+)
+
+
+def _norm_net(n: str) -> str:
+    return re.sub(r"[\s\-_.]+", "_", n.strip().upper())
+
+
+def _merge_lonely(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """Repair dangling nets the picker split by name instead of failing the iteration on them (picker QA 10-17:
+    "Q2_B" on the transistor and "Q2_B_DRIVE" on its resistor, "R1_R" on a resistor and "GPIO_RED" on the MCU,
+    "Vcc" on one pin and "VCC" everywhere else, "+5V" alone beside a "VCC" rail). Rules, in order:
+      1. same name up to case and separators: join the other spelling;
+      2. one name extends the other at a separator (Q2_B / Q2_B_DRIVE): join the shorter;
+      3. colour pairs (R1_R + GPIO_RED): two dangling nets that name the same colour and nothing else, on
+         different parts, join under the MCU-side name;
+      4. supply and ground aliases: a dangling 5 V, 3.3 V or ground alias joins the rail of that kind in use.
+    Never joins two pins of the same part (that would short it). Returns "OLD -> NEW" notes. Runs before
+    _auto_mcu; _wire_hinted then puts MCU-named leftovers on the module."""
+    parts = design.get("parts", [])
+    notes: list[str] = []
+
+    def nets_now() -> dict[str, list[dict[str, Any]]]:
+        on: dict[str, list[dict[str, Any]]] = {}
+        for p in parts:
+            for v in (p.get("pins") or {}).values():
+                on.setdefault(str(v), []).append(p)
+        return on
+
+    def rename(old: str, new: str) -> None:
+        for p in parts:
+            pins = p.get("pins") or {}
+            for k, v in list(pins.items()):
+                if str(v) == old:
+                    pins[k] = new
+        for k in ("scenarios", "benchmarks", "firmware"):
+            if k in design:
+                design[k] = json.loads(re.sub(rf'"{re.escape(old)}"', json.dumps(new), json.dumps(design[k])))
+        notes.append(f"{old} -> {new}")
+
+    def safe(old: str, new: str, on: dict[str, list[dict[str, Any]]]) -> bool:
+        return old != new and not any(p in on.get(new, []) for p in on.get(old, []))
+
+    supply = {"5V": _SUPPLY_5V, "3V3": _SUPPLY_3V3, "GND": _GND_ALIASES}
+    mp = firmware.mcu_part(design, kept)
+    mcu = mp[0] if mp else None
+    for _ in range(3):  # a join can leave another dangling name matching; settle in a few passes
+        changed = False
+        on = nets_now()
+        lonely = [n for n, ps in on.items() if len(ps) == 1]
+        for n in lonely:
+            on = nets_now()
+            if len(on.get(n, [])) != 1:
+                continue
+            up = _norm_net(n)
+            kind = next((k for k, al in supply.items() if up in al or up.lstrip("+") in al), None)
+            others = [m for m in on if m != n]
+            target = None
+            if kind:  # rule 4 (also covers rule 1 for rails)
+                rails = [m for m in others if _norm_net(m) in supply[kind] or _norm_net(m).lstrip("+") in supply[kind]]
+                def rank(m: str) -> int:
+                    u = _norm_net(m)
+                    al = supply[kind]
+                    return al.index(u) if u in al else al.index(u.lstrip("+")) if u.lstrip("+") in al else 99
+
+                rails.sort(key=lambda m: (-len(on[m]), rank(m)))
+                target = rails[0] if rails else None
+                if target and len(on[target]) == 1 and rank(n) < rank(target):
+                    n, target = target, n  # two dangling rail names: keep the plain one (GND over VSS)
+            if not target:  # rule 1
+                target = next((m for m in others if _norm_net(m) == up), None)
+            if not target:  # rule 2: Q2_B_DRIVE -> Q2_B, or Q2_B -> Q2_B_BASE when only the long one exists
+                ext = [m for m in others if up.startswith(_norm_net(m) + "_")]  # the longer name joins
+                ext.sort(key=lambda m: (len(on[m]) < 2, len(m)))
+                target = ext[0] if ext else None
+            if not target:  # rule 3
+                toks = set(up.split("_")) - _GENERIC_TOKENS
+                col = {_COLOURS[t] for t in toks if t in _COLOURS}
+                rest = {t for t in toks if t not in _COLOURS and not re.fullmatch(r"[RDQUC]\d+", t)}
+                if len(col) == 1 and not rest:
+                    mates = [
+                        m for m in others
+                        if len(on[m]) == 1
+                        and {_COLOURS[t] for t in set(_norm_net(m).split("_")) if t in _COLOURS} == col
+                    ]
+                    if len(mates) == 1:
+                        target = mates[0]
+                        if mcu is not None and on[n][0] is mcu:
+                            n, target = target, n  # keep the MCU-side name
+            if target and safe(n, target, on):
+                rename(n, target)
+                changed = True
+        if not changed:
+            break
+    return notes
+
+
+def _wire_hinted(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
+    """A dangling signal net whose name says it belongs to the microcontroller (MIC_OUT, FAN_PWM, SENSOR_TEMP,
+    GPIO_ADC, I2C_SDA, BTN) goes on a free module pin: SDA/SCL on the Pico's I2C0 pins, analog-sounding nets on a
+    free ADC pin, the rest on the next free GPIO."""
+    part, piece = firmware.mcu_part(design, kept)
+    names = {str(k): str(v) for k, v in (piece.get("pins") or {}).items()}
+    pins = part.setdefault("pins", {})
+    on_mcu = set(map(str, pins.values()))
+    for net in _lonely_nets(design):
+        up = _norm_net(net)
+        if net in on_mcu or up in _SUPPLY_5V + _SUPPLY_3V3 + _GND_ALIASES or not _MCU_HINT.search(up):
+            continue
+        free = [n for n in names if n not in pins and names[n].upper().startswith("GPIO")]
+        want: list[str] = []
+        if re.search(r"(^|_)SDA($|_)", up) and piece.get("key") in (PICO_KEY, PICO_W_KEY):
+            want = [_PICO_I2C["SDA"]]
+        elif re.search(r"(^|_)SCL($|_)", up) and piece.get("key") in (PICO_KEY, PICO_W_KEY):
+            want = [_PICO_I2C["SCL"]]
+        elif re.search(r"ADC|ANALOG|MIC|AUDIO|TEMP|SENSE|SENSOR|POT|LDR", up):
+            want = [n for n in _PICO_ADC if piece.get("key") in (PICO_KEY, PICO_W_KEY)] + [
+                n for n in names if "ADC" in names[n].upper()
+            ]
+        pick = next((n for n in want + free if n not in pins), None)
+        if pick:
+            pins[pick] = net
+            on_mcu.add(net)
+
+
+def _lonely_hint(design: dict[str, Any], net: str) -> str:
+    """The nets a dangling name most likely meant, for the repair prompt."""
+    import difflib  # noqa: PLC0415
+
+    names = sorted({str(v) for p in design.get("parts", []) for v in (p.get("pins") or {}).values()} - {net})
+    close = difflib.get_close_matches(net, names, n=2, cutoff=0.5)
+    return f"; did you mean {' or '.join(close)}?" if close else ""
+
+
 def rep_board(out: Path) -> tuple[float, float]:
     b = json.loads((out / "layout.json").read_text())["board"]
     return b["w"], b["h"]
@@ -1484,11 +1632,8 @@ def export(stream: Stream, out: Path) -> dict[str, Any]:
         bom,
     ]
     files += sorted((out / "gerbers").glob("*"))
-    files += [
-        f
-        for f in (out / "firmware" / "main.py", out / "firmware" / "test.json")
-        if f.exists()
-    ]
+    files += [f for f in (out / "firmware" / "main.py", out / "firmware" / "test.json") if f.exists()]
+    files += sorted(f for f in (out / "firmware").glob("*.py") if f.name != "main.py")  # host scripts (fan_host.py)
     zp = out / f"{name}-fab.zip"
     with zipfile.ZipFile(zp, "w", zipfile.ZIP_DEFLATED) as z:
         for f in files:

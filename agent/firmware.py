@@ -66,6 +66,10 @@ class ADC:
         mid = 32768 + _rng.randint(-400, 400)  # the amp's VCC/2 bias plus hiss
         if SOUND == "speaking":
             mid += int(14000 * math.sin(2 * math.pi * 220 * t) * (0.6 + 0.4 * math.sin(2 * math.pi * 3 * t)))
+        elif SOUND.startswith("tone:"):  # a sung note: fundamental plus a weaker 2nd and 3rd harmonic
+            f = float(SOUND[5:])
+            w = 2 * math.pi * f * t
+            mid += int(11000 * math.sin(w) + 3000 * math.sin(2 * w + 0.4) + 1500 * math.sin(3 * w + 1.1))
         return max(0, min(65535, mid))
 """
 
@@ -113,7 +117,10 @@ def generate(
     title: str,
     pwm: list[str] | None = None,
     inputs: list[str] | None = None,
+    failsafe: dict[str, Any] | None = None,
 ) -> str:
+    if failsafe:
+        return _generate_failsafe(commands, {n: g for n, g in gpio.items() if n not in (inputs or [])}, title, failsafe)
     pwm = sorted(n for n in (pwm or []) if n in gpio)
     if pwm:
         ins = {n: g for n, g in gpio.items() if n in (inputs or [])}
@@ -162,6 +169,111 @@ while True:
     elif ch not in "\\r\\n ":
         print("unknown", ch)
 """
+
+
+def _generate_failsafe(
+    commands: list[dict[str, Any]], gpio: dict[str, int], title: str, failsafe: dict[str, Any]
+) -> str:
+    """Typed commands with a watchdog: when the computer says nothing for `after_s` seconds (its script stopped,
+    it slept, the cable came out) the board sets the failsafe outputs itself (the fan board turns the fan ON)."""
+    table = {str(c["input"])[:1]: sorted({n for n in c.get("high", []) if n in gpio}) for c in commands if c.get("input")}
+    pins = "\n".join(f'    "{net}": Pin({n}, Pin.OUT),' for net, n in sorted(gpio.items(), key=lambda x: x[1]))
+    cmds = "\n".join(f'    "{k}": {tuple(v)!r},' for k, v in table.items())
+    safe = tuple(n for n in failsafe.get("high", []) if n in gpio)
+    after = float(failsafe.get("after_s", 15))
+    keys = " or ".join(table)
+    return f"""# {title}: MicroPython for the Raspberry Pi Pico on this board. Generated and tested by Etch.
+# Flash: hold BOOTSEL, plug the Pico in, copy the MicroPython .uf2 onto it, then save this file as main.py
+# (Thonny: File > Save as > Raspberry Pi Pico). The computer sends {keys} over the Pico's USB serial port
+# (fan_host.py does it for you, every 2 s). Failsafe: if nothing arrives for FAILSAFE_S seconds, the board turns
+# {", ".join(safe) or "its outputs"} on by itself until the computer speaks again.
+import sys
+from machine import Pin
+
+try:
+    import select
+except ImportError:
+    import uselect as select
+try:
+    from time import ticks_diff, ticks_ms
+except ImportError:  # the desk test runs this under CPython
+    import time as _time
+
+    def ticks_ms():
+        return int(_time.monotonic() * 1000)
+
+    def ticks_diff(a, b):
+        return a - b
+
+
+PINS = {{
+{pins}
+}}
+COMMANDS = {{
+{cmds}
+}}
+FAILSAFE = {safe!r}
+FAILSAFE_S = {after:g}
+
+
+def drive(on):
+    for net, pin in PINS.items():
+        pin.value(1 if net in on else 0)
+
+
+drive(())
+poll = select.poll()
+poll.register(sys.stdin, select.POLLIN)
+last = ticks_ms()
+tripped = False
+print("ready: send {keys}")
+while True:
+    if poll.poll(200):
+        ch = sys.stdin.read(1)
+        if not ch:
+            break
+        last, tripped = ticks_ms(), False
+        if ch in COMMANDS:
+            drive(COMMANDS[ch])
+            print("ok", ch)
+        elif ch not in "\\r\\n ":
+            print("unknown", ch)
+    elif not tripped and ticks_diff(ticks_ms(), last) > FAILSAFE_S * 1000:
+        drive(FAILSAFE)
+        tripped = True
+        print("failsafe: nothing from the computer for", FAILSAFE_S, "s")
+"""
+
+
+def run_quiet_link(main_py: str, first: str, work: Path, after_s: float, wait_s: float, beat: str = "") -> dict[int, int]:
+    """Failsafe test: send `first`, keep the serial link open but silent (or repeat `beat` every 0.1 s) for
+    `wait_s`, with the watchdog shortened to `after_s`; return GPIO number -> level."""
+    import time  # noqa: PLC0415
+
+    fast = re.sub(r"^FAILSAFE_S = .*$", f"FAILSAFE_S = {after_s}", main_py, count=1, flags=re.M)
+    run(fast, "", work)  # writes the helper files, raises on a crash
+    proc = subprocess.Popen(
+        [sys.executable, "-I", str(work / "runner.py"), str(work / "main.py"), str(work / "fake_machine.py")],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env={"ETCH_SOUND": "quiet", "PATH": "/usr/bin:/bin"},
+    )
+    assert proc.stdin is not None
+    proc.stdin.write(first)
+    proc.stdin.flush()
+    end = time.monotonic() + wait_s
+    while time.monotonic() < end:
+        time.sleep(0.1)
+        if beat:
+            proc.stdin.write(beat)
+            proc.stdin.flush()
+    out, err = proc.communicate(timeout=20)
+    line = next((x for x in out.splitlines() if x.startswith("STATE ")), None)
+    if proc.returncode != 0 or line is None:
+        raise RuntimeError(f"firmware test crashed: {(err or out)[-400:]}")
+    return {int(k): v for k, v in json.loads(line[6:]).items()}
 
 
 def _generate_pwm(
@@ -279,6 +391,176 @@ while True:
 """
 
 
+# rainbow bands for pitch mode: (upper edge in Hz or None, colour, RGB dies lit). Edges are half an octave apart
+# from 155 Hz, so a low male voice is red and a high soprano or a whistle is violet.
+RAINBOW = (
+    (155, "red", ("R",)),
+    (220, "yellow", ("R", "G")),
+    (311, "green", ("G",)),
+    (440, "cyan", ("G", "B")),
+    (622, "blue", ("B",)),
+    (None, "violet", ("R", "B")),
+)
+
+
+def pitch_bands(nets: dict[str, str]) -> list[dict[str, Any]]:
+    """RAINBOW with die letters mapped to the board's nets ({"R": "LED_R", ...}) and a test tone per band (the
+    middle of the band in log terms)."""
+    out, lo = [], 110.0
+    for edge, name, dies in RAINBOW:
+        hi = float(edge) if edge else lo * 2**0.5
+        out.append({"below_hz": edge, "colour": name, "high": [nets[d] for d in dies], "test_hz": round((lo * hi) ** 0.5)})
+        lo = hi
+    return out
+
+
+def generate_pitch(fw: dict[str, Any], gpio: dict[str, int], adc_gpio: int, title: str) -> str:
+    bands = tuple(
+        (b.get("below_hz"), str(b["colour"]), tuple(n for n in b["high"] if n in gpio)) for b in fw["bands"]
+    )
+    quiet = tuple(n for n in fw.get("quiet_high", []) if n in gpio)
+    pins = "\n".join(f'    "{net}": Pin({n}, Pin.OUT),' for net, n in sorted(gpio.items(), key=lambda x: x[1]))
+    rows = "\n".join(f"    ({e!r}, {c!r}, {h!r})," for e, c, h in bands)
+    return f"""# {title}: MicroPython for the Raspberry Pi Pico on this board. Generated and tested by Etch.
+# Sing, hum or whistle into the microphone: the program finds the pitch of the note and lights the LED in the
+# matching rainbow colour, low notes red through high notes violet. Silence turns it off.
+# How: 1024 samples at 8 kHz from ADC{adc_gpio - 26} (GPIO{adc_gpio}), about an eighth of a second. The note's period is the
+# time between upward crossings of the middle of the wave (with hysteresis, so harmonics and hiss do not count).
+# Flash: hold BOOTSEL, plug the Pico in, copy the MicroPython .uf2 onto it, then save this file as main.py.
+# Open the serial port to watch the pitch it hears. Room noise lights it: raise THRESHOLD. Change BANDS to
+# move the colour boundaries (Hz).
+from machine import ADC, Pin
+
+try:
+    from time import ticks_add, ticks_diff, ticks_us
+except ImportError:  # the desk test runs this under CPython, where samples come at a fixed 8 kHz
+    ticks_us = None
+
+PINS = {{
+{pins}
+}}
+BANDS = (  # (upper edge Hz or None, colour, nets lit)
+{rows}
+)
+QUIET = {quiet!r}
+THRESHOLD = 6000  # peak-to-peak counts out of 65535 (about 0.3 V at 3.3 V): quieter is silence
+RATE = 8000
+N = 1024
+mic = ADC(Pin({adc_gpio}))
+buf = [0] * N
+
+
+def sample():
+    if ticks_us is None:
+        for i in range(N):
+            buf[i] = mic.read_u16()
+        return
+    step = 1000000 // RATE
+    t = ticks_us()
+    for i in range(N):
+        while ticks_diff(ticks_us(), t) < 0:
+            pass
+        buf[i] = mic.read_u16()
+        t = ticks_add(t, step)
+
+
+def pitch():
+    lo, hi = min(buf), max(buf)
+    if hi - lo < THRESHOLD:
+        return 0
+    mid, hyst = (lo + hi) // 2, (hi - lo) // 6
+    first = last = None
+    n, armed = 0, False
+    for i in range(N):
+        v = buf[i]
+        if v < mid - hyst:
+            armed = True
+        elif armed and v > mid + hyst:
+            armed = False
+            if first is None:
+                first = i
+            last = i
+            n += 1
+    if n < 3:
+        return 0
+    return (n - 1) * RATE / (last - first)
+
+
+def show(on):
+    for net, pin in PINS.items():
+        pin.value(1 if net in on else 0)
+
+
+def colour(hz):
+    for edge, name, nets in BANDS:
+        if edge is None or hz < edge:
+            return name, nets
+    return BANDS[-1][1], BANDS[-1][2]
+
+
+show(QUIET)
+was = None
+while True:
+    sample()
+    hz = pitch()
+    name, nets = colour(hz) if hz else ("off", QUIET)
+    show(nets)
+    if name != was:
+        print(round(hz), "Hz", name)
+        was = name
+"""
+
+
+def _build_pitch(
+    design: dict[str, Any], part: dict[str, Any], piece: dict[str, Any], out: Path
+) -> tuple[list[dict[str, Any]], dict[str, Any]] | str:
+    """Pitch-to-colour firmware: tested with silence and with one sung test tone per rainbow band."""
+    fwd = design["firmware"]
+    gpio = _gpio_by_net(part, piece)
+    adc_net = fwd.get("input_net")
+    adc = gpio.pop(adc_net, None) if adc_net else None
+    if adc is None or adc not in (26, 27, 28):
+        return f"the microphone output net {adc_net!r} must be wired to an ADC pin (GPIO26, 27 or 28)"
+    bands = fwd.get("bands") or []
+    unknown = sorted({n for b in bands for n in b.get("high", []) if n not in gpio})
+    if not bands or unknown:
+        return f"pitch firmware needs bands whose nets are on {part['ref']} GPIO pins (missing: {unknown})"
+    main_py = generate_pitch(fwd, gpio, adc, str(design.get("title", "ETCH BOARD")))
+    fw = out / "firmware"
+    fw.mkdir(exist_ok=True)
+    tests, scen = [], []
+    cases = [("quiet", "quiet", set(fwd.get("quiet_high", [])), "silence", None)] + [
+        (f"pitch_{b['colour']}", f"tone:{b['test_hz']}", set(b["high"]), f"singing {b['test_hz']} Hz", b["test_hz"])
+        for b in bands
+    ]
+    with tempfile.TemporaryDirectory() as td:
+        for name, sound, want_nets, does, hz in cases:
+            got = run(main_py, "", Path(td), sound=sound)
+            got.pop(adc, None)
+            want = {gpio[n] for n in want_nets}
+            high = {n for n, v in got.items() if v}
+            tests.append({"input": name, "does": does, "high_gpio": sorted(high), "expected": sorted(want), "pass": high == want})
+            scen.append(
+                {
+                    "name": name,
+                    "gpio": {f"GPIO{n}": v for n, v in got.items()},
+                    "sound": "speaking" if hz else "quiet",
+                    **({"tone_hz": hz} if hz else {}),
+                    "inputs": [f"GPIO{adc}"],
+                }
+            )
+    (fw / "main.py").write_text(main_py)
+    report = {
+        "pins": {**{n: f"GPIO{g}" for n, g in gpio.items()}, adc_net: f"GPIO{adc} (ADC)"},
+        "tests": tests,
+        "pass": all(t["pass"] for t in tests),
+    }
+    (fw / "test.json").write_text(json.dumps(report, indent=1))
+    if not report["pass"]:
+        return "the firmware test failed: " + json.dumps([t for t in tests if not t["pass"]])
+    return scen, report
+
+
 def run(main_py: str, keys: str, work: Path, sound: str = "quiet") -> dict[int, int]:
     """Feed `keys` to the program over stdin; return GPIO number -> level when input runs out."""
     (work / "main.py").write_text(main_py)
@@ -332,9 +614,11 @@ def build(
         return "the design has firmware but no microcontroller module part"
     part, piece = found
     chip = firmware_esp32.chip_of(piece)
-    if (design.get("firmware") or {}).get("mode") == "sound":
+    if (design.get("firmware") or {}).get("mode") in ("sound", "pitch"):
         if chip:
             return "sound mode is Pico-only for now (its ADC sampling loop is tuned for the RP2040); use a Pico"
+        if design["firmware"]["mode"] == "pitch":
+            return _build_pitch(design, part, piece, out)
         return _build_sound(design, part, piece, out)
     commands = (design.get("firmware") or {}).get("commands") or []
     if chip and _readout(design, kept, part, piece):
@@ -352,7 +636,8 @@ def build(
         return f"firmware drives nets {unknown}, but no {part['ref']} GPIO pin is wired to them (GPIO nets: {sorted(gpio)})"
     pwm = [n for n in (design.get("firmware") or {}).get("pwm") or [] if n in gpio]
     inputs = [n for n in (design.get("firmware") or {}).get("inputs") or [] if n in gpio]
-    main_py = generate(commands, gpio, str(design.get("title", "ETCH BOARD")), pwm, inputs)
+    failsafe = (design.get("firmware") or {}).get("failsafe")
+    main_py = generate(commands, gpio, str(design.get("title", "ETCH BOARD")), pwm, inputs, failsafe)
     if chip:
         main_py = firmware_esp32.retarget(main_py, chip)
     gpio = {n: g for n, g in gpio.items() if n not in inputs}
@@ -393,6 +678,15 @@ def build(
                 "pass": {n for n, v in last.items() if v} == want_last,
             }
         )
+        if failsafe and not chip:
+            # the watchdog, shortened to 0.3 s: silence after "off" trips it; a steady heartbeat does not
+            off = next((str(c["input"])[:1] for c in commands if not c.get("high")), "")
+            want_safe = {gpio[n] for n in failsafe.get("high", []) if n in gpio}
+            for name, beat, want in (("link goes quiet", "", want_safe), ("computer keeps talking", off, set())):
+                got = run_quiet_link(main_py, off, work, 0.3, 1.0, beat)
+                high = {n for n, v in got.items() if v}
+                tests.append({"input": name, "high_gpio": sorted(high), "expected": sorted(want), "pass": high == want})
+                scen.append({"name": "failsafe" if beat == "" else "heartbeat", "gpio": {f"GPIO{n}": v for n, v in got.items()}})
         # speed: the first moving command at speed 5, then 9, sets the enable duty (QA round 4, motor car)
         mover = next((c for c in commands if set(c.get("high", [])) & set(pwm)), None)
         if mover:
@@ -409,6 +703,8 @@ def build(
                     }
                 )
     (fw / "main.py").write_text(main_py)
+    if host := (design.get("firmware") or {}).get("host"):  # the computer-side script (fan_host.py)
+        _write_host(fw, host)
     report = {
         "pins": {n: f"GPIO{g}" for n, g in gpio.items()},
         "tests": tests,
@@ -420,6 +716,21 @@ def build(
             [t for t in tests if not t["pass"]]
         )
     return scen, report
+
+
+HOST_SCRIPTS = {"fan_host.py": Path(__file__).with_name("fan_host.py")}
+
+
+def _write_host(fw: Path, host: dict[str, Any]) -> None:
+    """Copy a known host script next to main.py with this board's settings (e.g. ON_AT / OFF_AT)."""
+    src = HOST_SCRIPTS.get(str(host.get("file")))
+    if not src:
+        return
+    text = src.read_text()
+    for name, val in (host.get("set") or {}).items():
+        if re.fullmatch(r"[A-Z_]+", str(name)) and isinstance(val, (int, float)):
+            text = re.sub(rf"^{name} = [^#\n]*", f"{name} = {float(val)!r}  ", text, count=1, flags=re.M)
+    (fw / src.name).write_text(text)
 
 
 def _build_sound(
@@ -987,7 +1298,7 @@ def default_commands(design: dict[str, Any], kept: list[dict[str, Any]]) -> list
     if not found:
         return None
     fwd = design.get("firmware") or {}
-    if fwd.get("mode") == "sound" or fwd.get("drives") or any(c.get("high") for c in fwd.get("commands") or []):
+    if fwd.get("mode") in ("sound", "pitch") or fwd.get("drives") or any(c.get("high") for c in fwd.get("commands") or []):
         return None
     part, piece = found
     nets = list(dict.fromkeys(net for _, net in _channels(design, kept, _gpio_by_net(part, piece))))
@@ -1010,7 +1321,7 @@ def _readout(
     """A board whose program only reads inputs: no command drives a net high, or no LED hangs off a GPIO net
     (a sensor plus display board). Sound boards always drive LEDs."""
     fwd = design.get("firmware") or {}
-    if fwd.get("mode") == "sound" or fwd.get("drives"):
+    if fwd.get("mode") in ("sound", "pitch") or fwd.get("drives"):
         return False  # sound boards drive LEDs; a "drives" board (motor car) drives off-board loads by command
     if not any(c.get("high") for c in fwd.get("commands") or []):
         return True
@@ -1042,6 +1353,12 @@ def benchmarks(
             ("speaking", set(fwd.get("loud_high", [])), "someone speaking"),
         ]
         first = "speaking"
+    elif fwd.get("mode") == "pitch":
+        cases = [("quiet", set(fwd.get("quiet_high", [])), "silence")] + [
+            (f"pitch_{b['colour']}", set(b.get("high", [])), f"singing {b.get('test_hz')} Hz shows {b['colour']}")
+            for b in fwd.get("bands") or []
+        ]
+        first = cases[-1][0]
     else:
         cases = [("idle", set(), "nothing typed")] + [
             (f"cmd_{str(c['input'])[:1]}", set(c.get("high", [])), c.get("does", ""))
@@ -1071,4 +1388,6 @@ def benchmarks(
         {"check": f"{first}.{ref}.peak_ma", "max": 25.0, "text": f"{ref} under 25 mA"}
         for ref, _ in ch
     ]
+    if fwd.get("drives"):  # LEDs and a driven load (fan with a status LED): the load's own checks stand too
+        rows += list(design.get("benchmarks") or [])
     return rows

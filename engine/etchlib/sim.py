@@ -290,9 +290,10 @@ def netlist(
             # 220 Hz, 1 V amplitude voice-band tone, sound=quiet a 10 mV hiss
             vcc, gnd, o = nodes
             amp = 1.0 if scen.get("sound") == "speaking" else 0.01
+            hz = float(scen.get("tone_hz") or 220)  # pitch boards sing each band's own test tone
             lines.append(f"R{p.ref}_Q {vcc} {gnd} 6.6k")
             lines.append(f"E{p.ref} {p.ref}_MID {gnd} {vcc} {gnd} 0.5")
-            lines.append(f"V{p.ref}_S {p.ref}_SIG {p.ref}_MID SIN(0 {amp} 220)")
+            lines.append(f"V{p.ref}_S {p.ref}_SIG {p.ref}_MID SIN(0 {amp} {hz:g})")
             lines.append(f"R{p.ref}_O {p.ref}_SIG {o} 125")
         elif role == "ldr":
             lit = scen.get("ldr", "light")

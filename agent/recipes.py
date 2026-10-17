@@ -149,6 +149,46 @@ def voice_led(ask: str) -> dict[str, Any] | None:
     }
 
 
+def pitch_rainbow(ask: str) -> dict[str, Any] | None:
+    """Singing or humming lights an RGB LED in the colour of the note: low red through high violet (Pranav's
+    prompt family, 10-17). Same mic + RGB board as voice_led; the firmware finds the pitch (firmware.py, pitch
+    mode) instead of just loud or quiet."""
+    a = ask.lower()
+    if not re.search(r"\b(sing|sings|singing|sung|hum|humming|whistl\w*|voice|mic|microphone|note|notes|pitch\w*)\b", a):
+        return None
+    if not re.search(r"\b(pitch\w*|notes?|rainbow|higher|lower|frequenc\w*|tones?|tuner)\b", a):
+        return None
+    if not re.search(r"\b(led|light|lights|lit|glow\w*|colou?rs?|rainbow|hue)\b", a):
+        return None
+    from . import firmware  # noqa: PLC0415
+
+    bands = firmware.pitch_bands({"R": "LED_R", "G": "LED_G", "B": "LED_B"})
+    parts = [
+        _pico({**RGB_GPIO, "31": "MIC_OUT", "36": "P3V3"}),
+        {
+            "ref": "MK1",
+            "piece": MIC,
+            "value": "MAX4466",
+            "pins": {"1": "P3V3", "2": "GND", "3": "MIC_OUT"},
+            "group": "sensor",
+            "why": "Electret mic and amplifier module (MAX4466 with gain trim) plugs in here; its output rests at "
+            "half the supply and carries your voice.",
+        },
+        *_rgb_block(),
+    ]
+    return {
+        "name": "pitch_rainbow",
+        "title": "PITCH RAINBOW",
+        "voltage": 5.0,
+        "parts": parts,
+        "firmware": {"mode": "pitch", "input_net": "MIC_OUT", "bands": bands, "quiet_high": []},
+        "benchmarks": [],
+        "say": "A Pico listens through a mic amplifier, works out the pitch you sing and lights the RGB LED in that "
+        "rainbow colour: red for low notes, then yellow, green, cyan, blue, and violet for the highest. "
+        "Silence turns it off.",
+    }
+
+
 def typed_rgb(ask: str) -> dict[str, Any] | None:
     a = ask.lower()
     # "an RGB LED controlled by a Pico": no keys named, so the laptop picks the colour with r / g / b (sweep 10-17,
@@ -1230,15 +1270,127 @@ def motor_car(ask: str) -> dict[str, Any] | None:
     }
 
 
-PICO_RECIPES = (temp_display, heart_rate, strip_knob, motor_car)
+FLYBACK = "kicad:Diode:1N4001@D_DO-41_SOD81_P10.16mm_Horizontal"
+SWITCH_NPN = "kicad:Transistor_BJT:PN2222A@TO-92_Inline"
+
+
+def _threshold_c(a: str) -> float:
+    """The temperature the ask names ("past 80 deg", "above 80 C", "176 F"), in C; 80 when none is named."""
+    for m in re.finditer(r"(\d{2,3}(?:\.\d)?)\s*(°|º|deg\w*)?\s*(c\b|celsius|f\b|fahrenheit)?", a):
+        if m.group(2) or m.group(3) or re.search(r"(past|above|over|exceeds?|hits?|reach\w*|than|beyond)\s*$", a[: m.start()]):
+            v = float(m.group(1))
+            return round((v - 32) / 1.8, 1) if (m.group(3) or "").startswith("f") else v
+    return 80.0
+
+
+def usb_fan(ask: str) -> dict[str, Any] | None:
+    """A fan the computer switches over USB when it gets hot (Pranav's prompt family, 10-17): Pico on USB serial,
+    PN2222A low-side switch with a base resistor and pull-down, 1N4001 flyback diode across the fan, 5 V fan from
+    USB VBUS, bulk capacitor. A host script (fan_host.py) reads the CPU temperature with hysteresis and a
+    failsafe, and the firmware turns the fan on by itself when the computer goes quiet."""
+    a = ask.lower()
+    if not re.search(r"\b(fans?|cooling|cooler|blower)\b", a):
+        return None
+    if not re.search(r"\b(temp\w*|hot|hotter|heat|deg\w*|celsius|fahrenheit|°|thermal|cpu)\b|\d+\s*°?\s*[cf]\b", a):
+        return None
+    if not re.search(r"\b(computer|pc|laptop|usb|host|script|serial|desktop|mac|python)\b", a):
+        return None
+    if re.search(r"\b(display|oled|lcd|screen|bluetooth|wi-?fi|relay|pump|motors)\b", a):
+        return None
+    on_at = _threshold_c(a)
+    off_at = round(on_at - 5, 1)
+    parts = [
+        _pico({"20": "FAN_ON", "40": "VBUS", "8": "GND"}),
+        {
+            "ref": "R1",
+            "piece": R,
+            "value": "1k",
+            "pins": {"1": "FAN_ON", "2": "Q1_B"},
+            "group": "output",
+            "why": "Base resistor: about 2.6 mA from the 3.3 V pin, plenty to saturate the switch at fan current.",
+        },
+        {
+            "ref": "R2",
+            "piece": R,
+            "value": "10k",
+            "pins": {"1": "Q1_B", "2": "GND"},
+            "group": "output",
+            "why": "Pull-down: the fan stays off while the Pico boots and its pin floats.",
+        },
+        {
+            "ref": "Q1",
+            "piece": SWITCH_NPN,
+            "value": "PN2222A",
+            "pins": {"1": "GND", "2": "Q1_B", "3": "FAN_N"},
+            "group": "output",
+            "why": "Low-side switch for the fan (600 mA part, the fan draws about 100 mA).",
+        },
+        {
+            "ref": "D1",
+            "piece": FLYBACK,
+            "value": "1N4001",
+            "pins": {"1": "VBUS", "2": "FAN_N"},
+            "group": "output",
+            "why": "Flyback diode across the fan motor: catches the voltage kick when the switch turns off.",
+        },
+        {
+            "ref": "M1",
+            "piece": HDR2,
+            "value": "5V fan",
+            "pins": {"1": "VBUS", "2": "FAN_N"},
+            "load_ohms": 50,
+            "group": "output",
+            "why": "Fan header: a small 5 V DC fan (about 100 mA), red lead on pin 1 (+5 V).",
+        },
+        {
+            "ref": "C1",
+            "piece": CP_BULK,
+            "value": "470u",
+            "pins": {"1": "VBUS", "2": "GND"},
+            "group": "power",
+            "why": "Bulk capacitor so the fan's start-up surge does not brown out the Pico.",
+        },
+    ]
+    cmds = [
+        {"input": "1", "high": ["FAN_ON"], "does": "fan on"},
+        {"input": "0", "high": [], "does": "fan off"},
+    ]
+    bench = [
+        {"check": "idle.M1.avg_ma", "min": -1, "max": 1, "text": "Fan off at power-up"},
+        {"check": "cmd_1.M1.avg_ma", "min": 60, "max": 200, "text": "Fan spins when the computer says hot"},
+        {"check": "cmd_0.M1.avg_ma", "min": -1, "max": 1, "text": "Fan stops when the computer says cool"},
+        {"check": "failsafe.M1.avg_ma", "min": 60, "text": "Fan spins when the computer goes quiet (failsafe)"},
+        {"check": "cmd_1.supply_ma_peak", "max": 500, "text": "Under the 500 mA USB limit"},
+    ]
+    return {
+        "name": "usb_fan",
+        "title": "USB FAN",
+        "voltage": 5.0,
+        "parts": parts,
+        "firmware": {
+            "commands": cmds,
+            "drives": "fan",
+            "failsafe": {"after_s": 15, "high": ["FAN_ON"]},
+            "host": {"file": "fan_host.py", "set": {"ON_AT": on_at, "OFF_AT": off_at}},
+        },
+        "benchmarks": bench,
+        "say": f"A Pico on USB switches a 5 V fan through a transistor with a flyback diode. fan_host.py on your "
+        f"computer reads the CPU temperature and turns the fan on at {on_at:g} C and off below {off_at:g} C. If "
+        "the computer goes quiet for 15 seconds, the board turns the fan on by itself.",
+    }
+
+
+PICO_RECIPES = (temp_display, heart_rate, strip_knob, motor_car, usb_fan)
 
 RECIPES = (
     voice_arm,
+    usb_fan,
     motor_car,
     temp_display,
     heart_rate,
     strip_knob,
     plain_led,
+    pitch_rainbow,
     voice_led,
     typed_rgb,
     dark_beeper,
