@@ -3,8 +3,10 @@
 The public app (deploy/etch-app on Vercel) talks to this through a Cloudflare quick tunnel. Unlike
 studio/flux_server.py it does NOT serve the pcb-loop folder: only the endpoints below exist.
 
-  GET  /etch/health                      engine up?  {ok, busy, queue, stt}
-  POST /etch/live   {mode, text, base}   start a run -> {job}; one run at a time, small queue
+  GET  /etch/health                      engine up?  {ok, busy, queue, stt, running, max_runs, heavy_slots, heavy_in_use}
+  POST /etch/live   {mode, text, base}   start a run -> {job}; every run starts at once in its own process (no
+                                         queue); 503 only above ETCH_MAX_RUNS. The CPU-heavy steps inside the runs
+                                         share ETCH_HEAVY_SLOTS slots (engine/etchlib/slots.py)
   GET  /etch/job?id=..&since=N           the run's events from index N (polling; quick tunnels do not carry SSE)
   POST /etch/stt    raw f32 16 kHz PCM   local Parakeet speech-to-text (studio/stt/stt_server.cjs on :3421)
   GET  /etch/files/engine/out/live-*/frames/*.png|frames.json, /sim.json   board renders for the page
@@ -61,7 +63,9 @@ HEAVY_LOCK = Path(os.environ.get("ETCH_HEAVY_LOCK", str(Path.home() / "helloworl
 RUNS_PER_IP_HOUR = int(os.environ.get("ETCH_RUNS_PER_IP_HOUR", "10"))
 RUNS_PER_DAY = int(os.environ.get("ETCH_RUNS_PER_DAY", "80"))
 STT_PER_IP_10MIN = 60
-QUEUE_MAX = 3
+# No queue: every run starts at once. These caps only protect memory (each run is its own Python + KiCad).
+MAX_RUNS = int(os.environ.get("ETCH_MAX_RUNS", "12"))
+MAX_FAST_RUNS = int(os.environ.get("ETCH_MAX_FAST_RUNS", "8"))
 RUN_TIMEOUT_S = 15 * 60
 MAX_TEXT = 400
 ASKS_PER_IP_10MIN = int(os.environ.get("ETCH_ASKS_PER_IP_10MIN", "40"))
@@ -92,7 +96,7 @@ class Limiter:
 LIM = Limiter()
 
 
-# ---------------------------------------------------------------- jobs: one engine run at a time
+# ---------------------------------------------------------------- jobs: one engine process per run, all at once
 class Job:
     def __init__(self, args: list[str], ip: str, mode: str = "design", text: str = ""):
         self.id = secrets.token_urlsafe(12)
@@ -104,8 +108,8 @@ class Job:
         self.done = False
         self.created = time.time()
         self.ended: float | None = None
-        self.state = "queued"  # queued | running | done | failed | cancelled
-        self.stage = "waiting in line"
+        self.state = "running"  # running | done | failed | cancelled (no queue since 2026-10-17)
+        self.stage = "starting the engine"
         self.run: str | None = (
             None  # the engine's live-* folder, once its first event names it
         )
@@ -115,7 +119,7 @@ class Job:
         # long-poll: GET /etch/job?wait=N sleeps on this until a new event or the end of the run
         self.cond = threading.Condition(self.lock)
         self.lane = "full"  # "fast": a stored board or a code-only recipe/edit, outside the full-build line
-        self.started: float | None = None  # when the engine process was spawned (after the wait in line)
+        self.started: float | None = None  # when the engine process was spawned
         self.first_event: float | None = None
         self.last_stage: tuple[str, float] | None = None
         self.stages: list[dict] = []  # [{stage, s}] wall seconds per public stage, for the timing event
@@ -273,18 +277,45 @@ CLASSIFIER = Classifier()
 
 
 JOBS: dict[str, Job] = {}
-WAITING: list[Job] = []
-STATE = {"running": None, "fast": None}
-RUN_LOCK = threading.Lock()
-Q_LOCK = threading.Lock()
-# Fast lane (report rank 4): a stored board (0.05 s) or a code-only recipe or edit never waits behind a full
-# picker build or a 400 s ESP32 route. It has its own lock, so at most one fast and one full engine run at once.
-FAST_WAITING: list[Job] = []
-FAST_LOCK = threading.Lock()
-LANES = {
-    "full": (WAITING, RUN_LOCK, "running"),
-    "fast": (FAST_WAITING, FAST_LOCK, "fast"),
-}
+# Running engine processes per lane. A fast-lane run (a stored board, a recipe or a code-only edit) has its own,
+# separate count, so a burst of full builds never makes a stored board wait or fail.
+RUNNING = {"full": 0, "fast": 0}
+CAPS = {"full": lambda: MAX_RUNS, "fast": lambda: MAX_FAST_RUNS}
+RUN_COUNT_LOCK = threading.Lock()
+
+
+def reserve(lane: str) -> bool:
+    """Take one run place in the lane, or False at the memory cap (the caller answers 503, nothing waits)."""
+    with RUN_COUNT_LOCK:
+        if RUNNING[lane] >= CAPS[lane]():
+            return False
+        RUNNING[lane] += 1
+        return True
+
+
+def release(lane: str) -> None:
+    with RUN_COUNT_LOCK:
+        RUNNING[lane] = max(0, RUNNING[lane] - 1)
+
+
+def heavy_status() -> dict:
+    """The engine's heavy slots (engine/etchlib/slots.py), read without importing the engine package."""
+    import importlib.util
+
+    try:
+        mod = HEAVY_STATUS.get("mod")
+        if mod is None:
+            spec = importlib.util.spec_from_file_location("etch_slots", ROOT / "engine/etchlib/slots.py")
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            HEAVY_STATUS["mod"] = mod
+        n = mod.slot_count()
+        return {"heavy_slots": n, "heavy_in_use": mod.slots_in_use(n)}
+    except Exception:  # noqa: BLE001 - health must answer even if the probe cannot
+        return {"heavy_slots": None, "heavy_in_use": None}
+
+
+HEAVY_STATUS: dict = {}
 _CATALOG_KEYS: dict[str, dict] | None = None
 
 
@@ -331,35 +362,11 @@ def clean(s: str) -> str:
 
 
 def worker(job: Job):
-    waiting, run_lock, slot = LANES[job.lane]
-    with Q_LOCK:
-        waiting.append(job)
+    """Run one engine process to the end. The caller already reserved this run's place (reserve(job.lane)):
+    nothing waits here, every run starts at once."""
     try:
-        while True:
-            if job.cancelled:  # cancelled while waiting in line: nothing was started
-                with Q_LOCK:
-                    if job in waiting:
-                        waiting.remove(job)
-                return
-            with Q_LOCK:
-                pos = waiting.index(job)
-            if pos == 0 and run_lock.acquire(timeout=1.0):
-                if job.cancelled:
-                    run_lock.release()
-                    continue
-                break
-            job.emit(
-                {
-                    "agent": "lead",
-                    "type": "queued",
-                    "position": pos + (1 if STATE[slot] else 0),
-                    "t": 0,
-                }
-            )
-            time.sleep(1.0)
-        with Q_LOCK:
-            waiting.remove(job)
-        STATE[slot] = job.id
+        if job.cancelled:  # cancelled before its process started: nothing to stop
+            return
         job.state, job.stage = "running", "starting the engine"
         job.started = time.time()
         # a file, so a chatty stderr can never block the stdout pipe
@@ -380,6 +387,8 @@ def worker(job: Job):
             start_new_session=True,
         )
         job.proc = proc
+        if job.cancelled:  # cancelled in the instant between the check above and the spawn
+            threading.Thread(target=stop_group, args=(job,), daemon=True).start()
         timer = threading.Timer(RUN_TIMEOUT_S, lambda: stop_group(job))
         timer.start()
         ok = None
@@ -419,16 +428,11 @@ def worker(job: Job):
     except Exception as e:  # report to the page instead of hanging the poll
         job.emit({"agent": "lead", "type": "error", "t": 0, "error": clean(e)[:300]})
         job.state, job.stage = "failed", "stopped with an error"
-        with Q_LOCK:
-            if job in waiting:
-                waiting.remove(job)
     finally:
         if job.cancelled:
             job.state, job.stage = "cancelled", "cancelled"
             job.emit({"agent": "lead", "type": "cancelled", "t": 0})
-        if STATE[slot] == job.id:
-            STATE[slot] = None
-            run_lock.release()
+        release(job.lane)
         job.emit(job.timing())
         job.finish()
 
@@ -848,10 +852,15 @@ class H(BaseHTTPRequestHandler):
             return self.send_json(
                 {
                     "ok": True,
-                    "busy": bool(STATE["running"]),
-                    "queue": len(WAITING),
-                    "fast_busy": bool(STATE["fast"]),
-                    "fast_queue": len(FAST_WAITING),
+                    # no queue: busy only means the memory cap is reached (a new run gets a 503)
+                    "busy": RUNNING["full"] >= MAX_RUNS,
+                    "queue": 0,
+                    "fast_busy": RUNNING["fast"] >= MAX_FAST_RUNS,
+                    "fast_queue": 0,
+                    "running": RUNNING["full"],
+                    "fast_running": RUNNING["fast"],
+                    "max_runs": MAX_RUNS,
+                    **heavy_status(),
                     "stt": stt_up(),
                 }
             )
@@ -1127,13 +1136,14 @@ class H(BaseHTTPRequestHandler):
         return self.send_json({"error": "not found"}, 404)
 
     def start_build(self, ip: str, args: list[str], mode: str, text: str, room: bool = False):
-        """Queue an engine run. room=True only checks capacity (nothing is started)."""
+        """Start an engine run at once (no queue). room=True only checks capacity (nothing is started)."""
         base = Path(args[args.index("--base") + 1]) if "--base" in args else None
         lane = lane_for(mode, text, base) if mode in ("design", "modify") else "full"
-        if len(LANES[lane][0]) >= QUEUE_MAX:
+        if RUNNING[lane] >= CAPS[lane]():
             return self.send_json(
-                {"error": "I am busy with other builds. Try again in a minute."},
-                429,
+                {"error": f"{CAPS[lane]()} builds are running right now, the most this machine takes at once. "
+                          "Try again in a minute."},
+                503,
             )
         if not LIM.allow(
             "runs:" + ip, RUNS_PER_IP_HOUR, 3600, take=False
@@ -1146,6 +1156,12 @@ class H(BaseHTTPRequestHandler):
             )
         if room:
             return None
+        if not reserve(lane):  # lost a race for the last place since the check above
+            return self.send_json(
+                {"error": f"{CAPS[lane]()} builds are running right now, the most this machine takes at once. "
+                          "Try again in a minute."},
+                503,
+            )
         LIM.allow("runs:" + ip, RUNS_PER_IP_HOUR, 3600)
         LIM.allow("runs:day", RUNS_PER_DAY, 86400)
         job = Job(args, ip, mode, text)

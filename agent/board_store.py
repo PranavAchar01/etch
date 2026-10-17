@@ -39,9 +39,14 @@ def _load() -> list[dict[str, Any]]:
 
 
 def save(ask: str, out: Path, recipe: str | None = None) -> None:
-    rows = [r for r in _load() if r["run"] != out.name]
-    rows.append({"ask": ask, "run": out.name, "recipe": recipe, "saved": time.strftime("%Y-%m-%d %H:%M:%S")})
-    STORE.write_text(json.dumps({"boards": rows}, indent=1))
+    def add(data: Any) -> dict[str, Any]:
+        rows = [r for r in (data.get("boards") or []) if r["run"] != out.name] if isinstance(data, dict) else []
+        rows.append({"ask": ask, "run": out.name, "recipe": recipe, "saved": time.strftime("%Y-%m-%d %H:%M:%S")})
+        return {"boards": rows}
+
+    from etchlib.slots import update_json  # here, not at the top: deploy/etch_public.py imports this module bare
+
+    update_json(STORE, add, dict)  # parallel runs save boards too: locked, atomic
 
 
 def lookup(ask: str) -> dict[str, Any] | None:

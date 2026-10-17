@@ -36,7 +36,8 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-from etchlib.kicad import HEAVY_LOCK, KICAD_CLI, cli, footprint_root, heavy_lock, kicad_python
+from etchlib.kicad import KICAD_CLI, cli, footprint_root, kicad_python
+from etchlib.slots import heavy_slot
 from etchlib.parts import INDEX_PATH, KICAD_CATALOG_PATH, read_index
 
 from . import config, llm
@@ -912,8 +913,8 @@ def change_note(out: Path, board_id: str, request: str, resolved: dict[str, Any]
 
 
 def _lock() -> Any:
-    HEAVY_LOCK.parent.mkdir(parents=True, exist_ok=True)  # the lock's parent folder is not there on a fresh machine
-    return heavy_lock(wait_s=600)
+    """A live edit someone is waiting on: one of the live runs' heavy slots, not the batch ~/helloworld/.heavy-lock."""
+    return heavy_slot(wait_s=600)
 
 
 # ---------------------------------------------------------------- the whole run

@@ -36,6 +36,7 @@ from typing import Any
 
 import yaml
 from etchlib.kicad import cli
+from etchlib.slots import heavy_slot, update_json
 from etchlib.parts import load_index, read_index, register
 
 from . import (
@@ -248,7 +249,11 @@ class PieceShow:
 
     def _one(self, p: dict[str, Any]) -> None:
         try:
-            png, secs, hit = piece_render.render(p["footprint"])
+            if piece_render._png(p["footprint"]).exists():  # cached: no kicad-cli, no slot
+                png, secs, hit = piece_render.render(p["footprint"])
+            else:
+                with heavy_slot():
+                    png, secs, hit = piece_render.render(p["footprint"])
         except (subprocess.SubprocessError, OSError) as e:
             self.stream.emit("pieces", "error", k=p["key"], error=str(e)[:200])
             return
@@ -2172,6 +2177,11 @@ def _feedback(v: dict[str, Any], metrics: list[str]) -> str:
 
 
 def export(stream: Stream, out: Path) -> dict[str, Any]:
+    with heavy_slot():  # BOM, Gerbers, drill, STEP/GLB: kicad-cli work, one heavy slot
+        return _export(stream, out)
+
+
+def _export(stream: Stream, out: Path) -> dict[str, Any]:
     t0 = time.time()
     pcb = next(out.glob("*.kicad_pcb"))
     name = pcb.stem
@@ -2522,12 +2532,15 @@ def source_missing(
             "role": role,
         }
         idx_path = Path(__file__).resolve().parents[1] / "engine/parts/agent_index.json"
-        idx = read_index(idx_path)
-        for p in idx["parts"]:
-            if p["key"] == part["key"] and not p.get("spice"):
-                p["spice"] = spice
-                p["spice_note"] = f"{m.get('what')} modelled as a {note}"
-        idx_path.write_text(json.dumps(idx, indent=1))
+        def add_spice(idx: Any) -> Any:
+            for p in idx["parts"]:
+                if p["key"] == part["key"] and not p.get("spice"):
+                    p["spice"] = spice
+                    p["spice_note"] = f"{m.get('what')} modelled as a {note}"
+            return idx
+
+        # parallel runs source parts too: a locked read-modify-write, never a lost update
+        update_json(idx_path, add_spice, lambda: {"parts": []}, read=read_index)
         piece = {
             "key": part["key"],
             "family": str(m.get("what")),
@@ -2592,14 +2605,14 @@ def _layout_seed(spec: dict[str, Any]) -> Path | None:
 def _layout_remember(spec: dict[str, Any], out: Path) -> None:
     if _layout_seed(spec) is not None:
         return  # the first passing layout stays the seed, so archiving later runs never loses it
-    try:
-        idx = json.loads(LAYOUT_CACHE.read_text())
-    except (OSError, ValueError):
-        idx = {}
-    idx[_layout_key(spec)] = out.name
-    tmp = LAYOUT_CACHE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(idx, indent=0))
-    tmp.replace(LAYOUT_CACHE)
+    key = _layout_key(spec)
+
+    def put(idx: Any) -> dict[str, Any]:
+        idx = idx if isinstance(idx, dict) else {}
+        idx[key] = out.name
+        return idx
+
+    update_json(LAYOUT_CACHE, put, dict, indent=0)  # parallel runs: locked, atomic
 
 
 def _apply_mask(design: dict[str, Any], out: Path) -> None:
@@ -2648,11 +2661,11 @@ def render(stream: Stream, out: Path, quality: str = "basic") -> dict[str, Any]:
     pcb = next(out.glob("*.kicad_pcb"))
     stream.emit("render", "start", quality=quality)
     # live frames are 2/3 of the video size (the page scales them up): about 2x faster on a loaded Mac.
-    # No heavy lock: an interactive render for someone watching the page is not a batch job, and waiting on
-    # another job's lock stalled live builds for up to 10 minutes. kicad_frames already runs every render
-    # under nice -n 10, so a long batch job (a video render) keeps most of the machine.
-    t_lock = time.time()
-    meta = kf.frames(pcb, out / "frames", w=920, h=680, jobs=6)
+    # Not the batch heavy lock (waiting on another job's lock stalled live builds for up to 10 minutes): one of
+    # the live runs' heavy slots, so parallel builds take turns rendering. kicad_frames runs under nice -n 10.
+    with heavy_slot():
+        t_lock = time.time()
+        meta = kf.frames(pcb, out / "frames", w=920, h=680, jobs=6)
     res = {
         "frames": eng.url(out / "frames" / "frames.json"),
         "count": len(meta["frames"]),

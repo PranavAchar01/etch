@@ -32,6 +32,7 @@ from typing import Any
 from etchlib import sexpr
 from etchlib.kicad import KICAD_CLI, PARTS_CACHE
 from etchlib.parts import AGENT_INDEX_PATH, read_index, search_index
+from etchlib.slots import atomic_write_text, file_lock, update_json
 
 from . import config, llm, provenance
 from .engine_api import load_index
@@ -170,6 +171,13 @@ def convert(
     """Normalize to the current KiCad format, point the 3D model at the absolute STEP, check pins vs pads,
     register in agent_index.json."""
     d = PARTS_CACHE / lib
+    with file_lock(d / ".convert"):  # two parallel runs fetching the same part never share its files
+        return _convert(lib, d, sym, mod, step, source, extra)
+
+
+def _convert(
+    lib: str, d: Path, sym: Path, mod: Path, step: Path, source: str, extra: dict[str, Any]
+) -> dict[str, Any]:
     subprocess.run(
         [
             str(KICAD_CLI),
@@ -262,13 +270,12 @@ def convert(
 
 
 def _register(entry: dict[str, Any]) -> None:
-    data = (
-        read_index(AGENT_INDEX_PATH)
-        if AGENT_INDEX_PATH.exists()
-        else {"parts": []}
-    )
-    data["parts"] = [p for p in data["parts"] if p["key"] != entry["key"]] + [entry]
-    AGENT_INDEX_PATH.write_text(json.dumps(data, indent=1) + "\n")
+    def add(data: Any) -> Any:
+        data["parts"] = [p for p in data["parts"] if p["key"] != entry["key"]] + [entry]
+        return data
+
+    # parallel live runs register parts too: a locked read-modify-write, written atomically
+    update_json(AGENT_INDEX_PATH, add, lambda: {"parts": []}, read=read_index, trailer="\n")
     load_index.cache_clear()
 
 
@@ -539,9 +546,11 @@ def find_mechanical(
             "why": pick.get("reason"),
         },
     }
-    data = json.loads(MECH_INDEX.read_text()) if MECH_INDEX.exists() else {"parts": []}
-    data["parts"] = [e for e in data["parts"] if e["key"] != key] + [entry]
-    MECH_INDEX.write_text(json.dumps(data, indent=1) + "\n")
+    def add(data: Any) -> Any:
+        data["parts"] = [e for e in data["parts"] if e["key"] != key] + [entry]
+        return data
+
+    update_json(MECH_INDEX, add, lambda: {"parts": []}, trailer="\n")
     tiers.append({"tier": "scout_pick", "picked": f"{repo}/{path}"})
     return {
         "status": "ok",
@@ -617,7 +626,7 @@ def you_search(query: str, count: int = 8) -> list[dict[str, Any]]:
             }
         )
     YOU_CACHE.mkdir(parents=True, exist_ok=True)
-    f.write_text(json.dumps({"query": q, "at": time.strftime("%Y-%m-%dT%H:%M:%S"), "hits": hits}, indent=1))
+    atomic_write_text(f, json.dumps({"query": q, "at": time.strftime("%Y-%m-%dT%H:%M:%S"), "hits": hits}, indent=1))
     return hits
 
 
