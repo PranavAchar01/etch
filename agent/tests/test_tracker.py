@@ -199,6 +199,20 @@ def test_lonely_reset_label_on_a_header_is_left_open():
     live._drop_lonely_gpio(d, _kept(d))
     assert _nets(d)["J1"] == {"1": "SIG"}
 
+
+def test_lonely_sd_slot_runs_in_spi_mode_on_a_free_bus():
+    # live-1792274693843 (mp4 player): GP15-18 already taken, so SPI0 is busy and the card lands on SPI1 GP8-11
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY,
+         "pins": {**GNDS, "20": "A", "21": "B", "22": "C", "24": "D"}},
+        {"ref": "J1", "piece": "kicad:Connector_Generic:Conn_01x02@PinHeader_1x02_P2.54mm_Vertical",
+         "pins": {"1": "DAT2", "2": "DAT3_CD", "3": "CMD", "5": "CLK", "7": "DAT0", "8": "DAT1", "9": "DET"}},
+    ]}
+    live._wire_hinted(d, _kept(d))
+    u1, j1 = _nets(d)["U1"], _nets(d)["J1"]
+    assert (u1["11"], u1["12"], u1["14"], u1["15"]) == ("DAT0", "DAT3_CD", "CLK", "CMD")
+    assert "DET" in u1.values() and "1" not in j1 and "8" not in j1
+
 # The first picker tries of the failing 10-17 runs, as saved: each must now pass the spec gate on try one.
 RUNS = {
     "cretae a gps tracker like an airtag": [

@@ -2183,7 +2183,7 @@ _GENERIC_TOKENS = {
 }
 _MCU_HINT = re.compile(
     r"(^|_)(GPIO\w*|GP\d+|PICO\w*|MCU\w*|ADC\w*|ALERT|INT|IRQ|PWM\w*|SIG|SENSE|SENSOR\w*|DATA|CTRL|EN|BTN\w*|"
-    r"BUTTON\w*|SDA|SCL|TXD?\d*|RXD?\d*|UART\w*|MIC\w*|AUDIO\w*|FAN\w*|TEMP\w*)(_|$)"
+    r"BUTTON\w*|SDA|SCL|TXD?\d*|RXD?\d*|UART\w*|DET|CD|MIC\w*|AUDIO\w*|FAN\w*|TEMP\w*)(_|$)"
 )
 # a module's TX feeds the MCU's RX: UART0 (GP1 RX pin 2, GP0 TX pin 1), then UART1 on GP9/GP8
 _PICO_UART = {"TX": ("2", "12"), "RX": ("1", "11")}
@@ -2318,6 +2318,40 @@ def _merge_lonely(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[st
     return notes
 
 
+# SD card in SPI mode on the Pico: (MISO, CS, SCK, MOSI) pin numbers for SPI0 GP16-19, SPI1 GP8-11, SPI1 GP12-15
+_PICO_SPI = (("21", "22", "24", "25"), ("11", "12", "14", "15"), ("16", "17", "19", "20"))
+_SD_ROLE = (
+    r"DAT0|D0|DO|MISO|SDO",
+    r"DAT3(_CD)?|CD_DAT3|CS|SS|NSS",
+    r"CLK|SCK|SCLK",
+    r"CMD|DI|MOSI|SDI",
+)
+
+
+def _wire_sd(design: dict[str, Any], pins: dict[str, Any]) -> None:
+    """A card slot the picker named in SDIO terms (CLK, CMD, DAT0-3) but wired to nothing (10-17 sweep, mp4 player
+    live-1792274693843 failed three tries on it): run the card in SPI mode on the first free Pico SPI bus. DAT1 and
+    DAT2 are unused in SPI mode and left open."""
+    lonely = set(_lonely_nets(design))
+    for q in design.get("parts", []):
+        qp = q.get("pins") or {}
+        nets = [str(n) for n in qp.values() if str(n) in lonely]
+        role = [
+            next((n for n in nets if re.fullmatch(r, _norm_net(n))), None)
+            for r in _SD_ROLE
+        ]
+        if not all(role[1:3]) or not any(re.fullmatch(r"DAT\d", _norm_net(n)) for n in nets):
+            continue
+        bus = next((b for b in _PICO_SPI if not set(b) & set(pins)), None)
+        if not bus:
+            return
+        for num, net in zip(bus, role):
+            if net:
+                pins[num] = net
+        for num in [n for n, net in qp.items() if re.fullmatch(r"DAT[12]", _norm_net(str(net)))]:
+            del qp[num]
+
+
 def _wire_hinted(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
     """A dangling signal net whose name says it belongs to the microcontroller (MIC_OUT, FAN_PWM, SENSOR_TEMP,
     GPIO_ADC, I2C_SDA, BTN) goes on a free module pin: SDA/SCL on the Pico's I2C0 pins, analog-sounding nets on a
@@ -2325,6 +2359,8 @@ def _wire_hinted(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
     part, piece = firmware.mcu_part(design, kept)
     names = {str(k): str(v) for k, v in (piece.get("pins") or {}).items()}
     pins = part.setdefault("pins", {})
+    if piece.get("key") in (PICO_KEY, PICO_W_KEY):
+        _wire_sd(design, pins)
     on_mcu = set(map(str, pins.values()))
     for net in _lonely_nets(design):
         up = _norm_net(net)
