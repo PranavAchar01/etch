@@ -114,6 +114,10 @@ the fields below. The server itself adds `queued`, `error` and `cancelled` event
 | `assembly built` | `iteration, board, tracks, seconds, stages_s` |
 | `assembly gate` | `iteration, gate, check, ok, value`; `ok: null` with `status: "uncheckable"` marks a benchmark the simulation cannot satisfy (a fixed load, the same in every scenario, that one scenario's band expects to differ). It is not passed and not failed; the board passes when every other check passes. |
 | `assembly repair` (kind `uncheckable`) | `iteration, kind, checks, note`: the benchmarks marked as above |
+| `assembly repair` (kind `pieces`) | `kind, joined`: made-up piece keys resolved to the real piece they name, as `"<made-up> -> <real key>"`; the real piece is added to KEPT |
+| `assembly repair` (kind `parallel`) | `iteration, kind, joined`: parallel copies of one part (R1b, R1_2 beside R1 on the same two nets) folded into the original with the combined value |
+
+A failing current benchmark is also marked `uncheckable` when it asks an idle scenario (named idle/quiet/off/standby/..., or the simulator's default "idle" when the design sets no scenarios) for a minimum current while every modelled load reads ~0 mA there; the note reads "nothing drives the load while idle". Over-limit readings stay failures.
 | `benchmarks check` | one benchmark row (scenario, metric, value, band, ok) |
 | `benchmarks done` | totals: passed, failed |
 
