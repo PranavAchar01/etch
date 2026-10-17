@@ -241,3 +241,33 @@ def test_watering_is_not_the_sensor_recipe():
         )
         is None
     )
+
+
+def test_a_passive_synth_goes_back_to_the_picker():
+    # prod job QsB-ok6GZtu7rQqc: J1, J2, R1-R3, C1-C3 and nothing that makes a signal
+    C = "kicad:Device:C@C_Disc_D5.0mm_W2.5mm_P5.00mm"
+    parts = [{"ref": f"R{i}", "piece": R, "value": "10k", "pins": {"1": "A", "2": "B"}} for i in (1, 2, 3)]
+    parts += [{"ref": f"C{i}", "piece": C, "value": "100n", "pins": {"1": "A", "2": "GND"}} for i in (1, 2, 3)]
+    d = {"parts": parts}
+    ask = "build a music synthesizer that can be used by an intro producer"
+    assert "no part generates a signal" in live._no_sound_source(d, _cat(R), ask)
+    assert live._no_sound_source(d, _cat(R), "an rc low pass filter") is None
+    d["parts"].append({"ref": "U1", "piece": PICO, "pins": {"3": "GND"}})
+    assert live._no_sound_source(d, _cat(R, PICO), ask) is None
+
+
+def test_a_reading_no_repair_moves_is_not_checkable():
+    # prod job QsB-ok6GZtu7rQqc: "Speaker draws audible current" failed at ~273 mA on every try
+    def try_(value):
+        rows = [{"check": "play.supply_ma_avg", "value": 273.4, "pass": False, "text": "Total board current"}]
+        return {"parts": [{"ref": "R1", "value": value}]}, {"pass": False, "benchmarks": rows, "failed": ["x"]}
+
+    d1, v1 = try_("10k")
+    prev, moved = live._stuck_benchmarks(d1, v1, {})
+    assert not moved and v1["pass"] is False
+    d2, v2 = try_("22k")  # the repair changed a value, the reading did not move
+    _, moved = live._stuck_benchmarks(d2, v2, prev)
+    assert moved == ["play.supply_ma_avg"] and v2["pass"] is True
+    d3, v3 = try_("10k")  # the same design again: the repair did not try, still a failure
+    _, moved = live._stuck_benchmarks(d3, v3, live._stuck_benchmarks(d1, try_("10k")[1], {})[0])
+    assert not moved and v3["pass"] is False
