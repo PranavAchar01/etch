@@ -15,7 +15,8 @@ import { spring, tick, reducedMotion, onReducedMotion, clamp, lerp, smooth } fro
 import { gooLayer, spawnBlob, squish, wobble } from "./goo.js";
 import { createEyes } from "./eyes.js";
 import { createVoiceAdapter, speakable } from "./voice-adapter.js";
-import { el, icon, pixelLoader, timeline, stagger, streamAnswer, approvalCard, recommendCard, benchCard, bindMentions, fmtSecs } from "./trace.js";
+import { benchPanel } from "./bench-panel.js";
+import { el, icon, pixelLoader, timeline, stagger, streamAnswer, approvalCard, recommendCard, bindMentions, fmtSecs } from "./trace.js";
 
 const OPEN_SPRING = { stiffness: 250, damping: 21 }, LEAVE_GRACE = 60;
 const PILL_H = 56, GAP = 8, EYES_W = 46, MIC = 40, PAD = 8;
@@ -695,16 +696,15 @@ export function createDock(hostEl, opts = {}) {
       else { forced = null; hover = false; suppress = inside; if (root.contains(document.activeElement)) document.activeElement.blur(); focusIn = false; }
       update();
     },
-    // the turn's benchmarks card (one per id, created on first use, below that turn's steps)
+    // the run's benchmarks card lives in the Benchmarks panel above the "?" button, never in the chat
     bench(id = "bench") {
       if (benches.has(id)) return benches.get(id);
-      const t = cur();
-      const c = benchCard({ onRun: () => api.prefill("Check that ") });
-      t.el.append(c.el);
-      stick(false, true);
+      const c = benchPanel.card(id);
       benches.set(id, c);
       return c;
     },
+    // IPC-2221 / IPC-2221B / IR drop rows for that run, from its layout.json and sim.json
+    benchPhysics(id, layout, sim) { benchPanel.addPhysics(id, layout, sim); },
     // put text in the composer and open the dock for the person to finish it (only from their own click)
     prefill(text) {
       forced = true; dismissed = false; suppress = false; update();

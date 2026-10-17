@@ -476,6 +476,8 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
       }
       if (!sim || disposed) return;
       const c = B(); if (!c) return;
+      // IPC-2221 / IPC-2221B / IR drop from the build's own copper (the Benchmarks panel)
+      if (run && api?.authed) api.authed(`/etch/files/engine/out/${run}/layout.json`).then((r) => (r.ok ? r.json() : null)).then((lay) => { if (lay && !disposed) dock.benchPhysics?.(jid, lay, sim); }).catch(() => {});
       // planned rows the gates did not settle take their value from the sim
       for (const [k, p] of planned) {
         const v = simValue(sim, k);
@@ -490,12 +492,11 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
       if (num(sim.supply_ma_avg) != null && !covered("supply_ma_avg")) c.row("supply_ma_avg", { label: "Supply current", value: num(sim.supply_ma_avg), unit: "mA", status: "measured" });
       if (num(sim.supply_ma_peak) != null && !covered("supply_ma_peak")) c.row("supply_ma_peak", { label: "Supply peak", value: num(sim.supply_ma_peak), unit: "mA", status: "measured" });
     }
-    // after a build: "Benchmarks 3/3 ✓" on the pill for a moment, a nod for all pass, a wince for a fail
+    // after a build: a nod for all pass, a wince for a fail (the numbers stay in the Benchmarks panel)
     function verdict() {
       const c = card; if (!c) return;
       const { pass, total, failed } = c.summary;
       if (!total) return;
-      dock.flashStatus?.(`Benchmarks ${pass}/${total} ${failed ? "✗" : "✓"}`, 4000);
       setTimeout(() => { if (!disposed) dock.emote?.(failed ? "wince" : "nod"); }, 900);
     }
     let batches = 0, nb = 0, yes = 0, pieces = 0, queued = false, render = null, picked = [], result = null, benched = false;

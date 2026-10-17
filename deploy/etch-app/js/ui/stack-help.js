@@ -381,6 +381,7 @@ function placeButton() {
       if (or.width && overlaps(me, or)) top = Math.min(top, or.top - sr.top - 12 - 48);
     }
     Object.assign(fab.style, { top: top + "px", right: right + "px", bottom: "auto" });
+    document.dispatchEvent(new Event("sh:placed"));
     return;
   }
   if (fab.parentNode !== document.body) document.body.append(fab);
@@ -395,6 +396,7 @@ function placeButton() {
     if (or.width && overlaps(me, or)) bottom = Math.max(bottom, Math.round(innerHeight - or.top + 12));
   }
   fab.style.bottom = bottom + "px";
+  document.dispatchEvent(new Event("sh:placed"));
 }
 
 // ---------------------------------------------------------------- the panel
