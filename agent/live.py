@@ -1824,6 +1824,8 @@ def _wire_drives(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str
     def ground(net: str) -> bool:
         return _norm_net(net) in _GND_ALIASES
 
+    count = _net_count(design)
+    gnd = max((n for n in count if ground(n)), key=lambda n: count[n], default="GND")
     want: list[tuple[dict[str, Any], str, bool]] = []  # (part, pin, move even off a rail when GPIO is wired)
     res = [p for p in parts if fam(p) == "resistor" and len(p.get("pins") or {}) == 2]
     for p in parts:
@@ -1839,6 +1841,13 @@ def _wire_drives(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str
         elif f == "buzzer" and (plus := _pin_named(pc, "+")) in pins:
             want.append((p, plus, False))
         elif f in ("push button", "switch") and len(pins) == 2:
+            if len(set(pins.values())) == 1 and not ground(next(iter(pins.values()))):
+                # both legs on one net (live-1792267239993, "SW1 BTN/BTN" beside its pull-up): the second leg
+                # goes to ground, so a press pulls the input low
+                k2 = sorted(p["pins"], key=str)[-1]
+                p["pins"][k2] = gnd
+                pins[str(k2)] = gnd
+                notes.append(f"{p.get('ref')} pin {k2} to {gnd}, both legs were on one net")
             grounded = any(ground(v) for v in pins.values())
             want += [(p, k, True) for k, v in pins.items() if not ground(v) and grounded]
     for p, k, always in want:
@@ -1846,15 +1855,16 @@ def _wire_drives(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str
         net = str(p["pins"][k])
         if net in map(str, mpins.values()) and not rail(net):
             continue  # already reaches the microcontroller
-        if not (count.get(net) == 1 or (rail(net) and (no_gpio or always))):
+        # a button's live side must reach the MCU even when a pull-up already shares its net
+        if not (count.get(net) == 1 or (always and not rail(net)) or (rail(net) and (no_gpio or always))):
             continue
         free = [n for n in names if n not in mpins and n not in reserved and names[n].upper().startswith("GPIO")]
         free.sort(key=lambda n: "ADC" in names[n].upper())  # keep ADC pins for analog parts
         if not free:
             break
         spare = [n for n in driven if n not in count]
-        if count.get(net) == 1 and not rail(net) and (net in driven or not spare):
-            new = net  # a dangling name of its own: keep it
+        if not rail(net) and (count.get(net) != 1 or net in driven or not spare):
+            new = net  # a name of its own, or a net other parts share (a pull-up): keep it
         elif spare:
             new = spare[0]  # a net the firmware drives that nothing carries yet
         else:

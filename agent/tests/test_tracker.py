@@ -240,3 +240,15 @@ def test_passive_hanging_off_a_rail_is_dropped():
     ]}
     assert live._drop_dangling_passives(d, _kept(d)) == ["R2"]
     assert [p["ref"] for p in d["parts"]] == ["U1", "C1"]
+
+
+def test_shorted_button_gets_ground_and_its_pullup_net_reaches_the_mcu():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_KEY, "pins": {**GNDS, "36": "VCC", "6": "SDA"}},
+        {"ref": "R1", "piece": R, "pins": {"1": "VCC", "2": "BTN"}},
+        {"ref": "SW1", "piece": BTN, "pins": {"1": "BTN", "2": "BTN"}},
+    ]}
+    live._wire_drives(d, _kept(d))
+    n = _nets(d)
+    assert n["SW1"] == {"1": "BTN", "2": "GND"}
+    assert "BTN" in n["U1"].values()
