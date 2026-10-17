@@ -40,6 +40,7 @@ from etchlib.parts import load_index, read_index, register
 
 from . import (
     analog,
+    blocks,
     board_store,
     config,
     firmware,
@@ -2986,6 +2987,9 @@ def design(
     show.candidates(cl["kept"])
     t1 = time.time()
     rec = recipes.match(ask, cat) if not context else None
+    if rec is None and not context:
+        # the device library (engine/parts/devices.json): thousands of device words built from code-wired blocks
+        rec = blocks.match(ask, cat)
     # ETCH_CLASSIFIER=1: NVIDIA's prompt classifier picks the first picker model (repairs stay on the lead)
     rt = task_router.route(ask, bool(rec), config.MODEL, config.SUB_MODEL)
     if rt:
@@ -3113,7 +3117,8 @@ def design(
         code,
         ask,
         cl["kept"],
-        max_iters=1 if route != "picker" else MAX_ITERS,
+        # a device skeleton passed the offline gate; the picker may still repair it once the KiCad build speaks
+        max_iters=1 if route != "picker" and not route.startswith("device:") else MAX_ITERS,
     )
     t_asm = time.time() - t2
     ex = None

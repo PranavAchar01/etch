@@ -1068,10 +1068,22 @@ def device_design(ask: str) -> tuple[dict[str, Any], dict[str, Any]] | None:
     return design, d
 
 
+# an ask that names its own chip or topology ("a 555 timer", "an ESP32 clock", "no microcontroller") is not a
+# catalog device even when a device word is in it: the picker builds what was named
+_OWN_DESIGN = re.compile(
+    r"\b(?:[a-z]{1,5}-?\d{3,}[a-z0-9]*|555|esp ?32|esp8266|arduino|attiny|atmega|stm32|nixie|op[ -]?amps?|mosfets?|"
+    r"transistors? only|no (?:micro ?controller|mcu|chip|code)|without (?:a )?(?:micro ?controller|mcu|chip|code)|"
+    r"analog only|discrete|schematic of|logic gates?|flip[ -]?flop)\b",
+    re.I,
+)
+
+
 def match(
     ask: str, catalog: dict[str, dict[str, Any]]
 ) -> tuple[dict[str, Any], str, list[dict[str, Any]]] | None:
     """The recipe step's shape (recipes.match): (design, route, the catalog pieces it uses), or None."""
+    if _OWN_DESIGN.search(ask):
+        return None
     got = device_design(ask)
     if got is None:
         return None
@@ -1099,8 +1111,9 @@ def gate(design: dict[str, Any], ask: str = "", work: Path | None = None) -> str
     cat = live._cat()
     if bad := sorted({p["piece"] for p in d["parts"] if p["piece"] not in cat}):
         return f"pieces not in the library: {bad}"
+    live.register([cat[p["piece"]] for p in d["parts"]])  # what to_spec does for library pieces
     if bad := sorted({p["piece"] for p in d["parts"] if p["piece"] not in live.load_index()}):
-        return f"pieces missing from the piece index: {bad}"
+        return f"pieces the spec builder cannot resolve (no model or pads): {bad}"
     if raw := live._lonely_nets(d):
         return f"lonely nets as composed: {raw}"
     nets_used = {str(v) for p in d["parts"] for v in p["pins"].values()}
