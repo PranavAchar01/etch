@@ -116,6 +116,8 @@ the fields below. The server itself adds `queued`, `error` and `cancelled` event
 | `assembly repair` (kind `uncheckable`) | `iteration, kind, checks, note`: the benchmarks marked as above |
 | `assembly repair` (kind `pieces`) | `kind, joined`: made-up piece keys resolved to the real piece they name, as `"<made-up> -> <real key>"`; the real piece is added to KEPT |
 | `assembly repair` (kind `parallel`) | `iteration, kind, joined`: parallel copies of one part (R1b, R1_2 beside R1 on the same two nets) folded into the original with the combined value |
+| `picker retry` | `model, reason, max_tokens`: the main picker call timed out or failed; one retry on the quick sub-model with a tight output cap |
+| `picker missing_parts` | `reason, text`: the retry failed too; followed by `lead say` with `text` ("Looks like we don't have all of the components ...") and `lead done` with `ok: false`, `error: "missing parts: ..."` |
 
 A failing current benchmark is also marked `uncheckable` when it asks an idle scenario (named idle/quiet/off/standby/..., or the simulator's default "idle" when the design sets no scenarios) for a minimum current while every modelled load reads ~0 mA there; the note reads "nothing drives the load while idle". Over-limit readings stay failures.
 | `benchmarks check` | one benchmark row (scenario, metric, value, band, ok) |
