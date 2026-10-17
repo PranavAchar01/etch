@@ -1078,7 +1078,7 @@ def tts(text: str) -> bytes:
     import sys
 
     sys.path.insert(0, str(ROOT))
-    from agent.config import api_key
+    from agent.config import key_for  # OpenAI TTS: the OpenAI key, whatever provider the engine's models use
 
     tts_guard()
     tts_meter(text)
@@ -1095,7 +1095,7 @@ def tts(text: str) -> bytes:
             }
         ).encode(),
         headers={
-            "Authorization": "Bearer " + api_key(),
+            "Authorization": "Bearer " + key_for("openai-api-key"),
             "Content-Type": "application/json",
         },
     )
