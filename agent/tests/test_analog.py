@@ -107,3 +107,20 @@ def test_gpio_driver_resistor(cat):
     r1 = next(p for p in d["parts"] if p["ref"] == "R1")
     assert analog.parse_value(r1["value"]) <= 1000
     assert res.notes
+
+
+def test_backwards_flyback_is_flipped(cat):
+    # run live-1792258602299: the repair put D1's anode on VCC; it shorted the supply (952 mA, fan 27 mA)
+    d = copy.deepcopy(FAN)
+    d1 = next(p for p in d["parts"] if p["ref"] == "D1")
+    d1["pins"] = {"1": "Q1_C", "2": "VCC"}  # K on the collector, A on VCC
+    res = analog.solve(d, [], cat, "spin a fan when dark")
+    assert d1["pins"] == {"1": "VCC", "2": "Q1_C"}
+    assert any("flyback diode was backwards" in n for n in res.notes)
+
+
+def test_correct_flyback_untouched(cat):
+    d = copy.deepcopy(FAN)
+    res = analog.solve(d, [], cat, "spin a fan when dark")
+    assert next(p for p in d["parts"] if p["ref"] == "D1")["pins"] == {"1": "VCC", "2": "Q1_C"}
+    assert not any("flyback" in n for n in res.notes)
