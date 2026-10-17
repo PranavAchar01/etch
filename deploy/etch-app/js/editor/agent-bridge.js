@@ -4,16 +4,40 @@
 //   const bridge = createAgentBridge({ dock, api, board, viewer, highlight, select });
 //   bridge.ask("What does this do?", { ref: "U6" });      // POST /etch/ask, streamed into the dock
 //   bridge.change("add a buzzer", { ref: "J1" });         // recommend card, then /etch/live or /etch/change + /etch/job
+//   bridge.design("an ESP32 weather station");           // a new board: POST /etch/live {mode:"design"} + /etch/job
 //   const load = bridge.onLoad([{ id: "board", title: "Loading the board" }, …]); load.done("board");
 //   bridge.dispose();
 //
-// With ?mock=1, no backend, or a mock job id, change() plays a scripted build (the "full successful design run" from
-// API.md, with a failed DRC on the first try) so the whole flow can be shown without the engine.
+// With ?mock=1, no backend, or a mock job id, change() and design() play a scripted build (the "full successful design
+// run" from API.md, with a failed DRC on the first try) so the whole flow can be shown without the engine. Both hand
+// the finished run to viewer.reload({ run, design, done }): on render:done (the GLB is there) and on lead:done ok.
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const cap = (s) => { s = String(s || "").trim(); return s ? s[0].toUpperCase() + s.slice(1) : s; };
 const plain = (md) => String(md || "").replace(/\*\*|`/g, "").replace(/\s+/g, " ").trim();
 let seq = 0;
+// an event field that may be a list of part objects ({ref, piece, value, …}), strings or a count, as short text
+function refList(list, max = 8) {
+  const refs = (Array.isArray(list) ? list : []).map((p) => (typeof p === "string" ? p.split(/\s+/)[0] : p?.ref || p?.n || p?.value || "")).filter(Boolean);
+  // R1, R2, R3, R4 -> R1–R4
+  const groups = new Map(), other = [];
+  for (const r of refs) { const m = /^([A-Za-z_]+)(\d+)$/.exec(r); if (m) { if (!groups.has(m[1])) groups.set(m[1], []); groups.get(m[1]).push(+m[2]); } else other.push(r); }
+  const out = [];
+  for (const [p, ns] of groups) {
+    const u = [...new Set(ns)].sort((a, b) => a - b);
+    for (let i = 0; i < u.length; i++) { let j = i; while (j + 1 < u.length && u[j + 1] === u[j] + 1) j++; out.push(j - i >= 2 ? `${p}${u[i]}–${p}${u[j]}` : j > i ? `${p}${u[i]}, ${p}${u[j]}` : `${p}${u[i]}`); i = j; }
+  }
+  const all = [...out, ...other];
+  return all.length > max ? `${all.slice(0, max).join(", ")} and ${all.length - max} more` : all.join(", ");
+}
+const countOf = (v) => (Array.isArray(v) ? v.length : typeof v === "number" ? v : 0);
+// a gate's value as a few words: numbers and strings as they are, lists as a count, objects by their first fields
+function brief(v) {
+  if (v == null || v === "") return "";
+  if (Array.isArray(v)) return v.length ? `${v.length} item${v.length === 1 ? "" : "s"}` : "none";
+  if (typeof v === "object") return Object.entries(v).slice(0, 2).map(([k, x]) => `${k} ${typeof x === "object" ? countOf(x) || "" : x}`.trim()).join(", ");
+  const t = String(v); return t.length > 60 ? t.slice(0, 58) + "…" : t;
+}
 const nid = (p) => `${p}-${Date.now().toString(36)}-${(seq++).toString(36)}`;
 
 // the first one or two sentences of an answer, for the spoken line
@@ -55,33 +79,38 @@ function newPart(text, parts) {
   let n = 1; while (parts && parts[p + n]) n++;
   return { ref: p + n, name };
 }
-function simulate({ text, ref, board }) {
+// a new board from a description: the parts a small powered board with a microcontroller would pick
+const DESIGN_PARTS = [["U1", "ESP32-WROOM-32E", "controller"], ["J1", "USB-C receptacle", "power"], ["U2", "AP2112K-3.3", "power"],
+  ["C1", "10 µF", "power"], ["C2", "100 nF", "controller"], ["R1", "10 kΩ", "controller"], ["D1", "LED 0603", "status"], ["R2", "1 kΩ", "status"], ["SW1", "Tactile switch", "controller"]];
+function simulate({ text, ref, board, design = false }) {
   const parts = board?.parts || {};
-  const adding = /^(add|put|place|include)\b/i.test(String(text).trim());
+  const adding = !design && /^(add|put|place|include)\b/i.test(String(text).trim());
   const add = adding ? newPart(text, parts) : { ref: ref || Object.keys(parts)[0] || "U1", name: (ref && parts[ref]?.value) || "Part" };
   const refs = Object.keys(parts).slice(0, 6);
   const run = "live-" + Date.now();
   const E = []; let t = 0;
   const at = (dt, agent, type, f = {}, stage) => { t += dt; E.push({ ev: { agent, type, t: Math.round(t * 100) / 100, run, ...f }, stage }); };
   const lib = ["Device", "Buzzer_Beeper", "Connector", "LED_SMD", "Resistor_SMD", "Capacitor_SMD"];
-  at(0.1, "lead", "start", { ask: text, base: `/engine/out/${board?.id || run}` }, "starting the engine");
-  at(0.3, "lead", "say", { text: adding ? `On it. I'll add ${add.name.toLowerCase()} ${add.ref}${ref ? ` near ${ref}` : ""}, then place, route and check the board again.` : `On it. I'll change ${add.ref}, then place, route and check the board again.` });
+  at(0.1, "lead", "start", design ? { ask: text } : { ask: text, base: `/engine/out/${board?.id || run}` }, "starting the engine");
+  at(0.3, "lead", "say", { text: design ? "On it. I'll screen KiCad's parts for this, pick them, then place, route and check the board." : adding ? `On it. I'll add ${add.name.toLowerCase()} ${add.ref}${ref ? ` near ${ref}` : ""}, then place, route and check the board again.` : `On it. I'll change ${add.ref}, then place, route and check the board again.` });
   at(0.3, "classifier", "start", { candidates: 1840, batches: 12, backend: "kicad", symbol_libraries: 214, symbols: 1840, libraries_kept: 9 }, "screening parts");
   for (let i = 0; i < 12; i++) {
     at(0.16, "classifier", "batch", { seconds: 0.15, pieces: [0, 1, 2].map((j) => ({ k: `kicad:${lib[(i + j) % 6]}:P${i}${j}`, n: `${lib[(i + j) % 6]} ${i * 3 + j}`, f: lib[(i + j) % 6], yes: (i + j) % 4 === 0 })) });
   }
   at(0.2, "classifier", "done", { yes: 9, no: 1831, seconds: 2.1, backend: "kicad", families: 4 });
-  at(0.2, "filter", "done", { seconds: 0.1,
-    kept: [{ k: "kicad:Buzzer_Beeper:Buzzer", n: `${add.name} 12 mm`, f: "Buzzer_Beeper" }, { k: "kicad:Resistor_SMD:R_0603", n: "Resistor 0603", f: "Resistor_SMD" }, { k: "kicad:Device:Q_NPN", n: "NPN transistor", f: "Package_TO_SOT_SMD" }],
-    rejected: [{ k: "kicad:Buzzer_Beeper:Big", n: `${add.name} 30 mm`, f: "Buzzer_Beeper", why: "too big for the board" }] });
-  for (const n of [`${add.name} 12 mm`, "Resistor 0603", "NPN transistor"]) at(0.2, "pieces", "show", { k: "kicad:" + n, n, f: "", img: "" });
-  at(0.3, "picker", "start", { model: "etch", kept: 3 }, "picking parts");
+  const kept = design ? DESIGN_PARTS.slice(0, 5).map(([, v]) => ({ k: "kicad:" + v, n: v, f: "" }))
+    : [{ k: "kicad:Buzzer_Beeper:Buzzer", n: `${add.name} 12 mm`, f: "Buzzer_Beeper" }, { k: "kicad:Resistor_SMD:R_0603", n: "Resistor 0603", f: "Resistor_SMD" }, { k: "kicad:Device:Q_NPN", n: "NPN transistor", f: "Package_TO_SOT_SMD" }];
+  at(0.2, "filter", "done", { seconds: 0.1, kept,
+    rejected: design ? [{ k: "kicad:RF_Module:ESP32-S3-WROOM-1", n: "ESP32-S3-WROOM-1", f: "RF_Module", why: "more than this board needs" }]
+      : [{ k: "kicad:Buzzer_Beeper:Big", n: `${add.name} 30 mm`, f: "Buzzer_Beeper", why: "too big for the board" }] });
+  for (const { n } of kept) at(0.2, "pieces", "show", { k: "kicad:" + n, n, f: "", img: "" });
+  at(0.3, "picker", "start", { model: "etch", kept: kept.length }, "picking parts");
   at(0.7, "picker", "pick", { model: "etch", seconds: 0.7, benchmarks: [],
-    parts: [{ ref: add.ref, piece: "kicad:" + add.name, value: add.name, group: adding ? "added" : "changed", why: "what you asked for" },
+    parts: design ? DESIGN_PARTS.map(([r, v, g]) => ({ ref: r, piece: "kicad:" + v, value: v, group: g, why: g === "power" ? "powers the board" : g === "status" ? "shows it is on" : "runs what you asked for" })) : [{ ref: add.ref, piece: "kicad:" + add.name, value: add.name, group: adding ? "added" : "changed", why: "what you asked for" },
       { ref: "Q" + (Object.keys(parts).filter((r) => /^Q\d/.test(r)).length + 1), piece: "kicad:Device:Q_NPN", value: "NPN", group: "driver", why: `drives ${add.ref} from a GPIO` },
       ...refs.filter((r) => r !== add.ref).map((r) => ({ ref: r, piece: "", value: parts[r]?.value || "", group: "kept", why: "already on the board" }))] });
-  at(0.2, "pieces", "confirm", { parts: [{ k: "kicad:" + add.name, refs: [add.ref], img: "" }], drop: [] });
-  at(0.2, "assembly", "change", { added: adding ? [`${add.ref} ${add.name}`] : [], kept: Object.keys(parts).length });
+  at(0.2, "pieces", "confirm", { parts: design ? DESIGN_PARTS.map(([r, v]) => ({ k: "kicad:" + v, refs: [r], img: "" })) : [{ k: "kicad:" + add.name, refs: [add.ref], img: "" }], drop: [] });
+  if (!design) at(0.2, "assembly", "change", { added: adding ? [`${add.ref} ${add.name}`] : [], kept: Object.keys(parts).length });
   const gates = ["ERC", "DRC", "unconnected", "parity", "routed", "3D models"];
   for (const it of [1, 2]) {
     at(0.3, "assembly", "iteration", { iteration: it, phase: "place-route-check" }, it === 1 ? "placing and routing" : `placing and routing, try ${it}`);
@@ -96,7 +125,7 @@ function simulate({ text, ref, board }) {
   at(0.4, "export", "done", { zip: `/engine/out/${run}/fab.zip`, zip_bytes: 184320, project: ["board.kicad_pro", "board.kicad_pcb", "board.kicad_sch"], gerbers: ["F_Cu.gbr", "B_Cu.gbr", "F_Mask.gbr", "B_Mask.gbr", "F_Silkscreen.gbr", "Edge_Cuts.gbr", "drill.drl"], bom_lines: 14, seconds: 0.4 }, "exporting files");
   at(0.2, "render", "start", { quality: "preview" }, "rendering in 3D");
   at(1.0, "render", "done", { frames: `/engine/out/${run}/frames.json`, count: 48, quality: "preview", seconds: 1.0, lock_wait_s: 0 }, "finishing");
-  at(0.2, "lead", "say", { text: `Done. ${add.ref} is ${adding ? "on the board" : "changed"} and every check passes after one repair.` });
+  at(0.2, "lead", "say", { text: design ? "Done. Your board is built and every check passes after one repair." : `Done. ${add.ref} is ${adding ? "on the board" : "changed"} and every check passes after one repair.` });
   at(0.1, "lead", "done", { ok: true, iterations: 2, timings: { total_s: Math.round(t * 10) / 10 }, classifier: "kicad", route: "modify", board: `/engine/out/${run}` }, "done");
   const t0 = performance.now();
   return {
@@ -111,11 +140,12 @@ function simulate({ text, ref, board }) {
   };
 }
 
-export function createAgentBridge({ dock, api, board, viewer = null, highlight = () => {}, select = () => {} } = {}) {
+export function createAgentBridge({ dock, api, board, viewer = null, highlight = () => {}, select = () => {}, onEvent = () => {} } = {}) {
   if (!dock) throw new Error("createAgentBridge needs a dock");
   const timers = new Set();
   let disposed = false, jobGen = 0, askGen = 0;
-  const kind = board?.kind || (/^live-/.test(String(board?.id)) ? "live" : "gh");
+  // read each time: a new board (kind "new") becomes a live-* or library board once its design build is loaded
+  const kindOf = () => board?.kind || (/^live-/.test(String(board?.id)) ? "live" : "gh");
   const partCount = () => Object.keys(board?.parts || {}).length;
   const isMock = () => !!api?.status?.mock || (api?.hasBackend && !api.hasBackend());
 
@@ -222,8 +252,8 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     busy();
     dock.setState("thinking");
     dock.setStatus("Planning the change");
-    const live = kind === "live";
-    const choice = await dock.recommend({ id: rid, title: summarize(text, ref), confidence: confidence(text, ref, kind),
+    const live = kindOf() === "live";
+    const choice = await dock.recommend({ id: rid, title: summarize(text, ref), confidence: confidence(text, ref, kindOf()),
       detail: live
         ? "Etch adds it to this design, then places, routes and checks the whole board again and renders the new version. About a minute."
         : "Etch first turns this board into its own design (its licence and parts must allow that), then makes the change on the copy and checks it.",
@@ -252,6 +282,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     const gen = ++jobGen;
     busy();
     const sid = nid("send");
+    const kind = kindOf();
     const title = kind === "live" ? "Sending the change to Etch" : "Copying the board into Etch's own design";
     dock.setState("working");
     dock.setStatus("Starting the change");
@@ -287,7 +318,7 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
   }
 
   async function follow(jobId, sim, gen, req) {
-    const map = mapper(jobId);
+    const map = mapper(jobId, { design: !!req?.design });
     let since = 0, misses = 0, last = null, stage = "";
     while (!disposed && gen === jobGen) {
       let r;
@@ -309,12 +340,13 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
   }
 
   // one build event -> dock calls (API.md "Build events")
-  function mapper(jid) {
+  function mapper(jid, { design = false } = {}) {
     const S = (k) => `${jid}:${k}`;
     let batches = 0, nb = 0, yes = 0, pieces = 0, queued = false, render = null, picked = [], result = null;
     const step = (o) => dock.step(o);
     const fn = (ev) => {
       const k = `${ev.agent}:${ev.type}`;
+      try { onEvent(ev); } catch (e) { /* a page hook never stops the build view */ }
       if (queued && k !== "lead:queued") { queued = false; dock.loader(false); }
       switch (k) {
         case "lead:queued": queued = true; dock.setState("working"); dock.loader(true, `Waiting in line · ${ev.position} ahead`); break;
@@ -329,21 +361,21 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
           step({ id: S("cls"), kind: "tool", title: ev.backend === "stored board" ? "Built before, loading it" : "Screened KiCad parts", detail: `${ev.yes} fit, ${ev.no} set aside · ${ev.seconds} s`, status: "done", count: ev.yes, progress: 1 });
           break;
         case "filter:done":
-          step({ id: S("filter"), kind: "tool", title: `Kept ${(ev.kept || []).length} variants, set ${(ev.rejected || []).length} aside`,
-            detail: [...(ev.kept || []).map((p) => p.n), ...(ev.rejected || []).map((p) => `${p.n} (${p.why})`)].slice(0, 6).join(", "), status: "done" });
+          step({ id: S("filter"), kind: "tool", title: `Kept ${countOf(ev.kept)} variants, set ${countOf(ev.rejected)} aside`,
+            detail: [...(ev.kept || []).map((p) => (typeof p === "string" ? p : p?.n || p?.k || "")), ...(ev.rejected || []).map((p) => (typeof p === "string" ? p : `${p?.n || p?.k || ""}${p?.why ? ` (${p.why})` : ""}`))].filter(Boolean).slice(0, 6).join(", "), status: "done" });
           break;
         case "pieces:show": pieces++; step({ id: S("pieces"), kind: "step", title: `Gathered ${pieces} candidate part${pieces > 1 ? "s" : ""}`, detail: ev.n, status: "done", count: pieces }); break;
-        case "pieces:confirm": step({ id: S("pieces"), kind: "step", title: `Using ${(ev.parts || []).length} new part${(ev.parts || []).length === 1 ? "" : "s"}`, detail: (ev.parts || []).map((p) => (p.refs || []).join(" ")).join(", ") + ((ev.drop || []).length ? ` · ${(ev.drop || []).length} dropped` : ""), status: "done", count: pieces }); break;
+        case "pieces:confirm": step({ id: S("pieces"), kind: "step", title: `Using ${countOf(ev.parts)} new part${countOf(ev.parts) === 1 ? "" : "s"}`, detail: refList((ev.parts || []).flatMap((p) => (Array.isArray(p?.refs) ? p.refs : [p]))) + (countOf(ev.drop) ? ` · ${countOf(ev.drop)} dropped` : ""), status: "done", count: pieces }); break;
         case "picker:start": step({ id: S("pick"), kind: "task", title: "Picking parts", detail: `from ${ev.kept} kept variants`, status: "running" }); break;
         case "picker:pick":
-          picked = ev.parts || [];
-          step({ id: S("pick"), kind: "task", title: `Picked ${picked.length} parts${ev.recipe ? " (known circuit)" : ""}`, detail: picked.slice(0, 8).map((p) => `${p.ref} ${p.value || ""}`.trim()).join(", "), status: "done", count: picked.length, ref: picked[0]?.ref });
+          picked = Array.isArray(ev.parts) ? ev.parts : [];
+          step({ id: S("pick"), kind: "task", title: `Picked ${countOf(picked)} parts${ev.recipe ? " (known circuit)" : ""}`, detail: refList(picked), status: "done", count: picked.length, ref: picked[0]?.ref });
           if (ev.say) dock.say(ev.say);
           break;
         case "sourcing:start": step({ id: S("src:" + ev.what), kind: "tool", title: `Fetching ${ev.what}`, detail: ev.search, status: "running" }); break;
         case "sourcing:done": step({ id: S("src:" + ev.what), kind: "tool", title: ev.ok ? `Fetched ${ev.what}` : `Could not fetch ${ev.what}`, detail: ev.provenance?.source_url || ev.provenance?.route || "", status: ev.ok ? "done" : "failed" }); break;
         case "assembly:change": if (!(ev.added || []).length) { step({ id: S("change"), kind: "step", title: "Changing the existing parts", detail: ev.kept != null ? `${ev.kept} parts kept` : "", status: "done" }); break; }
-          step({ id: S("change"), kind: "step", title: `Adding ${(ev.added || []).join(", ")}`, detail: ev.kept != null ? `${ev.kept} parts kept` : "", status: "done" }); break;
+          step({ id: S("change"), kind: "step", title: `Adding ${refList(ev.added) || "parts"}`, detail: ev.kept != null ? `${ev.kept} parts kept` : "", status: "done" }); break;
         case "assembly:iteration":
           if (ev.phase === "place-route-check") step({ id: S("try:" + ev.iteration), kind: "task", title: `Placing and routing · try ${ev.iteration}`, status: "running" });
           else if (ev.phase === "decide") {
@@ -351,24 +383,29 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
             else step({ id: S("decide:" + ev.iteration), kind: "reasoning", title: ev.decision === "re-plan" ? "Checks failed, picking the parts again" : "Some checks failed, repairing the design", status: "done" });
           }
           break;
-        case "assembly:gate": step({ id: S(`gate:${ev.iteration}:${ev.gate}`), kind: "step", title: `${ev.gate} ${ev.ok ? "passed" : "failed"}`, detail: ev.value != null ? String(ev.value) : "", status: ev.ok ? "done" : "failed" }); break;
-        case "assembly:built": step({ id: S("try:" + ev.iteration), kind: "task", title: `Placing and routing · try ${ev.iteration}`, detail: `${ev.board?.w}×${ev.board?.h} mm · ${ev.tracks} tracks · ${ev.seconds} s`, status: "done" }); break;
-        case "picker:repair": step({ id: S("repair:" + ev.iteration), kind: "reasoning", title: "Fixing the design after the failed checks", detail: `${ev.parts} parts reviewed · ${ev.seconds} s`, status: "done" }); break;
-        case "export:done": step({ id: S("export"), kind: "tool", title: "Wrote the fab files", detail: `${(ev.gerbers || []).length} Gerbers · ${ev.bom_lines} BOM lines · ${Math.round((ev.zip_bytes || 0) / 1024)} KB zip`, status: "done" }); break;
+        case "assembly:gate": step({ id: S(`gate:${ev.iteration}:${ev.gate}`), kind: "step", title: `${ev.gate} ${ev.ok ? "passed" : "failed"}`, detail: brief(ev.value), status: ev.ok ? "done" : "failed" }); break;
+        case "assembly:built": step({ id: S("try:" + ev.iteration), kind: "task", title: `Placing and routing · try ${ev.iteration}`, detail: [ev.board?.w ? `${Math.round(ev.board.w)}×${Math.round(ev.board.h)} mm` : "", ev.tracks != null ? `${countOf(ev.tracks) || ev.tracks} tracks` : "", ev.seconds != null ? `${Math.round(ev.seconds)} s` : ""].filter(Boolean).join(" · "), status: "done" }); break;
+        case "picker:repair": {
+          const n = countOf(ev.parts), refs = Array.isArray(ev.parts) ? refList(ev.parts, 6) : "";
+          step({ id: S("repair:" + ev.iteration), kind: "reasoning", title: "Fixing the design after the failed checks", detail: [refs ? `${refs} reviewed` : n ? `${n} parts reviewed` : "", ev.seconds != null ? `${Math.round(ev.seconds)} s` : ""].filter(Boolean).join(" · "), status: "done" });
+          break;
+        }
+        case "export:done": step({ id: S("export"), kind: "tool", title: "Wrote the fab files", detail: [`${countOf(ev.gerbers)} Gerbers`, ev.bom_lines != null ? `${countOf(ev.bom_lines) || ev.bom_lines} BOM lines` : "", ev.zip_bytes ? `${Math.round(ev.zip_bytes / 1024)} KB zip` : ""].filter(Boolean).join(" · "), status: "done" }); break;
         case "render:start": render = loader("Rendering in 3D"); step({ id: S("render"), kind: "task", title: "Rendering in 3D", detail: ev.quality, status: "running" }); break;
         case "render:done":
           if (render) { render(); render = null; }
-          step({ id: S("render"), kind: "task", title: "Rendered in 3D", detail: `${ev.count} frames · ${ev.seconds} s`, status: "done" });
-          viewer?.reload?.({ run: ev.run, frames: ev.frames });
+          step({ id: S("render"), kind: "task", title: "Rendered in 3D", detail: [ev.count != null ? `${countOf(ev.count) || ev.count} frames` : "", ev.seconds != null ? `${Math.round(ev.seconds)} s` : ""].filter(Boolean).join(" · "), status: "done" });
+          viewer?.reload?.({ run: ev.run, frames: ev.frames, design });
           break;
-        case "benchmarks:check": step({ id: S("bench:" + (ev.check || ev.label)), kind: "task", title: ev.label || ev.said || ev.check, detail: `${ev.value ?? "?"} ${ev.unit || ""} · ${ev.result}`.trim(), status: ev.pass === false ? "failed" : "done" }); break;
-        case "benchmarks:done": step({ id: S("bench"), kind: "task", title: `Checks: ${ev.passed} passed, ${ev.failed} failed${ev.unmeasured ? `, ${ev.unmeasured} not measured` : ""}`, status: ev.failed ? "failed" : "done" }); break;
+        case "benchmarks:check": step({ id: S("bench:" + (ev.check || ev.label)), kind: "task", title: brief(ev.label || ev.said || ev.check), detail: [`${brief(ev.value) || "?"} ${ev.unit || ""}`.trim(), brief(ev.result)].filter(Boolean).join(" · "), status: ev.pass === false ? "failed" : "done" }); break;
+        case "benchmarks:done": step({ id: S("bench"), kind: "task", title: `Checks: ${countOf(ev.passed) || ev.passed || 0} passed, ${countOf(ev.failed) || ev.failed || 0} failed${ev.unmeasured ? `, ${countOf(ev.unmeasured) || ev.unmeasured} not measured` : ""}`, status: ev.failed ? "failed" : "done" }); break;
         case "lead:done":
           if (ev.ok) {
             result = { ok: true, board: ev.board, run: ev.run, parts: picked };
-            step({ id: S("done"), kind: "step", title: "Board updated", detail: `${ev.iterations} tr${ev.iterations === 1 ? "y" : "ies"} · ${ev.timings?.total_s ?? "?"} s`, status: "done" });
+            step({ id: S("done"), kind: "step", title: design ? "Board built" : "Board updated", detail: `${ev.iterations} tr${ev.iterations === 1 ? "y" : "ies"} · ${ev.timings?.total_s ?? "?"} s`, status: "done" });
             dock.setState("success"); dock.setStatus("Done");
-            const added = (picked.find((p) => p.group === "added") || picked.find((p) => p.group === "changed"))?.ref;
+            if (design) viewer?.reload?.({ run: ev.run, design, done: true });
+            const added = design ? null : (picked.find((p) => p.group === "added") || picked.find((p) => p.group === "changed"))?.ref;
             if (added) { highlight(added); dock.lookAt?.(added); }
             later(2500, () => dock.setState("idle"));
           } else {
@@ -395,6 +432,49 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     };
     fn.end = () => { if (render) render(); if (queued) dock.loader(false); };
     return fn;
+  }
+
+  // ---- design(): a new board from a description, POST /etch/live {mode: "design", text}, followed like a change ----
+  async function design(text, retried = false) {
+    text = String(text || "").replace(/\s+/g, " ").trim();
+    if (!text) return null;
+    const gen = ++jobGen;
+    busy();
+    const sid = nid("design");
+    const title = "Sending your description to Etch";
+    dock.setState("working");
+    dock.setStatus("Starting the build");
+    dock.step({ id: sid, kind: "tool", title, detail: text.length > 90 ? text.slice(0, 88) + "…" : text, status: "running" });
+    let sim = null, j;
+    const stop = loader("Starting");
+    try {
+      if (isMock()) {
+        await sleep(500);
+        sim = simulate({ text, board: { parts: {} }, design: true });
+        j = { job: sim.id };
+      } else {
+        const r = await api.authed("/etch/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "design", text }) });
+        const b = await r.json().catch(() => ({}));
+        if (!r.ok || b.ok === false) {
+          const e = new Error(b.error || (r.status === 429 ? "Etch is busy right now. Try again in a bit." : `error ${r.status}`));
+          e.status = r.status; throw e;
+        }
+        j = b;
+        try { const t = JSON.parse(localStorage.getItem("etch-tokens") || "{}"); t[j.job] = j.token; localStorage.setItem("etch-tokens", JSON.stringify(t)); } catch (e) { /* not remembered */ }
+      }
+      if (!sim && String(j.job || "").startsWith("mock-")) { sim = simulate({ text, board: { parts: {} }, design: true }); j.job = sim.id; }
+    } catch (e) {
+      stop();
+      if (e?.status === 401 && !retried) {
+        dock.step({ id: sid, kind: "tool", title, detail: "Needs your access code", status: "failed" });
+        if (await promptCode()) return design(text, true);
+      }
+      explain(e, sid, title, "tool");
+      return null;
+    }
+    stop();
+    dock.step({ id: sid, kind: "tool", title, detail: `job ${j.job}`, status: "done" });
+    return follow(j.job, sim, gen, { text, design: true });
   }
 
   // ---- onLoad(): the page-load work as agent steps ----
@@ -440,5 +520,5 @@ export function createAgentBridge({ dock, api, board, viewer = null, highlight =
     try { dock.loader(false); } catch (e) { /* dock already gone */ }
   }
 
-  return { ask, change, onLoad, dispose };
+  return { ask, change, design, onLoad, dispose };
 }
