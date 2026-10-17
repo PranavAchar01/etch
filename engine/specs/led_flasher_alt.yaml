@@ -1,0 +1,18 @@
+name: led_flasher_alt
+extends: led_flasher.yaml
+title: ETCH LED FLASHER ALT
+description: >
+  Add-feature diff on led_flasher: a second red LED on the other transistor, so the
+  two LEDs take turns. Only parts are added and every existing net is kept, so the
+  build reuses the base placement and copper and routes only the new connections.
+prompt: "add a second red LED so the two LEDs alternate"
+
+add_parts:
+  - {ref: D2, part: led_red_0805, value: RED, pins: {"2": LED2_A, "1": Q1_C},
+     why: "Second red LED; it lights while Q1 is on, so it alternates with D1."}
+  - {ref: R5, part: resistor_0603, value: "220", pins: {"1": VCC, "2": LED2_A},
+     why: "Limits the second LED's current, about 13 mA."}
+
+add_benchmarks:
+  - {check: led2_peak_ma, max: 20.0, text: "second LED current under 20 mA"}
+  - {check: alternate, max: 0.25, text: "LEDs alternate (overlap under 25 % of a period)"}

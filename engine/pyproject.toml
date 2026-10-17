@@ -1,0 +1,18 @@
+[project]
+name = "etch-engine"
+version = "0.1.0"
+description = "Spec in, verified KiCad board plus a step-by-step assembly.json out"
+requires-python = ">=3.12"
+dependencies = ["pyyaml>=6.0", "pygltflib>=1.16", "numpy>=1.26"]
+
+[dependency-groups]
+dev = ["ruff>=0.6", "pytest>=8"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["kicad_side"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
