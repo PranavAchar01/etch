@@ -122,7 +122,8 @@ export function createDock(host, { onSend, onMention, partScreenPos } = {}) {
     say(text) { status.textContent = String(text || "").slice(0, 140); voice.say(text); },
     listen() { if (voice.listening) voice.stop(); else voice.start(); },
     clear() { steps.textContent = ""; stepEls.clear(); answers.textContent = ""; ans.clear(); },
-    expand(on) { pinned = !!on; open(!!on); },
+    // like the real dock: opening from code needs { force: true } (a click); closing always works
+    expand(on, { force = false } = {}) { if (on && !force) return; pinned = !!on; open(!!on); },
     root,
   };
   // voice: the shared mic / STT / TTS logic; heard text goes out like typed text

@@ -28,8 +28,6 @@ const ID = Q.get("id") || "";
 const NEW = !ID && Q.get("new") === "1";
 const MOBILE = matchMedia("(max-width: 768px)");
 const APP_ROOT = new URL("../../", import.meta.url).href;
-// on phones a running build stays in the dock's pill (its step bubbles), so the workplane stays in view
-const expandDock = () => { if (!MOBILE.matches) dock?.expand(true); };
 const board = { id: ID, kind: NEW ? "new" : isLive(ID) ? "live" : "gh", live: isLive(ID), meta: {}, parts: {}, files: null };
 // ?new=1&mock=1: the scripted design build ends on this library board, so the whole flow can be shown without the engine
 const DEMO = "gh:OLIMEX/ESP32-POE/HARDWARE/ESP32-PoE-hardware-revision-M2";
@@ -129,13 +127,13 @@ const actions = {
   pick,
   changeBlock,
   ask(refs) {
-    dock?.expand(true);
+    dock?.expand(true, { force: true });
     if (refs.length === 1) bridge?.ask(`What does ${refs[0]} do on this board?`, { ref: refs[0] });
     else bridge?.ask(`What do ${refs.join(", ")} do together on this board?`, { ref: refs[0] });
   },
   async change(refs) {
     if (!dock || !bridge) return;
-    dock.expand(true);
+    dock.expand(true, { force: true });
     const r = refs[0];
     const what = refs.length === 1 ? `${r}${board.parts[r]?.value ? ` (${board.parts[r].value})` : ""}` : refs.join(", ");
     const ans = await dock.ask({ id: "chg-" + Date.now(), question: `What should Etch change about ${what}?`, options: ["Swap it for an equivalent part", "Move it closer to the board edge", "Remove it"], multi: false });
@@ -386,12 +384,14 @@ const reloadChange = async ({ run } = {}) => {
         api.authed(`/etch/layers?id=${q}`).then((r) => (r.ok ? r.json() : null)).catch(() => null)]);
       board.parts = parts.parts || {};
       await viewer.load(glb, { parts: board.parts, meta: board.meta, layers, keepView: true });
+      finishBuildAnim();
       board.id = run; board.kind = "live"; board.live = true;
       history.replaceState(null, "", page("board") + carry({ id: run }));
     } else if (board.files) {
       // demo: the same board again, so the swap in place is visible
       const glb = await cachedFetch(board.files.glb).then((r) => r.arrayBuffer());
       await viewer.load(glb, { parts: board.parts, meta: board.meta, keepView: true });
+      finishBuildAnim();
     }
     api.setBoard(board.id, board.parts, board.meta);
     renderSettings(); list?.render(); setSel(sel);
@@ -427,6 +427,7 @@ async function loadDesign({ run, done = false } = {}) {
     }
     await viewer.load(glb, { parts, meta, layers, keepView: true });
     viewer.reset(); // ease from the empty workplane onto the new board
+    finishBuildAnim(); // the build animation hands over to the real board
     Object.assign(board, { id, kind: mock ? "gh" : "live", live: !mock, meta, parts, building: false });
     if (!mock) board.files = null;
     api.setBoard(id, parts, meta);
@@ -447,15 +448,36 @@ async function loadDesign({ run, done = false } = {}) {
   void done;
 }
 
+// ---------- the build animation: js/editor/build-anim.js (loaded the first time a build starts; optional) ----------
+// hooks: createBuildAnim({ viewer, stage, board }) -> { start({ mode, board }), event(ev), finish({ glbReady }) }.
+// finish may be called twice (render:done after the GLB is loaded, then lead:done). Without the module the viewer's
+// own preview (viewer.build) draws instead.
+let buildAnim = null, buildAnimTried = null;
+function loadBuildAnim() {
+  if (!buildAnimTried) buildAnimTried = import("./build-anim.js").then((m) => {
+    const make = m.createBuildAnim || m.default;
+    buildAnim = typeof make === "function" ? make({ viewer, stage: $("stage"), board }) : m.start || m.event ? m : null;
+  }).catch(() => { buildAnim = null; });
+  return buildAnimTried;
+}
+async function startBuildAnim(mode) {
+  await loadBuildAnim();
+  if (buildAnim) { try { buildAnim.start?.({ mode, board }); } catch (e) { console.warn("build-anim:", e); } }
+  else viewer.build.start({ onBoard: mode === "change" });
+}
+// render:done: the new GLB is on screen
+function finishBuildAnim() {
+  if (buildAnim) { try { buildAnim.finish?.({ glbReady: true }); } catch (e) { console.warn("build-anim:", e); } }
+  else viewer.build.finish();
+}
+
 let hero = null;
 function startDesign(text) {
   if (board.building) { dock.say("I'm still building your board. Give me a minute."); return; }
   board.building = true;
-  backdrop?.building(true);
   if (hero?.open) hero.collapse();
   document.body.classList.remove("nb-on");
   viewer.lookFrom([0, 1, 0.18], { fitBox: true }); // the camera eases in onto the workplane, still from above
-  expandDock();
   dock.step({ id: "nb:what", kind: "step", title: "What should your board do?", detail: text, status: "done" });
   $("crTitle").textContent = "New board";
   bridge.design(text).then((r) => { if (!r || !r.ok) board.building = false; }).catch(() => { board.building = false; });
@@ -494,10 +516,11 @@ function suggestions(parts = board.parts, meta = board.meta) {
   return out;
 }
 let askingChange = false;
-async function askChange() {
+// clicked: the person picked a board just now, so the dock may open for the question; on a page load it stays a pill
+async function askChange({ clicked = false } = {}) {
   if (!dock || !bridge || askingChange) return;
   askingChange = true;
-  dock.expand(true);
+  if (clicked) dock.expand(true, { force: true });
   dock.say("What should we change?");
   const ans = await dock.ask({ id: "remix-" + Date.now(), question: "What should we change?", options: suggestions(), multi: false }).catch(() => null);
   askingChange = false;
@@ -511,7 +534,6 @@ async function askChange() {
 async function remix(b) {
   document.body.classList.remove("nb-on");
   Object.assign(board, { id: b.id, kind: "gh", live: false, local: false, building: false, meta: {}, parts: {} });
-  expandDock();
   const steps = bridge.onLoad([
     { id: "board", title: `Opening ${b.title || "the board"}` },
     { id: "parts", title: "Reading parts.json" },
@@ -536,7 +558,7 @@ async function remix(b) {
   remember(b.id);
   if (!list) list = createBoardList($("paneBoard"), { board, viewer, actions });
   list.render(); renderSettings(); syncTools(); bindLiquid(document);
-  askChange();
+  askChange({ clicked: true });
 }
 
 let backdrop = null;
@@ -560,7 +582,7 @@ async function startNew() {
     boardHref: (b) => page("board") + carry({ id: b.id, remix: 1 }),
     target: dockPill,
     onSubmit: (t) => { sendViaDock(t); dock.nudge?.(); },
-    onMic: () => { document.body.classList.remove("nb-on"); viewer.lookFrom([0, 1, 0.18], { fitBox: true }); dock.expand(true); dock.nudge?.(); dock.listen(); },
+    onMic: () => { document.body.classList.remove("nb-on"); viewer.lookFrom([0, 1, 0.18], { fitBox: true }); dock.nudge?.(); dock.listen(); },
     onPick: (b) => { dock.nudge?.(); remix(b); },
   });
   bindLiquid(document);
@@ -604,15 +626,30 @@ async function main() {
       clearTimeout(main.markT); if (list2.length) main.markT = setTimeout(() => viewer.mark([]), 4000);
     },
     select(ref) { if (ref) setSel([ref], { focus: true }); },
-    // a new board taking shape on the empty workplane until its GLB arrives
+    // the board taking shape in 3D until the GLB arrives: js/editor/build-anim.js when it is there (buildAnim.start /
+    // event / finish), else the viewer's own simple preview (viewer.build, js/build-preview.js)
     onEvent(ev) {
       const k = `${ev.agent}:${ev.type}`;
       if (k === "lead:error" || (k === "lead:done" && !ev.ok)) emote("wince");
-      if (!backdrop) return;
-      if (k === "lead:start") backdrop.building(true);
-      else if (k === "picker:pick") backdrop.parts(ev.parts || []);
-      else if (k === "pieces:confirm") backdrop.parts((ev.parts || []).flatMap((p) => p.refs || []));
-      else if (k === "assembly:built" && ev.board) backdrop.size(ev.board);
+      if (k === "lead:start") {
+        if (backdrop) { backdrop.remove(); backdrop = null; }
+        startBuildAnim(board.kind === "new" || viewer.isEmpty ? "design" : "change");
+      }
+      if (buildAnim) {
+        try {
+          buildAnim.event?.(ev);
+          if (k === "lead:done" || k === "lead:error" || k === "lead:cancelled") buildAnim.finish?.({ glbReady: k === "lead:done" && !!ev.ok });
+        } catch (e) { console.warn("build-anim:", e); }
+        return;
+      }
+      const vb = viewer.build;
+      if (k === "picker:pick") {
+        const list = Array.isArray(ev.parts) ? ev.parts : [];
+        vb.parts(vb.active && board.kind !== "new" && !viewer.isEmpty ? list.filter((p) => p.group === "added" || p.group === "changed" || !board.parts[p.ref]) : list);
+      } else if (k === "assembly:iteration" && ev.phase === "place-route-check") vb.phase("route");
+      else if (k === "assembly:gate") vb.phase("check");
+      else if (k === "assembly:built" && ev.board) { vb.size(ev.board); vb.phase("built"); }
+      else if (k === "lead:error" || k === "lead:cancelled" || (k === "lead:done" && !ev.ok)) vb.cancel();
     },
   });
   if (NEW) { await startNew(); return; }
