@@ -6,8 +6,14 @@
 <title>Explore boards · Etch</title>
 <meta name="description" content="Open-source circuit boards from GitHub, rendered in 3D. Open one to ask Etch about any part.">
 <meta name="theme-color" content="#ffffff">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Crect width='20' height='20' rx='5' fill='%23111'/%3E%3Cpath d='M5 13.5h4l3-3.5V6' stroke='%23fff' stroke-width='1.7' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='5.4' r='1.6' fill='%23fff'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/editor.css?v=3">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Averia+Serif+Libre:wght@400;700&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/explore.css?v=6">
 <link rel="modulepreload" href="js/explore.js">
 <link rel="modulepreload" href="js/common.js">
 <script>
@@ -16,31 +22,49 @@
     window.__index = fetch(w + "/index.json").then(function (r) { if (!r.ok) throw new Error("index " + r.status); return r.json(); }); window.__index.catch(function () {}); })();
 </script>
 </head>
-<body class="ex">
-<header class="topbar">
-  <div class="tb-left">
-    <nav class="crumb" aria-label="Breadcrumb"><a class="brand" id="homeL" href="/"><span id="logo"></span>etch</a><span class="sep">/</span><b>explore</b></nav>
-  </div>
-  <div class="tb-right"><a class="btn outline" id="buildL" href="/">Build a board</a></div>
+<body class="xp">
+<header class="top">
+  <a class="brand" id="homeL" href="/"><span id="logo"></span><span>etch</span></a>
+  <span class="crumb" aria-hidden="true">/</span><span class="here">Explore</span>
+  <span class="grow"></span>
+  <a class="btn ghost sm" id="buildTop" href="board.html?new=1">Build a board</a>
 </header>
-<main class="ex-wrap">
-  <div class="ex-head">
-    <div>
-      <h1>Open-source boards</h1>
-      <p>Real KiCad projects from GitHub, rendered in 3D. Open one, click any part and ask Etch what it does.</p>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>Real boards, ready to <em>poke at</em>.</h1>
+    <p class="lede">Open-source KiCad projects from GitHub, rendered in 3D. Open one, tap any part and ask Etch what it does.</p>
+    <div class="hero-row">
+      <a class="btn primary" id="buildL" href="board.html?new=1"><span id="plusIc"></span>Build a board</a>
+      <span class="stat" id="stat" aria-live="polite"></span>
     </div>
-    <label class="ex-search"><span id="sIc"></span><input id="q" type="search" placeholder="Search boards, owners, repos" autocomplete="off" aria-label="Search boards"></label>
+  </section>
+
+  <div class="cats-wrap">
+    <div class="cats" id="cats" role="group" aria-label="Categories">
+      <div class="goo" aria-hidden="true"><i class="bridge"></i><i class="blob a"></i><i class="blob b"></i></div>
+    </div>
   </div>
-  <div class="cats" id="cats" role="tablist" aria-label="Categories"></div>
-  <div class="ex-bar">
+
+  <div class="bar">
     <div class="count" id="count">Loading boards…</div>
-    <div class="opts">
-      <label class="toggle"><input type="checkbox" id="copyable"> Copyable only</label>
-      <select class="sel" id="sort" aria-label="Sort"><option value="popular">Popular</option><option value="recent">Recent</option></select>
+    <div class="tools">
+      <div class="search" id="search">
+        <button class="s-btn" id="sBtn" type="button" aria-label="Search boards" aria-controls="q" aria-expanded="false"><span id="sIc"></span></button>
+        <input id="q" type="search" placeholder="Title, owner, repo…" autocomplete="off" spellcheck="false" aria-label="Search boards" tabindex="-1">
+        <button class="s-x" id="sX" type="button" aria-label="Clear search" tabindex="-1"><span id="xIc"></span></button>
+      </div>
+      <button class="sw" id="copyable" type="button" role="switch" aria-checked="false"><span class="track"><span class="knob"></span></span>Copyable only</button>
+      <div class="seg" id="sort" role="radiogroup" aria-label="Sort">
+        <i class="seg-ind" aria-hidden="true"></i>
+        <button type="button" role="radio" data-v="popular" aria-checked="true">Popular</button>
+        <button type="button" role="radio" data-v="recent" aria-checked="false">Recent</button>
+      </div>
     </div>
   </div>
+
   <div class="grid" id="grid"></div>
-  <div class="ex-empty" id="empty" hidden></div>
+  <div class="empty" id="empty" hidden></div>
   <div class="sentinel" id="more"></div>
 </main>
 <script type="module" src="js/explore.js"></script>

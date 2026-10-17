@@ -5,8 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Board · Etch</title>
 <meta name="theme-color" content="#ffffff">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Crect width='20' height='20' rx='5' fill='%23111'/%3E%3Cpath d='M5 13.5h4l3-3.5V6' stroke='%23fff' stroke-width='1.7' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='5.4' r='1.6' fill='%23fff'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/editor.css?v=3">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Averia+Serif+Libre:wght@400;700&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/editor.css?v=4">
+<link rel="stylesheet" href="css/agent.css?v=1">
 <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
 <link rel="modulepreload" href="vendor/three/build/three.module.min.js">
 <link rel="modulepreload" href="vendor/three/examples/jsm/loaders/GLTFLoader.js">
@@ -14,16 +21,17 @@
 <link rel="modulepreload" href="vendor/three/examples/jsm/environments/RoomEnvironment.js">
 <link rel="modulepreload" href="vendor/three/examples/jsm/utils/BufferGeometryUtils.js">
 <link rel="modulepreload" href="vendor/three/examples/jsm/libs/meshopt_decoder.module.js">
-<link rel="modulepreload" href="js/board.js">
+<link rel="modulepreload" href="js/editor/main.js">
+<link rel="modulepreload" href="js/editor/viewcube.js">
+<link rel="modulepreload" href="js/editor/agent-bridge.js">
+<link rel="modulepreload" href="js/editor/parts-panel.js">
 <link rel="modulepreload" href="js/board-viewer.js">
 <link rel="modulepreload" href="js/common.js">
 <link rel="modulepreload" href="js/etch-api.js">
 <link rel="modulepreload" href="js/mock-api.js">
-<link rel="modulepreload" href="js/voice.js">
-<link rel="modulepreload" href="js/mascot.js">
 <script>
   // Instant start: before any module loads, show the board's prerendered still and start fetching its files
-  // (from Cache Storage when Explore already prefetched them). board.js picks these promises up.
+  // (from Cache Storage when Explore already prefetched them). js/editor/main.js picks these promises up.
   (function () {
     var q = new URLSearchParams(location.search), id = q.get("id") || "";
     if (!/^gh:/.test(id)) return;
@@ -39,119 +47,82 @@
     }
     function ok(r) { if (!r.ok) throw new Error(r.status === 404 ? "missing" : "error " + r.status); return r; }
     window.__boot = {
-      slug: slug, thumb: b + "thumb.webp",
+      slug: slug, thumb: b + "thumb.webp", t0: performance.now(),
       glb: get(b + "board.glb").then(ok).then(function (r) { return r.arrayBuffer(); }),
       meta: get(b + "meta.json").then(ok).then(function (r) { return r.json(); }),
       parts: get(b + "parts.json").then(ok).then(function (r) { return r.json(); }),
     };
     for (var k of ["glb", "meta", "parts"]) window.__boot[k].catch(function () {});
-    window.__poster = b + "thumb.webp";
+    var l = document.createElement("link"); l.rel = "preload"; l.as = "image"; l.href = b + "thumb.webp"; document.head.appendChild(l);
   })();
-  // The poster: KiCad's raytraced still with its lavender backdrop keyed out (the backdrop is a vertical gradient, so
-  // each row's colour comes from that row's edge pixels), drawn on the canvas background so the fade into 3D is seamless.
-  window.__showPoster = function (src) {
-    var cv = document.getElementById("posterC"); if (!cv || !src) return;
-    var im = new Image(); im.decoding = "async";
-    im.onload = function () {
-      var w = im.naturalWidth, h = im.naturalHeight; cv.width = w; cv.height = h;
-      var g = cv.getContext("2d", { willReadFrequently: true }); g.drawImage(im, 0, 0);
-      try {
-        var d = g.getImageData(0, 0, w, h), p = d.data;
-        var br = p[0], bg = p[1], bb = p[2];
-        for (var y = 0; y < h; y++) {
-          // the edge pixel (left or right) that continues the gradient from the row above; the board may touch one edge
-          var a = (y * w) * 4, z = (y * w + w - 1) * 4;
-          var da = Math.abs(p[a] - br) + Math.abs(p[a + 1] - bg) + Math.abs(p[a + 2] - bb), dz = Math.abs(p[z] - br) + Math.abs(p[z + 1] - bg) + Math.abs(p[z + 2] - bb);
-          var e = da <= dz ? a : z;
-          if (Math.min(da, dz) < 24) { br = p[e]; bg = p[e + 1]; bb = p[e + 2]; }
-          for (var x = 0; x < w; x++) {
-            var i = (y * w + x) * 4, dr = p[i] - br, dg = p[i + 1] - bg, db = p[i + 2] - bb;
-            var dist = Math.sqrt(dr * dr + dg * dg + db * db), t = (dist - 10) / 26;
-            if (t >= 1) continue;
-            if (t <= 0) { p[i + 3] = 0; continue; }
-            // half-keyed (KiCad's soft shadow): keep it as a neutral shadow, not a lavender fringe
-            var k = t * t * (3 - 2 * t), l = (p[i] + p[i + 1] + p[i + 2]) / 3;
-            p[i] = p[i + 1] = p[i + 2] = l * 0.6; p[i + 3] = Math.round(k * 160);
-          }
-        }
-        g.putImageData(d, 0, 0);
-      } catch (e) { /* tainted: show as is */ }
-      cv.classList.add("in");
-    };
-    im.src = src;
-  };
-  document.addEventListener("DOMContentLoaded", function () { if (window.__poster) window.__showPoster(window.__poster); });
 </script>
 </head>
 <body class="ed">
-<header class="topbar">
-  <div class="tb-left">
-    <button class="ib" id="sideT" title="Toggle chat panel" aria-label="Toggle chat panel"></button>
-    <nav class="crumb" aria-label="Breadcrumb"><a class="brand" id="homeL" href="/"><span id="logo"></span><span class="hide-sm">etch</span></a><span class="sep hide-sm">/</span><a id="exL" class="hide-sm" href="explore">explore</a><span class="sep">/</span><b id="crTitle">Board</b></nav>
-    <nav class="menu" aria-label="Menu"><button>File</button><button>Edit</button><button>View</button><button>Place</button><button>Tools</button><button>Help</button></nav>
+<header class="top">
+  <div class="top-row">
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a class="brand" id="homeL" href="explore"><span id="logo"></span><span class="hide-sm">etch</span></a>
+      <span class="sep hide-sm">/</span><a id="exL" class="hide-sm" href="explore">explore</a>
+      <span class="sep">/</span><h1 class="title" id="crTitle">Board</h1>
+    </nav>
+    <div class="top-r">
+      <span class="relpos"><button class="btn" id="importB" aria-haspopup="menu">Import</button><div class="pop menu" id="importPop" role="menu"></div></span>
+      <span class="relpos"><button class="btn" id="exportB" aria-haspopup="menu">Export</button><div class="pop menu" id="exportPop" role="menu"></div></span>
+      <button class="btn dark" id="shareB">Share</button>
+    </div>
   </div>
-  <div class="tb-mid">
-    <div class="seg" id="viewSeg" role="tablist"><button data-v="schematic">Schematic</button><button data-v="pcb">PCB</button><button data-v="3d" class="on" aria-selected="true">3D</button><button data-v="product">Product</button></div>
-  </div>
-  <div class="tb-right">
-    <button class="ib hide-md" id="undoB" title="Undo" aria-label="Undo" disabled></button>
-    <button class="ib hide-md" id="redoB" title="Redo" aria-label="Redo" disabled></button>
-    <button class="ib hide-md" id="histB" title="History" aria-label="History"></button>
-    <button class="ib hide-sm" id="resetB" title="Reset view" aria-label="Reset view"></button>
-    <span class="relpos"><button class="ib" id="findB" title="Find a part" aria-label="Find a part"></button>
-      <div class="pop search-pop" id="findPop"><input id="findQ" placeholder="Find a part: U6, USB, 10k…" autocomplete="off"><div class="plist" id="findL"></div></div></span>
-    <span class="vsep"></span>
-    <span class="relpos hide-sm"><button class="btn outline" id="dlB">Download</button><div class="pop" id="dlPop"></div></span>
-    <button class="btn dark" id="shareB">Share</button>
-    <button class="ib" id="panelT" title="Board info" aria-label="Board info"></button>
-    <span class="ws"><i>E</i>Public library</span>
+  <div class="tools" role="toolbar" aria-label="Editor tools">
+    <div class="tg edit">
+      <button class="ib hide-sm" id="copyB" title="Copy (Ctrl+C)" aria-label="Copy"></button>
+      <button class="ib hide-sm" id="pasteB" title="Paste (Ctrl+V)" aria-label="Paste"></button>
+      <button class="ib hide-sm" id="dupB" title="Duplicate (Ctrl+D)" aria-label="Duplicate"></button>
+      <button class="ib" id="delB" title="Delete (Del)" aria-label="Delete"></button>
+      <span class="vsep"></span>
+      <button class="ib" id="undoB" title="Undo (Ctrl+Z)" aria-label="Undo"></button>
+      <button class="ib" id="redoB" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"></button>
+    </div>
+    <div class="tg view seg" id="viewSeg" role="group" aria-label="View">
+      <button data-v="3d" class="on" aria-pressed="true">3D</button>
+      <button data-v="top" aria-pressed="false">Top</button>
+      <button data-v="ortho" aria-pressed="false">Ortho</button>
+    </div>
+    <div class="tg right">
+      <button class="ib" id="showAllB" title="Show all parts" aria-label="Show all parts"></button>
+      <button class="ib" id="panelT" title="Parts panel" aria-label="Toggle parts panel" aria-pressed="true"></button>
+    </div>
   </div>
 </header>
 <main class="ed-main">
-  <aside class="chat" id="chat" aria-label="Chat with Etch">
-    <div class="sheet-grab"></div>
-    <div class="chat-h" id="chatH"><h2>New chat</h2><div class="acts"><button class="ib" id="newChat" title="New chat" aria-label="New chat"></button><button class="ib" id="wideB" title="Expand" aria-label="Expand chat"></button></div></div>
-    <div class="demo-badge" id="demo"><i>Demo</i><span></span></div>
-    <div class="thread" id="thread" aria-live="polite"></div>
-    <div class="composer voice" id="voice">
-      <div class="v-row">
-        <button type="button" class="micbig" id="micB" aria-label="Talk to Etch" title="Click to talk, or hold Space"></button>
-        <div class="v-main">
-          <div class="v-state" id="vState">Talk to Etch</div>
-          <div class="v-text" id="vText">Point at a part while you talk to pin your question to it.</div>
-        </div>
-        <div class="lvl" id="lvl" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      </div>
-      <form class="typebox" id="comp">
-        <input id="ci" autocomplete="off" placeholder="Or type: click the board to pin a comment, or ask about the whole board" aria-label="Type a question for Etch">
-        <button type="submit" class="send" id="sendB" aria-label="Send" disabled></button>
-      </form>
-      <div class="comp-row">
-        <button type="button" class="chip on" id="cmtChip" aria-pressed="true" title="Clicking a part pins a comment to it"><span class="dot"></span>Comment</button>
-        <button type="button" class="chip opt" id="effChip" title="How hard Etch thinks">Effort Max</button>
-        <button type="button" class="chip opt" id="prodChip" aria-pressed="false" title="Answer in plain product terms">Product</button>
-      </div>
-    </div>
-  </aside>
-  <section class="stage" id="stage">
+  <section class="stage" id="stage" aria-label="3D board">
     <div class="cw" id="cw"></div>
     <div class="poster" id="poster" aria-hidden="true"><canvas id="posterC" width="640" height="400"></canvas></div>
-    <div class="ov" id="ov"><svg id="links"></svg></div>
-    <div class="hover-tag" id="htag"></div>
-    <div class="stage-err" id="err"><div></div></div>
-    <div class="stage-top">
-      <div class="cap"><div><b>3D board</b> · drag to orbit · two-finger scroll to pan · pinch to zoom</div><div class="sub" id="info">PCB and soldered parts.</div></div>
-      <div class="top-r"><button class="btn outline sm" id="homeV" title="Back to the starting view (or double-click the board)">Reset view</button><div class="seg sm light" id="modeSeg"><button data-m="floor" class="on" aria-pressed="true">Floor</button><button data-m="3d" class="on">3D</button><button data-m="photo">Photo</button></div></div>
+    <svg class="sel-ov" id="selOv" aria-hidden="true"></svg>
+    <div class="hover-tag" id="htag" aria-hidden="true"></div>
+    <div class="ghost" id="ghost" aria-hidden="true"><div class="g-img"></div><div class="g-tag"></div></div>
+    <div class="stage-err" id="err" role="alert"><div></div></div>
+    <div class="navc" id="navc">
+      <div class="cube-host" id="cubeHost"></div>
+      <div class="cam-host" id="camHost"></div>
     </div>
-    <div class="bottombar" id="bb">
-      <div class="bb-g" id="maskG"><span>Solder mask</span></div>
-      <div class="bb-g" id="silkG"><span>Silkscreen</span></div>
-      <div class="bb-g" id="finG"><span>Finish</span></div>
+    <div class="insp" id="insp" hidden></div>
+    <div class="br" id="br">
+      <span class="relpos"><button class="pill-btn" id="setB" aria-haspopup="dialog">Settings</button><div class="pop settings" id="setPop" role="dialog" aria-label="Board settings"></div></span>
+      <label class="snap">Snap grid <select id="snapS" aria-label="Snap grid"><option>0.1</option><option>0.25</option><option>0.5</option><option selected>1.0</option><option>2.0</option><option>5.0</option></select> mm</label>
     </div>
-    <div class="minimap" id="mini" title="Reset view"><canvas id="miniC" width="360" height="232"></canvas></div>
+    <div class="credits" id="credits"></div>
   </section>
-  <aside class="drawer" id="drawer" aria-label="Board info"><div class="drawer-in" id="drawerIn"></div></aside>
+  <aside class="rp" id="rp" aria-label="Parts">
+    <button class="rp-chev" id="rpChev" aria-label="Collapse panel" title="Collapse panel"></button>
+    <div class="sheet-grab" id="grab"></div>
+    <div class="rp-tabs" role="tablist" aria-label="Panel">
+      <button role="tab" id="tabParts" data-value="parts" aria-selected="true" aria-controls="paneParts">Parts</button>
+      <button role="tab" id="tabBoard" data-value="board" aria-selected="false" aria-controls="paneBoard">This board</button>
+    </div>
+    <div class="rp-pane" id="paneParts" role="tabpanel" aria-labelledby="tabParts"></div>
+    <div class="rp-pane" id="paneBoard" role="tabpanel" aria-labelledby="tabBoard" hidden></div>
+  </aside>
 </main>
-<script type="module" src="js/board.js"></script>
+<input type="file" id="glbFile" accept=".glb,model/gltf-binary" hidden>
+<script type="module" src="js/editor/main.js"></script>
 </body>
 </html>

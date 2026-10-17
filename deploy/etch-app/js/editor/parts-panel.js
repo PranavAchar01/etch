@@ -71,15 +71,26 @@ const CSS = `
   box-shadow:0 6px 10px rgba(20,28,45,.08),0 16px 32px rgba(20,28,45,.16)}
 .pp-art{position:absolute;inset:10px 10px 26px;display:grid;place-items:center}
 .pp-art img,.pp-art svg{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none}
-.pp-art img{opacity:0;transition:opacity .25s ease}
-.pp-art img[data-loaded]{opacity:1}
+.pp-art>img,.pp-art>svg{grid-area:1/1;opacity:0;transition:opacity .25s ease}
+.pp-art>[data-loaded]{opacity:1}
+.pp-art>.pp-sk{grid-area:1/1;width:100%;height:100%;border-radius:8px;transition:opacity .25s ease}
+.pp-art[data-ready]>.pp-sk{opacity:0}
+.pp-sk{display:block;background:linear-gradient(90deg,#eef0f3 0%,#eef0f3 30%,#f6f7f9 50%,#eef0f3 70%,#eef0f3 100%) 0 0/250% 100%;
+  animation:pp-sk 1.4s linear infinite}
+@keyframes pp-sk{from{background-position:100% 0}to{background-position:-150% 0}}
+.pp-sk-tile{cursor:default;box-shadow:none;background:#fff}
+.pp-sk-tile .pp-sk{position:absolute;inset:10px 10px 26px;border-radius:8px}
+.pp-sk-tile .pp-sk+.pp-sk{inset:auto 28% 9px;height:8px;border-radius:4px}
+.pp-sk-bar{height:12px;border-radius:6px;width:96px}
+.pp-sk-n{display:inline-block;width:18px;height:10px;border-radius:5px;vertical-align:middle}
+.pp-root[data-loading] .pp-dd-btn,.pp-root[data-loading] .pp-search-btn{cursor:default}
 .pp-name{position:absolute;left:6px;right:6px;bottom:6px;font-size:11.5px;line-height:15px;font-weight:600;text-align:center;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--pp-ink);opacity:0;transform:translateY(3px);
   transition:opacity .16s ease,transform .2s ease}
 .pp-tile:hover .pp-name,.pp-tile:focus-visible .pp-name,.pp-tile[data-lift] .pp-name{opacity:1;transform:none}
 .pp-empty{padding:32px 8px;text-align:center;color:var(--pp-mute);line-height:1.5}
 .pp-note{font-size:12px;color:var(--pp-mute);padding:0 2px 8px}
-@media (prefers-reduced-motion:reduce){.pp-root *{transition-duration:0s!important}}
+@media (prefers-reduced-motion:reduce){.pp-root *{transition-duration:0s!important}.pp-sk{animation:none;background:#eef0f3}}
 `;
 
 function injectCss() {
@@ -113,6 +124,21 @@ function glyph(family) {
   return `<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="6" y="6" width="88" height="88" rx="10" fill="${BOARD}"/><rect x="6" y="6" width="88" height="88" rx="10" fill="url(#pp-sheen)" opacity=".18"/>${body}</svg>`;
 }
 
+const SK_TILES = 8;
+const skTile = () => '<div class="pp-tile pp-sk-tile" aria-hidden="true"><i class="pp-sk"></i><i class="pp-sk"></i></div>';
+const SK_GRID = Array.from({ length: SK_TILES }, skTile).join('');
+
+// Until the editor creates the panel (it waits for the API config first), the empty pane shows a skeleton.
+function preSkeleton() {
+  const host = typeof document !== 'undefined' && document.getElementById('paneParts');
+  if (!host || host.childElementCount) return;
+  injectCss();
+  const r = el('div', 'pp-root pp-pre');
+  r.setAttribute('aria-busy', 'true');
+  r.innerHTML = `<div class="pp-head"><h2 class="pp-title">Parts</h2><div class="pp-bar"><div class="pp-dd"><div class="pp-dd-btn"><span class="pp-dd-label"><i class="pp-sk pp-sk-bar"></i></span>${ICON_CHEV}</div></div><div class="pp-search"><span class="pp-search-btn">${ICON_SEARCH}</span></div></div></div><div class="pp-scroll"><div class="pp-grid">${SK_GRID}</div></div>`;
+  host.appendChild(r);
+}
+
 function el(tag, cls, html) {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
@@ -122,11 +148,14 @@ function el(tag, cls, html) {
 
 export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd } = {}) {
   injectCss();
+  hostEl.querySelectorAll(':scope > .pp-pre').forEach((n) => n.remove());
   const base = (apiBase || '').replace(/\/+$/, '');
   const ac = new AbortController();
   const on = (t, type, fn, opts) => t.addEventListener(type, fn, { signal: ac.signal, ...opts });
 
   const root = el('div', 'pp-root');
+  root.setAttribute('data-loading', '');
+  root.setAttribute('aria-busy', 'true');
   root.innerHTML = `
     <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="pp-sheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
     <div class="pp-head">
@@ -134,7 +163,7 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
       <div class="pp-bar">
         <div class="pp-dd">
           <button class="pp-dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
-            <span class="pp-dd-label">Loading…</span><span class="pp-dd-count"></span>${ICON_CHEV}
+            <span class="pp-dd-label"><i class="pp-sk pp-sk-bar" aria-label="Loading parts"></i></span><span class="pp-dd-count"><i class="pp-sk pp-sk-n"></i></span>${ICON_CHEV}
           </button>
           <ul class="pp-menu" role="listbox" tabindex="-1"></ul>
         </div>
@@ -145,7 +174,7 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
         </div>
       </div>
     </div>
-    <div class="pp-scroll"><div class="pp-note" hidden></div><div class="pp-grid" role="list"></div></div>`;
+    <div class="pp-scroll"><div class="pp-note" hidden></div><div class="pp-grid" role="list">${SK_GRID}</div></div>`;
   hostEl.appendChild(root);
 
   const dd = root.querySelector('.pp-dd');
@@ -177,19 +206,34 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
     }, { root: scroller, rootMargin: '200px 0px' })
     : null;
 
+  // the art area holds a skeleton until it knows what to show: the rendered image once it has loaded, else the glyph
+  function reveal(art, node) {
+    art.appendChild(node);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      node.setAttribute('data-loaded', '');
+      art.setAttribute('data-ready', '');
+      setTimeout(() => art.querySelector(':scope > .pp-sk')?.remove(), 300);
+    }));
+  }
+  function showGlyph(art, part) {
+    const t = document.createElement('template');
+    t.innerHTML = glyph(part.family);
+    reveal(art, t.content.firstElementChild);
+  }
   function loadImg(tile) {
     const part = partOf.get(tile);
-    if (!part || !part.img || !base) return;
+    if (!part) return;
     const art = tile.querySelector('.pp-art');
+    if (!part.img || !base) { showGlyph(art, part); return; }
     const img = new Image();
     img.alt = '';
     img.decoding = 'async';
     img.draggable = false;
     img.onload = () => {
       if (disposed) return;
-      art.replaceChildren(img);
-      requestAnimationFrame(() => img.setAttribute('data-loaded', ''));
+      (img.decode ? img.decode().catch(() => {}) : Promise.resolve()).then(() => { if (!disposed) reveal(art, img); });
     };
+    img.onerror = () => { if (!disposed) showGlyph(art, part); };
     img.src = `${base}/etch/piece/${part.img}.png`;
   }
 
@@ -229,7 +273,7 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
     scroller.scrollTop = 0;
     render();
   }
-  on(ddBtn, 'click', () => openMenu(!dd.hasAttribute('data-open')));
+  on(ddBtn, 'click', () => { if (!root.hasAttribute('data-loading')) openMenu(!dd.hasAttribute('data-open')); });
   on(ddBtn, 'keydown', (e) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); openMenu(true); }
   });
@@ -300,7 +344,7 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
     const label = part.value && !part.name.includes(part.value) ? `${part.name} · ${part.value}` : part.name;
     t.title = `${label}\n${part.footprint.split(':').pop()}`;
     t.setAttribute('aria-label', `${label}. Press Enter to place.`);
-    const art = el('div', 'pp-art', glyph(part.family));
+    const art = el('div', 'pp-art', '<i class="pp-sk"></i>');
     const name = el('div', 'pp-name');
     name.textContent = part.name;
     t.append(art, name);
@@ -324,11 +368,9 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
     const tiles = list.map(makeTile);
     tiles.forEach((t) => frag.appendChild(t));
     grid.replaceChildren(frag);
-    if (base) {
-      for (const t of tiles) {
-        if (!partOf.get(t).img) continue;
-        if (io) io.observe(t); else loadImg(t);
-      }
+    for (const t of tiles) {
+      if (!base || !partOf.get(t).img) loadImg(t); // no render to wait for: the glyph fades in right away
+      else if (io) io.observe(t); else loadImg(t);
     }
   }
 
@@ -385,12 +427,17 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
   loadCatalog().then((c) => {
     if (disposed) return;
     catalog = c;
+    root.removeAttribute('data-loading');
+    root.removeAttribute('aria-busy');
     renderMenu();
     setFamily(c.families[0]?.id || '__all');
     if (pendingFilter != null) api.filter(pendingFilter);
   }).catch(() => {
     if (disposed) return;
+    root.removeAttribute('data-loading');
+    root.removeAttribute('aria-busy');
     ddLabel.textContent = 'Parts';
+    ddCount.textContent = '';
     grid.innerHTML = '<div class="pp-empty">Could not load the parts list. Reload the page to try again.</div>';
   });
 
@@ -416,3 +463,5 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
   };
   return api;
 }
+
+preSkeleton();

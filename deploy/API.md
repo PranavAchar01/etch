@@ -1,7 +1,8 @@
 # Etch backend API
 
-What `deploy/etch_public.py` serves today, and how the page (`deploy/etch-app/app.js`) uses each route. UI changes
-should line up with this file. The board view routes (`/etch/ask`, `/etch/comments*`, `/etch/change`) are handled in
+What `deploy/etch_public.py` serves today, and how the pages use each route: Explore (`deploy/etch-app/explore.html`,
+the homepage) and the board editor (`board.html`; `board.html?new=1` starts a design build). UI changes should line up
+with this file. The board view routes (`/etch/ask`, `/etch/comments*`, `/etch/change`) are handled in
 `etch_public.py`, with board loading, the model call, the comment store and board copying in `deploy/explore.py`; they
 are listed under "Board view" below and designed in [EXPLORE_API.md](EXPLORE_API.md) (with the static `world/`
 library).
@@ -17,7 +18,7 @@ the event) in the same commit.
 | Port | 3439 (`ETCH_PUBLIC_PORT`). Speech-to-text runs separately on 3421 and is reached only through `/etch/stt`. |
 | CORS | Allowed origins: `https://etch-app*.vercel.app`, `http://localhost:*`, `http://127.0.0.1:*` (`ETCH_ORIGINS` overrides). A new deploy URL outside that pattern gets CORS errors. |
 | Auth | Header `X-Etch-Code: <access code>` on every route except `/etch/health`, `/etch/thumb`, `/etch/piece/*` and `/etch/files/*`. The page asks for the code once and keeps it in `localStorage["etch-code"]`. |
-| Errors | JSON `{"error": "..."}` with a 4xx/5xx status. `401 {"error": "code"}` means a missing or wrong code: show the code prompt (`app.js` `api()` does this). Most other `error` strings are written to be shown to the user as is. |
+| Errors | JSON `{"error": "..."}` with a 4xx/5xx status. `401 {"error": "code"}` means a missing or wrong code: show the code prompt. Most other `error` strings are written to be shown to the user as is. |
 | Polling, not SSE | Cloudflare quick tunnels don't carry SSE, so build progress is polled from `/etch/job`. |
 | Paths | Every path the API returns is relative to the repo root (`/engine/out/live-…/…`). Fetch build files through `/etch/files` + that path. |
 
@@ -320,7 +321,7 @@ The copy is a new `engine/out/live-<ms>/` with the `design.json` and an `importe
 ## Build events
 
 Every event from `/etch/job` and `/etch/run` has `agent`, `type`, `t` (seconds since the build started) and `run`.
-The page keys on `` `${agent}:${type}` `` (`feed()`, `stepLine()` and `onEvent()` in `app.js`). Events not listed
+The board editor keys on `` `${agent}:${type}` `` (`mapper()` in `js/editor/agent-bridge.js`). Events not listed
 here can appear; ignore unknown ones.
 
 In the order a design build sends them:

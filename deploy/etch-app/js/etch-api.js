@@ -1,4 +1,4 @@
-// Client for Etch's board endpoints (deploy/EXPLORE_API.md section 2). Same API base as app.js: ?api= or config.json.
+// Client for Etch's board endpoints (deploy/EXPLORE_API.md section 2). API base: ?api= or config.json.
 // Falls back to mock-api.js with ?mock=1, when no API base is configured, or when an endpoint is missing (404) or
 // the engine cannot be reached, so the board view always works end to end.
 import { Q } from "./common.js";
@@ -73,7 +73,7 @@ export async function deleteComment(p) {
   try { return await call("/etch/comments/delete", p, () => mock.deleteComment(p)); }
   catch (e) { if (e.status === 404) return { ok: true, gone: true }; throw e; }
 }
-// the cancel token for a build, kept the way app.js keeps it
+// the cancel token for a build, kept in localStorage (etch-tokens) by job id
 function keepToken(j) {
   try { const t = JSON.parse(localStorage.getItem("etch-tokens") || "{}"); t[j.job] = j.token; localStorage.setItem("etch-tokens", JSON.stringify(t)); } catch (e) { /* not remembered */ }
 }

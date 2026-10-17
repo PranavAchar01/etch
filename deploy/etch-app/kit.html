@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Etch agent kit</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Averia+Serif+Libre:wght@300;400;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/agent.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #eef0f3; color: var(--ag-ink); font: 15px/1.5 var(--ag-sans); -webkit-font-smoothing: antialiased; }
+  main { max-width: 1080px; margin: 0 auto; padding: 40px 20px 220px; }
+  h1, h2 { font-family: var(--ag-serif); font-weight: 400; margin: 0; }
+  h1 { font-size: 34px; }
+  h2 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--ag-muted); margin: 4px 0 0; }
+  section { margin-top: 28px; background: #fff; border-radius: 22px; padding: 22px; box-shadow: 0 1px 2px rgba(20, 25, 40, .05); }
+  .note { color: var(--ag-muted); font-size: 13.5px; margin: 0 0 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .stage { display: grid; grid-template-columns: 260px 1fr; gap: 28px; align-items: center; }
+  .big { width: 240px; height: 190px; display: grid; place-items: center; background: #f6f7f9; border-radius: 20px; }
+  .big > div { width: 190px; height: 148px; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; margin-top: 22px; }
+  .cell { background: #f6f7f9; border-radius: 16px; padding: 14px 8px 10px; text-align: center; font-size: 12.5px; color: var(--ag-muted); }
+  .cell > div { width: 76px; height: 58px; margin: 0 auto 8px; }
+  label.lv { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ag-muted); font-variant-numeric: tabular-nums; }
+  .prims { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .prims > div { display: flex; flex-direction: column; gap: 10px; }
+  .k { font: 600 11px/1 var(--ag-sans); letter-spacing: .07em; text-transform: uppercase; color: var(--ag-faint); margin-top: 6px; }
+  .goo-demo { position: relative; height: 150px; background: #f6f7f9; border-radius: 18px; overflow: hidden; }
+  .goo-demo .lq-goo { position: absolute; inset: 0; }
+  .goo-demo .lq-blob { background: var(--ag-ink); }
+  .demo-bar { position: sticky; top: 10px; z-index: 30; }
+  .part { position: fixed; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: #fff; box-shadow: 0 2px 10px rgba(20, 25, 40, .15), inset 0 0 0 2px var(--ag-accent);
+    display: grid; place-items: center; font: 700 10px/1 var(--ag-sans); color: var(--ag-accent); cursor: grab; touch-action: none; z-index: 40; user-select: none; transition: box-shadow .15s, background-color .15s, color .15s; }
+  .part.hot { background: var(--ag-accent); color: #fff; box-shadow: 0 0 0 8px rgba(47, 107, 255, .18); }
+  .part span { position: absolute; top: 38px; white-space: nowrap; color: var(--ag-muted); font-weight: 600; }
+  @media (max-width: 760px) { .stage, .prims { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Etch agent kit</h1>
+  <p class="sub">The eyes, the liquid controls, the activity primitives and the dock, all on one page. Drag the round part markers: the eyes look at whichever part the agent is talking about.</p>
+
+  <section id="eyes">
+    <h2>Eyes</h2>
+    <p class="note">Every state morphs from the last one through springs. The level slider stands in for the mic or the voice.</p>
+    <div class="stage">
+      <div class="big"><div id="bigEyes"></div></div>
+      <div>
+        <div class="lq-tabs" id="stateTabs" aria-label="Eye state" style="flex-wrap:wrap;border-radius:22px"></div>
+        <div class="row" style="margin-top:14px" id="reacts"></div>
+        <div class="row" style="margin-top:14px">
+          <label class="lv">Level <input type="range" id="lvl" min="0" max="1" step="0.01" value="0"> <span id="lvlV">0.00</span></label>
+          <button class="ag-btn lq-btn" id="pulse" type="button">Pulse level</button>
+          <button class="ag-btn lq-btn" id="lookDot" type="button" aria-pressed="false">Look at U6</button>
+        </div>
+      </div>
+    </div>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section id="liquid">
+    <h2>Liquid controls</h2>
+    <p class="note">Buttons squish on press and wobble back. The tab indicator stretches between tabs and pinches thin while it travels. Blobs bud off a parent and melt back in.</p>
+    <div class="row">
+      <button class="ag-btn primary lq-btn" type="button">Primary</button>
+      <button class="ag-btn accent lq-btn" type="button">Accent</button>
+      <button class="ag-btn lq-btn" type="button">Default</button>
+      <button class="ag-btn ghost lq-btn" type="button">Ghost</button>
+      <div class="lq-tabs" id="panelTabs" aria-label="Panel">
+        <button type="button" data-value="parts">Parts</button>
+        <button type="button" data-value="board">This board</button>
+        <button type="button" data-value="history">History</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <button class="ag-btn lq-btn" id="spawn" type="button">Spawn blob</button>
+      <button class="ag-btn lq-btn" id="absorb" type="button">Absorb all</button>
+    </div>
+    <div class="goo-demo" id="gooDemo" style="margin-top:12px"><div class="lq-goo" id="gooLayer"></div></div>
+  </section>
+
+  <section id="prims">
+    <h2>Activity primitives</h2>
+    <p class="note">The pieces the dock is made of, shown on their own.</p>
+    <div class="prims">
+      <div id="primL"></div>
+      <div id="primR"></div>
+    </div>
+  </section>
+
+  <section id="dockDemo" class="demo-bar">
+    <h2>The dock</h2>
+    <p class="note">Hover the pill at the bottom to open it. Run a script, or type into the dock: anything with "buzzer" runs the change flow, anything else the question flow.</p>
+    <div class="row">
+      <button class="ag-btn primary lq-btn" id="dAsk" type="button">What is this board for?</button>
+      <button class="ag-btn primary lq-btn" id="dBuzz" type="button">Add a buzzer</button>
+      <button class="ag-btn lq-btn" id="dApprove" type="button">Approval card</button>
+      <button class="ag-btn lq-btn" id="dRec" type="button">Recommendation</button>
+      <button class="ag-btn lq-btn" id="dSay" type="button">Say a line</button>
+      <button class="ag-btn lq-btn" id="dOpen" type="button">Open</button>
+      <button class="ag-btn lq-btn" id="dClose" type="button">Close</button>
+      <button class="ag-btn ghost lq-btn" id="dClear" type="button">Clear</button>
+    </div>
+  </section>
+</main>
+
+<div class="part" data-ref="U6" style="left:calc(100% - 90px); top:46%">U6<span>U6</span></div>
+<div class="part" data-ref="USB-UART1" style="left:calc(100% - 150px); top:62%">UART<span>USB-UART1</span></div>
+<div class="part" data-ref="BZ1" style="left:90px; top:58%">BZ1<span>BZ1</span></div>
+<div class="part" data-ref="J1" style="left:140px; top:36%">J1<span>J1</span></div>
+
+<script type="module">
+// demo answers only: keep the kit off the network (voice falls back to the browser's speech)
+const q = new URLSearchParams(location.search);
+if (q.get("mock") !== "1") { q.set("mock", "1"); history.replaceState(null, "", "?" + q.toString() + location.hash); }
+
+const [{ createEyes, EYE_STATES }, goo, trace, { createDock }] = await Promise.all([
+  import("./js/ui/eyes.js"), import("./js/ui/goo.js"), import("./js/ui/trace.js"), import("./js/ui/dock.js"),
+]);
+const { liquidTabs, bindLiquid, spawnBlob, gooLayer } = goo;
+const $ = (id) => document.getElementById(id);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ---------- fake parts on the "board": draggable markers ----------
+const parts = new Map([...document.querySelectorAll(".part")].map((p) => [p.dataset.ref, p]));
+for (const p of parts.values()) {
+  p.addEventListener("pointerdown", (e) => {
+    p.setPointerCapture(e.pointerId);
+    const move = (ev) => { p.style.left = ev.clientX + "px"; p.style.top = ev.clientY + "px"; };
+    const up = () => { p.removeEventListener("pointermove", move); p.removeEventListener("pointerup", up); };
+    p.addEventListener("pointermove", move); p.addEventListener("pointerup", up);
+  });
+}
+const partScreenPos = (ref) => {
+  const p = parts.get(ref);
+  if (!p) return null;
+  const r = p.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+};
+
+// ---------- eyes ----------
+const big = createEyes($("bigEyes"), { label: "Etch, large" });
+const tabs = $("stateTabs");
+for (const s of EYE_STATES) { const b = document.createElement("button"); b.type = "button"; b.dataset.value = s; b.textContent = s; tabs.append(b); }
+liquidTabs(tabs, { value: "idle", onChange: (s) => big.setState(s) });
+for (const k of ["nod", "bounce", "shake", "surprise", "squish", "tilt", "blink"]) {
+  const b = document.createElement("button"); b.type = "button"; b.className = "ag-btn lq-btn"; b.textContent = k;
+  b.addEventListener("click", () => big.react(k)); $("reacts").append(b);
+}
+const lvl = $("lvl");
+lvl.addEventListener("input", () => { big.setLevel(+lvl.value); $("lvlV").textContent = (+lvl.value).toFixed(2); });
+let pulsing = 0;
+$("pulse").addEventListener("click", () => {
+  if (pulsing) { clearInterval(pulsing); pulsing = 0; big.setLevel(0); return; }
+  const t0 = performance.now();
+  pulsing = setInterval(() => { const t = (performance.now() - t0) / 1000; big.setLevel(Math.max(0, Math.sin(t * 7) * 0.5 + Math.sin(t * 2.3) * 0.4)); }, 50);
+});
+let looking = 0;
+$("lookDot").addEventListener("click", (e) => {
+  const on = !looking;
+  e.currentTarget.setAttribute("aria-pressed", String(on));
+  if (on) { const f = () => { const p = partScreenPos("U6"); big.lookAt(p.x, p.y); looking = requestAnimationFrame(f); }; f(); }
+  else { cancelAnimationFrame(looking); looking = 0; big.lookAt(null); }
+});
+const gal = $("gallery");
+for (const s of EYE_STATES) {
+  const c = document.createElement("div"); c.className = "cell"; c.dataset.state = s;
+  const holder = document.createElement("div"); c.append(holder, s); gal.append(c);
+  const e = createEyes(holder, { label: "Etch, " + s });
+  e.setState(s);
+  if (s === "userTalking" || s === "speaking") { const t0 = performance.now(); setInterval(() => { const t = (performance.now() - t0) / 1000; e.setLevel(Math.max(0, Math.sin(t * 6 + s.length) * 0.6)); }, 60); }
+}
+
+// ---------- liquid controls ----------
+liquidTabs($("panelTabs"), { value: "parts" });
+const layer = gooLayer($("gooLayer"), { id: "ag-goo-demo", blur: 10 });
+const parent = spawnBlob(layer, { to: { x: 90, y: 75 }, w: 74, h: 74 });
+const kids = [];
+$("spawn").addEventListener("click", () => {
+  const n = kids.length, s = 34 + Math.random() * 20;
+  kids.push(spawnBlob(layer, { from: { x: 90, y: 75 }, to: { x: 190 + n * 70, y: 40 + Math.random() * 70 }, w: s, h: s }));
+});
+$("absorb").addEventListener("click", () => { while (kids.length) kids.pop().absorb({ x: 90, y: 75 }); });
+
+// ---------- primitives on their own ----------
+const L = $("primL"), R = $("primR");
+const k = (t) => { const d = document.createElement("div"); d.className = "k"; d.textContent = t; return d; };
+const loader = trace.pixelLoader({ label: "Waiting for the engine" }).start();
+L.append(k("Pixel loader"), loader.el);
+const tr = trace.thinkingTrace({ open: true });
+tr.row({ id: 1, kind: "step", title: "Reading the board", status: "done", seconds: 0.4 });
+tr.row({ id: 2, kind: "reasoning", title: "The module is the main chip", detail: "Everything else hangs off its serial and power pins.", status: "done" });
+tr.row({ id: 3, kind: "search", title: "Searching parts.json for USB", status: "done", count: 3 });
+tr.row({ id: 4, kind: "tool", title: "Tracing nets from J1", status: "running", ref: "J1" });
+L.append(k("Thinking trace"), tr.el);
+const chips = document.createElement("div"); chips.className = "ag-chips";
+chips.append(trace.toolChip({ title: "Screening 304 KiCad parts", status: "running" }).el, trace.toolChip({ title: "Routing · try 2", status: "done" }).el,
+  trace.toolChip({ title: "Read parts.json", status: "done" }).el, trace.toolChip({ title: "DRC", status: "failed", count: 2 }).el);
+L.append(k("Tool chips"), chips);
+const tasks = document.createElement("div"); tasks.className = "ag-tasks";
+const t1 = trace.taskRow({ title: "Screening parts", status: "running", count: 0, progress: 0 });
+tasks.append(t1.el, trace.taskRow({ title: "Placing and routing · try 1", detail: "2 nets unrouted", status: "failed" }).el,
+  trace.taskRow({ title: "Checks", detail: "ERC 0 · DRC 0", status: "done", count: 15, progress: 1 }).el);
+L.append(k("Task rows"), tasks);
+let cnt = 0; setInterval(() => { cnt = (cnt + 37) % 340; t1.update({ count: Math.min(304, cnt), progress: Math.min(1, cnt / 304), status: cnt >= 304 ? "done" : "running" }); }, 400);
+
+const ans = trace.streamAnswer({ ref: "U6" });
+R.append(k("Streamed answer"), ans.el);
+const txt = "The ESP32 module U6 talks to the computer through USB-UART1, and **J1** is the USB-C port. The `EN` line resets it.";
+(async () => { for (const w of txt.split(/(?<= )/)) { ans.append(w); await sleep(55); } ans.end({ mentions: ["U6", "USB-UART1", "J1"], followups: ["How is it powered?", "What does EN do?"], seconds: 2.1, thoughts: ["Found the module", "Followed the USB pair"] }); })();
+const ask = trace.approvalCard({ question: "Which checks should I run after the change?", options: ["ERC", "DRC", { id: "sim", label: "Simulation", detail: "ngspice, takes about 20 s" }], multi: true });
+R.append(k("Approval card · multi"), ask.el);
+ask.promise.then((v) => { ask.el.dataset.result = JSON.stringify(v); });
+const rec = trace.recommendCard({ title: "Use a 1 kΩ base resistor for Q3", detail: "It keeps the GPIO under 3 mA and still saturates the transistor.", confidence: 0.86 });
+R.append(k("Recommendation card"), rec.el);
+const hot = (ref, on) => { const p = parts.get(ref); if (p) p.classList.toggle("hot", !!on); };
+trace.bindMentions($("prims"), (ref, o) => hot(ref, o.hover));
+
+// ---------- the dock ----------
+const dock = createDock(document.body, {
+  onSend(text, { via }) { if (/buzzer/i.test(text)) buzzerFlow(); else askFlow(text, via); },
+  onMention(ref, o) { if (o.hover !== undefined) hot(ref, o.hover); else { hot(ref, true); setTimeout(() => hot(ref, false), 900); } },
+  partScreenPos,
+});
+window.etchDock = dock;
+let run = 0;
+const typeIn = (text) => { const i = dock.el.querySelector(".ag-input"); i.value = text; dock.el.querySelector(".ag-compose").requestSubmit(); i.blur(); };
+async function stream(id, text, ms = 38) { for (const w of text.split(/(?<= )/)) { dock.answerAppend(id, w); await sleep(ms); } }
+
+async function askFlow() {
+  const me = ++run, alive = () => me === run;
+  dock.setState("thinking"); dock.setStatus("Thinking about the board"); dock.loader(true, "Reading the board");
+  await sleep(500); if (!alive()) return;
+  dock.step({ id: "s1", kind: "step", title: "Reading the board summary", status: "running" });
+  await sleep(800); dock.step({ id: "s1", status: "done", detail: "34 parts, 2 layers" });
+  dock.step({ id: "s2", kind: "reasoning", title: "Looking at the main chip", detail: "An ESP32 module with a USB serial bridge", status: "running", ref: "U6" });
+  await sleep(1100); if (!alive()) return; dock.step({ id: "s2", status: "done" });
+  dock.step({ id: "s3", kind: "search", title: "Searching parts.json for connectors", status: "running" });
+  await sleep(700); dock.step({ id: "s3", status: "done", count: 4 });
+  dock.setState("working"); dock.setStatus("Reading parts");
+  dock.step({ id: "t1", kind: "tool", title: "Read parts.json", status: "running" });
+  await sleep(450); dock.step({ id: "t1", status: "done" });
+  dock.step({ id: "t2", kind: "tool", title: "Tracing USB nets", status: "running", ref: "USB-UART1" });
+  await sleep(900); if (!alive()) return; dock.step({ id: "t2", status: "done" });
+  dock.loader(false);
+  dock.setState("speaking"); dock.setStatus("Answering");
+  const id = "a" + me;
+  dock.answerStart(id, { ref: "U6" });
+  await stream(id, "This is a **USB development board** for the ESP32 module U6. USB-UART1 bridges the USB-C port J1 to the module's serial pins, so one cable both flashes it and carries its logs.\n\nA 3.3 V regulator U2 powers everything from USB, and two buttons (SW1 reset, SW2 boot) put the module into download mode.");
+  if (!alive()) return;
+  dock.answerEnd(id, { mentions: ["U6", "USB-UART1", "J1", "U2"], followups: ["How is it powered?", "Add a buzzer", "What does SW2 do?"], seconds: 4.2, thoughts: 3 });
+  dock.say("It's a USB development board for the ESP32 module.");
+  dock.setState("success"); dock.setStatus("Answered");
+  await sleep(2200); if (alive()) { dock.setState("idle"); dock.setStatus(""); }
+}
+
+async function buzzerFlow() {
+  const me = ++run, alive = () => me === run;
+  dock.setState("thinking"); dock.setStatus("Planning the change"); dock.loader(true, "Planning the change");
+  dock.step({ id: "b0", kind: "reasoning", title: "A buzzer needs a free GPIO and a driver", detail: "GPIO 25 on U6 is free", status: "running", ref: "U6" });
+  await sleep(1000); if (!alive()) return; dock.step({ id: "b0", status: "done" });
+  dock.setState("working"); dock.setStatus("Screening parts");
+  dock.step({ id: "k1", kind: "task", title: "Screening parts", count: 0, progress: 0, status: "running" });
+  dock.step({ id: "c1", kind: "tool", title: "Screening 304 KiCad parts", status: "running" });
+  for (let i = 1; i <= 8; i++) { await sleep(180); if (!alive()) return; dock.step({ id: "k1", count: Math.round((304 * i) / 8), progress: i / 8 }); }
+  dock.step({ id: "k1", status: "done", detail: "12 kept" }); dock.step({ id: "c1", status: "done" });
+  dock.setStatus("Picking parts");
+  dock.step({ id: "k2", kind: "task", title: "Picking parts", status: "running" });
+  await sleep(900); dock.step({ id: "k2", status: "done", detail: "BZ1 buzzer · Q3 NPN · R14 1 kΩ" });
+  dock.setStatus("Placing and routing");
+  dock.step({ id: "k3", kind: "task", title: "Placing and routing · try 1", status: "running", ref: "BZ1", progress: 0 });
+  dock.step({ id: "c2", kind: "tool", title: "Routing · try 1", status: "running", ref: "BZ1" });
+  await sleep(500); dock.step({ id: "k3", progress: 0.6 });
+  await sleep(600); if (!alive()) return;
+  dock.step({ id: "k3", status: "failed", detail: "2 nets left unrouted" }); dock.step({ id: "c2", status: "failed" });
+  dock.step({ id: "k4", kind: "task", title: "Placing and routing · try 2", status: "running", ref: "BZ1", progress: 0 });
+  dock.step({ id: "c3", kind: "tool", title: "Routing · try 2", status: "running", ref: "BZ1" });
+  await sleep(500); dock.step({ id: "k4", progress: 0.5 }); await sleep(600); if (!alive()) return;
+  dock.step({ id: "k4", status: "done", progress: 1, detail: "48 tracks" }); dock.step({ id: "c3", status: "done" });
+  dock.setStatus("Running checks");
+  dock.step({ id: "k5", kind: "task", title: "Checks", detail: "ERC · DRC · unconnected · 3D models", status: "running", count: 0, progress: 0 });
+  for (let i = 1; i <= 5; i++) { await sleep(200); dock.step({ id: "k5", count: i * 3, progress: i / 5 }); }
+  dock.step({ id: "k5", status: "done", detail: "ERC 0 · DRC 0 · all 15 pass" });
+  dock.setStatus("Rendering");
+  dock.step({ id: "k6", kind: "task", title: "Rendering", status: "running", progress: 0 });
+  for (let i = 1; i <= 4; i++) { await sleep(260); dock.step({ id: "k6", progress: i / 4 }); }
+  if (!alive()) return;
+  dock.step({ id: "k6", status: "done", detail: "36 frames" });
+  dock.loader(false);
+  const id = "a" + me;
+  dock.setState("speaking");
+  dock.answerStart(id, { ref: "BZ1" });
+  await stream(id, "Added a buzzer BZ1 driven by Q3 from GPIO 25 of U6, with R14 limiting the base current. The first route left two nets open, the second closed them. All 15 checks pass.");
+  dock.answerEnd(id, { mentions: ["BZ1", "Q3", "R14", "U6"], followups: ["Make it louder", "Move BZ1 to the back"], seconds: 7.9 });
+  dock.say("Added the buzzer. All fifteen checks pass.");
+  dock.setState("success"); dock.setStatus("Buzzer added");
+  await sleep(2400); if (alive()) { dock.setState("idle"); dock.setStatus(""); }
+}
+
+$("dAsk").addEventListener("click", () => typeIn("What is this board for?"));
+$("dBuzz").addEventListener("click", () => typeIn("Add a buzzer"));
+$("dApprove").addEventListener("click", async () => {
+  dock.setState("confused"); dock.setStatus("Need a decision");
+  const v = await dock.ask({ id: "q1", question: "Which buzzer should I use?", options: [{ id: "magnetic", label: "Magnetic buzzer", detail: "Louder, needs a driver transistor" }, { id: "piezo", label: "Piezo disc", detail: "Thin, runs straight from a GPIO" }] });
+  dock.setState(v ? "heard" : "idle"); dock.setStatus(v ? "Going with " + v.join(", ") : "Skipped");
+  document.body.dataset.ask = JSON.stringify(v);
+});
+$("dRec").addEventListener("click", async () => {
+  dock.setState("idle"); dock.setStatus("One suggestion");
+  const v = await dock.recommend({ id: "r1", title: "Move BZ1 to the bottom side", detail: "It frees 6 mm next to J1 and shortens the route to Q3.", confidence: 0.82, actions: [{ id: "accept", label: "Accept" }, { id: "alternatives", label: "Alternatives" }] });
+  dock.setStatus(v === "accept" ? "Moving BZ1" : v ? "Looking for alternatives" : "Dismissed");
+  document.body.dataset.rec = JSON.stringify(v);
+});
+$("dSay").addEventListener("click", () => dock.say("U6 is the brain of this board: an ESP32 module with Wi-Fi and Bluetooth."));
+$("dOpen").addEventListener("click", () => dock.expand(true));
+$("dClose").addEventListener("click", () => dock.expand(false));
+$("dClear").addEventListener("click", () => { run++; dock.clear(); });
+
+bindLiquid(document);
+</script>
+</body>
+</html>

@@ -1,0 +1,567 @@
+// The agent dock: a floating pill at the bottom centre with Etch's eyes, a mic and a one-line status. Hover or focus
+// melts it open into a panel with the current step, the trace, tool chips, task rows, the last answer and the
+// composer; leaving lets the panel drain back into the pill. While collapsed, each running step buds off the pill as
+// a small bubble and drops back in when it is done. Voice is primary: click the mic, or hold Space, to talk.
+//
+//   const dock = createDock(hostEl, { onSend(text, { via }), onMention(ref, { hover }), partScreenPos(ref) })
+//   see the method list at the bottom of createDock (setState, setStatus, setLevel, step, loader, answerStart,
+//   answerAppend, answerEnd, ask, recommend, say, listen, clear, expand, lookAt).
+//
+// Shapes live in one goo layer (pill, panel, bubbles), content sits above it and follows the same springs. Every
+// frame only writes clip-path / transform / opacity; layout is read once per change through ResizeObservers.
+import { spring, tick, reducedMotion, onReducedMotion, clamp, lerp, smooth } from "./spring.js";
+import { gooLayer, spawnBlob, squish, wobble } from "./goo.js";
+import { createEyes } from "./eyes.js";
+import { createVoiceAdapter, speakable } from "./voice-adapter.js";
+import { el, icon, pixelLoader, thinkingTrace, toolChip, taskRow, streamAnswer, approvalCard, recommendCard, bindMentions, fmtSecs } from "./trace.js";
+
+const OPEN_SPRING = { stiffness: 250, damping: 21 }, LEAVE_GRACE = 60;
+const PILL_H = 56, GAP = 8, EYES_W = 46, MIC = 40, PAD = 8;
+const STATES = new Set(["idle", "userTalking", "heard", "thinking", "working", "speaking", "success", "confused", "error", "offline"]);
+const DEFAULT_STATUS = "Ask Etch · hold Space to talk";
+const plain = (s) => String(s || "").replace(/`([^`]+)`/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\s+/g, " ").trim();
+
+export function createDock(hostEl, opts = {}) {
+  const host = hostEl || document.body;
+  let W = 0, MAXH = 0;
+
+  // ---------- DOM ----------
+  const root = el("div", "ag-dock");
+  root.dataset.open = "false";
+  const goo = el("div", "ag-dock-goo");
+  goo.setAttribute("aria-hidden", "true");
+  const panelBlob = el("div", "ag-blob ag-blob-panel"), pillBlob = el("div", "ag-blob ag-blob-pill");
+  goo.append(panelBlob, pillBlob);
+  gooLayer(goo, { id: "ag-goo-dock", blur: 9, alpha: 22, shift: -10, after: "drop-shadow(0 10px 22px rgba(22,28,45,.13)) drop-shadow(0 1px 2px rgba(22,28,45,.12))" });
+
+  const phLine = el("div", "ag-ph-line");
+  const phLoader = pixelLoader({ size: "sm" });
+  const header = el("div", "ag-ph", phLine, phLoader.el);
+  const turnsEl = el("div", "ag-turns");
+  const empty = el("div", "ag-empty", el("div", "ag-empty-t", "What should we look at?"), el("div", "ag-empty-d", "Ask about any part, or ask for a change. Click the mic or hold Space to talk."));
+  const scroll = el("div", "ag-scroll", empty, turnsEl);
+  const inner = el("div", "ag-panel-in", header, scroll);
+  const panel = el("div", "ag-panel", inner);
+  panel.setAttribute("role", "region");
+  panel.setAttribute("aria-label", "Etch agent");
+  panel.inert = true;
+
+  const bubbles = el("div", "ag-bubbles");
+  const eyesWrap = el("div", "ag-pill-eyes");
+  const eyes = createEyes(eyesWrap);
+  const statusText = el("span", "ag-status-t", DEFAULT_STATUS);
+  const pillLoader = pixelLoader({ size: "xs" });
+  const status = el("div", "ag-status", pillLoader.el, statusText);
+  status.setAttribute("aria-live", "polite");
+  const input = el("input", "ag-input");
+  input.type = "text"; input.placeholder = "Ask Etch or describe a change"; input.setAttribute("aria-label", "Message Etch"); input.maxLength = 400;
+  input.autocomplete = "off";
+  const send = el("button", "ag-send lq-btn", icon("send"));
+  send.type = "submit"; send.setAttribute("aria-label", "Send");
+  const form = el("form", "ag-compose", input, send);
+  const mic = el("button", "ag-mic lq-btn", icon("mic"));
+  mic.type = "button"; mic.setAttribute("aria-label", "Talk to Etch (or hold Space)");
+  const pill = el("div", "ag-pill", eyesWrap, status, mic, form);
+  // the pill comes first in tab order: mic, then (once open) the composer and the panel
+  root.append(goo, pill, panel, bubbles);
+  host.append(root);
+  squish(send); squish(mic);
+
+  // ---------- springs ----------
+  const o = spring(0, { preset: OPEN_SPRING, precision: 0.001, onUpdate: draw });
+  const pw = spring(220, { preset: { stiffness: 300, damping: 22 }, precision: 0.05, onUpdate: draw });
+  const hs = spring(140, { preset: { stiffness: 260, damping: 26 }, precision: 0.05, onUpdate: draw });
+  const pk = spring({ x: 1, y: 1 }, { preset: "wobbly", precision: 0.0008, onUpdate: (v) => { const s = v.x === 1 && v.y === 1 ? "" : `${v.x} ${v.y}`; pillBlob.style.scale = s; eyesWrap.style.scale = s; } });
+  let collapsedW = 220;
+
+  function draw() {
+    const ov = clamp(o.value, 0, 1.08), oc = clamp(ov);
+    const ph = Math.min(MAXH, hs.value) * oc;
+    if (ph < 1) { panelBlob.style.clipPath = panel.style.clipPath = "inset(50% 50% 50% 50%)"; }
+    else {
+      const visW = lerp(Math.min(collapsedW, W) * 0.62, W, oc) * (ov > 1 ? 1 + (ov - 1) * 0.15 : 1);
+      const side = Math.max(0, (W - visW) / 2);
+      const c = `inset(${(MAXH - ph).toFixed(1)}px ${side.toFixed(1)}px 0px ${side.toFixed(1)}px round 22px)`;
+      panelBlob.style.clipPath = c; panel.style.clipPath = c;
+    }
+    const a = smooth(0.45, 1, oc);
+    inner.style.opacity = a.toFixed(3);
+    inner.style.transform = `translateY(${((1 - oc) * 12).toFixed(1)}px)`;
+    const p = clamp(pw.value, 120, W), side = (W - p) / 2;
+    pillBlob.style.clipPath = pill.style.clipPath = `inset(0px ${side.toFixed(1)}px round ${PILL_H / 2}px)`;
+    eyesWrap.style.transform = `translateX(${(side + PAD).toFixed(1)}px)`;
+    status.style.transform = `translateX(${(side + PAD + EYES_W + 8).toFixed(1)}px)`;
+    status.style.opacity = (1 - smooth(0.02, 0.4, oc)).toFixed(3);
+    form.style.opacity = smooth(0.5, 1, oc).toFixed(3);
+    mic.style.transform = `translateX(${(W - side - PAD - MIC - oc * 2).toFixed(1)}px) scale(${lerp(1, 1.1, oc).toFixed(3)})`;
+  }
+
+  function layout() {
+    W = Math.round(Math.min(460, innerWidth - 24));
+    MAXH = Math.round(clamp(innerHeight - 170, 180, 540));
+    root.style.width = W + "px";
+    root.style.height = MAXH + GAP + PILL_H + "px";
+    panelBlob.style.height = panel.style.height = MAXH + "px";
+    inner.style.maxHeight = MAXH + "px";
+    sizeCollapsed();
+    pw.jump(open ? W : collapsedW);
+    draw();
+  }
+  function sizeCollapsed() {
+    const sw = Math.min(status.offsetWidth || 160, W - (PAD * 2 + EYES_W + 8 + MIC + 12));
+    collapsedW = Math.round(clamp(PAD + EYES_W + 8 + sw + 12 + MIC + PAD, 170, W));
+    if (!open) pw.set(collapsedW);
+  }
+
+  // ---------- open / close ----------
+  let asked = false;
+  let open = false, hover = false, focusIn = false, forced = null, pending = 0, suppress = false, closeT = 0;
+  const typing = () => document.activeElement === input || input.value.trim() !== "";
+  function want() {
+    if (forced === true) return true;
+    if (forced === false) return false;
+    return hover || focusIn || pending > 0 || typing();
+  }
+  function update() {
+    const w = want();
+    if (w === open) return;
+    open = w;
+    root.dataset.open = String(open);
+    panel.inert = !open;
+    form.inert = !open;
+    // one spring both ways, so closing feels exactly as quick as opening
+    o.config(OPEN_SPRING).set(open ? 1 : 0);
+    pw.set(open ? W : collapsedW);
+    if (open) { dropBubble(0); stick(true); }
+    else wobblePill(0.6);
+  }
+  let inside = false;
+  root.addEventListener("pointerover", () => {
+    inside = true;
+    if (suppress) return;
+    clearTimeout(closeT);
+    if (!hover) { hover = true; update(); }
+  });
+  root.addEventListener("pointerout", (e) => {
+    if (e.relatedTarget && root.contains(e.relatedTarget)) return;
+    inside = false; suppress = false;
+    clearTimeout(closeT);
+    // a short grace only absorbs pointer jitter across the edge (or the gap between panel and pill)
+    closeT = setTimeout(() => { hover = false; update(); }, LEAVE_GRACE);
+  });
+  root.addEventListener("focusin", () => { focusIn = true; if (forced === false) forced = null; update(); });
+  root.addEventListener("focusout", (e) => {
+    if (e.relatedTarget && root.contains(e.relatedTarget)) return;
+    setTimeout(() => { if (!root.contains(document.activeElement)) { focusIn = false; update(); } }, 0);
+  });
+  input.addEventListener("input", update);
+  root.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !open || pending > 0) return;
+    e.preventDefault();
+    forced = null; hover = false; focusIn = false; suppress = inside; input.value = "";
+    if (root.contains(document.activeElement)) document.activeElement.blur();
+    update();
+  });
+  // touch: a tap on the pill opens / closes it
+  pill.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "touch" || e.target.closest(".ag-mic, .ag-compose")) return;
+    forced = open ? null : true; hover = false; update();
+  });
+  bubbles.addEventListener("click", () => { forced = null; hover = true; update(); });
+
+  function wobblePill(s = 1) { pk.impulse({ x: 0.9 * s, y: -1.4 * s }); }
+
+  // ---------- size tracking ----------
+  const ro = new ResizeObserver(() => {
+    hs.set(inner.offsetHeight || 140);
+    if (!open) sizeCollapsed();
+  });
+  ro.observe(inner); ro.observe(status);
+  let stickRaf = 0;
+  function stick(force) {
+    if (stickRaf) return;
+    stickRaf = requestAnimationFrame(() => {
+      stickRaf = 0;
+      const near = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 120;
+      if (force || near) scroll.scrollTop = scroll.scrollHeight;
+    });
+  }
+
+  // ---------- bubbles (collapsed only) ----------
+  let bub = null, bubT = 0;
+  function showBubble(text, { id = null, kind = "step", caption = false, done = false } = {}) {
+    if (open || !text) return;
+    clearTimeout(bubT);
+    const pillTop = MAXH + GAP;
+    if (!bub) {
+      const c = el("div", "ag-bub");
+      bubbles.append(c);
+      bub = { c, id, blob: null };
+    }
+    bub.id = id;
+    const c = bub.c;
+    c.className = "ag-bub" + (caption ? " caption" : "") + (done ? " done" : "");
+    c.replaceChildren(...[caption ? null : done ? icon("done", "is-done") : kind === "answer" ? icon("spark", "is-spark") : el("span", "ag-spin"), el("span", "ag-bub-t", text)].filter(Boolean));
+    c.style.maxWidth = W - 24 + "px";
+    const w = c.offsetWidth, h = c.offsetHeight;
+    const to = { x: W / 2, y: pillTop - 12 - h / 2 };
+    if (!bub.blob) bub.blob = spawnBlob(goo, { from: { x: W / 2, y: pillTop + PILL_H / 2 }, to, w, h, radius: Math.min(h / 2, 20), content: c, className: "ag-blob-bub" });
+    else { bub.blob.resize(w, h); bub.blob.moveTo(to.x, to.y); }
+  }
+  function dropBubble(delay = 0) {
+    clearTimeout(bubT);
+    if (!bub) return;
+    const b = bub;
+    bubT = setTimeout(() => {
+      if (bub !== b) return;
+      bub = null;
+      b.blob.absorb({ x: W / 2, y: MAXH + GAP + PILL_H / 2 }).then(() => { b.c.remove(); if (!open) { wobblePill(1); eyes.react("blink"); } });
+    }, delay);
+  }
+
+  // ---------- state ----------
+  let base = "idle", overlay = null, overlayT = 0, statusBase = "", statusTemp = "";
+  function paintState() {
+    const s = overlay || base;
+    eyes.setState(s);
+    root.dataset.state = s;
+  }
+  function setOverlay(s, ms = 0) {
+    clearTimeout(overlayT);
+    overlay = s; paintState();
+    if (s && ms) overlayT = setTimeout(() => { overlay = null; paintState(); }, ms);
+  }
+  function paintStatus() {
+    const t = statusTemp || statusBase || DEFAULT_STATUS;
+    if (statusText.textContent === t) return;
+    statusText.textContent = t;
+    statusText.classList.remove("ag-in"); void statusText.offsetWidth; statusText.classList.add("ag-in");
+  }
+  let curLine = "";
+  function paintLine() {
+    let t = "";
+    for (const s of steps.values()) if (s.data.status === "running" && s.data.title) t = s.data.title;
+    t = t || curLine || statusBase || "";
+    if (phLine.textContent !== t) phLine.textContent = t;
+  }
+
+  // ---------- eyes follow parts ----------
+  let hoverRef = null, lookRef = null, clickRef = null, clickT = 0, answerRef = null, eyeJob = null;
+  function refNow() {
+    if (hoverRef) return hoverRef;
+    if (lookRef) return lookRef;
+    if (clickRef) return clickRef;
+    let r = null;
+    for (const s of steps.values()) if (s.data.status === "running" && s.data.ref) r = s.data.ref;
+    return r || answerRef;
+  }
+  function retarget() {
+    if (eyeJob || !opts.partScreenPos) { if (!opts.partScreenPos) eyes.lookAt(null); return; }
+    eyeJob = tick(() => {
+      const r = refNow();
+      if (!r) { eyes.lookAt(null); eyeJob = null; return false; }
+      let p = null;
+      try { p = opts.partScreenPos(r); } catch (e) { p = null; }
+      if (p && isFinite(p.x) && isFinite(p.y)) eyes.lookAt(p.x, p.y); else eyes.lookAt(null);
+      return true;
+    });
+  }
+  bindMentions(root, (ref, m) => {
+    if (m.hover === true) hoverRef = ref;
+    else if (m.hover === false) { if (hoverRef === ref) hoverRef = null; }
+    else { clickRef = ref; clearTimeout(clickT); clickT = setTimeout(() => { clickRef = null; retarget(); }, 1800); }
+    retarget();
+    if (opts.onMention) opts.onMention(ref, m.hover === undefined ? {} : { hover: m.hover });
+  });
+
+  // ---------- turns ----------
+  const steps = new Map(), answers = new Map(), cards = new Map();
+  let turn = null;
+  function newTurn(text, via) {
+    if (turn) {
+      turn.el.classList.add("old");
+      if (turn.trace) { if (!turn.trace.finished) turn.trace.done(); turn.trace.setOpen(false); }
+    }
+    const t = { el: el("div", "ag-turn lq-in"), trace: null, chips: null, tasks: null, loader: null, ans: el("div", "ag-turn-ans"), cards: el("div", "ag-turn-cards") };
+    if (text) {
+      const u = el("div", "ag-you", el("span", "ag-you-t", text));
+      if (via === "voice") u.prepend(icon("mic", "ag-you-ic"));
+      t.el.append(u);
+    }
+    t.act = el("div", "ag-turn-act");
+    t.el.append(t.act, t.ans, t.cards);
+    turnsEl.append(t.el);
+    empty.hidden = true;
+    while (turnsEl.children.length > 8) turnsEl.firstChild.remove();
+    turn = t;
+    stick(true);
+    return t;
+  }
+  const cur = () => turn || newTurn();
+  // a trace whose rows are all finished folds into "Thought for …" a moment later, unless another step starts
+  function settleTrace(tr) {
+    clearTimeout(tr.settleT);
+    const busy = () => [...tr.rows.values()].some((r) => r.data.status === "running");
+    if (busy()) return;
+    tr.settleT = setTimeout(() => { if (!busy() && !tr.finished) tr.done(); }, 1200);
+  }
+  function doSend(text, via) {
+    text = String(text || "").trim();
+    if (!text) return;
+    newTurn(text, via);
+    asked = true; // sending is a user gesture, so Etch may answer out loud from here on
+    curLine = "";
+    paintLine();
+    if (opts.onSend) opts.onSend(text, { via });
+  }
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const t = input.value; input.value = "";
+    doSend(t, "typed"); update();
+  });
+
+  // ---------- voice ----------
+  let spaceWaiting = false, fakeSpeak = 0;
+  const voice = createVoiceAdapter({
+    onState(s, d) {
+      if (s === "listening") {
+        setOverlay("userTalking"); statusTemp = "Listening…"; paintStatus(); mic.classList.add("rec");
+        if (spaceWaiting) { spaceWaiting = false; dispatchEvent(new KeyboardEvent("keyup", { code: "Space", key: " " })); }
+      } else {
+        mic.classList.remove("rec");
+        if (s === "transcribing") { setOverlay("heard"); statusTemp = "Got it…"; }
+        else if (s === "speaking") { setOverlay("speaking"); statusTemp = ""; }
+        else if (s === "idle") { if (overlay !== "heard") setOverlay(null); statusTemp = ""; eyes.setLevel(0); }
+        else if (s === "off") { setOverlay(null); statusTemp = ""; if (d) caption(d); eyes.react("squish"); }
+        paintStatus();
+      }
+    },
+    onLevel(who, x) {
+      if ((who === "you" && overlay === "userTalking") || (who === "etch" && overlay === "speaking")) eyes.setLevel(x);
+      mic.style.setProperty("--lv", who === "you" ? clamp(x).toFixed(3) : "0");
+    },
+    onHeard(text) { setOverlay("heard", 1100); statusTemp = ""; paintStatus(); doSend(text, "voice"); },
+    onInterim(text) { statusTemp = text ? `“${text.length > 48 ? "…" + text.slice(-46) : text}”` : "Listening…"; paintStatus(); },
+    onCaption(text) { caption(text); },
+    onError(line) { eyes.react("squish"); caption(line); },
+  });
+  function caption(text) {
+    const t = plain(text);
+    if (!t) return;
+    curLine = t.length > 140 ? t.slice(0, 137) + "…" : t;
+    paintLine();
+    showBubble(curLine, { caption: true });
+    dropBubble(Math.max(2600, t.split(" ").length * 380));
+  }
+  mic.addEventListener("pointerdown", (e) => { if (e.button !== 0) return; e.preventDefault(); voice.toggle(); });
+  mic.addEventListener("pointerup", () => voice.release());
+  mic.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); if (!e.repeat) voice.toggle(); } });
+  mic.addEventListener("keyup", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); } });
+
+  // Space anywhere (outside text fields and other controls) is push-to-talk. Space on a focused control keeps its
+  // normal meaning and does not reach voice.js's window listener.
+  const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT" || a.isContentEditable); };
+  const onControl = () => { const a = document.activeElement; return !!a && a !== document.body && !!a.closest("button, a[href], summary, [role=button], [role=tab], [role=radio], [role=checkbox], [role=switch], [role=option], [role=menuitem]"); };
+  const kd = (e) => {
+    if (e.code !== "Space" || isTyping()) return;
+    if (onControl()) { e.stopPropagation(); return; }
+    e.preventDefault();
+    if (e.repeat) return;
+    if (!voice.created) { spaceWaiting = false; voice.start({ held: true }); }
+  };
+  const ku = (e) => {
+    if (e.code !== "Space" || isTyping()) return;
+    if (onControl()) { e.stopPropagation(); return; }
+    if (!voice.listening) spaceWaiting = true;
+    setTimeout(() => { spaceWaiting = false; }, 1500);
+  };
+  document.addEventListener("keydown", kd);
+  document.addEventListener("keyup", ku);
+
+  // ---------- reduced motion ----------
+  const paintRM = () => root.classList.toggle("rm", reducedMotion());
+  const offRM = onReducedMotion(paintRM);
+  paintRM();
+  const onResize = () => layout();
+  addEventListener("resize", onResize, { passive: true });
+  layout();
+  paintState(); paintLine();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { sizeCollapsed(); draw(); });
+
+  // ---------- public API ----------
+  const api = {
+    el: root,
+    eyes,
+    get open() { return open; },
+    get state() { return overlay || base; },
+
+    setState(s) {
+      if (!STATES.has(s)) return;
+      base = s;
+      // the agent moving on clears the dock's own short-lived voice looks
+      if (overlay === "heard" && s !== "idle") setOverlay(null);
+      paintState();
+    },
+    setStatus(text) { statusBase = plain(text); paintStatus(); paintLine(); },
+    setLevel(v) { eyes.setLevel(v); },
+
+    step(d) {
+      if (!d || d.id == null) return;
+      const kind = d.kind === "coding" ? "tool" : d.kind || "step";
+      const data = { ...d, kind, status: d.status || "running" };
+      let s = steps.get(d.id);
+      const was = s ? s.data.status : null;
+      if (s) { s.data = { ...s.data, ...data }; s.comp.update ? s.comp.update(s.data) : s.trace.row(s.data); }
+      else {
+        const t = cur();
+        let comp, trace = null;
+        if (kind === "tool") {
+          if (!t.chips) { t.chips = el("div", "ag-chips"); t.act.append(t.chips); }
+          comp = toolChip(data); t.chips.append(comp.el);
+        } else if (kind === "task") {
+          if (!t.tasks) { t.tasks = el("div", "ag-tasks"); t.tasks.setAttribute("role", "list"); t.act.append(t.tasks); }
+          comp = taskRow(data); t.tasks.append(comp.el);
+        } else {
+          if (!t.trace) { t.trace = thinkingTrace({ open: true }); t.act.prepend(t.trace.el); }
+          trace = t.trace; trace.row(data); comp = {};
+        }
+        s = { data, comp, trace, turn: t };
+        steps.set(d.id, s);
+      }
+      const st = s.data.status;
+      if (st === "running") showBubble(s.data.title, { id: d.id, kind });
+      else if (bub && bub.id === d.id) { showBubble(s.data.title, { id: d.id, kind, done: st === "done" }); dropBubble(st === "failed" ? 1400 : 650); }
+      if (st === "failed" && was !== "failed") eyes.react("shake");
+      if (s.trace) settleTrace(s.trace);
+      paintLine(); retarget(); stick();
+    },
+
+    loader(on, label) {
+      const t = cur();
+      if (on) {
+        if (!t.loader) { t.loader = pixelLoader({ label: label || "Working" }); t.loader.el.classList.add("ag-turn-loader", "lq-in"); t.act.prepend(t.loader.el); }
+        t.loader.start(label);
+        phLoader.start(); pillLoader.start();
+        root.classList.add("loading");
+      } else {
+        if (t.loader) { t.loader.stop(); t.loader.el.remove(); t.loader = null; }
+        phLoader.stop(); pillLoader.stop();
+        root.classList.remove("loading");
+      }
+      stick();
+    },
+
+    answerStart(id, { ref } = {}) {
+      const t = cur();
+      if (t.trace && !t.trace.finished) { t.trace.done(); t.trace.setOpen(false); }
+      const a = streamAnswer({ ref, onFollowup: (f) => doSend(f, "followup") });
+      t.ans.append(a.el);
+      answers.set(id, { a, bubbleAt: 0 });
+      answerRef = ref || null;
+      retarget();
+      showBubble("Answering…", { kind: "answer", id: "answer:" + id });
+      stick();
+      return a;
+    },
+    answerAppend(id, chunk) {
+      let x = answers.get(id);
+      if (!x) { api.answerStart(id); x = answers.get(id); }
+      x.a.append(chunk);
+      const now = performance.now();
+      if (!open && now - x.bubbleAt > 300) {
+        x.bubbleAt = now;
+        const p = plain(x.a.text);
+        showBubble(p.length > 90 ? p.slice(0, 88).replace(/\s+\S*$/, "") + "…" : p, { kind: "answer", id: "answer:" + id });
+      }
+      stick();
+    },
+    answerEnd(id, info = {}) {
+      const x = answers.get(id);
+      if (!x) return;
+      x.a.end(info);
+      const t = cur();
+      if (t.trace && !t.trace.finished) t.trace.done(info.seconds);
+      const first = speakable(x.a.text, 1);
+      curLine = first; paintLine();
+      if (!open && first) { showBubble(first.length > 110 ? first.slice(0, 108) + "…" : first, { kind: "answer", id: "answer:" + id, done: true }); dropBubble(4200); }
+      setTimeout(() => { if (answerRef && answers.get(id)) { answerRef = null; retarget(); } }, 2600);
+      stick();
+    },
+
+    ask({ id, question, options = [], multi = false } = {}) {
+      const key = id ?? "ask:" + Math.random();
+      if (cards.has(key)) cards.get(key).cancel();
+      const c = approvalCard({ question, options, multi });
+      cur().cards.append(c.el);
+      cards.set(key, c);
+      pending++; if (forced === false) forced = null; update();
+      eyes.react("surprise");
+      stick(true);
+      c.promise.finally(() => { if (cards.get(key) === c) cards.delete(key); pending = Math.max(0, pending - 1); update(); });
+      return c.promise;
+    },
+    recommend({ id, title, detail, confidence, actions } = {}) {
+      const key = id ?? "rec:" + Math.random();
+      if (cards.has(key)) cards.get(key).cancel();
+      const c = recommendCard({ title, detail, confidence, actions });
+      cur().cards.append(c.el);
+      cards.set(key, c);
+      pending++; if (forced === false) forced = null; update();
+      eyes.react("blink");
+      stick(true);
+      c.promise.finally(() => { if (cards.get(key) === c) cards.delete(key); pending = Math.max(0, pending - 1); update(); });
+      return c.promise;
+    },
+
+    say(text) {
+      const t = plain(text);
+      if (!t) return;
+      const spoken = voice.say(t, { force: opts.speak === "always" || asked });
+      if (!spoken) {
+        // nothing is spoken before the person has used their voice; the eyes still "say" it with the caption
+        caption(t);
+        clearInterval(fakeSpeak);
+        const t0 = performance.now(), dur = Math.max(1400, t.split(" ").length * 300);
+        setOverlay("speaking");
+        fakeSpeak = setInterval(() => {
+          const k = performance.now() - t0;
+          if (k > dur || overlay !== "speaking") { clearInterval(fakeSpeak); eyes.setLevel(0); if (overlay === "speaking") setOverlay(null); return; }
+          eyes.setLevel(0.25 + 0.3 * Math.abs(Math.sin(k / 95)));
+        }, 50);
+      }
+    },
+    listen() { voice.start({ auto: true }); },
+
+    clear() {
+      for (const c of cards.values()) c.cancel();
+      cards.clear(); steps.clear(); answers.clear();
+      turnsEl.replaceChildren(); turn = null; empty.hidden = false;
+      api.loader(false);
+      dropBubble(0);
+      answerRef = lookRef = hoverRef = clickRef = null; retarget();
+      curLine = ""; statusBase = ""; statusTemp = ""; paintStatus(); paintLine();
+      base = "idle"; setOverlay(null);
+      turn = null;
+    },
+    expand(v) {
+      if (v) { forced = true; suppress = false; }
+      else { forced = null; hover = false; suppress = inside; if (root.contains(document.activeElement)) document.activeElement.blur(); focusIn = false; }
+      update();
+    },
+    // extra: hold the eyes on a part (partScreenPos is polled each frame while set); null lets go
+    lookAt(ref) { lookRef = ref || null; retarget(); },
+
+    destroy() {
+      for (const c of cards.values()) c.cancel();
+      voice.stop(); offRM(); ro.disconnect();
+      document.removeEventListener("keydown", kd); document.removeEventListener("keyup", ku);
+      removeEventListener("resize", onResize);
+      eyes.destroy(); root.remove();
+    },
+  };
+  // react to the agent appearing to change the board: a little wobble on the pill
+  api.nudge = () => { wobblePill(1); wobble(statusText, 0.6); };
+  return api;
+}
+
+export { fmtSecs };
