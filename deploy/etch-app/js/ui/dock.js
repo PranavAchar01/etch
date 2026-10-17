@@ -193,9 +193,11 @@ export function createDock(hostEl, opts = {}) {
     if (show) badge.textContent = `${pending} waiting`;
   }
   let inside = false;
-  root.addEventListener("pointerover", () => {
+  root.addEventListener("pointerover", (e) => {
     inside = true;
     if (suppress) return;
+    // arriving straight on the collapsed mic does not open the dock, so the mic stays under the pointer for the click
+    if (!open && e.target.closest && e.target.closest(".ag-mic")) { clearTimeout(closeT); return; }
     clearTimeout(closeT);
     if (!hover) { hover = true; dismissed = false; update(); }
   });
@@ -400,6 +402,10 @@ export function createDock(hostEl, opts = {}) {
       if (via === "voice") u.prepend(icon("mic", "ag-you-ic"));
       t.el.append(u);
     }
+    // an earlier turn shows its message and a one-line result; a click opens it up again
+    t.el.addEventListener("click", (e) => {
+      if (t.el.classList.contains("old") && !t.el.classList.contains("full") && !e.target.closest("button, a, input")) t.el.classList.add("full");
+    });
     turnsEl.append(t.el);
     empty.hidden = true;
     while (turnsEl.children.length > 8) turnsEl.firstChild.remove();
