@@ -1,34 +1,33 @@
 # Etch backend API
 
 Base: the backend origin (port 3439 locally). All responses are JSON unless noted. CORS is limited to
-`ETCH_ORIGINS`. Endpoints marked **code** need the header `X-Etch-Code: <access code>` and return
-`401 {"error": "code"}` without it. Build ids look like `live-1792258295776`.
+`ETCH_ORIGINS`. There is no access code: every endpoint is open, protected by per-IP rate limits and a
+daily run cap. Build ids look like `live-1792258295776`.
 
 This document covers what the API does today. Changes stay backward compatible: new fields and new
 event types can appear, existing ones keep their meaning.
 
 ## Endpoints
 
-| method | path | code | body / query | response |
-|---|---|---|---|---|
-| GET | `/etch/health` | no | | `{ok, busy, queue, stt}` |
-| POST | `/etch/auth` | checks it | | `200 {ok:true}`, `401 {ok:false,error}`, `429` after too many tries |
-| POST | `/etch/live` | yes | `{mode, text, base?}` | `{job, token}` |
-| GET | `/etch/job` | yes | `?id=<job>&since=<N>` | `{events, next, done, state, stage, run}` |
-| POST | `/etch/cancel` | yes | `{job, token}` | `200 {ok:true,...}`, `403` wrong token, `409` cannot cancel |
-| GET | `/etch/builds` | yes | | `{builds:[...], now}` running and recent builds |
-| GET | `/etch/run` | yes | `?id=live-N` | `{events, build}` a finished build's events for replay |
-| GET | `/etch/thumb` | no | `?id=live-N` | PNG, last render frame |
-| GET | `/etch/zip` | yes | `?id=live-N` | ZIP, fab package (KiCad project, Gerbers, BOM) |
-| GET | `/etch/layers` | yes | `?id=live-N` | copper pours (zone fills) for the 3D view |
-| GET | `/etch/glb` | yes | `?id=live-N` | `model/gltf-binary` board model |
-| GET | `/etch/parts` | yes | `?id=live-N` | `{ok, ...}` placed parts for the viewer |
-| GET | `/etch/export` | yes | `?id=live-N` | export check result (`ok`, `reasons`) |
-| GET | `/etch/export.zip` | yes | `?id=live-N` | ZIP when checks pass, else `409 {error, reasons}` |
-| GET | `/etch/piece/<16 hex>.png` | no | | PNG of one KiCad library part (long cache) |
-| GET | `/etch/files/engine/out/live-*/frames/*.png`, `.../frames.json`, `.../sim.json` | no | | render frames and sim data |
-| POST | `/etch/stt` | yes | raw float32 16 kHz mono PCM, < 45 s | transcript JSON from the local STT server, `503` when offline |
-| POST | `/etch/tts` | yes | `{text}` | `audio/mpeg`, `503` when offline |
+| method | path | body / query | response |
+|---|---|---|---|
+| GET | `/etch/health` | | `{ok, busy, queue, stt}` |
+| POST | `/etch/live` | `{mode, text, base?}` | `{job, token}` |
+| GET | `/etch/job` | `?id=<job>&since=<N>` | `{events, next, done, state, stage, run}` |
+| POST | `/etch/cancel` | `{job, token}` | `200 {ok:true,...}`, `403` wrong token, `409` cannot cancel |
+| GET | `/etch/builds` | | `{builds:[...], now}` running and recent builds |
+| GET | `/etch/run` | `?id=live-N` | `{events, build}` a finished build's events for replay |
+| GET | `/etch/thumb` | `?id=live-N` | PNG, last render frame |
+| GET | `/etch/zip` | `?id=live-N` | ZIP, fab package (KiCad project, Gerbers, BOM) |
+| GET | `/etch/layers` | `?id=live-N` | copper pours (zone fills) for the 3D view |
+| GET | `/etch/glb` | `?id=live-N` | `model/gltf-binary` board model |
+| GET | `/etch/parts` | `?id=live-N` | `{ok, ...}` placed parts for the viewer |
+| GET | `/etch/export` | `?id=live-N` | export check result (`ok`, `reasons`) |
+| GET | `/etch/export.zip` | `?id=live-N` | ZIP when checks pass, else `409 {error, reasons}` |
+| GET | `/etch/piece/<16 hex>.png` | | PNG of one KiCad library part (long cache) |
+| GET | `/etch/files/engine/out/live-*/frames/*.png`, `.../frames.json`, `.../sim.json` | | render frames and sim data |
+| POST | `/etch/stt` | raw float32 16 kHz mono PCM, < 45 s | transcript JSON from the local STT server, `503` when offline |
+| POST | `/etch/tts` | `{text}` | `audio/mpeg`, `503` when offline |
 
 `/etch/live` fields:
 

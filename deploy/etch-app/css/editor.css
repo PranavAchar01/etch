@@ -275,14 +275,6 @@ body.nochat .chat.wide { margin-left: -621px; }
 /* toast, gate */
 .toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); background: #111; color: #fff; padding: 9px 16px; border-radius: 10px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 100; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-.gate { position: fixed; inset: 0; background: rgba(250, 250, 248, .72); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 90; padding: 16px; }
-.gate.show { display: flex; }
-.gate-card { width: 380px; max-width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 22px; display: flex; flex-direction: column; gap: 10px; }
-.gate-t { font-size: 17px; font-weight: 600; }
-.gate-s { font-size: 14px; color: var(--muted); }
-.gate-card input { height: 38px; border: 1px solid var(--line2); border-radius: 10px; padding: 0 12px; outline: 0; }
-.gate-err { font-size: 13px; color: var(--red); min-height: 18px; }
-.gate-row { display: flex; justify-content: flex-end; gap: 8px; }
 
 /* ---------- explore ---------- */
 body.ex { background: #fff; }
