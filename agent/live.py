@@ -24,6 +24,7 @@ from __future__ import annotations
 import concurrent.futures as cf
 import csv
 import json
+import os
 import re
 import subprocess
 import sys
@@ -1955,7 +1956,8 @@ def design(
         )
         err = f"prefilter: {pf.kind}" if pf else "mains voltage" if mains else "no board in the ask"
         return _refuse(stream, ask, out, t0, err, msg)
-    hit = board_store.lookup(ask) if not context else None
+    # ETCH_NO_STORE=1 (QA sweeps): always build fresh instead of answering from a stored board
+    hit = board_store.lookup(ask) if not context and not os.environ.get("ETCH_NO_STORE") else None
     if hit:
         stream.emit("lead", "say", text="I have built this one before. Here it is.")
         return _stored(stream, ask, out, hit, t0)
