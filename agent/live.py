@@ -1514,6 +1514,8 @@ def source_missing(
                 what=m.get("what"),
                 ok=False,
                 status=res.get("status"),
+                reason=f"no real KiCad symbol and footprint found for {m.get('what')}; not drawing one",
+                searched=[t.get("tier") for t in res.get("tiers") or []],
                 seconds=round(time.time() - t0, 2),
             )
             # no verdict here: the caller says whether the board stops or goes ahead without it (QA 10-17: this
