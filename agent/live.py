@@ -875,8 +875,13 @@ def assemble(
             design, kept
         ):  # before _auto_mcu: a split name is not a reason to add a Pico
             stream.emit("assembly", "repair", iteration=it, kind="nets", joined=joined)
-        if radio := _radio_fix(design, kept, ask):
+        if leds := _fix_leds(design, kept):  # before _auto_mcu: a lone cathode is not a signal
             keys.update(str(p["piece"]) for p in design.get("parts", []) if p.get("piece"))
+            stream.emit("lead", "say", text="LEDs: " + "; ".join(leds) + ".")
+        if radio := _radio_fix(design, kept, ask):
+            keys.update(
+                str(p["piece"]) for p in design.get("parts", []) if p.get("piece")
+            )
             stream.emit("lead", "say", text="Radio: " + "; ".join(radio) + ".")
         if added := _auto_mcu(design, kept, ask):
             keys.add(added["piece"])
@@ -886,7 +891,12 @@ def assemble(
             _wire_hinted(design, kept)
         firmware.tie_grounds(design, kept)
         _wire_mcu_supply(design, kept)
+        if drives := _wire_drives(design, kept):
+            stream.emit("lead", "say", text="Wired " + "; ".join(drives) + ".")
         _drop_lonely_gpio(design, kept)
+        if dropped := _drop_dangling_passives(design, kept):
+            stream.emit("lead", "say", text=f"Dropped {', '.join(dropped)}: one end went nowhere.")
+        _prune_commands(design)
         stand_ins = _led_stand_ins(
             design, kept, keys
         )  # before _fix_refs renames D1 on a capacitor to C1
@@ -1667,6 +1677,277 @@ def _drop_lonely_gpio(design: dict[str, Any], kept: list[dict[str, Any]]) -> Non
     # "3V3_EN only on U1 pin 37"). A module pin left open is how the module ships.
     for num in [n for n, net in pins.items() if str(net) in lonely]:
         del pins[num]
+    # A no-connect or reset label on another part's lone pin (OLED header pin 4 "RUN", a module's "NC" or "RST",
+    # live-1792269010803) is a pin the board leaves open too; its pull-up lives on the module.
+    for q in design.get("parts", []):
+        qp = q.get("pins") or {}
+        for num in [
+            n
+            for n, net in qp.items()
+            if str(net) in lonely and re.fullmatch(_OPEN_LABEL, _norm_net(str(net)))
+        ]:
+            del qp[num]
+
+
+_OPEN_LABEL = r"N_?C\d*|RST|RESET|RUN|3V3_EN|ADC_VREF|AGND"
+
+
+R_KEY = "kicad:Device:R@R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical"
+
+
+def _net_count(design: dict[str, Any]) -> dict[str, int]:
+    count: dict[str, int] = {}
+    for p in design.get("parts", []):
+        for net in (p.get("pins") or {}).values():
+            count[str(net)] = count.get(str(net), 0) + 1
+    return count
+
+
+def _pin_named(piece: dict[str, Any], name: str) -> str | None:
+    return next(
+        (
+            str(n)
+            for n, nm in (piece.get("pins") or {}).items()
+            if str(nm).upper() == name
+        ),
+        None,
+    )
+
+
+def _fix_leds(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """Single LEDs the picker left half wired, repaired in code instead of another model try (10-17 tracker runs:
+    live-1792273274109 "LED1_K only on D1 pin 1" twice, live-1792273514460 a lone LED on nets A and K,
+    live-1792273474850 "R1 has both pins on net LED_NET"). Per LED: a series resistor with both ends on the anode's
+    net is split (MCU side keeps the net, the anode gets its own); a dangling cathode goes to ground; a dangling
+    anode joins a resistor end that dangles, or gets a new 220 ohm resistor whose far end the MCU drives; an anode
+    on the drive net beside a resistor whose other end dangles moves to that end. Runs before _auto_mcu, so a lone
+    cathode is never mistaken for a signal. Returns notes for the say line."""
+    by_key = _cat() | {p["key"]: p for p in kept}
+    parts = design.get("parts", [])
+    count = _net_count(design)
+    gnd = max(
+        (n for n in count if _norm_net(n) in _GND_ALIASES),
+        key=lambda n: count[n],
+        default="GND",
+    )
+    notes: list[str] = []
+
+    def fam(p: dict[str, Any]) -> str:
+        return str((by_key.get(p.get("piece")) or {}).get("family") or "").lower()
+
+    def fresh(base: str) -> str:
+        names = set(_net_count(design))
+        n, i = base, 2
+        while n in names:
+            n, i = f"{base}{i}", i + 1
+        return n
+
+    res = [p for p in parts if fam(p) == "resistor" and len(p.get("pins") or {}) == 2]
+    for led in [p for p in parts if fam(p) == "led"]:
+        piece = by_key[led["piece"]]
+        a, k = _pin_named(piece, "A"), _pin_named(piece, "K")
+        if not a or not k:
+            continue
+        ref, pins = str(led.get("ref")), led.setdefault("pins", {})
+        if (
+            a in pins
+            and _norm_net(str(pins[a])) in _GND_ALIASES
+            and _norm_net(str(pins.get(k, ""))) not in _GND_ALIASES
+        ):
+            # drawn backwards, anode on ground (live-1792274265002: "LED1_A" on pin 1, which is K)
+            pins[a], pins[k] = pins.get(k), pins[a]
+            if pins[a] is None:
+                del pins[a]
+            notes.append(f"{ref} turned around, its anode was on {pins[k]}")
+        an = str(pins[a]) if a in pins else None
+        for r in res:
+            rp = r["pins"]
+            if an and {str(v) for v in rp.values()} == {an}:
+                new = fresh(f"{ref}_A")
+                rp[sorted(rp)[-1]] = new
+                pins[a] = new
+                notes.append(
+                    f"{r.get('ref')} was shorted on {an}, so {ref}'s anode now sits on {new} behind it"
+                )
+        count = _net_count(design)
+        if k not in pins or count.get(str(pins[k]), 0) == 1:
+            pins[k] = gnd
+            notes.append(f"{ref} cathode to {gnd}")
+        an = str(pins[a]) if a in pins else None
+        count = _net_count(design)
+        dangling = [  # (resistor, its dangling net) whose other end is wired
+            (r, str(v))
+            for r in res
+            for v in r["pins"].values()
+            if count.get(str(v)) == 1
+            and str(v) != an
+            and sum(count.get(str(w), 0) > 1 for w in r["pins"].values()) == 1
+        ]
+        if an is None or count.get(an) == 1:
+            if dangling:
+                pins[a] = dangling[0][1]
+                notes.append(f"{ref} anode joined {dangling[0][0].get('ref')}")
+            elif (
+                not any(an and an in map(str, r["pins"].values()) for r in res)
+                and R_KEY in by_key
+            ):
+                an = an or fresh(f"{ref}_A")
+                pins[a] = an
+                used = {str(p.get("ref")) for p in parts}
+                n = 1
+                while f"R{n}" in used:
+                    n += 1
+                drive = fresh(f"{ref}_DRV")
+                parts.append(
+                    {
+                        "ref": f"R{n}",
+                        "piece": R_KEY,
+                        "value": "220",
+                        "pins": {"1": drive, "2": an},
+                        "group": led.get("group", "io"),
+                        "why": f"Limits the current through {ref}: Etch added it because the LED had none.",
+                    }
+                )
+                if by_key[R_KEY] not in kept:
+                    kept.append(by_key[R_KEY])
+                res.append(parts[-1])
+                notes.append(f"added R{n}, 220 ohm, in series with {ref}")
+        else:
+            for r, net in dangling:
+                if an in map(str, r["pins"].values()):
+                    pins[a] = net
+                    notes.append(f"{ref} anode moved behind {r.get('ref')}")
+                    break
+    return notes
+
+
+def _wire_drives(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """Outputs and buttons the microcontroller should run but does not reach get a free GPIO pin each (10-17
+    tracker runs: an LED's resistor hung on VBUS, so "the microcontroller U1 has no GPIO pin wired to anything").
+    An LED's drive end (its resistor's far end, or the anode when it has none), a buzzer's + and a button's live
+    side move to a GPIO when that net dangles, or when it sits on a supply rail and no GPIO is wired yet (a button
+    from a rail to ground is moved always: pressing it would short the rail). The new net takes a name the
+    firmware already drives but nothing carries, so the picker's own program works. Returns notes."""
+    mp = firmware.mcu_part(design, kept)
+    if not mp:
+        return []
+    mcu, piece = mp
+    by_key = _cat() | {p["key"]: p for p in kept}
+    mpins = mcu.setdefault("pins", {})
+    names = {str(k): str(v) for k, v in (piece.get("pins") or {}).items()}
+    reserved = {str(n) for n in (piece.get("spice") or {}).get("reserved") or []}
+    no_gpio = not firmware._gpio_by_net(mcu, piece)
+    driven = list(
+        dict.fromkeys(
+            str(n)
+            for c in (design.get("firmware") or {}).get("commands") or []
+            if isinstance(c, dict)
+            for n in c.get("high") or []
+        )
+    )
+    parts = design.get("parts", [])
+    notes: list[str] = []
+
+    def fam(p: dict[str, Any]) -> str:
+        return str((by_key.get(p.get("piece")) or {}).get("family") or "").lower()
+
+    def rail(net: str) -> bool:
+        return bool(_RAIL_RX.fullmatch(net)) and _norm_net(net) not in _GND_ALIASES
+
+    def ground(net: str) -> bool:
+        return _norm_net(net) in _GND_ALIASES
+
+    count = _net_count(design)
+    gnd = max((n for n in count if ground(n)), key=lambda n: count[n], default="GND")
+    want: list[tuple[dict[str, Any], str, bool]] = []  # (part, pin, move even off a rail when GPIO is wired)
+    res = [p for p in parts if fam(p) == "resistor" and len(p.get("pins") or {}) == 2]
+    for p in parts:
+        f, pins = fam(p), {str(k): str(v) for k, v in (p.get("pins") or {}).items()}
+        pc = by_key.get(p.get("piece")) or {}
+        if f == "led" and (a := _pin_named(pc, "A")) in pins:
+            an = pins[a]
+            r = next(
+                (r for r in res if an in map(str, r["pins"].values()) and len(set(map(str, r["pins"].values()))) == 2),
+                None,
+            )
+            want += [(r, k, False) for k, v in r["pins"].items() if str(v) != an] if r else [(p, a, False)]
+        elif f == "buzzer" and (plus := _pin_named(pc, "+")) in pins:
+            minus = _pin_named(pc, "-")
+            if minus in pins and count.get(pins[minus]) == 1:
+                # "-" left on a net of its own (piano live-1792275159885 try 3, "BZ1_- only on BZ1 pin 2")
+                p["pins"][minus] = pins[minus] = gnd
+                notes.append(f"{p.get('ref')} - to {gnd}")
+            want.append((p, plus, False))
+        elif f in ("push button", "switch") and len(pins) == 2:
+            if len(set(pins.values())) == 1 and not ground(next(iter(pins.values()))):
+                # both legs on one net (live-1792267239993, "SW1 BTN/BTN" beside its pull-up): the second leg
+                # goes to ground, so a press pulls the input low
+                k2 = sorted(p["pins"], key=str)[-1]
+                p["pins"][k2] = gnd
+                pins[str(k2)] = gnd
+                notes.append(f"{p.get('ref')} pin {k2} to {gnd}, both legs were on one net")
+            grounded = any(ground(v) for v in pins.values())
+            want += [(p, k, True) for k, v in pins.items() if not ground(v) and grounded]
+    for p, k, always in want:
+        count = _net_count(design)
+        net = str(p["pins"][k])
+        if net in map(str, mpins.values()) and not rail(net):
+            continue  # already reaches the microcontroller
+        # a button's live side must reach the MCU even when a pull-up already shares its net
+        if not (count.get(net) == 1 or (always and not rail(net)) or (rail(net) and (no_gpio or always))):
+            continue
+        free = [n for n in names if n not in mpins and n not in reserved and names[n].upper().startswith("GPIO")]
+        free.sort(key=lambda n: "ADC" in names[n].upper())  # keep ADC pins for analog parts
+        if not free:
+            break
+        spare = [n for n in driven if n not in count]
+        if not rail(net) and (count.get(net) != 1 or net in driven or not spare):
+            new = net  # a name of its own, or a net other parts share (a pull-up): keep it
+        elif spare:
+            new = spare[0]  # a net the firmware drives that nothing carries yet
+        else:
+            new = next((names[n] for n in free if names[n] not in count), f"{p.get('ref')}_IO")
+        m = re.fullmatch(r"(?:GPIO|GP)_?(\d+)", new.upper())
+        pin = next(
+            (n for n in free if m and re.fullmatch(f"GPIO{int(m.group(1))}(_.*)?", names[n].upper())),
+            free[0],
+        )
+        p["pins"][k] = new
+        mpins[pin] = new
+        notes.append(f"{p.get('ref')} to {mcu.get('ref')} {names[pin]}" + (f" instead of {net}" if rail(net) else ""))
+    return notes
+
+
+def _drop_dangling_passives(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[str]:
+    """A resistor or capacitor with one end on a supply rail or ground and the other on nothing connects nothing:
+    a regulator's ADJ divider left behind when the regulator was dropped (live-1792274265002, "ADJ only on R2
+    pin 2"). Runs after every wiring repair, so a dangling end that should reach the MCU already does."""
+    by_key = _cat() | {p["key"]: p for p in kept}
+    count = _net_count(design)
+    out, keep = [], []
+    for p in design.get("parts", []):
+        nets = [str(n) for n in (p.get("pins") or {}).values()]
+        fam = str((by_key.get(p.get("piece")) or {}).get("family") or "").lower()
+        if (
+            fam in ("resistor", "capacitor")
+            and len(nets) == 2
+            and sorted(count.get(n, 0) == 1 for n in nets) == [False, True]
+            and any(_RAIL_RX.fullmatch(n) for n in nets if count.get(n, 0) > 1)
+        ):
+            out.append(str(p.get("ref")))
+            continue
+        keep.append(p)
+    design["parts"] = keep
+    return out
+
+
+def _prune_commands(design: dict[str, Any]) -> None:
+    """Firmware commands that drive a net no pin carries (GPIO1 when the board's one LED sits on GPIO0) can never
+    pass the firmware test; they drive nothing, so those names are dropped from the command."""
+    on = set(_net_count(design))
+    for c in (design.get("firmware") or {}).get("commands") or []:
+        if isinstance(c, dict) and isinstance(c.get("high"), list):
+            c["high"] = [n for n in c["high"] if str(n) in on]
 
 
 def _wire_mcu_supply(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
@@ -1699,6 +1980,12 @@ def _wire_mcu_supply(design: dict[str, Any], kept: list[dict[str, Any]]) -> None
             pin = names.get("VSYS" if power_in else "VBUS")
         elif up in _SUPPLY_3V3:
             pin = names.get("3V3")
+        elif re.search(r"BAT|VIN", up) and (by_key.get(owner.get("piece")) or {}).get(
+            "family", ""
+        ) in _POWER_IN:
+            # a cell's + on its own net (VBAT, BAT+): the Pico runs from it through VSYS (10-17, live-1792273371898
+            # failed "VBAT only on BT1 pin 1")
+            pin = names.get("VSYS")
         else:
             continue
         if pin and pin not in pins:
@@ -1764,10 +2051,10 @@ def _radio_fix(
     for part in design.get("parts", []):
         key = str(part.get("piece", ""))
         nets = [str(n) for n in (part.get("pins") or {}).values()]
-        if re.search(r"antenna|:ANT", key, re.I) and all(
-            n in lonely for n in nets
-        ):
-            did.append(f"dropped {part.get('ref')}, the antenna on the module does that job")
+        if re.search(r"antenna|:ANT", key, re.I) and all(n in lonely for n in nets):
+            did.append(
+                f"dropped {part.get('ref')}, the antenna on the module does that job"
+            )
             continue
         keep.append(part)
     design["parts"] = keep
@@ -1778,7 +2065,9 @@ def _radio_fix(
                 part["piece"] = PICO_W_KEY
                 if cat[PICO_W_KEY] not in kept:
                     kept.append(cat[PICO_W_KEY])
-                did.append(f"{part.get('ref')} is a Pico W so the board has Bluetooth and Wi-Fi")
+                did.append(
+                    f"{part.get('ref')} is a Pico W so the board has Bluetooth and Wi-Fi"
+                )
     return did
 
 
@@ -1798,13 +2087,7 @@ def _auto_mcu(
     if not lonely:
         return None
     cat = _cat()
-    key = (
-        PICO_W_KEY
-        if re.search(
-            _WIRELESS, ask.lower()
-        )
-        else PICO_KEY
-    )
+    key = PICO_W_KEY if re.search(_WIRELESS, ask.lower()) else PICO_KEY
     if key not in cat:
         return None
     by_key = {p["key"]: p for p in kept} | cat
@@ -1925,8 +2208,10 @@ _GENERIC_TOKENS = {
 }
 _MCU_HINT = re.compile(
     r"(^|_)(GPIO\w*|GP\d+|PICO\w*|MCU\w*|ADC\w*|ALERT|INT|IRQ|PWM\w*|SIG|SENSE|SENSOR\w*|DATA|CTRL|EN|BTN\w*|"
-    r"BUTTON\w*|SDA|SCL|TX|RX|MIC\w*|AUDIO\w*|FAN\w*|TEMP\w*)(_|$)"
+    r"BUTTON\w*|SDA|SCL|TXD?\d*|RXD?\d*|UART\w*|DET|CD|MIC\w*|AUDIO\w*|FAN\w*|TEMP\w*)(_|$)"
 )
+# a module's TX feeds the MCU's RX: UART0 (GP1 RX pin 2, GP0 TX pin 1), then UART1 on GP9/GP8
+_PICO_UART = {"TX": ("2", "12"), "RX": ("1", "11")}
 
 
 def _norm_net(n: str) -> str:
@@ -2058,6 +2343,40 @@ def _merge_lonely(design: dict[str, Any], kept: list[dict[str, Any]]) -> list[st
     return notes
 
 
+# SD card in SPI mode on the Pico: (MISO, CS, SCK, MOSI) pin numbers for SPI0 GP16-19, SPI1 GP8-11, SPI1 GP12-15
+_PICO_SPI = (("21", "22", "24", "25"), ("11", "12", "14", "15"), ("16", "17", "19", "20"))
+_SD_ROLE = (
+    r"DAT0|D0|DO|MISO|SDO",
+    r"DAT3(_CD)?|CD_DAT3|CS|SS|NSS",
+    r"CLK|SCK|SCLK",
+    r"CMD|DI|MOSI|SDI",
+)
+
+
+def _wire_sd(design: dict[str, Any], pins: dict[str, Any]) -> None:
+    """A card slot the picker named in SDIO terms (CLK, CMD, DAT0-3) but wired to nothing (10-17 sweep, mp4 player
+    live-1792274693843 failed three tries on it): run the card in SPI mode on the first free Pico SPI bus. DAT1 and
+    DAT2 are unused in SPI mode and left open."""
+    lonely = set(_lonely_nets(design))
+    for q in design.get("parts", []):
+        qp = q.get("pins") or {}
+        nets = [str(n) for n in qp.values() if str(n) in lonely]
+        role = [
+            next((n for n in nets if re.fullmatch(r, _norm_net(n))), None)
+            for r in _SD_ROLE
+        ]
+        if not all(role[1:3]) or not any(re.fullmatch(r"DAT\d", _norm_net(n)) for n in nets):
+            continue
+        bus = next((b for b in _PICO_SPI if not set(b) & set(pins)), None)
+        if not bus:
+            return
+        for num, net in zip(bus, role):
+            if net:
+                pins[num] = net
+        for num in [n for n, net in qp.items() if re.fullmatch(r"DAT[12]", _norm_net(str(net)))]:
+            del qp[num]
+
+
 def _wire_hinted(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
     """A dangling signal net whose name says it belongs to the microcontroller (MIC_OUT, FAN_PWM, SENSOR_TEMP,
     GPIO_ADC, I2C_SDA, BTN) goes on a free module pin: SDA/SCL on the Pico's I2C0 pins, analog-sounding nets on a
@@ -2065,6 +2384,8 @@ def _wire_hinted(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
     part, piece = firmware.mcu_part(design, kept)
     names = {str(k): str(v) for k, v in (piece.get("pins") or {}).items()}
     pins = part.setdefault("pins", {})
+    if piece.get("key") in (PICO_KEY, PICO_W_KEY):
+        _wire_sd(design, pins)
     on_mcu = set(map(str, pins.values()))
     for net in _lonely_nets(design):
         up = _norm_net(net)
@@ -2088,6 +2409,10 @@ def _wire_hinted(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
             PICO_W_KEY,
         ):
             want = [_PICO_I2C["SCL"]]
+        elif (uart := re.search(r"(?:^|_)(TX|RX)D?\d*(?:$|_)", up)) and piece.get(
+            "key"
+        ) in (PICO_KEY, PICO_W_KEY):
+            want = list(_PICO_UART[uart.group(1)])
         elif re.search(r"ADC|ANALOG|MIC|AUDIO|TEMP|SENSE|SENSOR|POT|LDR", up):
             want = [
                 n for n in _PICO_ADC if piece.get("key") in (PICO_KEY, PICO_W_KEY)
