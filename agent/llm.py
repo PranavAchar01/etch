@@ -141,6 +141,10 @@ def _status(e: Exception) -> int | None:
 RATE_FILE = config.OUT / ".primary-rate.json"
 RATE_WINDOW_S = 60.0
 RETRY_AFTER_MAX_S = 20.0
+# the longest one request waits for a slot in the shared rate window before it gives up with a ModelError (the
+# picker then says the model was slow) instead of sleeping without a word: every Etch process on this Mac shares
+# the window, so local QA sweeps could otherwise park a prod run indefinitely (crash-fidget 10-17)
+PACE_MAX_S = 75.0  # one full 60 s window, not two
 
 
 def _rate_file(key: str = "") -> Path:
@@ -189,6 +193,11 @@ def _pace(base_url: str, now=time.time, sleep=time.sleep, key: str = "") -> floa
                 wait = RATE_WINDOW_S - (t - min(stamps)) + 0.05
             finally:
                 fcntl.flock(lk, fcntl.LOCK_UN)
+            if waited + wait > PACE_MAX_S:
+                raise ModelError(
+                    f"no free model slot after {round(waited, 1)} s: {config.RATE_PER_MIN} requests a minute are "
+                    "in use by other runs"
+                )
             sleep(wait)
             waited += wait
 

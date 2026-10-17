@@ -430,7 +430,11 @@ def worker(job: Job):
         job.proc = proc
         if job.cancelled:  # cancelled in the instant between the check above and the spawn
             threading.Thread(target=stop_group, args=(job,), daemon=True).start()
-        timer = threading.Timer(RUN_TIMEOUT_S, lambda: stop_group(job))
+        def _timed_out():
+            job.timed_out = True
+            stop_group(job)
+
+        timer = threading.Timer(RUN_TIMEOUT_S, _timed_out)
         timer.start()
         ok = None
         for line in proc.stdout:
@@ -452,6 +456,13 @@ def worker(job: Job):
         errf.close()
         if job.cancelled:
             pass
+        elif getattr(job, "timed_out", False):  # the backend's last-resort cap, after the engine's own watchdog
+            mins = round(RUN_TIMEOUT_S / 60)
+            job.emit({"agent": "lead", "type": "say", "t": 0,
+                      "text": f"I stopped this build after {mins} minutes with no result. It was stuck, not slow. "
+                              "Try again in a minute."})
+            job.emit({"agent": "lead", "type": "error", "t": 0, "error": f"timeout: run stopped after {mins} min"})
+            job.state, job.stage = "failed", f"stopped after {mins} minutes"
         elif rc != 0:
             tail = [x for x in err.splitlines() if x.strip()][-1:] or ["engine stopped"]
             saved = save_engine_err(job, err, rc)
