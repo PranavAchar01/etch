@@ -19,6 +19,7 @@ import { createBoardList } from "./board-list.js";
 import { createDrop } from "./drop.js";
 import { createNewBoardHero } from "./new-board.js";
 import { createStartBackdrop } from "./start-backdrop.js";
+import { createRenderLoader } from "./render-loader.js";
 import { bindLiquid, liquidTabs, wobble } from "../ui/goo.js";
 
 registerSW();
@@ -64,6 +65,8 @@ for (const [id, name] of [["copyB", "copy"], ["pasteB", "paste"], ["dupB", "dup"
 for (const b of document.querySelectorAll(".top .btn, .tools .ib, .seg button, .pill-btn")) b.classList.add("lq-btn");
 
 const viewer = createBoardViewer($("cw"));
+// "Rendering your board" over the stage from the moment a build is done (or the page opens a board) until its model is in the scene
+const rl = createRenderLoader($("stage"));
 const overlay = createSelectionOverlay($("selOv"), viewer);
 let sel = [];
 
@@ -377,6 +380,7 @@ async function fetchBoard(steps, id = ID) {
 // render:done from a change: load the new run's board in place, keeping the camera and selection
 viewer.reload = (o = {}) => (o.design ? loadDesign(o) : reloadChange(o));
 const reloadChange = async ({ run } = {}) => {
+  rl.show();
   try {
     if (run && /^live-\d+$/.test(run) && api.hasBackend() && !api.status.mock) {
       const q = encodeURIComponent(run);
@@ -395,8 +399,9 @@ const reloadChange = async ({ run } = {}) => {
     }
     api.setBoard(board.id, board.parts, board.meta);
     renderSettings(); list?.render(); setSel(sel);
+    rl.hide();
     arrived();
-  } catch (e) { toast("Couldn't load the new version: " + e.message); }
+  } catch (e) { rl.fail("Couldn't render the new version."); toast("Couldn't load the new version: " + e.message); }
 };
 
 // ---------- a new board: the design build's run, loaded in place (render:done first, then lead:done ok) ----------
@@ -406,6 +411,7 @@ async function loadDesign({ run, done = false } = {}) {
   const key = mock ? "mock:" + run : run;
   if (loadedRun === key || loadingRun === key) return;
   loadingRun = key;
+  rl.show();
   try {
     let glb, parts, meta, layers = null, id;
     if (mock) {
@@ -427,6 +433,7 @@ async function loadDesign({ run, done = false } = {}) {
     }
     await viewer.load(glb, { parts, meta, layers, keepView: true });
     viewer.reset(); // ease from the empty workplane onto the new board
+    rl.hide();
     Object.assign(board, { id, kind: mock ? "gh" : "live", live: !mock, meta, parts, building: false });
     if (!mock) board.files = null;
     api.setBoard(id, parts, meta);
@@ -441,6 +448,7 @@ async function loadDesign({ run, done = false } = {}) {
     if (mock) remember(id);
     loadedRun = key;
   } catch (e) {
+    rl.fail("Couldn't render your board. Try opening it again.");
     toast("Couldn't load the new board: " + e.message);
     dock?.setState("confused"); dock?.say("The board is built, but I couldn't load it here. Try opening it again.");
   } finally { loadingRun = null; }
@@ -569,6 +577,7 @@ async function startNew() {
 
 async function main() {
   if (!ID && !NEW) { fail("No board chosen", `Pick one in <a href="${page("explore") + carry()}">Explore</a>, or <a href="${page("board") + carry({ new: 1 })}">build a new one</a>.`); return; }
+  if (ID) rl.show();
   await api.init();
   if (!api.status.mock) {
     const cfg = Q.get("api") ? {} : await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).catch(() => ({}));
@@ -626,6 +635,7 @@ async function main() {
   let data;
   try { data = await fetchBoard(steps); }
   catch (e) {
+    rl.fail("Couldn't load this board.");
     const missing = /missing|404/.test(e.message);
     steps.fail(missing ? "board" : "glb", missing ? "Not in the library" : e.message.replace(/<[^>]+>/g, ""));
     fail(missing ? "This board isn't in the library" : "Couldn't load this board",
@@ -639,7 +649,8 @@ async function main() {
   viewer.on("ready", () => { hidePoster(); steps.done("render", `${Object.keys(viewer.parts).length} with 3D bodies`); });
   try {
     await viewer.load(data.glb, { parts: board.parts, meta: board.meta, layers: data.layers });
-  } catch (e) { steps.fail("render", e.message); fail("Couldn't show this board in 3D", esc(e.message)); return; }
+    rl.hide();
+  } catch (e) { rl.fail("Couldn't render this board."); steps.fail("render", e.message); fail("Couldn't show this board in 3D", esc(e.message)); return; }
   list = createBoardList($("paneBoard"), { board, viewer, actions });
   list.render();
   renderSettings();
