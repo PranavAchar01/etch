@@ -936,18 +936,22 @@ def load() -> dict[str, Any]:
 
 def _tag_index(pieces: list[dict[str, Any]]) -> dict[str, list[str]]:
     """tag -> piece keys, best first: usable pieces (3D model, pads match, SPICE, footprint resolves), then pieces
-    whose library or family says the tag (a relay in Relay before a relay driver IC), then hobby / through-hole
-    footprints first (_hobby_rank), then by key so the order never changes between runs."""
+    whose library or family says the tag (a relay in Relay before a relay driver IC), then routable sizes (never
+    01005/0402/WLP/BGA first), then hobby footprints (_hobby_rank: header, JST, terminal), then through-hole before
+    SMD, then by key so the order never changes between runs."""
     from .piece_tags import primary_tags
 
     rows: dict[str, list[tuple[int, int, int, str]]] = {}
     for p in pieces:
         prim = primary_tags(p)
         use = 0 if _usable(p) else 1
+        # hand-solderable first: 01005/0201/0402, WLP and BGA parts do not route on a hobby board
+        tiny = 1 if _TINY.search(p["footprint"]) else 0
+        pkg = 0 if "tht" in p["tags"] else 2 if "smd" in p["tags"] else 1
         hob = _hobby_rank(p["footprint"])
         for t in p["tags"]:
-            rows.setdefault(t, []).append((use, 0 if t in prim else 1, hob, p["key"]))
-    return {t: [r[3] for r in sorted(v)] for t, v in sorted(rows.items())}
+            rows.setdefault(t, []).append((use, 0 if t in prim else 1, tiny, hob, pkg, p["key"]))
+    return {t: [r[-1] for r in sorted(v)] for t, v in sorted(rows.items())}
 
 
 def tagged(tag: str, k: int = 20, usable: bool = True) -> list[dict[str, Any]]:

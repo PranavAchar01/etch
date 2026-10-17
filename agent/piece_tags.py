@@ -164,9 +164,9 @@ LIB_TAGS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("Board", ("board",)),
     ("Camera", ("camera",)),
     ("DiscreteSemi", ("discrete",)),
-    ("marbastlib-mx", ("keyswitch", "switch", "button")),
-    ("marbastlib-choc", ("keyswitch", "switch", "button")),
-    ("marbastlib-gateron", ("keyswitch", "switch", "button")),
+    ("marbastlib-mx", ("keyswitch", "switch")),
+    ("marbastlib-choc", ("keyswitch", "switch")),
+    ("marbastlib-gateron", ("keyswitch", "switch")),
     ("marbastlib-he", ("keyswitch", "hall")),
     ("marbastlib-promicroish", ("mcu", "mcu-board")),
 )
@@ -621,9 +621,10 @@ def tags_for(p: dict[str, Any]) -> list[str]:
             tags.add(f"connector-{int(m.group(1)) * int(m.group(2))}")
         elif p.get("pins"):
             tags.add(f"connector-{len(p['pins'])}")
-    if _THT.search(fname):
+    fp = p.get("footprint", "")  # the library nickname says it too: LED_THT, Resistor_SMD
+    if _THT.search(fp):
         tags.add("tht")
-    elif _SMD.search(fname):
+    elif _SMD.search(fp):
         tags.add("smd")
     return sorted(tags)
 
@@ -631,4 +632,12 @@ def tags_for(p: dict[str, Any]) -> list[str]:
 def primary_tags(p: dict[str, Any]) -> frozenset[str]:
     """Tags a piece gets from its library and family alone (what it IS, not what its description mentions)."""
     lib = p["lib_id"].split(":", 1)[0]
-    return frozenset(_lib_tags(lib)) | frozenset(FAMILY_TAGS.get(p.get("family", ""), ()))
+    name = p["lib_id"].split(":", 1)[-1]
+    extra = {"button"} if _BUTTON_SYMBOL.match(name) else set()
+    if lib == "Transistor_BJT":
+        # a discrete BJT is primarily its polarity (an optocoupler's NPN output is not)
+        extra |= {t for t in ("npn", "pnp") if t in set(p.get("tags") or ())}
+    return frozenset(_lib_tags(lib)) | frozenset(FAMILY_TAGS.get(p.get("family", ""), ())) | extra
+
+
+_BUTTON_SYMBOL = re.compile(r"SW_Push|SW_Tactile|SPST_Push|Button", re.I)
