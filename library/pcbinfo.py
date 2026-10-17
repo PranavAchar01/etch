@@ -162,6 +162,22 @@ def board_info(pcb: Path, sch_dir: Path | None = None) -> dict[str, Any]:
     }
 
 
+def footprint_models(pcb: Path) -> list[dict[str, Any]]:
+    """Every (model ...) on every footprint: {ref, path, hidden}. Footprints without a model are not listed
+    (no model is ever invented for them)."""
+    tree = parse_sexpr(pcb.read_text(errors="replace"))
+    out = []
+    for fp in children(tree, "footprint") + children(tree, "module"):
+        ref = prop(fp, "Reference") or _text(fp, "reference") or "?"
+        for m in children(fp, "model"):
+            if len(m) < 2 or not isinstance(m[1], str):
+                continue
+            hide = child(m, "hide")
+            hidden = "hide" in m[2:] or bool(hide and (len(hide) < 2 or hide[1] == "yes"))
+            out.append({"ref": ref, "path": m[1], "hidden": hidden})
+    return out
+
+
 # ---------------------------------------------------------------- GLB
 
 def glb_json(path: Path) -> dict:
