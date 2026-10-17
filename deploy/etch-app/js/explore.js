@@ -1,7 +1,7 @@
 // Explore: the open-source board library (world/index.json). Category chips with a liquid indicator, an
 // expanding search, a licence switch, sort, a lazily filled grid of springy cards, and prefetch: boards near the
 // viewport get their small files warmed into Cache Storage, a hovered or touched board its GLB as well.
-import { Q, $, h, esc, icon, LOGO, carry, page, fmtStars, prefetchBoard, boardFiles, WORLD, registerSW, keyBackdrop } from "./common.js";
+import { Q, $, h, esc, icon, LOGO, carry, page, fmtStars, prefetchBoard, cachedFetch, boardFiles, WORLD, registerSW } from "./common.js";
 
 import { spring, reducedMotion } from "./ui/spring.js";
 import { gooFilter } from "./ui/goo.js";
@@ -160,55 +160,164 @@ moveSeg(true);
 if (document.fonts) document.fonts.ready.then(() => moveSeg(true));
 
 // ---- cards ----
+// a board's meta.json (small, prefetched anyway) carries the pinned commit; the source arrow links there once known
+const metaOf = new Map();
+function meta(slug) {
+  if (!metaOf.has(slug)) metaOf.set(slug, cachedFetch(boardFiles(slug).meta, { refresh: false }).then((r) => (r.ok ? r.json() : null)).catch(() => null));
+  return metaOf.get(slug);
+}
+// warm a board: meta first (through the same cache, so it is fetched once), then the rest
+function warmBoard(slug, glb) {
+  meta(slug).then(() => setTimeout(() => prefetchBoard(slug, { glb }), 30));
+}
 const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => {
-  for (const e of es) if (e.isIntersecting) { prefetchBoard(e.target.dataset.slug, { glb: (+e.target.dataset.bytes || 0) < 1.5e6 && nearBudget-- > 0 }); io.unobserve(e.target); }
+  for (const e of es) if (e.isIntersecting) { const c = e.target; warmBoard(c.dataset.slug, (+c.dataset.bytes || 0) < 1.5e6 && nearBudget-- > 0); sourceLink(c); io.unobserve(c); }
 }, { rootMargin: "300px 0px" }) : null;
 let nearBudget = 8; // GLBs warmed just for being near the viewport; hover always warms
+function sourceLink(c) {
+  const s = c.querySelector(".src");
+  if (!s || s.dataset.pinned) return;
+  meta(c.dataset.slug).then((m) => {
+    if (!m || !m.commit) return;
+    const base = (m.url || s.href).replace(/\/+$/, "");
+    s.href = `${base}/tree/${m.commit}`;
+    s.dataset.pinned = "1";
+  });
+}
 
-// hover lifts on a spring, press squishes (wider and shorter), release wobbles back
-function springy(a) {
-  let lift = 0, press = 0;
+// KiCad's stills sit on a lavender gradient: key it out to pure white. The backdrop is flood-filled in from the
+// edges (so board pixels that happen to be lavender stay), its edge feathered, and the lavender un-mixed from the
+// feathered pixels so no tinted fringe is left. Returns a canvas cropped to the board, or null.
+function whiteThumb(img) {
+  const w = img.naturalWidth, hh = img.naturalHeight; if (!w || !hh) return null;
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = hh;
+  const g = cv.getContext("2d", { willReadFrequently: true });
+  let d;
+  try { g.drawImage(img, 0, 0); d = g.getImageData(0, 0, w, hh); } catch (e) { return null; }
+  const p = d.data, n = w * hh;
+  // backdrop colour per row from the outermost pixels; rows where the board touches an edge keep the last good one
+  const bg = new Float32Array(hh * 3);
+  let br = p[0], bgc = p[1], bb = p[2];
+  for (let y = 0; y < hh; y++) {
+    const a = y * w * 4, z = (y * w + w - 1) * 4;
+    const da = Math.abs(p[a] - br) + Math.abs(p[a + 1] - bgc) + Math.abs(p[a + 2] - bb), dz = Math.abs(p[z] - br) + Math.abs(p[z + 1] - bgc) + Math.abs(p[z + 2] - bb);
+    const e = da <= dz ? a : z; if (Math.min(da, dz) < 24) { br = p[e]; bgc = p[e + 1]; bb = p[e + 2]; }
+    bg[y * 3] = br; bg[y * 3 + 1] = bgc; bg[y * 3 + 2] = bb;
+  }
+  const LO = 14, HI = 46; // colour distance: below LO pure backdrop, above HI pure board
+  // the raytracer's contact shadow is the backdrop darkened (same hue): s = how much of the backdrop is left,
+  // off = how far the pixel is from that pure darkening, relative to its brightness
+  const dist = new Float32Array(n), shade = new Float32Array(n), shadow = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const y = (i / w) | 0, o = i * 4, r0 = bg[y * 3], g0 = bg[y * 3 + 1], b0 = bg[y * 3 + 2];
+    const dr = p[o] - r0, dg = p[o + 1] - g0, db = p[o + 2] - b0;
+    dist[i] = Math.sqrt(dr * dr + dg * dg + db * db);
+    const k = (p[o] * r0 + p[o + 1] * g0 + p[o + 2] * b0) / (r0 * r0 + g0 * g0 + b0 * b0 || 1);
+    const pr = p[o] - k * r0, pg = p[o + 1] - k * g0, pb = p[o + 2] - k * b0;
+    const off = Math.sqrt(pr * pr + pg * pg + pb * pb) / Math.max(1, k * Math.sqrt(r0 * r0 + g0 * g0 + b0 * b0));
+    shade[i] = k;
+    shadow[i] = k > 0.42 && k < 1.06 && off < 0.035 ? 1 : 0;
+  }
+  // flood from the border through backdrop and its shadow
+  const inBg = new Uint8Array(n), stack = new Int32Array(n); let sp = 0;
+  const push = (i) => { if (!inBg[i] && (dist[i] < HI || shadow[i])) { inBg[i] = 1; stack[sp++] = i; } };
+  for (let x = 0; x < w; x++) { push(x); push((hh - 1) * w + x); }
+  for (let y = 0; y < hh; y++) { push(y * w); push(y * w + w - 1); }
+  while (sp) { const i = stack[--sp], x = i % w; if (x > 0) push(i - 1); if (x < w - 1) push(i + 1); if (i >= w) push(i - w); if (i < n - w) push(i + w); }
+  const SHADOW = 0.3; // keep a faint, neutral grey contact shadow (0 = none)
+  // alpha: board 1, backdrop/shadow 0, the backdrop's soft edge in between; then a 3x3 box blur so the cut-out
+  // edge is anti-aliased instead of stair-stepped
+  const al = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    if (!inBg[i]) al[i] = 1;
+    else if (shadow[i]) al[i] = 0;
+    else { const t = Math.min(1, Math.max(0, (dist[i] - LO) / (HI - LO))); al[i] = t * t * (3 - 2 * t); }
+  }
+  const sa = new Float32Array(n);
+  for (let y = 0; y < hh; y++) for (let x = 0; x < w; x++) {
+    let sum = 0, c = 0;
+    for (let j = Math.max(0, y - 1); j <= Math.min(hh - 1, y + 1); j++) for (let k = Math.max(0, x - 1); k <= Math.min(w - 1, x + 1); k++) { sum += al[j * w + k]; c++; }
+    sa[y * w + x] = sum / c;
+  }
+  let x0 = w, y0 = hh, x1 = -1, y1 = -1;
+  for (let i = 0; i < n; i++) {
+    const o = i * 4, y = (i / w) | 0, x = i % w, a0 = al[i], a = sa[i];
+    // what sits behind: white, or the neutral shadow
+    const back = inBg[i] && shadow[i] ? 255 * (1 - SHADOW * (1 - Math.min(1, shade[i]))) : 255;
+    for (let c = 0; c < 3; c++) {
+      // the pixel with the lavender un-mixed out (composite = a0*fg + (1-a0)*bg)
+      const fg = a0 > 0.02 ? Math.min(255, Math.max(0, (p[o + c] - (1 - a0) * bg[y * 3 + c]) / a0)) : back;
+      p[o + c] = Math.round(a * fg + (1 - a) * back);
+    }
+    p[o + 3] = 255;
+    if (a > 0.06) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) return null;
+  g.putImageData(d, 0, 0);
+  // crop to the board with a little white margin so every board centres the same way
+  const m = 6; x0 = Math.max(0, x0 - m); y0 = Math.max(0, y0 - m); x1 = Math.min(w - 1, x1 + m); y1 = Math.min(hh - 1, y1 + m);
+  const out = document.createElement("canvas"); out.width = x1 - x0 + 1; out.height = y1 - y0 + 1;
+  out.getContext("2d").drawImage(cv, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+  return out;
+}
+
+// hover lifts the card a little on a spring and nudges the source arrow up-right; press squishes, release settles
+const lerpC = (a, b, t) => Math.round(a + (b - a) * Math.min(1, Math.max(0, t)));
+function springy(c) {
+  const arrow = c.querySelector(".src"), glyph = arrow.firstChild;
+  let lift = 0, press = 0, apress = 0;
   const draw = () => {
     const p = sq.value, y = ly.value;
-    a.style.transform = p || y ? `translateY(${(-6 * y).toFixed(2)}px) scale(${(1 + 0.03 * p).toFixed(4)}, ${(1 - 0.045 * p).toFixed(4)})` : "";
+    c.style.transform = Math.abs(p) > 1e-4 || Math.abs(y) > 1e-4 ? `translateY(${(-3 * y).toFixed(2)}px) scale(${(1 + 0.012 * p).toFixed(4)}, ${(1 - 0.02 * p).toFixed(4)})` : "";
+    glyph.style.transform = Math.abs(y) > 1e-4 ? `translate(${(2 * y).toFixed(2)}px, ${(-2 * y).toFixed(2)}px)` : "";
+    const k = lerpC(241, 226, y);
+    arrow.style.backgroundColor = y > 1e-3 ? `rgb(${k},${k},${k})` : "";
+    const q = aq.value;
+    arrow.style.scale = Math.abs(q) > 1e-4 ? `${(1 + 0.08 * q).toFixed(4)} ${(1 - 0.12 * q).toFixed(4)}` : "";
   };
-  const ly = spring(0, { stiffness: 260, damping: 17, onUpdate: draw });
-  const sq = spring(0, { stiffness: 520, damping: 16, onUpdate: draw });
-  const go = () => { ly.set(lift); sq.set(press); };
-  a.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") { lift = 1; go(); } });
-  a.addEventListener("pointerleave", () => { lift = 0; press = 0; go(); });
-  a.addEventListener("pointerdown", () => { press = 1; go(); });
-  for (const t of ["pointerup", "pointercancel", "dragstart"]) a.addEventListener(t, () => { press = 0; go(); });
-  a.addEventListener("focus", () => { lift = 1; go(); });
-  a.addEventListener("blur", () => { lift = 0; go(); });
+  const ly = spring(0, { stiffness: 300, damping: 26, onUpdate: draw });
+  const sq = spring(0, { stiffness: 600, damping: 34, onUpdate: draw });
+  const aq = spring(0, { stiffness: 600, damping: 30, onUpdate: draw });
+  const go = () => { ly.set(lift); sq.set(press); aq.set(apress); };
+  c.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") { lift = 1; go(); } });
+  c.addEventListener("pointerleave", () => { lift = c.querySelector(":focus-visible") ? 1 : 0; press = apress = 0; go(); });
+  c.addEventListener("pointerdown", (e) => { if (e.button > 0) return; if (arrow.contains(e.target)) apress = 1; else press = 1; go(); });
+  for (const t of ["pointerup", "pointercancel", "dragstart"]) c.addEventListener(t, () => { press = apress = 0; go(); });
+  c.addEventListener("focusin", (e) => { if (e.target.matches(":focus-visible")) { lift = 1; go(); } });
+  c.addEventListener("focusout", (e) => { if (!c.contains(e.relatedTarget)) { lift = 0; go(); } });
 }
 
 const mm = (v) => (Math.round(v * 10) / 10).toString();
+const catLabel = (id) => CATS.find((c) => c.id === id)?.label || (id ? id.replace(/-/g, " ").replace(/^./, (x) => x.toUpperCase()) : "");
+const ARROW = '<svg class="ic" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5 12.5 5.5M7 5.5h5.5V11"/></svg>';
 function card(b, i) {
   const f = boardFiles(b.slug);
   const img = h("img", { src: f.thumb, alt: "", width: "640", height: "400", loading: "lazy", decoding: "async" });
   img.addEventListener("load", () => {
-    const go = () => { const cv = keyBackdrop(img); if (cv) { cv.className = "in"; img.replaceWith(cv); } else img.classList.add("in"); };
+    const go = () => { const cv = whiteThumb(img); if (cv) { cv.className = "in"; img.replaceWith(cv); } else img.classList.add("in"); };
     (window.requestIdleCallback || ((fn) => setTimeout(fn, 16)))(go, { timeout: 300 });
   }, { once: true });
   img.addEventListener("error", () => img.remove(), { once: true });
-  const meta = [b.parts ? `${b.parts.toLocaleString()} parts` : "No parts", b.layers ? `${b.layers} layers` : "", b.size_mm ? `${mm(b.size_mm[0])} × ${mm(b.size_mm[1])} mm` : ""].filter(Boolean).join(" · ");
-  const a = h("a", { class: "card", href: page("board") + carry({ id: b.id }), "data-slug": b.slug, "data-bytes": b.glb_bytes || 0, style: `--i:${Math.min(i, 12)}`, "aria-label": `${b.title} by ${b.owner}` },
-    h("div", { class: "th" }, img),
-    h("div", { class: "body" },
-      h("div", { class: "t", title: b.title }, b.title),
-      h("div", { class: "m" }, meta),
-      h("div", { class: "cr" },
-        h("span", { class: "or", title: `${b.owner}/${b.repo}` }, `${b.owner}/${b.repo}`),
-        h("span", { class: "lic" + (b.copyable ? " ok" : ""), title: b.copyable ? "Licence allows copying and changes" : "View only" }, b.license || "No licence"),
-        h("span", { class: "stars", title: `${(b.stars || 0).toLocaleString()} stars`, html: icon("star", 13) + esc(fmtStars(b.stars)) }))));
-  const warm = () => prefetchBoard(b.slug);
-  a.addEventListener("pointerenter", warm, { once: true });
-  a.addEventListener("focus", warm, { once: true });
-  a.addEventListener("touchstart", warm, { once: true, passive: true });
-  springy(a);
-  if (io) io.observe(a);
-  return a;
+  const lic = b.license || "No licence";
+  const specs = [b.parts ? `${b.parts.toLocaleString()} parts` : "No parts", b.layers ? `${b.layers} layers` : "", b.size_mm ? `${mm(b.size_mm[0])} × ${mm(b.size_mm[1])} mm` : ""].filter(Boolean).join(" · ");
+  const tip = `${b.title}\n${b.owner}/${b.repo}\n${specs}\nLicence: ${lic}${b.copyable ? " (copying allowed)" : " (view only)"}`;
+  const c = h("article", { class: "card", "data-slug": b.slug, "data-bytes": b.glb_bytes || 0, style: `--i:${Math.min(i, 12)}` },
+    h("a", { class: "card-main", href: page("board") + carry({ id: b.id }), "aria-label": `${b.title} by ${b.owner}`, title: tip },
+      h("div", { class: "th" }, img),
+      h("div", { class: "info" },
+        h("div", { class: "l1" }, h("span", { class: "who" }, `${b.owner} · ${catLabel(b.category)}`), h("span", { class: "lic" }, ` · ${lic}`)),
+        h("div", { class: "l2" }, h("span", { class: "t" }, b.title), h("span", { class: "stars", "aria-label": `${(b.stars || 0).toLocaleString()} stars`, html: icon("star", 14) + esc(fmtStars(b.stars)) })))),
+    h("a", { class: "src", href: `https://github.com/${encodeURIComponent(b.owner)}/${encodeURIComponent(b.repo)}`, target: "_blank", rel: "noopener", "aria-label": "View source on GitHub", title: "View source on GitHub", html: `<span class="g">${ARROW}</span>` }));
+  const main = c.firstChild;
+  const warm = () => { warmBoard(b.slug, true); sourceLink(c); };
+  main.addEventListener("pointerenter", warm, { once: true });
+  main.addEventListener("focus", warm, { once: true });
+  c.addEventListener("touchstart", warm, { once: true, passive: true });
+  c.lastChild.addEventListener("pointerenter", () => sourceLink(c), { once: true });
+  c.lastChild.addEventListener("focus", () => sourceLink(c), { once: true });
+  springy(c);
+  if (io) io.observe(c);
+  return c;
 }
 
 function more() {
@@ -220,7 +329,9 @@ function more() {
 
 function update() {
   filter(); renderCats(); syncURL();
-  $("grid").textContent = ""; st.shown = 0; more();
+  const g = $("grid");
+  if (io) for (const c of g.children) io.unobserve(c);
+  g.textContent = ""; st.shown = 0; more();
   const label = st.cat ? (CATS.find((c) => c.id === st.cat)?.label || st.cat) : "all categories";
   $("count").innerHTML = `<b>${list.length.toLocaleString()}</b> board${list.length === 1 ? "" : "s"} · ${esc(label)}`;
   const em = $("empty");
