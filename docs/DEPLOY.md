@@ -13,7 +13,6 @@ Keys are read from the Keychain at run time, never from files:
 | Crusoe (default model provider) | `jarvis-vault/Crusoe` | `CRUSOE_API_KEY` |
 | OpenAI (fallback, TTS, Decisions classifier) | `openai-api-key` | `OPENAI_API_KEY` |
 | You.com part search (optional) | `jarvis-vault/You.com` | `YOU_API_KEY` |
-| site access code | `etch-app-access-code` | `ETCH_ACCESS_CODE` |
 
 Restart only the backend after a code change: `launchctl kickstart -k gui/$(id -u)/com.etch.app.backend`.
 
@@ -26,7 +25,7 @@ ngspice, uv and the engine environment. The API listens on port 3439.
 ```sh
 docker build -t etch-backend .
 docker run --rm -p 3439:3439 \
-  -e CRUSOE_API_KEY -e OPENAI_API_KEY -e YOU_API_KEY -e ETCH_ACCESS_CODE \
+  -e CRUSOE_API_KEY -e OPENAI_API_KEY -e YOU_API_KEY \
   -e ETCH_ORIGINS=https://your-frontend.example \
   etch-backend
 curl http://127.0.0.1:3439/etch/health
@@ -45,7 +44,6 @@ container; mount a volume there to keep builds across restarts.
 | `ETCH_BIND` | `127.0.0.1` (image: `0.0.0.0`) | address the API binds |
 | `ETCH_PUBLIC_PORT` | `3439` | API port |
 | `ETCH_ORIGINS` | built-in list | comma-separated CORS origins allowed to call the API |
-| `ETCH_ACCESS_CODE` | Keychain | code every POST and job poll must send as `X-Etch-Code` |
 | `ETCH_HEAVY_LOCK` | `~/helloworld/.heavy-lock` (image: `/tmp/etch-heavy-lock`) | one-heavy-job lock directory |
 | `ETCH_BASE_URL` | Crusoe `https://api.inference.crusoecloud.com/v1` | primary OpenAI-compatible endpoint |
 | `ETCH_MODEL` / `ETCH_SUB_MODEL` | Nemotron 3 Super 120B / Nemotron 3.5 Lightning 30B | lead and sub-agent models |

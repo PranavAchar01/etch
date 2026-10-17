@@ -4,7 +4,6 @@ The public app (deploy/etch-app on Vercel) talks to this through a Cloudflare qu
 studio/flux_server.py it does NOT serve the pcb-loop folder: only the endpoints below exist.
 
   GET  /etch/health                      engine up?  {ok, busy, queue, stt}
-  POST /etch/auth                        check the access code
   POST /etch/live   {mode, text, base}   start a run -> {job}; one run at a time, small queue
   GET  /etch/job?id=..&since=N           the run's events from index N (polling; quick tunnels do not carry SSE)
   POST /etch/stt    raw f32 16 kHz PCM   local Parakeet speech-to-text (studio/stt/stt_server.cjs on :3421)
@@ -21,9 +20,7 @@ studio/flux_server.py it does NOT serve the pcb-loop folder: only the endpoints 
   POST /etch/comments {board, ref, anchor, text}, /etch/comments/reply {id, text}, /etch/comments/delete {id}
   POST /etch/change {board, ref?, text}  change a board: live-* -> modify run; gh: -> copied into a live-* run
 
-Every POST and job poll needs the header X-Etch-Code. The code lives in the macOS Keychain
-(service etch-app-access-code) or ETCH_ACCESS_CODE; it is never in the repo or the page bundle.
-Per-IP rate limits and a global daily cap protect the API keys the engine spends.
+The API is open (no access code since 2026-10-17). Per-IP rate limits and a global daily cap protect the API keys the engine spends.
 """
 
 from __future__ import annotations
@@ -63,35 +60,12 @@ HEAVY_LOCK = Path(os.environ.get("ETCH_HEAVY_LOCK", str(Path.home() / "helloworl
 RUNS_PER_IP_HOUR = int(os.environ.get("ETCH_RUNS_PER_IP_HOUR", "10"))
 RUNS_PER_DAY = int(os.environ.get("ETCH_RUNS_PER_DAY", "80"))
 STT_PER_IP_10MIN = 60
-AUTH_FAILS_PER_IP_10MIN = 10
 QUEUE_MAX = 3
 RUN_TIMEOUT_S = 15 * 60
 MAX_TEXT = 400
 ASKS_PER_IP_10MIN = int(os.environ.get("ETCH_ASKS_PER_IP_10MIN", "40"))
 MAX_STT_BYTES = 16000 * 4 * 45  # 45 s of audio
 
-
-def access_code() -> str:
-    if os.environ.get("ETCH_ACCESS_CODE"):
-        return os.environ["ETCH_ACCESS_CODE"]
-    return (
-        subprocess.check_output(
-            [
-                "security",
-                "find-generic-password",
-                "-a",
-                os.environ.get("USER", ""),
-                "-s",
-                "etch-app-access-code",
-                "-w",
-            ]
-        )
-        .decode()
-        .strip()
-    )
-
-
-CODE = access_code()
 
 
 # ---------------------------------------------------------------- rate limits
@@ -747,7 +721,7 @@ class H(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", o)
             self.send_header("Vary", "Origin")
             self.send_header(
-                "Access-Control-Allow-Headers", "Content-Type, X-Etch-Code"
+                "Access-Control-Allow-Headers", "Content-Type"
             )
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Max-Age", "600")
@@ -761,10 +735,6 @@ class H(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(b)))
         self.end_headers()
         self.wfile.write(b)
-
-    def authed(self) -> bool:
-        got = self.headers.get("X-Etch-Code", "")
-        return bool(got) and hmac.compare_digest(got.strip().encode(), CODE.encode())
 
     def body(self, cap: int) -> bytes | None:
         n = int(self.headers.get("Content-Length", "0") or 0)
@@ -790,8 +760,6 @@ class H(BaseHTTPRequestHandler):
                 }
             )
         if u.path == "/etch/comments":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             q = urllib.parse.parse_qs(u.query)
             try:
                 board = explore.load_board((q.get("board") or [""])[0])
@@ -799,8 +767,6 @@ class H(BaseHTTPRequestHandler):
                 return self.send_json({"error": str(e)}, e.status)
             return self.send_json({"ok": True, "comments": comments().list(board.id)})
         if u.path == "/etch/job":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             q = urllib.parse.parse_qs(u.query)
             j = JOBS.get(q.get("id", [""])[0])
             if not j:
@@ -820,12 +786,8 @@ class H(BaseHTTPRequestHandler):
                 }
             )
         if u.path == "/etch/builds":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             return self.send_json({"builds": library(), "now": round(time.time(), 1)})
         if u.path == "/etch/run":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             run = urllib.parse.parse_qs(u.query).get("id", [""])[0]
             evs = run_events(run)
             if evs is None:
@@ -838,23 +800,17 @@ class H(BaseHTTPRequestHandler):
                 return self.send_json({"error": "not found"}, 404)
             return self.blob(p.read_bytes(), "image/png", "public, max-age=600")
         if u.path == "/etch/zip":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             run = urllib.parse.parse_qs(u.query).get("id", [""])[0]
             p = zip_path(run) if RUN_RE.match(run) else None
             if not p:
                 return self.send_json({"error": "not found"}, 404)
             return self.blob(p.read_bytes(), "application/zip", "no-store", p.name)
         if u.path == "/etch/layers":
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             res = board_layers(urllib.parse.parse_qs(u.query).get("id", [""])[0])
             if res is None:
                 return self.send_json({"error": "not found"}, 404)
             return self.send_json(res)
         if u.path in ("/etch/glb", "/etch/parts", "/etch/export", "/etch/export.zip"):
-            if not self.authed():
-                return self.send_json({"error": "code"}, 401)
             run = urllib.parse.parse_qs(u.query).get("id", [""])[0]
             # already built (a stored board copies them in, a reopened build made them before): send the file,
             # no engine process (that start-up alone was about 3 s)
@@ -946,22 +902,6 @@ class H(BaseHTTPRequestHandler):
 
     def do_POST(self):
         ip = self.ip()
-        if self.path == "/etch/auth":
-            if not LIM.allow(
-                "authfail:" + ip, AUTH_FAILS_PER_IP_10MIN, 600, take=False
-            ):
-                return self.send_json(
-                    {"error": "Too many tries. Wait 10 minutes, then try again."}, 429
-                )
-            if self.authed():
-                return self.send_json({"ok": True})
-            LIM.allow("authfail:" + ip, AUTH_FAILS_PER_IP_10MIN, 600)
-            return self.send_json(
-                {"ok": False, "error": "That code did not work."}, 401
-            )
-        if not self.authed():
-            LIM.allow("authfail:" + ip, AUTH_FAILS_PER_IP_10MIN, 600)
-            return self.send_json({"error": "code"}, 401)
         if self.path == "/etch/cancel":
             try:
                 body = json.loads(self.body(4096) or b"{}")
