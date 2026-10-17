@@ -664,6 +664,37 @@ def auto_layout(parts: list[dict[str, Any]], groups: list[str]) -> list[dict[str
     return blocks
 
 
+def _rewrite_device() -> str | None:
+    """The device the prompt rewriter named for this run (env ETCH_REWRITE_RESULT, JSON with "device"), or None."""
+    try:
+        dev = json.loads(os.environ.get("ETCH_REWRITE_RESULT") or "{}").get("device")
+    except (ValueError, AttributeError):
+        return None
+    return dev if isinstance(dev, str) and dev.strip() else None
+
+
+def _fit_blocks(
+    blocks: list[dict[str, Any]] | None, parts: list[dict[str, Any]], groups: list[str]
+) -> list[dict[str, Any]]:
+    """A design's own layout blocks with refs it no longer has dropped and parts a fix-up added since in a block
+    of their own (auto layout), so a stale layout never stops the build with "layout has no cell"."""
+    if not blocks:
+        return auto_layout(parts, groups)
+    refs = {p["ref"] for p in parts}
+    out = []
+    for b in blocks:
+        rows = [[c for c in row if c is None or str(c).startswith("@") or c in refs] for row in b.get("rows", [])]
+        rows = [r for r in rows if any(c and not str(c).startswith("@") for c in r) or "@title" in r]
+        if any(c and not str(c).startswith("@") for r in rows for c in r):
+            out.append({**b, "rows": rows})
+    placed = {c for b in out for r in b["rows"] for c in r}
+    extra = [p for p in parts if p["ref"] not in placed]
+    if extra:
+        out += [{**b, "rows": [[c for c in r if c != "@title"] for r in b["rows"]]} for b in auto_layout(extra, groups)]
+        out = [{**b, "rows": [r for r in b["rows"] if r]} for b in out]
+    return out
+
+
 def _rot(key: str, group: str) -> int:
     f = _family(key)
     if group == "power" and "connector" in f:
@@ -796,7 +827,7 @@ def to_spec(
             "gap": 2.5,
             "hole": {"r": 3.5, "inset": 3.5},
             # a recipe may lay out its own blocks (a key matrix wants a grid, not rows of four by family)
-            "blocks": design.get("layout_blocks") or auto_layout(design["parts"], seen),
+            "blocks": _fit_blocks(design.get("layout_blocks"), design["parts"], seen),
         },
         "finish": {
             "mask": "#08502AE6",
@@ -3597,6 +3628,11 @@ def design(
     if rec is None and not context:
         # the device library (engine/parts/devices.json): thousands of device words built from code-wired blocks
         rec = blocks.match(ask, cat)
+        dev = _rewrite_device()
+        if rec is None and dev:
+            # the prompt rewriter's device name ("gps tracker" for "cretae a gps trakcer"); the raw ask still
+            # carries the modifiers and the named-chip guard
+            rec = blocks.match(f"{dev}: {ask}", cat)
     # ETCH_CLASSIFIER=1: NVIDIA's prompt classifier picks the first picker model (repairs stay on the lead)
     rt = task_router.route(ask, bool(rec), config.MODEL, config.SUB_MODEL)
     if rt:
@@ -3729,7 +3765,9 @@ def design(
         ask,
         cl["kept"],
         # a device skeleton passed the offline gate; the picker may still repair it once the KiCad build speaks
-        max_iters=1 if route != "picker" and route != "blocks" and not route.startswith("device:") else MAX_ITERS,
+        # code-wired boards (recipes, catalog devices, picked blocks) build once: the netlist picker's repair of
+        # one renamed and dropped their nets (QA 10-17 fidget toy: NPX_DIN became NPX, ENC_A left dangling)
+        max_iters=MAX_ITERS if route == "picker" else 1,
     )
     t_asm = time.time() - t2
     ex = None

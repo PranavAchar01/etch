@@ -14,7 +14,12 @@ ARM = ROOT / "engine/out/live-1792214061143/design.json"
 @pytest.fixture
 def arm():
     if not ARM.is_file():
-        return recipes.voice_arm("a voice controlled robot arm")
+        # a fresh worktree has no engine/out (ignored): the recipe's design plus the quiet / speaking scenarios
+        # the firmware build of a sound-mode board adds (firmware._build_sound)
+        d = recipes.voice_arm("a voice controlled robot arm")
+        assert d["firmware"]["mode"] == "sound"
+        d.setdefault("scenarios", [{"name": "quiet"}, {"name": "speaking"}])
+        return d
     return json.loads(ARM.read_text())
 
 

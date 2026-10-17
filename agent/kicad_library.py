@@ -43,7 +43,7 @@ from .piece_tags import tags_for
 OUT = config.ENGINE / "parts/kicad_library.json"
 # where the build finds the symbol / footprint libraries that are not KiCad's own (read by etchlib.kicad)
 LIB_PATHS = config.ENGINE / "parts/lib_paths.json"
-VERSION = 7  # 7: tags + fp_ok on every piece. bump when the record format changes: load() rebuilds an older file
+VERSION = 8  # 8: Device families by whole prefix token (encoder, crystal, resonator). 7: tags + fp_ok on every piece. bump when the record format changes: load() rebuilds an older file
 
 
 def _extra_dir() -> Path:
@@ -568,13 +568,17 @@ def _family(lib: str, name: str, descr: str, kw: str) -> str:
             ("SPEAKER", "speaker"),
             ("THERMISTOR", "thermistor"),
             ("FUSE", "fuse"),
+            ("DIAC", "diode"),
             ("D", "diode"),
             ("Q", "transistor"),
             ("BATTERY", "battery"),
             ("MICROPHONE", "microphone"),
+            ("ROTARYENCODER", "rotary encoder"),
             ("ROTARY_ENCODER", "rotary encoder"),
         ):
-            if n.startswith(pre):
+            # one- and two-letter prefixes are whole name tokens (R, R_Small, CP_Small), so RotaryEncoder,
+            # Resonator and Crystal are not read as a resistor or a capacitor (QA 10-17: an EC11 got an R card)
+            if n == pre or n.startswith(pre + "_") or len(pre) > 2 and n.startswith(pre):
                 return fam
     if lib.startswith("Connector") and re.search(r"usb", name, re.I):
         return "USB connector"
