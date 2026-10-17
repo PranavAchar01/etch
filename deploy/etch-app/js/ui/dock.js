@@ -15,6 +15,7 @@ import { createEyes } from "./eyes.js";
 import { createVoiceAdapter, speakable } from "./voice-adapter.js";
 import { el, icon, pixelLoader, thinkingTrace, toolChip, taskRow, streamAnswer, approvalCard, recommendCard, bindMentions, fmtSecs } from "./trace.js";
 
+const OPEN_SPRING = { stiffness: 250, damping: 21 }, LEAVE_GRACE = 60;
 const PILL_H = 56, GAP = 8, EYES_W = 46, MIC = 40, PAD = 8;
 const STATES = new Set(["idle", "userTalking", "heard", "thinking", "working", "speaking", "success", "confused", "error", "offline"]);
 const DEFAULT_STATUS = "Ask Etch · hold Space to talk";
@@ -67,7 +68,7 @@ export function createDock(hostEl, opts = {}) {
   squish(send); squish(mic);
 
   // ---------- springs ----------
-  const o = spring(0, { preset: { stiffness: 250, damping: 23 }, precision: 0.001, onUpdate: draw });
+  const o = spring(0, { preset: OPEN_SPRING, precision: 0.001, onUpdate: draw });
   const pw = spring(220, { preset: { stiffness: 300, damping: 22 }, precision: 0.05, onUpdate: draw });
   const hs = spring(140, { preset: { stiffness: 260, damping: 26 }, precision: 0.05, onUpdate: draw });
   const pk = spring({ x: 1, y: 1 }, { preset: "wobbly", precision: 0.0008, onUpdate: (v) => { const s = v.x === 1 && v.y === 1 ? "" : `${v.x} ${v.y}`; pillBlob.style.scale = s; eyesWrap.style.scale = s; } });
@@ -113,6 +114,7 @@ export function createDock(hostEl, opts = {}) {
   }
 
   // ---------- open / close ----------
+  let asked = false;
   let open = false, hover = false, focusIn = false, forced = null, pending = 0, suppress = false, closeT = 0;
   const typing = () => document.activeElement === input || input.value.trim() !== "";
   function want() {
@@ -127,7 +129,8 @@ export function createDock(hostEl, opts = {}) {
     root.dataset.open = String(open);
     panel.inert = !open;
     form.inert = !open;
-    o.config(open ? { stiffness: 250, damping: 21 } : { stiffness: 320, damping: 30 }).set(open ? 1 : 0);
+    // one spring both ways, so closing feels exactly as quick as opening
+    o.config(OPEN_SPRING).set(open ? 1 : 0);
     pw.set(open ? W : collapsedW);
     if (open) { dropBubble(0); stick(true); }
     else wobblePill(0.6);
@@ -143,7 +146,8 @@ export function createDock(hostEl, opts = {}) {
     if (e.relatedTarget && root.contains(e.relatedTarget)) return;
     inside = false; suppress = false;
     clearTimeout(closeT);
-    closeT = setTimeout(() => { hover = false; update(); }, 420);
+    // a short grace only absorbs pointer jitter across the edge (or the gap between panel and pill)
+    closeT = setTimeout(() => { hover = false; update(); }, LEAVE_GRACE);
   });
   root.addEventListener("focusin", () => { focusIn = true; if (forced === false) forced = null; update(); });
   root.addEventListener("focusout", (e) => {
@@ -305,6 +309,7 @@ export function createDock(hostEl, opts = {}) {
     text = String(text || "").trim();
     if (!text) return;
     newTurn(text, via);
+    asked = true; // sending is a user gesture, so Etch may answer out loud from here on
     curLine = "";
     paintLine();
     if (opts.onSend) opts.onSend(text, { via });
@@ -511,7 +516,7 @@ export function createDock(hostEl, opts = {}) {
     say(text) {
       const t = plain(text);
       if (!t) return;
-      const spoken = voice.say(t, { force: opts.speak === "always" });
+      const spoken = voice.say(t, { force: opts.speak === "always" || asked });
       if (!spoken) {
         // nothing is spoken before the person has used their voice; the eyes still "say" it with the caption
         caption(t);
