@@ -136,9 +136,22 @@
 
 /* one turn's timeline: rows in order, noise grouped, folded to one line when done */
 .ag-tl { border-radius: 12px; }
-.ag-tl-list { list-style: none; margin: 0; padding: 0 2px; display: flex; flex-direction: column; }
-.ag-tl.done:not(.open) .ag-tl-list { display: none; }
-.ag-tl.done.open .ag-tl-list { padding: 4px 10px 6px; margin-top: 2px; border-radius: 12px; background: var(--ag-soft); }
+.ag-tl-list, .ag-tl-live { list-style: none; margin: 0; padding: 0 2px; display: flex; flex-direction: column; }
+.ag-tl:not(.open) .ag-tl-list { display: none; }
+.ag-tl.open .ag-tl-list { padding: 4px 10px 6px; margin: 2px 0 4px; border-radius: 12px; background: var(--ag-soft); max-height: 320px; overflow: auto; overscroll-behavior: contain; }
+.ag-tl-iss { flex: none; padding: 2px 7px; border-radius: 999px; background: #fbe7e5; color: var(--ag-fail); font: 650 11px/1.2 var(--ag-sans); }
+/* a finished live row folds away into the summary */
+.ag-tr-row.ag-fold { animation: ag-fold .24s cubic-bezier(.5, 0, .75, .3) both; overflow: hidden; }
+@keyframes ag-fold { from { opacity: 1; max-height: 60px; } to { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; transform: translateY(-6px) scaleY(.6); } }
+/* earlier turns: the message and a one-line result; click to see it all */
+.ag-turn.old { cursor: pointer; }
+.ag-turn.old.full { cursor: auto; }
+.ag-turn.old:not(.full) > .ag-tl:not(:last-child), .ag-turn.old:not(.full) .ag-ans-ments, .ag-turn.old:not(.full) .ag-ans-meta,
+.ag-turn.old:not(.full) .ag-ans-follow, .ag-turn.old:not(.full) .ag-ans-th { display: none; }
+.ag-turn.old:not(.full) .ag-ans-text { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.ag-turn.old:not(.full) .ag-ans-text p { display: inline; margin: 0; }
+.ag-turn.old:not(.full) .ag-ans-text ul { display: inline; padding: 0; }
+@media (prefers-reduced-motion: reduce) { .ag-tr-row.ag-fold { animation: none; } }
 .ag-tl-sum, .ag-tl-gh {
   display: flex; align-items: center; gap: 7px; width: 100%; border: 0; background: none; cursor: pointer; text-align: left;
   padding: 3px 0; font: 500 12.5px/1.35 var(--ag-sans); color: var(--ag-muted); border-radius: 8px;

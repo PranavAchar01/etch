@@ -215,15 +215,23 @@ const isGate = (d) => (d.kind || "step") === "step" && GATE.test(d.title || "");
 // rows people rarely read once they are done: tool calls, searches, passed checks
 const lowValue = (d) => d.status === "done" && (d.kind === "tool" || d.kind === "coding" || d.kind === "search" || isGate(d));
 const lc = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+// While Etch works a turn shows two things: one collapsed summary of everything finished ("12 steps · screened 304
+// parts · 2 tries · 41s", click to expand) and the step running now, live, at the bottom. A finished step folds into
+// the summary by itself a moment after its check appears. Failures show as an "N issues" chip on the summary; only a
+// turn that ends on a failure keeps that failure in view.
+const LIVE_MAX = 2;
 export function timeline({ verb = "Thought for" } = {}) {
   const sumText = el("span", "ag-tl-st");
-  const sum = el("button", "ag-tl-sum", icon("spark", "is-spark"), sumText, icon("chev", "ag-chev"));
+  const issues = el("span", "ag-tl-iss");
+  issues.hidden = true;
+  const sum = el("button", "ag-tl-sum", icon("spark", "is-spark"), sumText, issues, icon("chev", "ag-chev"));
   sum.type = "button"; sum.hidden = true;
-  const list = el("ol", "ag-tl-list");
-  const root = el("div", "ag-tl", sum, list);
+  const list = el("ol", "ag-tl-list");          // finished rows (hidden until the summary is opened)
+  const live = el("ol", "ag-tl-live");          // what is running now
+  const root = el("div", "ag-tl", sum, list, live);
   const rows = new Map(), all = [];
   const t0 = performance.now();
-  let finished = false;
+  let finished = false, sumT = 0;
   const setOpen = (o) => { root.classList.toggle("open", !!o); sum.setAttribute("aria-expanded", o ? "true" : "false"); };
   sum.addEventListener("click", () => setOpen(!root.classList.contains("open")));
 
@@ -246,7 +254,7 @@ export function timeline({ verb = "Thought for" } = {}) {
     list.insertBefore(li, before);
     return g;
   }
-  // a finished low-value row joins its low-value neighbours in one summary line
+  // inside the expanded summary, low-value neighbours still share one line
   function regroup(r) {
     if (!r.el.isConnected || !lowValue(r.data) || r.el.parentElement !== list) return;
     const prev = r.el.previousElementSibling, next = r.el.nextElementSibling;
@@ -256,9 +264,53 @@ export function timeline({ verb = "Thought for" } = {}) {
     else if (lowRow(prev)) { g = makeGroup(prev); g.gl.append(prev); g.rows.push(prev._r); }
     else if (next && next._g) { next._g.gl.prepend(r.el); next._g.rows.unshift(r); groupSummary(next._g); return; }
     else if (lowRow(next)) { g = makeGroup(r.el); g.gl.append(r.el, next); g.rows.push(r, next._r); groupSummary(g); return; }
-    if (!g && isGate(r.data)) g = makeGroup(r.el); // a lone passed check still folds into "1 check passed"
+    if (!g && isGate(r.data)) g = makeGroup(r.el);
     if (!g) return;
     g.gl.append(r.el); g.rows.push(r); groupSummary(g);
+  }
+  // the summary line: steps, the biggest numbers worth knowing, tries, time
+  let finalInfo = null;
+  function paintSum(final) {
+    if (!final && finished && finalInfo) final = finalInfo;
+    const real = all.filter((r) => !r.dupOf);
+    const doneN = real.filter((r) => r.data.status !== "running").length;
+    const s = (performance.now() - t0) / 1000;
+    const bits = [];
+    const tries = Math.max(0, ...real.map((r) => +(/\btry (\d+)/i.exec(r.data.title || "") || [])[1] || 0));
+    const scr = real.map((r) => /screen\w*\s+(\d[\d,]*)\s+(.*?parts)/i.exec(r.data.title || "")).find(Boolean);
+    if (final) {
+      const build = real.some((r) => r.data.kind === "task" || r.data.kind === "tool");
+      bits.push(tries ? `Built in ${tries} tr${tries === 1 ? "y" : "ies"} · ${fmtSecs(final.s)}` : `${build && verb === "Thought for" ? "Done in" : verb} ${fmtSecs(final.s)}`);
+      bits.push(`${real.length} step${real.length === 1 ? "" : "s"}`);
+      if (scr) bits.push(`screened ${scr[1]} parts`);
+      const last = all[all.length - 1];
+      if (last.data.status === "failed") bits.push("stopped on a problem");
+      else if (real.some((r) => isGate(r.data))) bits.push("every check passes");
+    } else {
+      bits.push(`${doneN} step${doneN === 1 ? "" : "s"}`);
+      if (scr) bits.push(`screened ${scr[1]} parts`);
+      if (tries > 1) bits.push(`${tries} tries`);
+      bits.push(fmtSecs(s));
+    }
+    sumText.textContent = bits.join(" · ");
+    const nIss = real.filter((r) => r.data.status === "failed").length;
+    issues.hidden = !nIss || (final && all[all.length - 1].data.status === "failed" && nIss === 1);
+    issues.textContent = `${nIss} issue${nIss === 1 ? "" : "s"}`;
+    sum.hidden = doneN === 0 && !final;
+  }
+  // a finished row folds from the live area into the summary (a quick liquid fold, then it is gone from view)
+  function settle(r) {
+    clearTimeout(r.foldT);
+    r.foldT = setTimeout(() => {
+      if (r.data.status === "running" || r.el.parentElement !== live) return;
+      const go = () => { r.el.classList.remove("ag-fold"); list.append(r.el); regroup(r); paintSum(); };
+      if (reducedMotion()) go(); else { r.el.classList.add("ag-fold"); setTimeout(go, 240); }
+    }, 250);
+  }
+  function capLive() {
+    // never more than a couple of live lines: older running rows wait in the summary
+    const runningEls = [...live.children].filter((n) => n._r && n._r.data.status === "running");
+    while (runningEls.length > LIVE_MAX) { const n = runningEls.shift(); list.append(n); }
   }
   const api = {
     el: root, rows,
@@ -271,39 +323,40 @@ export function timeline({ verb = "Thought for" } = {}) {
         r = traceRow(d); r.el._r = r;
         stagger(r.el);
         rows.set(d.id, r); all.push(r);
-        list.append(r.el);
+        live.append(r.el);
       }
       if (r.data.status === "failed") {
-        // the same failure twice in a row is one row with ×2
         const twin = all.find((o) => o !== r && o.data.status === "failed" && o.key === r.key && !o.dupOf);
         if (twin && !r.dupOf) { r.dupOf = twin; twin.bump(); r.el.remove(); }
       }
       if (finished && r.data.status === "running") api.reopen();
-      if (lowValue(r.data)) { clearTimeout(r.groupT); r.groupT = setTimeout(() => regroup(r), 250); }
+      if (r.data.status === "running") { if (r.el.parentElement === list) live.append(r.el); capLive(); }
+      else if (r.el.parentElement === live) settle(r);
+      paintSum();
+      clearInterval(sumT);
+      if (api.running && !finished) sumT = setInterval(() => paintSum(), 1000);
       return r;
     },
-    reopen() { finished = false; root.classList.remove("done"); sum.hidden = true; setOpen(true); },
+    reopen() { finished = false; finalInfo = null; root.classList.remove("done"); },
     done(seconds) {
       if (!all.length) return;
       finished = true;
-      for (const r of all) { clearTimeout(r.groupT); regroup(r); }
-      const s = seconds ?? (performance.now() - t0) / 1000;
-      const n = all.filter((r) => !r.dupOf).length;
-      const tries = Math.max(0, ...all.map((r) => +(/\btry (\d+)/i.exec(r.data.title || "") || [])[1] || 0));
-      const build = all.some((r) => r.data.kind === "task" || r.data.kind === "tool");
+      clearInterval(sumT);
       const last = all[all.length - 1];
-      const gates = all.some((r) => isGate(r.data));
-      let line = tries ? `Built in ${tries} tr${tries === 1 ? "y" : "ies"} · ${fmtSecs(s)}` : `${build && verb === "Thought for" ? "Done in" : verb} ${fmtSecs(s)}`;
-      line += ` · ${n} step${n === 1 ? "" : "s"}`;
-      if (last.data.status === "failed") line += " · stopped on a problem";
-      else if (gates) line += " · every check passes";
-      sumText.textContent = line;
+      for (const r of all) {
+        clearTimeout(r.foldT);
+        // a turn that ends on a failure keeps that failure in view below the summary
+        if (r === last && r.data.status === "failed") { live.append(r.el); continue; }
+        if (r.el.parentElement === live) list.append(r.el);
+        regroup(r);
+      }
+      finalInfo = { s: seconds ?? (performance.now() - t0) / 1000 };
+      paintSum(finalInfo);
       sum.hidden = false;
       root.classList.add("done");
       setOpen(false);
     },
   };
-  setOpen(true);
   return api;
 }
 export function thinkingTrace({ open = false, label = "Thinking" } = {}) {
