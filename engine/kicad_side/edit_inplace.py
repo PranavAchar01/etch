@@ -1036,16 +1036,20 @@ def apply(pcb_path, job_path, result_path):
     placer = Placer(board, outline, cu, rules, items)
     placed_at = {}
     for a in job.get("add", []):
-        fp = load_fp(a["fp_root"], a["footprint"])
-        fp.SetReference(a["ref"])
-        fp.SetValue(a["value"])
-        if a.get("model"):
-            set_model(fp, a["model"])
         nets = {k: v for k, v in (a.get("pads") or {}).items() if v}
-        for p in fp.Pads():
-            n = nets.get(p.GetNumber())
-            if n:
-                p.SetNet(get_net(board, n))
+
+        def make(c):
+            f = load_fp(c["fp_root"], c["footprint"])
+            f.SetReference(a["ref"])
+            f.SetValue(a["value"])
+            if c.get("model"):
+                set_model(f, c["model"])
+            for p in f.Pads():
+                n = nets.get(p.GetNumber())
+                if n:
+                    p.SetNet(get_net(board, n))
+            return f
+
         anchor = a.get("anchor")
         if a.get("near"):
             nf = board.FindFootprintByReference(a["near"])
@@ -1064,10 +1068,26 @@ def apply(pcb_path, job_path, result_path):
             anchor = [(bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2]
         toward = a.get("toward")
         sides = ("top", "bottom") if a.get("side") != "bottom" else ("bottom", "top")
-        board.Add(fp)
-        got = placer.place(fp, anchor, nets, toward=toward, sides=sides)
-        if not got:
+        # the planned footprint first, then the same symbol in smaller footprints (same pads, same meaning)
+        alts = []
+        for c in a.get("alternatives") or []:
+            try:
+                cb, _ = local_shape(load_fp(c["fp_root"], c["footprint"]), cu)
+            except Exception:
+                continue
+            alts.append(((cb[2] - cb[0]) * (cb[3] - cb[1]), c))
+        cands = [a] + [c for _, c in sorted(alts, key=lambda t: t[0])][:6]
+        got = fp = None
+        for c in cands:
+            fp = make(c)
+            board.Add(fp)
+            got = placer.place(fp, anchor, nets, toward=toward, sides=sides)
+            if got:
+                if c is not a:
+                    got["swapped_to"] = c["footprint"]
+                break
             board.Remove(fp)
+        if not got:
             res["not_placed"].append(a["ref"])
             continue
         cbox = court(fp)
@@ -1139,7 +1159,10 @@ def copper_items_of(board, fp, cu, cu_names):
 def main(argv):
     if argv[0] == "inspect":
         board = pcbnew.LoadBoard(argv[1])
-        json.dump(facts(board), open(argv[2], "w"), indent=1)
+        # saved once by this KiCad, so every item has the uuid the DRC before / after comparison keys on (an older
+        # file without uuids gets new random ones on every load)
+        pcbnew.SaveBoard(argv[1], board)
+        json.dump(facts(pcbnew.LoadBoard(argv[1])), open(argv[2], "w"), indent=1)
     elif argv[0] == "apply":
         apply(argv[1], argv[2], argv[3])
     else:
