@@ -221,6 +221,51 @@ def _create(base_url: str, key: str, model: str, kw: dict[str, Any], effort, tim
         raise
 
 
+def _metered(base_url: str, key: str, model: str, kw, effort, timeout, agent: str):
+    resp = _create(base_url, key, model, kw, effort, timeout)
+    if _is_openai(base_url):
+        u = resp.usage
+        meter(model, agent, getattr(u, "prompt_tokens", 0) or 0, getattr(u, "completion_tokens", 0) or 0)
+    return resp
+
+
+def _hedged(stream: Stream, agent: str, model: str, kw, effort, ptimeout: float, timeout: float | None):
+    """One primary request. When it has not answered after config.HEDGE_S and a fallback is configured, the same
+    request also goes to the fallback model and the first answer wins: a stalled Crusoe call costs about 12 s
+    instead of the 30 s timeout plus a retry (report rank 2). Returns (response, fallback model or None). A
+    primary error inside the hedge window raises as before (the caller retries or falls back)."""
+    import concurrent.futures as cf
+
+    if config.HEDGE_S <= 0 or not _fallback_ready() or _is_openai(config.BASE_URL) or ptimeout <= config.HEDGE_S:
+        return _create(config.BASE_URL, config.api_key(), model, kw, effort, ptimeout), None
+    pool = cf.ThreadPoolExecutor(max_workers=2, thread_name_prefix="llm-hedge")
+    try:
+        prim = pool.submit(_create, config.BASE_URL, config.api_key(), model, kw, effort, ptimeout)
+        if cf.wait([prim], timeout=config.HEDGE_S).done:
+            return prim.result(), None  # an answer, or the primary's own error for the caller's retry/fallback
+        fb_model = config.fallback_model(model)
+        stream.emit(agent, "llm_hedge", model=model, to=fb_model, after_s=config.HEDGE_S)
+        fb = pool.submit(
+            _metered, config.FALLBACK_BASE_URL, config.fallback_key(), fb_model, kw, effort, timeout or 45, agent
+        )
+        pending = {prim, fb}
+        err: Exception | None = None
+        while pending:
+            done, pending = cf.wait(pending, return_when=cf.FIRST_COMPLETED)
+            for f in done:
+                try:
+                    r = f.result()
+                except Exception as e:  # the other request may still answer
+                    stream.emit(agent, "llm_error", model=model if f is prim else fb_model, error=str(e)[:300])
+                    err = e
+                    continue
+                stream.emit(agent, "llm_hedge_won", winner="primary" if f is prim else "fallback")
+                return r, (None if f is prim else fb_model)
+        raise ModelError(f"{model} and the hedged {fb_model} both failed: {str(err)[:200]}") from err
+    finally:
+        pool.shutdown(wait=False)  # the losing request finishes in the background and is dropped
+
+
 def chat(
     stream: Stream,
     agent: str,
@@ -246,6 +291,7 @@ def chat(
         and time.time() - _fallback_since < FALLBACK_STICKY_S
     )
     resp = None
+    metered = False  # a hedged fallback call meters itself (the losing call is billed too)
     if not (sticky and _fallback_ready()):
         ptimeout = timeout or 45
         if not _is_openai(base):
@@ -254,8 +300,12 @@ def chat(
         for attempt in range(1, tries + 1):
             ta = time.time()
             try:
-                resp = _create(base, config.api_key(), model, kw, effort, ptimeout)
+                resp, hedged = _hedged(stream, agent, model, kw, effort, ptimeout, timeout)
+                if hedged:
+                    base, used, metered = config.FALLBACK_BASE_URL, hedged, True
                 break
+            except ModelError:
+                raise  # the hedge already tried the primary and the fallback
             except Exception as e:
                 secs = round(time.time() - ta, 1)
                 stream.emit(
@@ -302,7 +352,7 @@ def chat(
                 f"{used} (fallback) failed after {secs} s ({type(e).__name__}): {str(e)[:200]}."
             ) from e
     u = resp.usage
-    if _is_openai(base):
+    if _is_openai(base) and not metered:
         meter(
             used,
             agent,

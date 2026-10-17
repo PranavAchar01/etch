@@ -43,6 +43,9 @@ SUB_MODEL = os.environ.get(
 )  # research/model-pick.md (sub-agents)
 KEY_SOURCE = os.environ.get("ETCH_API_KEY_SOURCE", "jarvis-vault/Crusoe")
 PRIMARY_TIMEOUT = float(os.environ.get("ETCH_PRIMARY_TIMEOUT", "30"))
+# hedge: a primary (Crusoe) call with no answer after this many seconds also goes to the fallback model in
+# parallel, and the first answer wins (the logged Nemotron picker p90 is 10.9 s; stalls cost 42-44 s). 0 = off.
+HEDGE_S = float(os.environ.get("ETCH_HEDGE_S", "12"))
 RATE_PER_MIN = int(os.environ.get("ETCH_RATE_PER_MIN", "28"))
 MAX_TOKENS = int(os.environ.get("ETCH_MAX_TOKENS", "4000"))
 FALLBACK = os.environ.get("ETCH_FALLBACK", "openai").lower()

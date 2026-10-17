@@ -844,6 +844,8 @@ def assemble(
                         iteration=it,
                         base=None,
                         note="kept layout failed a check: full build",
+                        failed=_failed_checks(v),  # which check sank the kept layout (report rank 1)
+                        seconds=v.get("seconds"),
                     )
                     v = eng.run_build(spec_path, out)
             except Exception as e:
@@ -973,6 +975,27 @@ def assemble(
         "seconds": round(time.time() - t0, 2),
         "design": design,
     }
+
+
+def _failed_checks(v: dict[str, Any]) -> list[str]:
+    """The checks a build verdict failed, by name ("crashed" when the kept layout could not even build)."""
+    if "erc_errors" not in v:
+        return ["crashed"]
+    out = [
+        name
+        for name, bad in (
+            ("ERC", v.get("erc_errors")),
+            ("DRC", v.get("drc_violations")),
+            ("unconnected", v.get("unconnected")),
+            ("parity", v.get("parity")),
+            ("routed", v.get("unrouted")),
+            ("3D models", v.get("models_missing")),
+            ("ngspice", not v.get("sim_ok")),
+        )
+        if bad
+    ]
+    out += [f"benchmark {b.get('check')}" for b in v.get("benchmarks", []) if not b.get("pass")]
+    return out
 
 
 def _normalize_pins(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:

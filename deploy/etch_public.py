@@ -65,6 +65,7 @@ RUN_TIMEOUT_S = 15 * 60
 MAX_TEXT = 400
 ASKS_PER_IP_10MIN = int(os.environ.get("ETCH_ASKS_PER_IP_10MIN", "40"))
 MAX_STT_BYTES = 16000 * 4 * 45  # 45 s of audio
+LONG_POLL_MAX_S = 25.0  # under Cloudflare's ~100 s idle cut and any proxy's 60 s read timeout
 
 
 
@@ -110,16 +111,58 @@ class Job:
         self.proc: subprocess.Popen | None = None
         self.cancelled = False
         self.lock = threading.Lock()
+        # long-poll: GET /etch/job?wait=N sleeps on this until a new event or the end of the run
+        self.cond = threading.Condition(self.lock)
+        self.lane = "full"  # "fast": a stored board or a code-only recipe/edit, outside the full-build line
+        self.started: float | None = None  # when the engine process was spawned (after the wait in line)
+        self.first_event: float | None = None
+        self.last_stage: tuple[str, float] | None = None
+        self.stages: list[dict] = []  # [{stage, s}] wall seconds per public stage, for the timing event
 
     def emit(self, ev: dict):
-        with self.lock:
+        now = time.time()
+        with self.cond:
+            if self.started and self.first_event is None:
+                self.first_event = now
             self.events.append(ev)
+            self.cond.notify_all()
         run = ev.get("run")
         if isinstance(run, str) and RUN_RE.match(run):
             self.run = run
         s = stage_of(ev)
         if s:
+            base = re.sub(r",? ?(try \d+|\(\d+ ahead\))$", "", s)
+            if self.last_stage and self.last_stage[0] != base:
+                self.stages.append({"stage": self.last_stage[0], "s": round(now - self.last_stage[1], 2)})
+            if not self.last_stage or self.last_stage[0] != base:
+                self.last_stage = (base, now)
             self.stage = s
+
+    def finish(self) -> None:
+        """Mark the run ended and wake every long-poll waiting on it."""
+        now = time.time()
+        with self.cond:
+            self.ended = now
+            self.done = True
+            self.cond.notify_all()
+
+    def timing(self) -> dict:
+        """The server's own clock on this run (additive event `lead:timing`, docs/API.md)."""
+        st = self.started or self.created
+        if self.last_stage:  # close the stage the run ended in
+            self.stages.append({"stage": self.last_stage[0], "s": round(time.time() - self.last_stage[1], 2)})
+            self.last_stage = None
+        return {
+            "agent": "lead",
+            "type": "timing",
+            "t": 0,
+            "lane": self.lane,
+            "queued_s": round(st - self.created, 2),
+            "spawn_to_first_event_s": round(self.first_event - st, 2) if self.first_event else None,
+            "run_s": round(time.time() - st, 2),
+            "total_s": round(time.time() - self.created, 2),
+            "stages": self.stages,
+        }
 
     def public(self) -> dict:
         """What any signed-in viewer may see about this run: no IP, no token, no paths."""
@@ -135,6 +178,7 @@ class Job:
             "ended": round(self.ended, 1) if self.ended else None,
             "thumb": bool(self.run and thumb_path(self.run)),
             "zip": bool(self.run and zip_path(self.run)),
+            "lane": self.lane,
         }
 
 
@@ -229,9 +273,56 @@ CLASSIFIER = Classifier()
 
 JOBS: dict[str, Job] = {}
 WAITING: list[Job] = []
-STATE = {"running": None}
+STATE = {"running": None, "fast": None}
 RUN_LOCK = threading.Lock()
 Q_LOCK = threading.Lock()
+# Fast lane (report rank 4): a stored board (0.05 s) or a code-only recipe or edit never waits behind a full
+# picker build or a 400 s ESP32 route. It has its own lock, so at most one fast and one full engine run at once.
+FAST_WAITING: list[Job] = []
+FAST_LOCK = threading.Lock()
+LANES = {
+    "full": (WAITING, RUN_LOCK, "running"),
+    "fast": (FAST_WAITING, FAST_LOCK, "fast"),
+}
+_CATALOG_KEYS: dict[str, dict] | None = None
+
+
+def catalog_keys() -> dict[str, dict]:
+    global _CATALOG_KEYS
+    if _CATALOG_KEYS is None:
+        try:
+            pieces = json.loads((ROOT / "engine/parts/kicad_catalog.json").read_text())["pieces"]
+            _CATALOG_KEYS = {p["key"]: p for p in pieces}
+        except (OSError, ValueError, KeyError):
+            _CATALOG_KEYS = {}
+    return _CATALOG_KEYS
+
+
+def lane_for(mode: str, text: str, base: Path | None) -> str:
+    """'fast' when the engine will answer from code alone: a stored board, a recipe, or a known edit on the base
+    (the same plain-code checks agent/live.py makes first, under a millisecond, no model). Anything else, or any
+    doubt, is a full build."""
+    try:
+        import sys as _sys
+
+        if str(ROOT) not in _sys.path:
+            _sys.path.insert(0, str(ROOT))
+        from agent import board_store, prefilter, recipes  # stdlib-only modules
+
+        if mode == "design":
+            pf = prefilter.screen(text)
+            if pf and pf.stop:
+                return "fast"  # refused with no model call
+            ask = pf.ask if pf else text
+            if not os.environ.get("ETCH_NO_STORE") and board_store.lookup(ask):
+                return "fast"
+            return "fast" if recipes.match(ask, catalog_keys()) else "full"
+        if mode == "modify" and base is not None:
+            d = json.loads((base / "design.json").read_text())
+            return "fast" if recipes.edit(text, d, catalog_keys() or None) else "full"
+    except Exception:  # noqa: BLE001 - a guess only; the full lane is always correct
+        return "full"
+    return "full"
 
 
 def clean(s: str) -> str:
@@ -239,35 +330,37 @@ def clean(s: str) -> str:
 
 
 def worker(job: Job):
+    waiting, run_lock, slot = LANES[job.lane]
     with Q_LOCK:
-        WAITING.append(job)
+        waiting.append(job)
     try:
         while True:
             if job.cancelled:  # cancelled while waiting in line: nothing was started
                 with Q_LOCK:
-                    if job in WAITING:
-                        WAITING.remove(job)
+                    if job in waiting:
+                        waiting.remove(job)
                 return
             with Q_LOCK:
-                pos = WAITING.index(job)
-            if pos == 0 and RUN_LOCK.acquire(timeout=1.0):
+                pos = waiting.index(job)
+            if pos == 0 and run_lock.acquire(timeout=1.0):
                 if job.cancelled:
-                    RUN_LOCK.release()
+                    run_lock.release()
                     continue
                 break
             job.emit(
                 {
                     "agent": "lead",
                     "type": "queued",
-                    "position": pos + (1 if STATE["running"] else 0),
+                    "position": pos + (1 if STATE[slot] else 0),
                     "t": 0,
                 }
             )
             time.sleep(1.0)
         with Q_LOCK:
-            WAITING.remove(job)
-        STATE["running"] = job.id
+            waiting.remove(job)
+        STATE[slot] = job.id
         job.state, job.stage = "running", "starting the engine"
+        job.started = time.time()
         # a file, so a chatty stderr can never block the stdout pipe
         errf = tempfile.TemporaryFile(mode="w+")
         # own session = own process group (pgid == proc.pid): cancel and the timeout signal exactly this
@@ -326,17 +419,17 @@ def worker(job: Job):
         job.emit({"agent": "lead", "type": "error", "t": 0, "error": clean(e)[:300]})
         job.state, job.stage = "failed", "stopped with an error"
         with Q_LOCK:
-            if job in WAITING:
-                WAITING.remove(job)
+            if job in waiting:
+                waiting.remove(job)
     finally:
         if job.cancelled:
             job.state, job.stage = "cancelled", "cancelled"
             job.emit({"agent": "lead", "type": "cancelled", "t": 0})
-        job.ended = time.time()
-        if STATE["running"] == job.id:
-            STATE["running"] = None
-            RUN_LOCK.release()
-        job.done = True
+        if STATE[slot] == job.id:
+            STATE[slot] = None
+            run_lock.release()
+        job.emit(job.timing())
+        job.finish()
 
 
 def lock_owner() -> int | None:
@@ -756,6 +849,8 @@ class H(BaseHTTPRequestHandler):
                     "ok": True,
                     "busy": bool(STATE["running"]),
                     "queue": len(WAITING),
+                    "fast_busy": bool(STATE["fast"]),
+                    "fast_queue": len(FAST_WAITING),
                     "stt": stt_up(),
                 }
             )
@@ -771,8 +866,15 @@ class H(BaseHTTPRequestHandler):
             j = JOBS.get(q.get("id", [""])[0])
             if not j:
                 return self.send_json({"error": "no such run"}, 404)
-            since = max(0, int((q.get("since", ["0"])[0] or "0")))
-            with j.lock:
+            try:
+                since = max(0, int((q.get("since", ["0"])[0] or "0")))
+                wait = min(LONG_POLL_MAX_S, max(0.0, float((q.get("wait", ["0"])[0] or "0"))))
+            except ValueError:
+                return self.send_json({"error": "bad request"}, 400)
+            with j.cond:
+                # long-poll (additive): hold the request until an event past `since` exists or the run ends
+                if wait > 0:
+                    j.cond.wait_for(lambda: len(j.events) > since or j.done, timeout=wait)
                 evs = j.events[since:]
                 n = len(j.events)
             return self.send_json(
@@ -1025,7 +1127,9 @@ class H(BaseHTTPRequestHandler):
 
     def start_build(self, ip: str, args: list[str], mode: str, text: str, room: bool = False):
         """Queue an engine run. room=True only checks capacity (nothing is started)."""
-        if len(WAITING) >= QUEUE_MAX:
+        base = Path(args[args.index("--base") + 1]) if "--base" in args else None
+        lane = lane_for(mode, text, base) if mode in ("design", "modify") else "full"
+        if len(LANES[lane][0]) >= QUEUE_MAX:
             return self.send_json(
                 {"error": "I am busy with other builds. Try again in a minute."},
                 429,
@@ -1044,6 +1148,7 @@ class H(BaseHTTPRequestHandler):
         LIM.allow("runs:" + ip, RUNS_PER_IP_HOUR, 3600)
         LIM.allow("runs:day", RUNS_PER_DAY, 86400)
         job = Job(args, ip, mode, text)
+        job.lane = lane
         JOBS[job.id] = job
         threading.Thread(target=worker, args=(job,), daemon=True).start()
         return self.send_json({"ok": True, "job": job.id, "token": job.token})
