@@ -1642,11 +1642,11 @@ def _drop_lonely_gpio(design: dict[str, Any], kept: list[dict[str, Any]]) -> Non
     part, piece = mp
     lonely = set(_lonely_nets(design))
     pins = part.get("pins") or {}
+    # Any pin of the module whose net ends there is an unused pin, whatever its name: the picker often labels
+    # RUN, 3V3_EN, ADC_VREF or AGND with their own names (live-1792272486984, a GPS tracker failed twice on
+    # "3V3_EN only on U1 pin 37"). A module pin left open is how the module ships.
     for num in [n for n, net in pins.items() if str(net) in lonely]:
-        name = str(piece.get("pins", {}).get(str(num), ""))
-        supply = str(pins[num]).upper() in _SUPPLY_5V + _SUPPLY_3V3
-        if name.startswith("GPIO") or (supply and name.upper() in _MCU_POWER_PINS):
-            del pins[num]
+        del pins[num]
 
 
 def _wire_mcu_supply(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
@@ -1685,7 +1685,6 @@ def _wire_mcu_supply(design: dict[str, Any], kept: list[dict[str, Any]]) -> None
             pins[pin] = net
 
 
-_MCU_POWER_PINS = ("VBUS", "VSYS", "3V3", "5V", "VIN", "+5V", "+3V3")
 PICO_KEY = "kicad:MCU_Module:RaspberryPi_Pico@RaspberryPi_Pico_Common_THT"
 PICO_W_KEY = "kicad:MCU_Module:RaspberryPi_Pico_W@RaspberryPi_Pico_Common_THT"
 _PICO_ADC = ("31", "32", "34")  # GPIO26/27/28

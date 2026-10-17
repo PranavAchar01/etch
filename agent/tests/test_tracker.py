@@ -40,3 +40,15 @@ def test_radio_fix_leaves_wired_antenna_and_plain_asks():
     }
     assert live._radio_fix(design, [], "a led blinker") == []
     assert len(design["parts"]) == 2
+
+
+def test_self_named_module_pins_are_left_open():
+    design = {
+        "parts": [
+            {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {"3": "GND", "24": "LED", "30": "RUN", "37": "3V3_EN", "35": "ADC_VREF", "33": "AGND"}},
+            {"ref": "R1", "piece": "kicad:Device:R@R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical", "pins": {"1": "LED", "2": "GND"}},
+        ]
+    }
+    kept = [live._cat()[live.PICO_W_KEY]]
+    live._drop_lonely_gpio(design, kept)
+    assert design["parts"][0]["pins"] == {"3": "GND", "24": "LED"}
