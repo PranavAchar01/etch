@@ -158,7 +158,7 @@
   #livebar button.on { background:var(--amber); color:#201400; border-color:var(--amber); }
   body.live #cue, body.live #title, body.live #end, body.live #gallery, body.live #cornewrap, body.live #next { display:none !important; }
   #vwrap { position:absolute; left:0; top:0; width:1380px; height:874px; }
-  /* ---------- app (2026-10-16): pixel background, idle landing, talk controls, access code, phone layout ---------- */
+  /* ---------- app (2026-10-16): pixel background, idle landing, talk controls, phone layout ---------- */
   #bg { position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:0; }
   #stage { z-index:1; background:transparent; }
   #top, #main, #capband { z-index:1; }
@@ -199,14 +199,6 @@
   #wait { position:absolute; left:50%; top:330px; transform:translateX(-50%); font:600 20px Inter; color:var(--ink); background:rgba(4,12,7,.92); border:1.5px solid var(--line2); border-radius:12px; padding:12px 20px; opacity:0; transition:opacity .4s; z-index:2; pointer-events:none; white-space:nowrap; }
   #capband { background:rgba(0,0,0,.92); }
 
-  #gate { position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; background:rgba(1,3,1,.82); backdrop-filter:blur(4px); padding:16px; }
-  #gform { width:min(440px, 100%); box-sizing:border-box; background:#06100a; border:1.5px solid var(--v); border-radius:16px; padding:22px; box-shadow:0 0 40px rgba(61,255,110,.25); }
-  #gform b { display:block; font:700 26px Silkscreen; color:var(--v); }
-  #gform p { margin:8px 0 16px; color:var(--mute); font:15px/1.45 Inter; }
-  #gform .r { display:flex; gap:10px; }
-  #gcode { flex:1; min-width:0; font:600 18px "JetBrains Mono"; color:var(--ink); background:#020402; border:1.5px solid var(--line2); border-radius:10px; padding:10px 12px; outline:none; }
-  #gcode:focus { border-color:var(--v); }
-  #gerr { min-height:20px; margin-top:10px; font:14px Inter; color:var(--amber); }
 
   /* phone: the board view scales to the width, everything else stacks below at full size */
   body.mobile, html:has(body.mobile) { overflow:auto; height:auto; }
@@ -431,8 +423,6 @@
   <section id="capband"><div class="etchw sm" id="bandW" role="button" tabindex="0" title="Click Etch to talk"><div class="face"><i class="ring"></i><i class="ring r2"></i><canvas id="mB" class="px" width="32" height="30"></canvas></div><div class="vlab" id="bandL">CLICK ME TO TALK</div></div>
   <div id="bub" style="opacity:0"><div id="who"><span id="whot"></span><canvas id="vu" width="92" height="36"></canvas></div><div id="cap"></div></div></section>
 </div>
-<div id="gate"><form id="gform" autocomplete="off"><b>ETCH</b><p>Etch is in private preview. Enter the access code you were given; this browser remembers it.</p>
-  <div class="r"><input id="gcode" type="password" placeholder="access code" /><button class="btn go" type="submit">Enter</button></div><div id="gerr"></div></form></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
 <script type="module" src="app.js?v=14"></script>
 </body>
