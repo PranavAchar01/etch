@@ -40,3 +40,13 @@ def test_taken_rail_pin_left_alone():
     d["parts"][0]["pins"]["40"] = "VBUS5"
     live._wire_mcu_supply(d, _kept())
     assert d["parts"][0]["pins"]["40"] == "VBUS5"
+
+
+def test_firmware_driven_net_off_the_mcu_gets_a_gpio():
+    d = copy.deepcopy(RELAY)
+    d["parts"][0]["pins"] = {"3": "GND"}
+    d["parts"].append({"ref": "R1", "piece": "kicad:Device:R@R_Axial_DIN0204_L3.6mm_D1.6mm_P2.54mm_Vertical",
+                       "pins": {"1": "RELAY_IN", "2": "GND"}})
+    d["firmware"] = {"commands": [{"input": "1", "high": ["RELAY_IN"]}]}
+    live._wire_named_gpio(d, _kept())
+    assert "RELAY_IN" in d["parts"][0]["pins"].values()

@@ -736,6 +736,7 @@ def assemble(
         ]
         err = None
         spec_path = out / "spec.yaml"
+        (out / f"design-try{it}.json").write_text(json.dumps(design, indent=1))  # what each try really was
         lonely = _lonely_nets(design)
         mism = _ref_mismatch(design)
         if bad:
@@ -770,7 +771,7 @@ def assemble(
         elif firmware.mcu_part(design, kept) and isinstance(
             fw := firmware.build(design, kept, out), str
         ):
-            err = fw
+            err = fw + "\nYour nets now:\n" + _wiring(design, kept)
         elif firmware.mcu_part(design, kept) and isinstance(
             fb_rows := firmware.benchmarks(design, kept), str
         ):
@@ -1126,7 +1127,14 @@ def _wire_named_gpio(design: dict[str, Any], kept: list[dict[str, Any]]) -> None
         for c in (design.get("firmware") or {}).get("commands") or []
         for n in c.get("high") or []
     }
-    for net in _lonely_nets(design):
+    on_parts = {
+        str(n)
+        for q in design.get("parts", [])
+        for n in (q.get("pins") or {}).values()
+        if str(n).upper() not in ("GND",) + _SUPPLY_5V + _SUPPLY_3V3
+    }
+    # a net the firmware drives belongs on the MCU even when it already joins two other pins (R and Q base)
+    for net in _lonely_nets(design) + sorted((driven & on_parts) - set(_lonely_nets(design))):
         if net in pins.values():
             continue
         m = re.fullmatch(r"(?:GPIO|GP|IO|D)_?(\d+)", net.upper())
