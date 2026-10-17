@@ -1,11 +1,15 @@
 // Parts tab for the board editor: a family dropdown, an expanding search field and a 2-column grid of
 // draggable part tiles. The editor owns the drag ghost and the drop; this module only reports drag start/end.
+// Each tile shows the part's isolated 3D render (`thumb`, a static webp from library/render_parts.py) over a
+// skeleton block that stays until the image has decoded; a part with no render keeps the neutral skeleton block.
 //
-//   const panel = createPartsPanel(hostEl, { apiBase, onDragStart(part, evt), onDragEnd(part, evt) });
+//   const panel = createPartsPanel(hostEl, { onDragStart(part, evt), onDragEnd(part, evt) });
 //   panel.filter('led');  panel.dispose();
 
 const CATALOG_URL = new URL('./parts-catalog.json', import.meta.url);
 const DRAG_THRESHOLD = 4;
+const APP_ROOT = new URL('../../', import.meta.url);
+const MAX_LOADS = 4; // images decoding at once
 let catalogPromise = null;
 
 function loadCatalog() {
@@ -62,32 +66,32 @@ const CSS = `
 .pp-clear svg{width:13px;height:13px}
 .pp-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:4px 14px 16px;scrollbar-width:thin}
 .pp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.pp-tile{position:relative;aspect-ratio:1/1;background:var(--pp-tile);border-radius:10px;box-shadow:var(--pp-shadow);
+.pp-tile{position:relative;display:flex;flex-direction:column;background:var(--pp-tile);border-radius:14px;
+  box-shadow:0 0 0 1px #ececec,0 1px 2px rgba(17,17,17,.03),0 4px 14px rgba(17,17,17,.03);
   cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;overflow:hidden;contain:layout paint;
   transition:transform .32s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease}
-.pp-tile:hover{box-shadow:0 2px 4px rgba(20,28,45,.07),0 6px 16px rgba(20,28,45,.09)}
+.pp-tile:hover{box-shadow:0 0 0 1px #e4e4e4,0 2px 4px rgba(17,17,17,.04),0 12px 28px rgba(17,17,17,.07)}
 .pp-tile[data-press]{transform:scale(1.04,.92);transition:transform .12s cubic-bezier(.3,.7,.4,1)}
 .pp-tile[data-lift]{transform:translateY(-4px) scale(1.05);cursor:grabbing;
-  box-shadow:0 6px 10px rgba(20,28,45,.08),0 16px 32px rgba(20,28,45,.16)}
-.pp-art{position:absolute;inset:10px 10px 26px;display:grid;place-items:center}
-.pp-art img,.pp-art svg{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none}
-.pp-art>img,.pp-art>svg{grid-area:1/1;opacity:0;transition:opacity .25s ease}
-.pp-art>[data-loaded]{opacity:1}
-.pp-art>.pp-sk{grid-area:1/1;width:100%;height:100%;border-radius:8px;transition:opacity .25s ease}
+  box-shadow:0 0 0 1px #e4e4e4,0 6px 10px rgba(17,17,17,.08),0 16px 32px rgba(17,17,17,.16)}
+.pp-art{position:relative;aspect-ratio:1/1;margin:6px 6px 0;display:grid}
+.pp-art>*{grid-area:1/1;width:100%;height:100%}
+.pp-art>img{object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none;opacity:0;transition:opacity .18s ease-out}
+.pp-art>img[data-loaded]{opacity:1}
+.pp-art>.pp-sk{border-radius:10px;transition:opacity .18s ease-out}
 .pp-art[data-ready]>.pp-sk{opacity:0}
 .pp-sk{display:block;background:linear-gradient(90deg,#eef0f3 0%,#eef0f3 30%,#f6f7f9 50%,#eef0f3 70%,#eef0f3 100%) 0 0/250% 100%;
   animation:pp-sk 1.4s linear infinite}
 @keyframes pp-sk{from{background-position:100% 0}to{background-position:-150% 0}}
-.pp-sk-tile{cursor:default;box-shadow:none;background:#fff}
-.pp-sk-tile .pp-sk{position:absolute;inset:10px 10px 26px;border-radius:8px}
-.pp-sk-tile .pp-sk+.pp-sk{inset:auto 28% 9px;height:8px;border-radius:4px}
+.pp-art[data-none]>.pp-sk{animation:none;background:#eef0f3}
+.pp-sk-tile{cursor:default}
+.pp-sk-tile .pp-name{display:flex;justify-content:center;align-items:center}
+.pp-sk-tile .pp-name .pp-sk{width:60%;height:8px;border-radius:4px}
 .pp-sk-bar{height:12px;border-radius:6px;width:96px}
 .pp-sk-n{display:inline-block;width:18px;height:10px;border-radius:5px;vertical-align:middle}
 .pp-root[data-loading] .pp-dd-btn,.pp-root[data-loading] .pp-search-btn{cursor:default}
-.pp-name{position:absolute;left:6px;right:6px;bottom:6px;font-size:11.5px;line-height:15px;font-weight:600;text-align:center;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--pp-ink);opacity:0;transform:translateY(3px);
-  transition:opacity .16s ease,transform .2s ease}
-.pp-tile:hover .pp-name,.pp-tile:focus-visible .pp-name,.pp-tile[data-lift] .pp-name{opacity:1;transform:none}
+.pp-name{flex:none;height:28px;padding:0 8px;font:600 12px/28px "Figtree",system-ui,sans-serif;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--pp-ink)}
 .pp-empty{padding:32px 8px;text-align:center;color:var(--pp-mute);line-height:1.5}
 .pp-note{font-size:12px;color:var(--pp-mute);padding:0 2px 8px}
 @media (prefers-reduced-motion:reduce){.pp-root *{transition-duration:0s!important}.pp-sk{animation:none;background:#eef0f3}}
@@ -105,27 +109,8 @@ const ICON_SEARCH = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" 
 const ICON_X = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>';
 const ICON_CHEV = '<svg class="pp-chev" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 7 9l3.5-3.5"/></svg>';
 
-// Footprint glyphs for parts without a render: green board square, copper pads, a simple body per family.
-const PAD = '#c9a24a', BODY = '#2b2f36', BOARD = '#0b7a43', SILK = '#e9efe9';
-const GLYPH_BODY = {
-  basics: `<rect x="22" y="44" width="56" height="12" rx="6" fill="#d9c7a3"/><rect x="34" y="44" width="4" height="12" fill="#a8432f"/><rect x="44" y="44" width="4" height="12" fill="#3a3a3a"/><rect x="54" y="44" width="4" height="12" fill="#c58b2e"/><circle cx="16" cy="50" r="5" fill="${PAD}"/><circle cx="84" cy="50" r="5" fill="${PAD}"/>`,
-  lights: `<circle cx="50" cy="48" r="17" fill="#ff5a4e" opacity=".9"/><circle cx="50" cy="48" r="17" fill="none" stroke="${SILK}" stroke-width="1.5"/><circle cx="44" cy="42" r="5" fill="#fff" opacity=".55"/><circle cx="40" cy="76" r="4.5" fill="${PAD}"/><circle cx="60" cy="76" r="4.5" fill="${PAD}"/>`,
-  switches: `<rect x="28" y="28" width="44" height="44" rx="4" fill="${BODY}"/><circle cx="50" cy="50" r="12" fill="#5c6270"/><rect x="18" y="22" width="8" height="8" fill="${PAD}"/><rect x="74" y="22" width="8" height="8" fill="${PAD}"/><rect x="18" y="70" width="8" height="8" fill="${PAD}"/><rect x="74" y="70" width="8" height="8" fill="${PAD}"/>`,
-  chips: `<rect x="30" y="26" width="40" height="48" rx="3" fill="${BODY}"/><circle cx="37" cy="33" r="2.5" fill="#5c6270"/>${[0, 1, 2, 3].map((i) => `<rect x="22" y="${31 + i * 11}" width="8" height="5" fill="${PAD}"/><rect x="70" y="${31 + i * 11}" width="8" height="5" fill="${PAD}"/>`).join('')}`,
-  sensors: `<circle cx="50" cy="46" r="18" fill="#e9e3d2"/><path d="M38 46h24M38 40h24M38 52h24" stroke="#b5463a" stroke-width="2.4"/><circle cx="42" cy="78" r="4.5" fill="${PAD}"/><circle cx="58" cy="78" r="4.5" fill="${PAD}"/>`,
-  connectors: `<rect x="20" y="38" width="60" height="24" rx="2" fill="${BODY}"/>${[0, 1, 2, 3].map((i) => `<rect x="${27 + i * 13}" y="45" width="7" height="10" fill="${PAD}"/>`).join('')}`,
-  modules: `<rect x="22" y="20" width="56" height="62" rx="3" fill="#20242b"/><rect x="28" y="26" width="44" height="30" rx="2" fill="#aab2bd"/><path d="M32 66h10M32 72h10" stroke="${PAD}" stroke-width="3"/>${[0, 1, 2, 3, 4].map((i) => `<rect x="${26 + i * 10}" y="82" width="5" height="5" fill="${PAD}"/>`).join('')}`,
-  power: `<rect x="30" y="34" width="40" height="30" rx="3" fill="${BODY}"/><rect x="34" y="22" width="32" height="12" fill="#b8bcc4"/><circle cx="50" cy="28" r="3" fill="#7d838e"/>${[0, 1, 2].map((i) => `<rect x="${36 + i * 12}" y="64" width="5" height="14" fill="${PAD}"/>`).join('')}`,
-  sound: `<circle cx="50" cy="50" r="24" fill="${BODY}"/><circle cx="50" cy="50" r="6" fill="#5c6270"/><circle cx="50" cy="50" r="15" fill="none" stroke="#3d424c" stroke-width="2"/><circle cx="26" cy="80" r="4.5" fill="${PAD}"/><circle cx="74" cy="80" r="4.5" fill="${PAD}"/>`,
-  other: `<circle cx="50" cy="50" r="18" fill="none" stroke="${PAD}" stroke-width="7"/><circle cx="50" cy="50" r="11" fill="#f6f7f9"/>`,
-};
-function glyph(family) {
-  const body = GLYPH_BODY[family] || GLYPH_BODY.other;
-  return `<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="6" y="6" width="88" height="88" rx="10" fill="${BOARD}"/><rect x="6" y="6" width="88" height="88" rx="10" fill="url(#pp-sheen)" opacity=".18"/>${body}</svg>`;
-}
-
 const SK_TILES = 8;
-const skTile = () => '<div class="pp-tile pp-sk-tile" aria-hidden="true"><i class="pp-sk"></i><i class="pp-sk"></i></div>';
+const skTile = () => '<div class="pp-tile pp-sk-tile" aria-hidden="true"><div class="pp-art"><i class="pp-sk"></i></div><div class="pp-name"><i class="pp-sk"></i></div></div>';
 const SK_GRID = Array.from({ length: SK_TILES }, skTile).join('');
 
 // Until the editor creates the panel (it waits for the API config first), the empty pane shows a skeleton.
@@ -146,10 +131,9 @@ function el(tag, cls, html) {
   return n;
 }
 
-export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd } = {}) {
+export function createPartsPanel(hostEl, { onDragStart, onDragEnd } = {}) {
   injectCss();
   hostEl.querySelectorAll(':scope > .pp-pre').forEach((n) => n.remove());
-  const base = (apiBase || '').replace(/\/+$/, '');
   const ac = new AbortController();
   const on = (t, type, fn, opts) => t.addEventListener(type, fn, { signal: ac.signal, ...opts });
 
@@ -157,7 +141,6 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
   root.setAttribute('data-loading', '');
   root.setAttribute('aria-busy', 'true');
   root.innerHTML = `
-    <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="pp-sheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
     <div class="pp-head">
       <h2 class="pp-title">Parts</h2>
       <div class="pp-bar">
@@ -196,45 +179,71 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
   let drag = null;
   const partOf = new WeakMap();
 
+  // images load through a small queue (a few at a time), started when a tile nears the viewport
+  const queue = [];
+  let loading = 0;
   const io = 'IntersectionObserver' in window
     ? new IntersectionObserver((entries) => {
       for (const e of entries) {
         if (!e.isIntersecting) continue;
         io.unobserve(e.target);
-        loadImg(e.target);
+        enqueue(e.target);
       }
     }, { root: scroller, rootMargin: '200px 0px' })
     : null;
-
-  // the art area holds a skeleton until it knows what to show: the rendered image once it has loaded, else the glyph
-  function reveal(art, node) {
-    art.appendChild(node);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      node.setAttribute('data-loaded', '');
-      art.setAttribute('data-ready', '');
-      setTimeout(() => art.querySelector(':scope > .pp-sk')?.remove(), 300);
-    }));
-  }
-  function showGlyph(art, part) {
-    const t = document.createElement('template');
-    t.innerHTML = glyph(part.family);
-    reveal(art, t.content.firstElementChild);
-  }
-  function loadImg(tile) {
+  const thumbUrl = (part) => new URL(part.thumb, APP_ROOT).href;
+  // decoded images by key, so switching families back and forth shows them at once
+  const decoded = new Map();
+  function enqueue(tile, front = false) {
     const part = partOf.get(tile);
-    if (!part) return;
-    const art = tile.querySelector('.pp-art');
-    if (!part.img || !base) { showGlyph(art, part); return; }
+    if (!part || tile.dataset.queued) return;
+    tile.dataset.queued = '1';
+    if (front) queue.unshift(tile); else queue.push(tile);
+    pump();
+  }
+  function pump() {
+    while (loading < MAX_LOADS && queue.length) {
+      const tile = queue.shift();
+      if (!tile.isConnected) continue;
+      loading++;
+      loadImg(tile).finally(() => { loading--; pump(); });
+    }
+  }
+  // a part with no render keeps a still, neutral skeleton block (never a drawing)
+  function noImage(art) { art.setAttribute('data-none', ''); }
+  function reveal(art, img) {
+    art.appendChild(img);
+    requestAnimationFrame(() => {
+      img.setAttribute('data-loaded', '');
+      art.setAttribute('data-ready', '');
+      setTimeout(() => art.querySelector(':scope > .pp-sk')?.remove(), 220);
+    });
+  }
+  function fetchImg(url) {
     const img = new Image();
     img.alt = '';
     img.decoding = 'async';
     img.draggable = false;
-    img.onload = () => {
-      if (disposed) return;
-      (img.decode ? img.decode().catch(() => {}) : Promise.resolve()).then(() => { if (!disposed) reveal(art, img); });
-    };
-    img.onerror = () => { if (!disposed) showGlyph(art, part); };
-    img.src = `${base}/etch/piece/${part.img}.png`;
+    img.src = url;
+    return (img.decode ? img.decode() : new Promise((ok, no) => { img.onload = ok; img.onerror = no; })).then(() => img);
+  }
+  function loadImg(tile) {
+    const part = partOf.get(tile);
+    const art = tile.querySelector('.pp-art');
+    if (!part?.thumb) { noImage(art); return Promise.resolve(); }
+    const url = thumbUrl(part);
+    const got = decoded.get(url);
+    const p = got ? Promise.resolve(got.cloneNode()) : fetchImg(url).then((img) => { decoded.set(url, img); return img.cloneNode(); });
+    return p.then((img) => { if (!disposed && tile.isConnected) reveal(art, img); })
+      .catch(() => { if (!disposed) noImage(art); });
+  }
+  // the first family's images start loading as soon as the catalog arrives, before their tiles scroll in
+  function prefetch(parts) {
+    for (const p of parts.slice(0, 24)) {
+      if (!p.thumb) continue;
+      const url = thumbUrl(p);
+      if (!decoded.has(url)) fetchImg(url).then((img) => decoded.set(url, img)).catch(() => {});
+    }
   }
 
   // ---------- dropdown ----------
@@ -344,7 +353,7 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
     const label = part.value && !part.name.includes(part.value) ? `${part.name} · ${part.value}` : part.name;
     t.title = `${label}\n${part.footprint.split(':').pop()}`;
     t.setAttribute('aria-label', `${label}. Press Enter to place.`);
-    const art = el('div', 'pp-art', '<i class="pp-sk"></i>');
+    const art = el('div', 'pp-art', '<i class="pp-sk" aria-hidden="true"></i>');
     const name = el('div', 'pp-name');
     name.textContent = part.name;
     t.append(art, name);
@@ -368,9 +377,12 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
     const tiles = list.map(makeTile);
     tiles.forEach((t) => frag.appendChild(t));
     grid.replaceChildren(frag);
+    queue.length = 0;
     for (const t of tiles) {
-      if (!base || !partOf.get(t).img) loadImg(t); // no render to wait for: the glyph fades in right away
-      else if (io) io.observe(t); else loadImg(t);
+      const part = partOf.get(t);
+      if (!part.thumb) noImage(t.querySelector('.pp-art'));
+      else if (decoded.has(thumbUrl(part))) loadImg(t); // already decoded: no skeleton flash
+      else if (io) io.observe(t); else enqueue(t);
     }
   }
 
@@ -430,7 +442,9 @@ export function createPartsPanel(hostEl, { apiBase = '', onDragStart, onDragEnd 
     root.removeAttribute('data-loading');
     root.removeAttribute('aria-busy');
     renderMenu();
-    setFamily(c.families[0]?.id || '__all');
+    const first = c.families[0]?.id || '__all';
+    prefetch(first === '__all' ? c.parts : c.parts.filter((p) => p.family === first));
+    setFamily(first);
     if (pendingFilter != null) api.filter(pendingFilter);
   }).catch(() => {
     if (disposed) return;

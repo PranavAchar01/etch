@@ -3,7 +3,8 @@
 Reads engine/parts/index.json (the verified parts) and engine/parts/kicad_catalog.json (the KiCad pieces),
 groups every part into a beginner family, and writes deploy/etch-app/js/editor/parts-catalog.json.
 The image of a part is the 16-hex name of its prerendered footprint in engine/parts/piece_renders (same
-rule as agent/piece_render._png), served by the backend at /etch/piece/<hex>.png, or null when none exists.
+rule as agent/piece_render._png), served by the backend at /etch/piece/<hex>.png, or null when none exists. `thumb` is the isolated 3D render
+from library/render_parts.py, a static file next to the app (parts/<footprint>.webp), or absent when none exists.
 
   python3 library/build_parts_catalog.py
 """
@@ -14,6 +15,8 @@ import hashlib
 import json
 import re
 from pathlib import Path
+
+from render_parts import OUT as THUMBS, safe_name
 
 ROOT = Path(__file__).resolve().parent.parent
 INDEX = ROOT / "engine/parts/index.json"
@@ -69,6 +72,11 @@ NICE = {
 def render_hex(footprint: str) -> str | None:
     h = hashlib.sha1(f"{R_VERSION}|{footprint}|{R_VIEW}|{R_W}x{R_H}".encode()).hexdigest()[:16]
     return h if (RENDERS / f"{h}.png").exists() else None
+
+
+def thumb_of(footprint: str) -> str | None:
+    name = safe_name(footprint) + ".webp"
+    return f"parts/{name}" if (THUMBS / name).exists() else None
 
 
 def family_of(*fields: str) -> str:
@@ -129,6 +137,8 @@ def build() -> dict:
             "pins": pin_list(p.get("pins")),
             "img": render_hex(fp),
         }
+        if thumb_of(fp):
+            row["thumb"] = thumb_of(fp)
         v = p.get("value")
         if v and v != p["name"] and len(v) <= 16:
             row["value"] = v
@@ -148,6 +158,8 @@ def build() -> dict:
             "pins": pin_list(p.get("pins")),
             "img": render_hex(fp),
         }
+        if thumb_of(fp):
+            row["thumb"] = thumb_of(fp)
         names = pin_names(p.get("pins"))
         if names:
             row["pinNames"] = names
@@ -167,7 +179,8 @@ def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(cat, separators=(",", ":"), ensure_ascii=False) + "\n")
     with_img = sum(1 for p in cat["parts"] if p["img"])
-    print(f"{len(cat['parts'])} parts ({with_img} with images) -> {OUT.relative_to(ROOT)}")
+    with_thumb = sum(1 for p in cat["parts"] if p.get("thumb"))
+    print(f"{len(cat['parts'])} parts ({with_thumb} with 3D thumbs, {with_img} with piece renders) -> {OUT.relative_to(ROOT)}")
     for f in cat["families"]:
         print(f"  {f['label']}: {f['count']}")
 
