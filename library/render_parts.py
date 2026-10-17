@@ -99,6 +99,8 @@ def footprint_sexpr(footprint: str) -> tuple[str, bool]:
 def glb_mesh_count(path: Path) -> int:
     try:
         b = path.read_bytes()
+        if len(b) < 20 or struct.unpack_from("<I", b, 8)[0] != len(b):
+            return 0  # truncated or still being written
         n = struct.unpack_from("<I", b, 12)[0]
         return len(json.loads(b[20:20 + n]).get("meshes", []))
     except Exception:
@@ -179,8 +181,9 @@ const fill = new THREE.HemisphereLight(0xffffff, 0xd8d8d2, 0.7);
 scene.add(key, fill);
 const cam = new THREE.PerspectiveCamera(32, 1, 1e-4, 10);
 // one fixed 3/4 view for every part: the board's home azimuth, a little lower so sides and pins read
-const az = THREE.MathUtils.degToRad(25), el = THREE.MathUtils.degToRad(40);
-const DIR = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+// (flat SMD chips get a higher one, so their body, end caps and markings read)
+const viewDir = (elDeg) => { const az = THREE.MathUtils.degToRad(25), el = THREE.MathUtils.degToRad(elDeg); return new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)); };
+let DIR = viewDir(40);
 const ENIG = { color: 0xdfb85e, metalness: 1, roughness: 0.24 };
 // part material, as the editor makes it (STEP colours are already linear)
 function partMaterial(src) {
@@ -271,6 +274,7 @@ window.renderPart = async (url, kind) => {
   const sz = box.getSize(new THREE.Vector3());
   shadow.scale.set(Math.max(sz.x, 1e-4) * 1.55, Math.max(sz.z, 1e-4) * 1.55, 1);
   shadow.position.set((box.min.x + box.max.x) / 2, 0.000002, (box.min.z + box.max.z) / 2);
+  DIR = viewDir(kind !== "flat" && sz.y < 0.45 * Math.max(sz.x, sz.z) ? 56 : 40);
   fit(box);
   renderer.render(scene, cam);
   if (group.userData.plinth) { scene.remove(group.userData.plinth); group.userData.plinth.geometry.dispose(); }

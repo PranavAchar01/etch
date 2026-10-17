@@ -67,8 +67,28 @@ export function createStartBackdrop(host, { boards = [] } = {}) {
   host.append(root);
 
   let shown = new Set(), box = { x: 30, y: 30, w: W - 60, h: H - 60 };
+  // pin the ghost onto the viewer's empty workplane: its inner box (30..370 x 30..230) covers the drawing area
+  let offFrame = null;
+  function attach(viewer) {
+    const fit = () => {
+      const a = viewer.emptyArea;
+      if (!a) return;
+      const pts = [[a.x0, a.z0], [a.x1, a.z0], [a.x0, a.z1], [a.x1, a.z1]].map(([x, z]) => viewer.worldToScreen({ x, y: 0, z }));
+      if (pts.some((p) => p.behind)) return;
+      const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+      const l = Math.min(...xs), r = Math.max(...xs), t = Math.min(...ys), b = Math.max(...ys);
+      const kx = (r - l) / (W - 60), ky = (b - t) / (H - 60);
+      Object.assign(svg.style, { left: l - 30 * kx + "px", top: t - 30 * ky + "px", width: W * kx + "px", height: H * ky + "px", transform: "none" });
+      svg.setAttribute("preserveAspectRatio", "none");
+      root.classList.add("pinned");
+    };
+    offFrame = viewer.on("frame", fit);
+    fit();
+  }
+
   return {
     el: root,
+    attach,
     building(on) { root.classList.toggle("building", !!on); },
     // the engine's board size in mm: keep the ghost's 400 x 260 box, fit an outline of that aspect into it
     size(b) {
@@ -96,6 +116,7 @@ export function createStartBackdrop(host, { boards = [] } = {}) {
     },
     remove() {
       clearTimeout(driftT);
+      offFrame?.();
       for (const s of drifts) s.stop?.();
       root.classList.add("gone");
       setTimeout(() => root.remove(), 600);
