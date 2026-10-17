@@ -22,7 +22,7 @@ cd etch
 | Path | What |
 | --- | --- |
 | `deploy/etch-app/` | The page (static: `index.html`, `app.js`, `viewer3d.js`). This folder is what Vercel serves. |
-| `deploy/etch_public.py` | The backend API the page calls (port 3439). |
+| `deploy/etch_public.py` | The backend API the page calls (port 3439). Routes and build events: [deploy/API.md](deploy/API.md); planned ones: [deploy/EXPLORE_API.md](deploy/EXPLORE_API.md). |
 | `deploy/*.sh` | How it runs on the host Mac: launchd restart, Cloudflare tunnel, Vercel redeploy, STT keeper. |
 | `agent/` | The lead agent and sub-agents that write and repair board specs ([agent/README.md](agent/README.md)). |
 | `engine/` | Spec in, verified KiCad board out ([engine/README.md](engine/README.md)). |

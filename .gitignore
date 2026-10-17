@@ -39,6 +39,7 @@
 
 !/deploy/
 /deploy/*
+!/deploy/*.md
 !/deploy/etch_public.py
 !/deploy/redeploy.sh
 !/deploy/restart.sh
