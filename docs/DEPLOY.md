@@ -52,6 +52,9 @@ container; mount a volume there to keep builds across restarts.
 | `ETCH_FALLBACK` | `openai` | `off` disables the automatic fallback |
 | `ETCH_FALLBACK_MODEL` / `ETCH_FALLBACK_SUB_MODEL` | `gpt-5-mini` / `gpt-5-nano` | models used after a primary error |
 | `ETCH_PRIMARY_TIMEOUT` | `40` | seconds before a primary call counts as failed |
+| `ETCH_CLASSIFIER` | unset | `1` runs NVIDIA's prompt-task-and-complexity-classifier (NVIDIA Open Model License, ~740 MB download on first use, needs `torch` and `transformers`) before the first pick: complexity below `ETCH_CLASSIFIER_THRESHOLD` (default `0.3`) picks with `ETCH_SUB_MODEL`, the rest with `ETCH_MODEL`; repairs always use `ETCH_MODEL`. Without the packages it logs `route: off` and changes nothing |
+| `ETCH_CLASSIFIER_DIR` / `ETCH_CLASSIFIER_THREADS` | HF cache / `2` | local model folder; CPU threads for the classifier |
+| `ETCH_THINKING` | `off` | `on` turns Nemotron reasoning back on (about 8x slower per call) |
 | `ETCH_KICAD_CLI` / `ETCH_KICAD_PY` / `ETCH_KICAD_SHARE` | `/usr/bin/kicad-cli`, `/usr/bin/python3`, `/usr/share/kicad` | KiCad paths on Linux |
 | `ETCH_STT_URL` | `http://127.0.0.1:3421/stt` | speech-to-text server (not in the image; `/etch/stt` returns 503 without it) |
 

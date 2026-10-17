@@ -194,6 +194,58 @@ def stage_of(ev: dict) -> str | None:
     return None
 
 
+class Classifier:
+    """ETCH_CLASSIFIER=1: one long-lived NVIDIA prompt classifier process for the whole backend
+    (agent/task_router.py --serve), so the ~740 MB model loads once, not once per build. classify() returns
+    the scores as a JSON string for the build's ETCH_CLASSIFIED, or None (router off for that build)."""
+
+    ARGS = [
+        "uv", "run", "--quiet", "--project", "engine",
+        "--with", "torch", "--with", "transformers", "--with", "safetensors",
+        "--with", "sentencepiece", "--with", "huggingface_hub",
+        "nice", "-n", "10", "python", "-m", "agent.task_router", "--serve",
+    ]
+
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+        self.proc: subprocess.Popen | None = None
+        self.ready = False
+
+    def _start(self) -> None:
+        self.proc = subprocess.Popen(
+            self.ARGS, cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, text=True, start_new_session=True,
+        )
+        head = json.loads(self.proc.stdout.readline() or "{}")
+        self.ready = bool(head.get("ready"))
+        print(f"classifier: {head}", flush=True)
+
+    def warm(self) -> None:
+        with self.lock:
+            if self.proc is None or self.proc.poll() is not None:
+                self._start()
+
+    def classify(self, text: str) -> str | None:
+        if os.environ.get("ETCH_CLASSIFIER") != "1":
+            return None
+        try:
+            with self.lock:
+                if self.proc is None or self.proc.poll() is not None:
+                    self._start()
+                if not self.ready:
+                    return None
+                self.proc.stdin.write(json.dumps({"ask": text}) + "\n")
+                self.proc.stdin.flush()
+                line = self.proc.stdout.readline()
+            res = json.loads(line)
+            return None if "error" in res else json.dumps(res)
+        except (OSError, ValueError):
+            return None
+
+
+CLASSIFIER = Classifier()
+
+
 JOBS: dict[str, Job] = {}
 WAITING: list[Job] = []
 STATE = {"running": None}
@@ -239,9 +291,14 @@ def worker(job: Job):
         errf = tempfile.TemporaryFile(mode="w+")
         # own session = own process group (pgid == proc.pid): cancel and the timeout signal exactly this
         # run's processes (uv, the engine's python, KiCad, ngspice) and nothing else
+        env = dict(os.environ)
+        scored = CLASSIFIER.classify(job.text) if job.mode == "design" else None
+        if scored:
+            env["ETCH_CLASSIFIED"] = scored
         proc = subprocess.Popen(
             job.args,
             cwd=ROOT,
+            env=env,
             stdout=subprocess.PIPE,
             stderr=errf,
             text=True,
@@ -1115,6 +1172,8 @@ def stt_up() -> bool:
 
 if __name__ == "__main__":
     threading.Thread(target=gc_jobs, daemon=True).start()
+    if os.environ.get("ETCH_CLASSIFIER") == "1":
+        threading.Thread(target=CLASSIFIER.warm, daemon=True).start()
     print(f"etch public backend on http://127.0.0.1:{PORT}", flush=True)
     # ETCH_BIND=0.0.0.0 inside a container (docs/DEPLOY.md); the Mac keeps loopback behind the tunnel
     ThreadingHTTPServer((os.environ.get("ETCH_BIND", "127.0.0.1"), PORT), H).serve_forever()

@@ -116,3 +116,44 @@ def test_web_tier_rejects_an_invented_lcsc_id(env, monkeypatch):
     res = pl.find_part("Raspberry Pi Pico", Stream("t", echo=False))
     assert env["fetch"] == [] and res["status"] == "leads"
     assert any(t.get("rejected_lcsc") == "C175359" for t in res["tiers"])
+
+
+def test_tries_the_next_lcsc_id_and_keeps_the_right_datasheet(env, monkeypatch):
+    # first id's vendor library fails to convert: the next id is tried; the failed id's PDF is not attached
+    resp = {"results": {"web": [
+        {"url": "https://www.lcsc.com/product-detail/x_C111.html", "title": "drv | LCSC",
+         "description": "LCSC Part # C111", "snippets": []},
+        {"url": "https://www.lcsc.com/product-detail/DRV8833RTYR_C222.html", "title": "DRV8833RTYR | LCSC",
+         "description": "LCSC Part # C222", "snippets": []},
+        {"url": "https://datasheet.lcsc.com/x.pdf?productCode=C111", "title": "ds", "description": "", "snippets": []},
+    ]}}
+    monkeypatch.setattr(pl, "_get", lambda *a, **k: json.dumps(resp).encode())
+    monkeypatch.setattr(pl, "scout_pick", lambda *a: {"lcsc": None, "mpn": None, "reason": "r"})
+
+    def fetch(lcsc, stream, route="x"):
+        env["fetch"].append(lcsc)
+        if lcsc == "C111":
+            return {"status": "error", "part": None}
+        return {"status": "ok", "part": {"key": "drv8833rtyr_c222", "footprint": "LCSC_C222:QFN-16", "provenance": {}}}
+
+    monkeypatch.setattr(pl, "easyeda_fetch", fetch)
+    tiers: list = []
+    res = pl.you_find("DRV8833 dual motor driver", Stream("t", echo=False), tiers)
+    assert env["fetch"] == ["C111", "C222"]
+    assert res["part"]["lcsc"] == "C222" and "datasheet" not in res["part"]
+
+
+def test_part_number_from_the_ask_is_confirmed_in_the_catalogue(env, monkeypatch):
+    resp = {"results": {"web": [
+        {"url": "https://cdn.sparkfun.com/datasheets/hx711_english.pdf", "title": "HX711 24-bit ADC",
+         "description": "load cell amplifier", "snippets": []},
+    ]}}
+    monkeypatch.setattr(pl, "_get", lambda *a, **k: json.dumps(resp).encode())
+    monkeypatch.setattr(pl, "scout_pick", lambda *a: {"lcsc": "C123456", "mpn": "", "reason": "r"})
+    monkeypatch.setattr(pl, "jlc_search", lambda q, limit=5: [
+        {"lcsc": "C43656", "mpn": "HX711", "stock": 10, "datasheet": "https://lcsc/hx711.pdf"},
+        {"lcsc": "C9", "mpn": "OTHER1", "stock": 99, "datasheet": ""},
+    ] if q == "HX711" else [])
+    res = pl.you_find("HX711 load cell amplifier", Stream("t", echo=False), [])
+    assert env["fetch"] == ["C43656"]  # the invented C123456 is never fetched, OTHER1 is filtered out
+    assert res["part"]["mpn"] == "HX711" and res["part"]["datasheet"] == "https://lcsc/hx711.pdf"

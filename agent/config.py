@@ -4,7 +4,11 @@ ETCH_BASE_URL         OpenAI-compatible base URL (default https://api.inference.
 ETCH_MODEL            lead agent model (default nvidia/NVIDIA-Nemotron-3-Super-120B-A12B)
 ETCH_SUB_MODEL        sub-agent model (default nvidia/Nemotron-3.5-Lightning-30B-A3B)
 ETCH_API_KEY_SOURCE   Keychain service that holds the key (default jarvis-vault/Crusoe)
-ETCH_PRIMARY_TIMEOUT  seconds before a primary call gives up and the fallback takes over (default 40)
+ETCH_PRIMARY_TIMEOUT  seconds per primary attempt (default 30); a timed-out, 429 or 5xx primary call is tried once
+                      more on the primary, then the fallback takes over
+ETCH_RATE_PER_MIN     client-side cap on primary (Crusoe) requests per rolling minute, shared by every Etch process
+                      on the machine (default 28; Crusoe's free tier allows 30)
+ETCH_MAX_TOKENS       output cap per primary call (default 4000); a runaway generation ends instead of timing out
 ETCH_FALLBACK         "openai" (default) or "off"
 ETCH_THINKING         "off" (default) or "on": Nemotron reasoning on non-OpenAI endpoints. Off is about 8x faster
                       (Super 3.5 s vs 27 s on a picker-sized call) and the analog solver does the numbers.
@@ -38,7 +42,9 @@ SUB_MODEL = os.environ.get(
     "ETCH_SUB_MODEL", "nvidia/Nemotron-3.5-Lightning-30B-A3B"
 )  # research/model-pick.md (sub-agents)
 KEY_SOURCE = os.environ.get("ETCH_API_KEY_SOURCE", "jarvis-vault/Crusoe")
-PRIMARY_TIMEOUT = float(os.environ.get("ETCH_PRIMARY_TIMEOUT", "40"))
+PRIMARY_TIMEOUT = float(os.environ.get("ETCH_PRIMARY_TIMEOUT", "30"))
+RATE_PER_MIN = int(os.environ.get("ETCH_RATE_PER_MIN", "28"))
+MAX_TOKENS = int(os.environ.get("ETCH_MAX_TOKENS", "4000"))
 FALLBACK = os.environ.get("ETCH_FALLBACK", "openai").lower()
 THINKING = os.environ.get("ETCH_THINKING", "off").lower() == "on"
 FALLBACK_BASE_URL = os.environ.get("ETCH_FALLBACK_BASE_URL", OPENAI_URL)

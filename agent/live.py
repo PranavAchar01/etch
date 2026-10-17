@@ -49,6 +49,7 @@ from . import (
     prefilter,
     recipes,
     select,
+    task_router,
 )
 from . import engine_api as eng
 from .events import Stream
@@ -434,12 +435,15 @@ def _piece_line(p: dict[str, Any]) -> str:
 
 
 def pick(
-    stream: Stream, ask: str, kept: list[dict[str, Any]], extra: str = ""
+    stream: Stream,
+    ask: str,
+    kept: list[dict[str, Any]],
+    extra: str = "",
+    model: str | None = None,
 ) -> tuple[dict[str, Any], list]:
     t0 = time.time()
-    stream.emit(
-        "picker", "start", model=PICKER_MODEL, kept=len(kept), effort=PICKER_EFFORT
-    )
+    model = model or PICKER_MODEL
+    stream.emit("picker", "start", model=model, kept=len(kept), effort=PICKER_EFFORT)
     msgs = [
         {
             "role": "system",
@@ -455,7 +459,7 @@ def pick(
     ans, _ = llm.call_json(
         stream,
         "picker",
-        PICKER_MODEL,
+        model,
         msgs,
         PICK_FN,
         effort=PICKER_EFFORT,
@@ -2097,6 +2101,10 @@ def design(
     show.candidates(cl["kept"])
     t1 = time.time()
     rec = recipes.match(ask, cat) if not context else None
+    # ETCH_CLASSIFIER=1: NVIDIA's prompt classifier picks the first picker model (repairs stay on the lead)
+    rt = task_router.route(ask, bool(rec), config.MODEL, config.SUB_MODEL)
+    if rt:
+        stream.emit("lead", "router", **rt)
     route = "picker"
     if rec:
         d, route, used = rec
@@ -2133,7 +2141,9 @@ def design(
         stream.emit(
             "lead", "say", text=f"{len(cl['kept'])} parts fit. Picking the circuit."
         )
-        d, msgs = pick(stream, ask, cl["kept"], context)
+        d, msgs = pick(
+            stream, ask, cl["kept"], context, model=rt.get("model") if rt else None
+        )
         if d.get("missing"):
             got = source_missing(stream, d["missing"])
             if not got:
