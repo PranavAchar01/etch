@@ -20,6 +20,7 @@ import { createDrop } from "./drop.js";
 import { createNewBoardHero } from "./new-board.js";
 import { createStartBackdrop } from "./start-backdrop.js";
 import { createRenderLoader } from "./render-loader.js";
+import * as myBoards from "../my-boards.js";
 import { bindLiquid, liquidTabs, wobble } from "../ui/goo.js";
 
 registerSW();
@@ -391,6 +392,7 @@ const reloadChange = async ({ run } = {}) => {
       board.parts = parts.parts || {};
       await viewer.load(glb, { parts: board.parts, meta: board.meta, layers, keepView: true });
       board.id = run; board.kind = "live"; board.live = true;
+      myBoards.retitle(run, board.meta?.title);
       history.replaceState(null, "", page("board") + carry({ id: run }));
     } else if (board.files) {
       // demo: the same board again, so the swap in place is visible
@@ -438,6 +440,7 @@ async function loadDesign({ run, done = false } = {}) {
     if (!mock) board.files = null;
     api.setBoard(id, parts, meta);
     showMeta(meta);
+    myBoards.retitle(id, meta.title);
     history.replaceState(null, "", page("board") + carry({ id }));
     if (!list) list = createBoardList($("paneBoard"), { board, viewer, actions });
     list.render(); renderSettings(); syncTools(); bindLiquid(document);
@@ -455,7 +458,7 @@ async function loadDesign({ run, done = false } = {}) {
   void done;
 }
 
-let hero = null;
+let hero = null, lastAsk = "";
 function startDesign(text) {
   if (board.building) { dock.say("I'm still building your board. Give me a minute."); return; }
   board.building = true;
@@ -617,6 +620,12 @@ async function main() {
     onEvent(ev) {
       const k = `${ev.agent}:${ev.type}`;
       if (k === "lead:error" || (k === "lead:done" && !ev.ok)) emote("wince");
+      // My boards (Explore): every board this browser builds or changes; the mock's runs open as the demo board
+      if (k === "lead:start") lastAsk = ev.ask || "";
+      else if (k === "lead:done" && ev.ok) {
+        const id = !api.status.mock && isLive(ev.run) ? ev.run : board.kind === "new" ? DEMO : board.id;
+        myBoards.record({ run: id, title: board.id === id ? board.meta?.title : "", prompt: lastAsk });
+      }
       if (!backdrop) return;
       if (k === "lead:start") backdrop.building(true);
       else if (k === "picker:pick") backdrop.parts(ev.parts || []);
