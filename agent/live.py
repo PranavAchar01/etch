@@ -720,6 +720,7 @@ def assemble(
     tried: set[str] = set()  # made-up piece names already sent to sourcing once
     v: dict[str, Any] | None = None
     last_fail = None
+    stuck_prev: dict[str, Any] = {}  # failing benchmark -> (value, design values) on the previous built try
     for it in range(1, max_iters + 1):
         ti = time.time()
         stream.emit("assembly", "iteration", iteration=it, phase="place-route-check")
@@ -798,6 +799,8 @@ def assemble(
                 "these nets touch only one pin, so they connect nothing. Give the pin at the OTHER end the SAME "
                 f"net name (for a sensor output, the MCU input pin it feeds): {where}"
             )
+        elif silent := _no_sound_source(design, kept, ask):
+            err = silent
         elif lint := _wiring_lint(design, kept):
             err = (
                 "wiring mistakes: "
@@ -919,6 +922,8 @@ def assemble(
                     "assembly", "gate", iteration=it, gate=name, ok=ok, value=val
                 )
             static = _static_benchmarks(design, v, out, kept)
+            stuck_prev, moved = _stuck_benchmarks(design, v, stuck_prev)
+            static += moved
             if static:
                 stream.emit(
                     "assembly",
@@ -1087,6 +1092,72 @@ def _remark(v: dict[str, Any], rows: list[dict[str, Any]], marked: list[str]) ->
         v["uncheckable"] = marked
         v["pass"] = not v["failed"] and not v.get("unrouted") and not v.get("models_missing")
     return marked
+
+
+def _part_values(design: dict[str, Any]) -> tuple:
+    return tuple(sorted((str(p.get("ref")), str(p.get("piece")), str(p.get("value"))) for p in design.get("parts", [])))
+
+
+def _stuck_benchmarks(
+    design: dict[str, Any], v: dict[str, Any], prev: dict[str, Any]
+) -> tuple[dict[str, Any], list[str]]:
+    """Third uncheckable case (prod job QsB-ok6GZtu7rQqc, 10-17): a current benchmark that fails with the same
+    value on two built tries although the repair changed the parts or values in between is one the modelled loads
+    cannot move; repairing it again only loops. Marked not checkable (v recomputed); returns the failing values
+    to compare against on the next try, and the marked checks."""
+    rows = v.get("benchmarks") or []
+    vals = _part_values(design)
+    marked = []
+    for b in rows:
+        if b.get("pass") is not False or not isinstance(b.get("value"), (int, float)):
+            continue
+        if not re.search(r"(?:^|\.)(supply_ma_avg|supply_ma_peak|avg_ma|peak_ma)$", str(b.get("check", ""))):
+            continue
+        was = prev.get(b["check"])
+        if was and was[1] != vals and abs(was[0] - b["value"]) <= 0.01 * max(1e-6, abs(was[0])):
+            b["pass"] = None
+            b["status"] = "uncheckable"
+            b["text"] += " (not checkable in simulation: no repair moves this reading)"
+            marked.append(b["check"])
+    now = {b["check"]: (b["value"], vals) for b in rows if b.get("pass") is False and isinstance(b.get("value"), (int, float))}
+    if marked:
+        _remark(v, rows, marked + list(v.get("uncheckable") or []))
+    return now, marked
+
+
+_SOUND_ASK = re.compile(
+    r"\b(synth\w*|musical instrument|instrument|drum machine|sampler|theremin|sequencer|groovebox|keytar|"
+    r"music (?:maker|box|board|machine)|make music|plays? (?:music|notes|tones|songs?|melod\w*)|tone generator|"
+    r"noise ?maker|sound ?(?:effects?|board|maker))\b",
+    re.I,
+)
+_SOUND_SOURCE = re.compile(
+    r"555|NE555|LM555|TLC555|ICM7555|oscillat|XTAL|crystal|VCO|codec|DAC|PCM51|MAX98357|VS10[0-9]3|LM386|PAM8|TDA\d|"
+    r"TPA\d|PT8211|ATTINY|ATMEGA|STM32|ESP32|RP2040|Pico|Arduino|74HC14|CD40\d\d|4093|40106|op.?amp|LM358|TL07|"
+    r"Buzzer",
+    re.I,
+)
+
+
+def _no_sound_source(design: dict[str, Any], kept: list[dict[str, Any]], ask: str) -> str | None:
+    """Functional sanity gate (prod job QsB-ok6GZtu7rQqc, "a music synthesizer ... intro producer", 10-17): a synth
+    or instrument ask whose parts hold nothing that makes a signal (no MCU, oscillator, 555, codec/DAC or amp) is
+    a passive network that cannot make sound. It goes back to the picker instead of being built."""
+    if not _SOUND_ASK.search(ask) or firmware.mcu_part(design, kept):
+        return None
+    by_key = {p["key"]: p for p in kept}
+    for part in design.get("parts", []):
+        piece = str(part.get("piece", ""))
+        info = by_key.get(piece) or {}
+        text = " ".join(str(x) for x in (piece, part.get("value"), info.get("family"), info.get("description")) if x)
+        if _SOUND_SOURCE.search(text):
+            return None
+    return (
+        "the ask is for an instrument that makes sound, but no part generates a signal: there is no microcontroller, "
+        "oscillator (555), codec/DAC or amplifier, so the board is a passive network that stays silent. Add the "
+        f"Raspberry Pi Pico ({PICO_KEY}) to make the tones (PWM on a GPIO through a resistor and capacitor to the "
+        "audio jack or a buzzer), plus the controls the ask needs (buttons or keys on GPIO, knobs on ADC pins)"
+    )
 
 
 _IDLE = re.compile(r"idle|quiet|off|standby|rest|silent|sleep|default", re.I)
