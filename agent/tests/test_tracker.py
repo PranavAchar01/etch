@@ -177,6 +177,18 @@ def test_lonely_battery_net_goes_to_vsys():
     assert _nets(d)["U1"]["39"] == "VBAT"
 
 
+
+def test_lonely_module_uart_crosses_onto_pico_uart():
+    # live-1792274500634 try 1: the GPS module's TxD1/RxD1 reached no MCU pin, and GP0 already drove the LED
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "1": "V_LED"}},
+        {"ref": "J2", "piece": "kicad:Connector_Generic:Conn_01x02@PinHeader_1x02_P2.54mm_Vertical",
+         "pins": {"1": "TxD1", "2": "RxD1"}},
+    ]}
+    live._wire_hinted(d, _kept(d))
+    u1 = _nets(d)["U1"]
+    assert u1["2"] == "TxD1" and u1["11"] == "RxD1"
+
 # The first picker tries of the failing 10-17 runs, as saved: each must now pass the spec gate on try one.
 RUNS = {
     "cretae a gps tracker like an airtag": [

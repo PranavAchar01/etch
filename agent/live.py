@@ -2170,8 +2170,10 @@ _GENERIC_TOKENS = {
 }
 _MCU_HINT = re.compile(
     r"(^|_)(GPIO\w*|GP\d+|PICO\w*|MCU\w*|ADC\w*|ALERT|INT|IRQ|PWM\w*|SIG|SENSE|SENSOR\w*|DATA|CTRL|EN|BTN\w*|"
-    r"BUTTON\w*|SDA|SCL|TX|RX|MIC\w*|AUDIO\w*|FAN\w*|TEMP\w*)(_|$)"
+    r"BUTTON\w*|SDA|SCL|TXD?\d*|RXD?\d*|UART\w*|MIC\w*|AUDIO\w*|FAN\w*|TEMP\w*)(_|$)"
 )
+# a module's TX feeds the MCU's RX: UART0 (GP1 RX pin 2, GP0 TX pin 1), then UART1 on GP9/GP8
+_PICO_UART = {"TX": ("2", "12"), "RX": ("1", "11")}
 
 
 def _norm_net(n: str) -> str:
@@ -2333,6 +2335,10 @@ def _wire_hinted(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
             PICO_W_KEY,
         ):
             want = [_PICO_I2C["SCL"]]
+        elif (uart := re.search(r"(?:^|_)(TX|RX)D?\d*(?:$|_)", up)) and piece.get(
+            "key"
+        ) in (PICO_KEY, PICO_W_KEY):
+            want = list(_PICO_UART[uart.group(1)])
         elif re.search(r"ADC|ANALOG|MIC|AUDIO|TEMP|SENSE|SENSOR|POT|LDR", up):
             want = [
                 n for n in _PICO_ADC if piece.get("key") in (PICO_KEY, PICO_W_KEY)
