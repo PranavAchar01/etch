@@ -850,6 +850,7 @@ def route_new(board, cu, outline, items, jobs, rules, grid=None, budget_s=120.0)
             ix, iy = R.nearest(p["x"], p["y"])
             src = {(LAYERS.index(L), ix, iy) for L in p["layers"]}
             hit = [s for s in src if s in targets]
+            backup = False
             if pad_in_zone(board, net, rn, lid, (p["x"] + ox, p["y"] + oy)):
                 how = "pour"
                 near = {c: v for c, v in stitch.items() if len(p["layers"]) == 1 and c[0] == LAYERS.index(p["layers"][0])
@@ -862,17 +863,26 @@ def route_new(board, cu, outline, items, jobs, rules, grid=None, budget_s=120.0)
                         R._mark_via(nid, cx, cy, via_d)
                         R.vias.append({"net": net, "x": round(cx, 4), "y": round(cy, 4), "d": via_d, "drill": via_drill})
                         how = "pour + stitching via"
-                results.append({"net": net, "pin": pin, "ok": True, "how": how})
-                for s in src:
-                    targets[s] = ("pad", p)
-                continue
-            if hit:
+                path = None
+                if how == "pour":
+                    # the pour may not reach the pad once it is refilled around the new part (a starved thermal, a
+                    # new island): a short track to other copper of the net as well, when there is one
+                    alt = {c for c, v in targets.items() if v[0] != "zone"}
+                    path = R._search(nid, src, alt, max_expand=80000) if alt else None
+                if path is None:
+                    results.append({"net": net, "pin": pin, "ok": True, "how": how})
+                    for s_ in src:
+                        targets[s_] = ("pad", p)
+                    continue
+                backup = True
+            elif hit:
                 results.append({"net": net, "pin": pin, "ok": True, "how": "touching"})
                 continue
-            if time.time() - t0 > budget_s:
+            elif time.time() - t0 > budget_s:
                 results.append({"net": net, "pin": pin, "ok": False, "why": "routing time ran out"})
                 continue
-            path = R._search(nid, src, set(targets), max_expand=600000)
+            else:
+                path = R._search(nid, src, set(targets), max_expand=600000)
             if path is None:
                 results.append({"net": net, "pin": pin, "ok": False,
                                 "why": "no free way through" if not R.capped else "search limit reached"})
@@ -903,7 +913,8 @@ def route_new(board, cu, outline, items, jobs, rules, grid=None, budget_s=120.0)
                             targets.setdefault((L, ix2, iy2), ("own", None))
             for s in src:
                 targets[s] = ("pad", p)
-            results.append({"net": net, "pin": pin, "ok": True, "how": kind, "tracks": len(new_t), "vias": len(new_v),
+            results.append({"net": net, "pin": pin, "ok": True, "how": ("pour + " if backup else "") + kind,
+                            "tracks": len(new_t), "vias": len(new_v),
                             "length_mm": round(sum(math.hypot(b[0] - a[0], b[1] - a[1])
                                                    for t in new_t for a, b in zip(t["pts"], t["pts"][1:])), 2)})
             done.add(rn)
