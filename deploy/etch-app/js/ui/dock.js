@@ -15,7 +15,7 @@ import { spring, tick, reducedMotion, onReducedMotion, clamp, lerp, smooth } fro
 import { gooLayer, spawnBlob, squish, wobble } from "./goo.js";
 import { createEyes } from "./eyes.js";
 import { createVoiceAdapter, speakable } from "./voice-adapter.js";
-import { el, icon, pixelLoader, timeline, stagger, streamAnswer, approvalCard, recommendCard, bindMentions, fmtSecs } from "./trace.js";
+import { el, icon, pixelLoader, timeline, stagger, streamAnswer, approvalCard, recommendCard, benchCard, bindMentions, fmtSecs } from "./trace.js";
 
 const OPEN_SPRING = { stiffness: 250, damping: 21 }, LEAVE_GRACE = 60;
 const PILL_H = 56, GAP = 8, EYES_W = 46, MIC = 40, PAD = 8;
@@ -199,6 +199,8 @@ export function createDock(hostEl, opts = {}) {
   let inside = false;
   root.addEventListener("pointerover", (e) => {
     inside = true;
+    // touch has no hover: a tap opens and closes it (pointerdown below), so a tap does not open then close at once
+    if (e.pointerType === "touch") return;
     if (suppress) return;
     // arriving straight on the collapsed mic does not open the dock, so the mic stays under the pointer for the click
     if (!open && e.target.closest && e.target.closest(".ag-mic")) { clearTimeout(closeT); return; }
@@ -206,6 +208,7 @@ export function createDock(hostEl, opts = {}) {
     if (!hover) { hover = true; dismissed = false; update(); }
   });
   root.addEventListener("pointerout", (e) => {
+    if (e.pointerType === "touch") { inside = false; return; }
     if (e.relatedTarget && root.contains(e.relatedTarget)) return;
     inside = false; suppress = false;
     clearTimeout(closeT);
@@ -393,7 +396,8 @@ export function createDock(hostEl, opts = {}) {
   });
 
   // ---------- turns ----------
-  const steps = new Map(), answers = new Map(), cards = new Map();
+  const steps = new Map(), answers = new Map(), cards = new Map(), benches = new Map();
+  let flashT = 0;
   let turn = null;
   // One chronological flow per turn: the person's message, then every step, card and answer in the order they
   // happened. Steps go into the turn's current timeline; a card or an answer closes it, and later steps open a new one.
@@ -675,7 +679,7 @@ export function createDock(hostEl, opts = {}) {
 
     clear() {
       for (const c of cards.values()) c.cancel();
-      cards.clear(); steps.clear(); answers.clear();
+      cards.clear(); steps.clear(); answers.clear(); benches.clear();
       turnsEl.replaceChildren(); turn = null; empty.hidden = false; liveR = null; unseen = 0; paintPill();
       api.loader(false);
       dropBubble(0);
@@ -690,6 +694,27 @@ export function createDock(hostEl, opts = {}) {
       if (v) { forced = true; suppress = false; dismissed = false; }
       else { forced = null; hover = false; suppress = inside; if (root.contains(document.activeElement)) document.activeElement.blur(); focusIn = false; }
       update();
+    },
+    // the turn's benchmarks card (one per id, created on first use, below that turn's steps)
+    bench(id = "bench") {
+      if (benches.has(id)) return benches.get(id);
+      const t = cur();
+      const c = benchCard({ onRun: () => api.prefill("Check that ") });
+      t.el.append(c.el);
+      stick(false, true);
+      benches.set(id, c);
+      return c;
+    },
+    // put text in the composer and open the dock for the person to finish it (only from their own click)
+    prefill(text) {
+      forced = true; dismissed = false; suppress = false; update();
+      input.value = String(text || "");
+      requestAnimationFrame(() => { input.focus(); input.setSelectionRange(input.value.length, input.value.length); });
+    },
+    // a short status on the pill for a few seconds ("Benchmarks 3/3 ✓")
+    flashStatus(text, ms = 3500) {
+      clearTimeout(flashT); statusTemp = plain(text); paintStatus();
+      flashT = setTimeout(() => { if (statusTemp === plain(text)) { statusTemp = ""; paintStatus(); } }, ms);
     },
     // extra: hold the eyes on a part (partScreenPos is polled each frame while set); null lets go
     lookAt(ref) { lookRef = ref || null; retarget(); },

@@ -718,3 +718,107 @@ export function recommendCard({ title = "", detail = "", confidence = null, acti
   close.addEventListener("click", () => finish(xAct ? xAct.id : null));
   return { el: root, promise, cancel: () => finish(null), get open() { return open; }, focus: () => row.querySelector("button")?.focus() };
 }
+
+// ---- benchmarks card: what the board was measured against, one line per benchmark ----
+//   const b = benchCard({ onRun });  b.row(key, { label, value, unit, min, max, status });  b.check("DRC", true);
+//   status: "pending" (planned, no value yet) | "pass" | "fail" | "unmeasured" | "measured" (a number with no target)
+const CORE = ["ERC", "DRC", "unconnected", "routed"];
+const fmtNum = (v) => { const n = +v; if (!isFinite(n)) return String(v ?? ""); const a = Math.abs(n); return a >= 100 ? String(Math.round(n)) : a >= 10 ? n.toFixed(1).replace(/\.0$/, "") : n.toFixed(2).replace(/\.?0+$/, ""); };
+function rangeText(min, max, unit) {
+  const u = unit ? " " + unit : "";
+  if (min != null && max != null) return `${fmtNum(min)}–${fmtNum(max)}${u}`;
+  if (min != null) return `≥ ${fmtNum(min)}${u}`;
+  if (max != null) return `≤ ${fmtNum(max)}${u}`;
+  return "";
+}
+export function benchCard({ onRun } = {}) {
+  const pill = el("span", "ag-bn-pill", "planned");
+  const root = el("div", "ag-card ag-bench lq-in", el("div", "ag-bn-head", el("span", "ag-bn-t", "Benchmarks"), pill));
+  root.setAttribute("role", "group"); root.setAttribute("aria-label", "Benchmarks");
+  const list = el("div", "ag-bn-rows");
+  list.setAttribute("role", "list");
+  const coreText = el("span", "ag-bn-ct", "Checks running");
+  const coreChips = el("span", "ag-bn-chips");
+  const coreBtn = el("button", "ag-bn-core", el("span", "ag-bn-dot", ""), coreText, icon("chev", "ag-chev"));
+  coreBtn.type = "button"; coreBtn.setAttribute("aria-expanded", "false"); coreBtn.hidden = true;
+  coreChips.hidden = true;
+  coreBtn.addEventListener("click", () => { coreChips.hidden = !coreChips.hidden; coreBtn.setAttribute("aria-expanded", coreChips.hidden ? "false" : "true"); coreBtn.classList.toggle("open", !coreChips.hidden); });
+  root.append(list, coreBtn, coreChips);
+  if (onRun) {
+    const run = el("button", "ag-follow lq-btn ag-bn-run", "Run a check");
+    run.type = "button"; squish(run);
+    run.addEventListener("click", () => onRun());
+    root.append(el("div", "ag-bn-acts", run));
+  }
+  const rows = new Map(), core = new Map();
+  function paintPill() {
+    const r = [...rows.values()].map((x) => x.d);
+    const judged = r.filter((d) => d.status === "pass" || d.status === "fail");
+    const pass = judged.filter((d) => d.status === "pass").length, fail = judged.length - pass;
+    const pending = r.filter((d) => d.status === "pending").length;
+    pill.dataset.tone = fail ? "fail" : pending ? "wait" : "pass";
+    pill.textContent = !judged.length ? (pending ? "planned" : "measured") : fail ? `${fail} failing` : pending ? `${pass} of ${judged.length + pending}` : `${pass} of ${judged.length} pass`;
+  }
+  function paintCore() {
+    if (!core.size) return;
+    coreBtn.hidden = false;
+    const v = [...core.entries()];
+    const bad = v.filter(([, ok]) => ok === false);
+    coreBtn.dataset.tone = bad.length ? "fail" : "pass";
+    coreText.textContent = bad.length ? `${bad.map(([g]) => g).join(", ")} failing · ${v.length - bad.length} pass` : `${v.length} check${v.length === 1 ? "" : "s"} pass`;
+    coreChips.replaceChildren(...v.map(([g, ok]) => { const c = el("span", "ag-bn-chip", icon(ok ? "done" : "failed", ok ? "is-done" : "is-failed"), g); c.dataset.tone = ok ? "pass" : "fail"; return c; }));
+  }
+  const api = {
+    el: root,
+    get summary() {
+      const r = [...rows.values()].map((x) => x.d);
+      const judged = r.filter((d) => d.status === "pass" || d.status === "fail");
+      return { pass: judged.filter((d) => d.status === "pass").length, total: judged.length, failed: judged.filter((d) => d.status === "fail").length, rows: r.length };
+    },
+    has(key) { return rows.has(key); },
+    keys() { return [...rows.keys()]; },
+    row(key, p) {
+      let x = rows.get(key);
+      if (!x) {
+        const dot = el("span", "ag-bn-dot"), label = el("span", "ag-bn-l"), mark = el("i", "ag-bn-mk"), band = el("i", "ag-bn-band");
+        const bar = el("span", "ag-bn-bar", band, mark), val = el("span", "ag-bn-v"), tgt = el("span", "ag-bn-tg");
+        const line = el("div", "ag-bn-row lq-in", dot, label, bar, val, tgt);
+        line.setAttribute("role", "listitem");
+        stagger(line);
+        list.append(line);
+        const pos = spring(0.5, { preset: { stiffness: 170, damping: 13 }, precision: 0.002, onUpdate: (v) => { mark.style.left = (clamp(v, -0.04, 1.04) * 100).toFixed(2) + "%"; } });
+        x = { d: { status: "pending" }, dot, label, bar, band, mark, val, tgt, line, pos, placed: false };
+        rows.set(key, x);
+      }
+      const d = (x.d = { ...x.d, ...p });
+      x.line.dataset.status = d.status;
+      x.label.textContent = d.label || key;
+      x.line.title = [d.label || key, d.result || ""].filter(Boolean).join(" · ");
+      const has = d.value != null && d.value !== "" && isFinite(+d.value);
+      x.val.replaceChildren(has ? `${fmtNum(d.value)}${d.unit ? " " + d.unit : ""}` : d.status === "unmeasured" ? "n/a" : el("i", "ag-bn-sk"));
+      x.tgt.textContent = rangeText(d.min, d.max, d.unit) || (d.status === "measured" ? "measured" : "");
+      // where the value sits: the target band in the middle of the bar, the mark springs to the value
+      const lo = d.min != null ? +d.min : null, hi = d.max != null ? +d.max : null;
+      if (lo == null && hi == null) x.bar.hidden = true;
+      else {
+        x.bar.hidden = false;
+        const span = lo != null && hi != null ? Math.max(1e-9, hi - lo) : Math.abs(lo ?? hi) || 1;
+        const d0 = lo != null && hi != null ? lo - span * 0.6 : 0;
+        const d1 = lo != null && hi != null ? hi + span * 0.6 : lo != null ? lo * 2 : hi * 1.6;
+        const f = (v) => clamp((v - d0) / (d1 - d0 || 1), 0, 1);
+        x.band.style.left = (f(lo ?? d0) * 100).toFixed(1) + "%";
+        x.band.style.right = ((1 - f(hi ?? d1)) * 100).toFixed(1) + "%";
+        x.mark.hidden = !has;
+        // the mark springs in from the band's middle to the value
+        if (has) { if (!x.placed) { x.placed = true; x.pos.jump(f(lo != null && hi != null ? (lo + hi) / 2 : lo ?? hi)); } x.pos.set(f(+d.value)); }
+      }
+      paintPill();
+      return api;
+    },
+    check(gate, ok) {
+      if (!CORE.some((g) => g.toLowerCase() === String(gate).toLowerCase())) return false;
+      core.set(gate, !!ok); paintCore(); return true;
+    },
+  };
+  return api;
+}
