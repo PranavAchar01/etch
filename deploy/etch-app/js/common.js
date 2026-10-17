@@ -154,7 +154,7 @@ const P = {
 };
 export const icon = (name, size = 18) => `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[name] || ""}</svg>`;
 // Etch's mark: a black rounded square with an etched trace and a via
-export const LOGO = '<svg class="logo-mark" viewBox="0 0 20 20" aria-hidden="true"><rect width="20" height="20" rx="5" fill="#111"/><path d="M5 13.5h4l3-3.5V6" stroke="#fff" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="5.4" r="1.6" fill="#fff"/><circle cx="5" cy="13.5" r="1.3" fill="#fff"/></svg>';
+export const LOGO = '<svg class="logo-mark" viewBox="0 0 64 64" width="28" height="28" style="width:28px;height:28px" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="#1a7f4b"/><rect x="12" y="14" width="40" height="36" rx="8" fill="#16191d"/><g fill="#d9b45a"><rect x="16" y="50" width="4" height="6" rx="1"/><rect x="24" y="50" width="4" height="6" rx="1"/><rect x="36" y="50" width="4" height="6" rx="1"/><rect x="44" y="50" width="4" height="6" rx="1"/></g><g stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"><path d="M20 30Q24 24 28 30"/><path d="M36 30Q40 24 44 30"/></g></svg>';
 
 // KiCad's raytraced stills come on a lavender gradient backdrop; key it out (each row's backdrop colour follows the
 // edge pixel that continues the gradient) so a thumb sits on the page's own light background. Same as board.html's poster.
