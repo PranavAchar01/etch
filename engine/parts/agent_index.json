@@ -22,7 +22,7 @@
    "value": "TP4056_C725790",
    "spice": null,
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C725790/LCSC_C725790.3dshapes/ESOP-8_L4.9-W3.9-H1.6-LS6.0-P1.27.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C725790/LCSC_C725790.3dshapes/ESOP-8_L4.9-W3.9-H1.6-LS6.0-P1.27.step",
    "pins": [
     "1",
     "2",
@@ -70,7 +70,7 @@
    "value": "MMBT2222A_C83939",
    "spice": null,
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C83939/LCSC_C83939.3dshapes/SOT-23-3P_L2.9-W1.3-H1.0-LS2.4-P0.95.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C83939/LCSC_C83939.3dshapes/SOT-23-3P_L2.9-W1.3-H1.0-LS2.4-P0.95.step",
    "pins": [
     "1",
     "2",
@@ -120,7 +120,7 @@
     "role": "switch"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C5379904/LCSC_C5379904.3dshapes/SENSOR-TH_SW-520D.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C5379904/LCSC_C5379904.3dshapes/SENSOR-TH_SW-520D.step",
    "pins": [
     "1",
     "2"
@@ -165,7 +165,7 @@
     "role": "switch"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C22355741/LCSC_C22355741.3dshapes/SW-TH_3P-L8.8-W3.9-P2.50_SS12D00G3.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C22355741/LCSC_C22355741.3dshapes/SW-TH_3P-L8.8-W3.9-P2.50_SS12D00G3.step",
    "pins": [
     "1",
     "2",
@@ -212,7 +212,7 @@
     "role": "passive"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/GH_kicad_libraries_esp32_wroom_32/dl/ESP32-WROOM-32.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/GH_kicad_libraries_esp32_wroom_32/dl/ESP32-WROOM-32.step",
    "pins": [
     "1",
     "2",
@@ -329,7 +329,7 @@
     "role": "passive"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C2837020/LCSC_C2837020.3dshapes/LED-TH_4P-BD5.8-P1.30-RGB.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C2837020/LCSC_C2837020.3dshapes/LED-TH_4P-BD5.8-P1.30-RGB.step",
    "pins": [
     "1",
     "2",
@@ -375,7 +375,7 @@
     "role": "passive"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C49196609/LCSC_C49196609.3dshapes/TO-92-3_L4.8-W3.7-P1.27-L.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C49196609/LCSC_C49196609.3dshapes/TO-92-3_L4.8-W3.7-P1.27-L.step",
    "pins": [
     "1",
     "2",
@@ -421,7 +421,7 @@
     "role": "switch"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C2764058/LCSC_C2764058.3dshapes/WIFIM-SMD_ESP32-SL.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C2764058/LCSC_C2764058.3dshapes/WIFIM-SMD_ESP32-SL.step",
    "pins": [
     "1",
     "2",
@@ -540,7 +540,7 @@
     "role": "switch"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C118536/LCSC_C118536.3dshapes/TO-92-3_L4.9-W3.7-P1.27-L.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C118536/LCSC_C118536.3dshapes/TO-92-3_L4.9-W3.7-P1.27-L.step",
    "pins": [
     "1",
     "2",
@@ -584,7 +584,7 @@
     "role": "passive"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C499918/LCSC_C499918.3dshapes/FBGA-153_L13.0-W11.5-H1.1-P0.50_KLMAG1JETD-B041.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C499918/LCSC_C499918.3dshapes/FBGA-153_L13.0-W11.5-H1.1-P0.50_KLMAG1JETD-B041.step",
    "pins": [
     "A1",
     "A2",
@@ -928,7 +928,7 @@
     "role": "switch"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C356849/LCSC_C356849.3dshapes/WIRELM-SMD_L18.0-W13.0-H3.0-E73-2G4M08S1C.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C356849/LCSC_C356849.3dshapes/WIRELM-SMD_L18.0-W13.0-H3.0-E73-2G4M08S1C.step",
    "pins": [
     "1",
     "2",
@@ -1055,7 +1055,7 @@
     "role": "passive"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C16581/LCSC_C16581.3dshapes/ESOP-8_L4.9-W3.9-H1.6-LS6.0-P1.27.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C16581/LCSC_C16581.3dshapes/ESOP-8_L4.9-W3.9-H1.6-LS6.0-P1.27.step",
    "pins": [
     "1",
     "2",
@@ -1111,7 +1111,7 @@
     "role": "passive"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C99269/LCSC_C99269.3dshapes/SOT-563-6P_L1.6-W1.2-H0.6-LS1.6-P0.50.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C99269/LCSC_C99269.3dshapes/SOT-563-6P_L1.6-W1.2-H0.6-LS1.6-P0.50.step",
    "pins": [
     "1",
     "2",
@@ -1164,7 +1164,7 @@
     "role": "switch"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C8734/LCSC_C8734.3dshapes/LQFP-48_L7.0-W7.0-H1.4-LS9.0-P0.50.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C8734/LCSC_C8734.3dshapes/LQFP-48_L7.0-W7.0-H1.4-LS9.0-P0.50.step",
    "pins": [
     "1",
     "2",
@@ -1302,7 +1302,7 @@
     "role": "passive"
    },
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C29160/LCSC_C29160.3dshapes/DIP-24_L31.7-W6.6-H4.5-P1.27-LS7.62-BL.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C29160/LCSC_C29160.3dshapes/DIP-24_L31.7-W6.6-H4.5-P1.27-LS7.62-BL.step",
    "pins": [
     "1",
     "2",
@@ -1388,7 +1388,7 @@
    "value": "DRV8833RTYR",
    "spice": null,
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C154936/LCSC_C154936.3dshapes/QFN-16_L4.0-W4.0-P0.65-TL-EP2.6.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C154936/LCSC_C154936.3dshapes/QFN-16_L4.0-W4.0-P0.65-TL-EP2.6.step",
    "pins": [
     "1",
     "2",
@@ -1456,7 +1456,7 @@
    "value": "HX711",
    "spice": null,
    "why": null,
-   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C43656/LCSC_C43656.3dshapes/SOP-16_L9.9-W3.9-H1.5-LS6.0-P1.27.step",
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C43656/LCSC_C43656.3dshapes/SOP-16_L9.9-W3.9-H1.5-LS6.0-P1.27.step",
    "pins": [
     "1",
     "2",
@@ -1498,6 +1498,52 @@
    "mpn": "HX711",
    "manufacturer": "Avia Semicon (Xiamen)",
    "datasheet": "https://www.lcsc.com/datasheet/lcsc_datasheet_2011051703_Avia-Semicon--Xiamen-HX711_C43656.pdf"
+  },
+  {
+   "provenance": {
+    "route": "scout you.com found GRM32DR61E106K, LCSC C32856, easyeda2kicad",
+    "source_url": "https://www.lcsc.com/product-detail/C32856.html",
+    "api_url": "https://easyeda.com/api/products/C32856/components",
+    "version": "EasyEDA library as of 2026-10-17, easyeda2kicad 1.0.1",
+    "licence": "not stated by LCSC/EasyEDA (vendor library; check terms before redistributing)",
+    "model_file": "CAP-TH_D4.0-H7.0-P1.5.step",
+    "model_sha256": "62325bdc21c088fbb87eb489e0f8fdd6676bbd31b80bdb1dabddffa08b279a9f",
+    "search_url": "https://www.alldatasheet.com/category/index.jsp?sSearchword=Capacitor+10UF+25V",
+    "search": "you.com Web Search (allowlisted distributor/manufacturer domains)",
+    "datasheet": null
+   },
+   "key": "electrolyticcapacitor10uf50v_c32856",
+   "name": "electrolyticcapacitor10UF50V (CAP-TH_BD4.0-P1.50-D0.8-FD)",
+   "aliases": [
+    "c32856",
+    "electrolyticcapacitor10uf50v"
+   ],
+   "lib_id": "LCSC_C32856:electrolyticcapacitor10UF50V",
+   "footprint": "LCSC_C32856:CAP-TH_BD4.0-P1.50-D0.8-FD",
+   "category": "fetched",
+   "value": "electrolyticcapacitor10UF50V",
+   "spice": {
+    "prefix": "R",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "passive"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/helloworld/etch-crash-badge/engine/parts/cache/LCSC_C32856/LCSC_C32856.3dshapes/CAP-TH_D4.0-H7.0-P1.5.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "pin_names": {
+    "1": "+",
+    "2": "-"
+   },
+   "source": "LCSC via easyeda2kicad",
+   "lcsc": "C32856",
+   "mpn": "GRM32DR61E106K",
+   "spice_note": "10uF cap modelled as a two-pin passive"
   }
  ]
 }
