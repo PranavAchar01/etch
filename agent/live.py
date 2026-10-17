@@ -725,6 +725,7 @@ def assemble(
             stream.emit("lead", "say", text=added["say"])
         _wire_named_gpio(design, kept)
         firmware.tie_grounds(design, kept)
+        _wire_mcu_supply(design, kept)
         _drop_lonely_gpio(design, kept)
         stand_ins = _led_stand_ins(design, kept, keys)  # before _fix_refs renames D1 on a capacitor to C1
         _fix_refs(design)
@@ -1154,6 +1155,37 @@ def _drop_lonely_gpio(design: dict[str, Any], kept: list[dict[str, Any]]) -> Non
         supply = str(pins[num]).upper() in _SUPPLY_5V + _SUPPLY_3V3
         if name.startswith("GPIO") or (supply and name.upper() in _MCU_POWER_PINS):
             del pins[num]
+
+
+def _wire_mcu_supply(design: dict[str, Any], kept: list[dict[str, Any]]) -> None:
+    """A 5 V or 3.3 V net that lands on one pin of a board whose microcontroller module has that rail free
+    gets the module's rail (sweep 10-17, live-1792260040287: a Pico relay driver left "VCC only on J1 pin 1"
+    three times; the coil's + belongs on the Pico's USB 5 V). 5 V goes on VBUS, or on VSYS when the lonely pin
+    is itself the board's power input; 3.3 V goes on the 3V3 output. A taken rail pin is left alone."""
+    mp = firmware.mcu_part(design, kept)
+    if not mp:
+        return
+    part, piece = mp
+    names = {str(v).upper(): str(k) for k, v in (piece.get("pins") or {}).items()}
+    by_key = {p["key"]: p for p in kept}
+    pins = part.setdefault("pins", {})
+    for net in _lonely_nets(design):
+        up = net.upper()
+        owner = next(
+            (q for q in design.get("parts", []) if net in (q.get("pins") or {}).values()), None
+        )
+        if owner is None or owner is part:
+            continue
+        if up in _SUPPLY_5V:
+            fam = (by_key.get(owner.get("piece")) or {}).get("family", "")
+            power_in = fam in _POWER_IN and not owner.get("load_ohms")
+            pin = names.get("VSYS" if power_in else "VBUS")
+        elif up in _SUPPLY_3V3:
+            pin = names.get("3V3")
+        else:
+            continue
+        if pin and pin not in pins:
+            pins[pin] = net
 
 
 _MCU_POWER_PINS = ("VBUS", "VSYS", "3V3", "5V", "VIN", "+5V", "+3V3")
