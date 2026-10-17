@@ -52,3 +52,167 @@ def test_self_named_module_pins_are_left_open():
     kept = [live._cat()[live.PICO_W_KEY]]
     live._drop_lonely_gpio(design, kept)
     assert design["parts"][0]["pins"] == {"3": "GND", "24": "LED"}
+
+
+# --- deterministic LED / drive repairs (10-17 tracker runs) ---------------------------------------------------
+
+import copy  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+import pytest  # noqa: E402
+
+from agent import engine_api as eng  # noqa: E402
+from agent.events import Stream  # noqa: E402
+
+LED = "kicad:Device:LED@LED_D5.0mm"
+R = live.R_KEY
+COIN = "kicad:Device:Battery_Cell@BatteryHolder_Keystone_1058_1x2032"
+BTN = "kicad:Switch:SW_Push@SW_PUSH_6mm"
+BUZ = "kicad:Device:Buzzer@Buzzer_D14mm_H7mm_P10mm"
+GNDS = {"3": "GND", "38": "GND"}
+
+
+def _kept(design):
+    cat = live._cat()
+    return [copy.deepcopy(cat[p["piece"]]) for p in design["parts"]]
+
+
+def _nets(design):
+    return {p["ref"]: dict(p["pins"]) for p in design["parts"]}
+
+
+def test_lonely_cathode_goes_to_ground():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "20": "GPIO15"}},
+        {"ref": "R1", "piece": R, "pins": {"1": "GPIO15", "2": "LED1_A"}},
+        {"ref": "D1", "piece": LED, "pins": {"1": "LED1_K", "2": "LED1_A"}},
+    ]}
+    live._fix_leds(d, _kept(d))
+    assert _nets(d)["D1"] == {"1": "GND", "2": "LED1_A"}
+
+
+def test_bare_led_gets_a_resistor_and_a_gpio():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": dict(GNDS)},
+        {"ref": "D1", "piece": LED, "pins": {"1": "K", "2": "A"}},
+    ], "firmware": {"commands": [{"input": "1", "high": ["GPIO15"]}]}}
+    kept = _kept(d)
+    live._fix_leds(d, kept)
+    live._wire_drives(d, kept)
+    n = _nets(d)
+    assert n["D1"] == {"1": "GND", "2": "A"}
+    assert n["R1"] == {"1": "GPIO15", "2": "A"}
+    assert n["U1"]["20"] == "GPIO15"  # the firmware's own net, on the pin of that name
+    assert not live._lonely_nets(d)
+
+
+def test_shorted_series_resistor_is_split():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "20": "LED_NET"}},
+        {"ref": "D1", "piece": LED, "pins": {"1": "GND", "2": "LED_NET"}},
+        {"ref": "R1", "piece": R, "pins": {"1": "LED_NET", "2": "LED_NET"}},
+    ]}
+    live._fix_leds(d, _kept(d))
+    n = _nets(d)
+    assert n["R1"] == {"1": "LED_NET", "2": "D1_A"} and n["D1"]["2"] == "D1_A"
+    assert not live._wiring_lint(d, _kept(d))
+
+
+def test_anode_moves_behind_a_dangling_resistor():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "20": "LED_NET"}},
+        {"ref": "D1", "piece": LED, "pins": {"1": "GND", "2": "LED_NET"}},
+        {"ref": "R1", "piece": R, "pins": {"1": "LED_NET", "2": "D1_A"}},
+    ]}
+    live._fix_leds(d, _kept(d))
+    assert _nets(d)["D1"]["2"] == "D1_A" and not live._lonely_nets(d)
+
+
+def test_rail_hung_led_moves_to_gpio_when_mcu_has_none():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "40": "VBUS"}},
+        {"ref": "J1", "piece": "kicad:Connector_Generic:Conn_01x02@PinHeader_1x02_P2.54mm_Vertical", "pins": {"1": "VBUS", "2": "GND"}},
+        {"ref": "R1", "piece": R, "pins": {"1": "VBUS", "2": "LED_A"}},
+        {"ref": "D1", "piece": LED, "pins": {"1": "GND", "2": "LED_A"}},
+    ], "firmware": {"commands": [{"input": "1", "high": ["GPIO0"]}, {"input": "2", "high": ["GPIO0", "GPIO1"]}]}}
+    kept = _kept(d)
+    live._wire_drives(d, kept)
+    live._prune_commands(d)
+    n = _nets(d)
+    assert n["R1"]["1"] == "GPIO0" and n["U1"]["1"] == "GPIO0"
+    assert d["firmware"]["commands"][1]["high"] == ["GPIO0"]  # GPIO1 drove nothing
+
+
+def test_rail_led_stays_when_mcu_already_drives_something():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "40": "VBUS", "20": "SIG"}},
+        {"ref": "R2", "piece": R, "pins": {"1": "SIG", "2": "GND"}},
+        {"ref": "R1", "piece": R, "pins": {"1": "VBUS", "2": "PWR_A"}},
+        {"ref": "D1", "piece": LED, "pins": {"1": "GND", "2": "PWR_A"}},
+    ]}
+    assert live._wire_drives(d, _kept(d)) == []  # a power indicator is a real design
+
+
+def test_button_and_buzzer_get_gpios():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": {**GNDS, "36": "3V3"}},
+        {"ref": "SW1", "piece": BTN, "pins": {"1": "3V3", "2": "GND"}},
+        {"ref": "BZ1", "piece": BUZ, "pins": {"1": "BUZ", "2": "GND"}},
+    ]}
+    kept = _kept(d)
+    live._wire_drives(d, kept)
+    live._drop_lonely_gpio(d, kept)  # 3V3 now lands on the module alone: left open
+    n = _nets(d)
+    assert n["SW1"]["1"] != "3V3" and n["SW1"]["1"] in n["U1"].values()
+    assert "BUZ" in n["U1"].values()
+    assert not live._lonely_nets(d)
+
+
+def test_lonely_battery_net_goes_to_vsys():
+    d = {"parts": [
+        {"ref": "U1", "piece": live.PICO_W_KEY, "pins": dict(GNDS)},
+        {"ref": "BT1", "piece": COIN, "pins": {"1": "VBAT", "2": "GND"}},
+    ]}
+    live._wire_mcu_supply(d, _kept(d))
+    assert _nets(d)["U1"]["39"] == "VBAT"
+
+
+# The first picker tries of the failing 10-17 runs, as saved: each must now pass the spec gate on try one.
+RUNS = {
+    "cretae a gps tracker like an airtag": [
+        ("U1", live.PICO_W_KEY, {"3": "GND", "8": "GND", "38": "GND", "40": "VBUS"}),
+        ("J1", "kicad:Connector_Generic:Conn_01x02@PinHeader_1x02_P2.54mm_Vertical", {"1": "VBUS", "2": "GND"}),
+        ("D1", LED, {"1": "K", "2": "LED_A"}),
+        ("R1", R, {"1": "VBUS", "2": "LED_A"}),
+        ("BT1", COIN, {"1": "VBAT", "2": "GND"}),
+    ],
+    "gps tracker": [
+        ("U1", live.PICO_W_KEY, {"3": "GND", "38": "GND", "1": "GPS_RX", "2": "GPS_TX"}),
+        ("J1", "kicad:Connector_Generic:Conn_01x02@PinHeader_1x02_P2.54mm_Vertical", {"1": "GPS_TX", "2": "GPS_RX"}),
+        ("D1", LED, {"1": "K", "2": "A"}),
+    ],
+    "make an airtag": [
+        ("U1", live.PICO_W_KEY, {"3": "GND", "38": "GND", "20": "LED_NET"}),
+        ("D1", LED, {"1": "GND", "2": "LED_NET"}),
+        ("R1", R, {"1": "LED_NET", "2": "LED_NET"}),
+    ],
+}
+
+
+@pytest.mark.parametrize("ask", sorted(RUNS))
+def test_failing_tracker_tries_pass_spec_first_try(ask, tmp_path, monkeypatch):
+    class Built(Exception):
+        pass
+
+    def stop(*a, **k):
+        raise Built
+
+    monkeypatch.setattr(eng, "run_build", stop)
+    d = {
+        "parts": [{"ref": r, "piece": k, "pins": dict(p), "group": "main"} for r, k, p in RUNS[ask]],
+        "firmware": {"commands": [{"input": "1", "high": ["GPIO0"]}, {"input": "0", "high": []}]},
+    }
+    s = Stream("t", echo=False)
+    live.assemble(s, d, [], Path(tmp_path), "", ask, _kept(d), max_iters=1)
+    gate = [e for e in s.events if str(e.get("gate", "")).startswith("spec")][-1]
+    assert gate["ok"], gate["value"]
