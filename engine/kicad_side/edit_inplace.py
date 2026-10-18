@@ -472,10 +472,7 @@ class Placer:
         R = radius or min(60.0, max(self.bb[2] - self.bb[0], self.bb[3] - self.bb[1]))
         step = 0.5
         n = int(R / step)
-        offs = sorted(
-            ((i * step, j * step) for i in range(-n, n + 1) for j in range(-n, n + 1)),
-            key=lambda d: d[0] * d[0] + d[1] * d[1],
-        )
+        offs = _ring_offsets(n, step)
         for side in sides:
             if side == "bottom":
                 flip(fp)
@@ -521,6 +518,22 @@ class Placer:
             if side == "bottom":
                 flip(fp)
         return None
+
+
+_OFFS = {}
+
+
+def _ring_offsets(n, step):
+    """Grid offsets nearest first, cached per size: a 60 mm radius is ~58k offsets, sorted once instead of on every
+    part placed."""
+    key = (n, step)
+    offs = _OFFS.get(key)
+    if offs is None:
+        offs = _OFFS[key] = sorted(
+            ((i * step, j * step) for i in range(-n, n + 1) for j in range(-n, n + 1)),
+            key=lambda d: d[0] * d[0] + d[1] * d[1],
+        )
+    return offs
 
 
 def place_ref(fp, placer, side):

@@ -435,9 +435,13 @@ def chat(
     effort: str | None = None,
     timeout: float | None = None,
     max_tokens: int | None = None,
+    retry_timeout: bool = True,
 ) -> Any:
     """One completion; emits an `llm` event with model, provider, latency and token counts. max_tokens caps the
-    output off OpenAI (in place of ETCH_MAX_TOKENS) so a runaway answer ends instead of timing out."""
+    output off OpenAI (in place of ETCH_MAX_TOKENS) so a runaway answer ends instead of timing out.
+    retry_timeout=False is for a caller with its own next step (the picker's quick sub-model): with no fallback
+    configured, a primary timeout raises ModelError at once instead of a second full timeout on the same stalled
+    model (picker run iBKh: Super 30 s + 30 s before the 11 s Lightning answer)."""
     global _fallback_since
     kw: dict[str, Any] = {"messages": messages}
     if max_tokens:
@@ -489,7 +493,8 @@ def chat(
                     model = used = _swap(model)
                     tries = max(tries, attempt + 1)
                     continue
-                if attempt < tries and _retryable(e):
+                stalled = _status(e) is None and not retry_timeout and not _fallback_ready()
+                if attempt < tries and _retryable(e) and not stalled:
                     wait = _backoff(e, attempt) if _status(e) == 429 else 0.0
                     stream.emit(
                         agent,
@@ -573,6 +578,7 @@ def call_json(
     effort: str | None = None,
     timeout: float | None = None,
     max_tokens: int | None = None,
+    retry_timeout: bool = True,
 ) -> tuple[dict[str, Any], Any]:
     """Ask for one structured answer through a forced tool call; fall back to JSON in the text
     (some open-model servers ignore a named tool_choice)."""
@@ -587,6 +593,7 @@ def call_json(
         effort=effort,
         timeout=timeout,
         max_tokens=max_tokens,
+        retry_timeout=retry_timeout,
     )
     if msg.tool_calls:
         return json.loads(msg.tool_calls[0].function.arguments or "{}"), msg

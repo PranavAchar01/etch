@@ -332,3 +332,24 @@ def test_a_crusoe_fallback_key_has_its_own_window(monkeypatch):
     assert llm._rate_file("k2") != llm.RATE_FILE
     assert llm._pace(config.CRUSOE_URL, key="k1") == 0
     assert llm._pace(config.CRUSOE_URL, key="k2") == 0  # key 1's window is full, key 2's is not
+
+
+def test_no_retry_on_stalled_primary_when_caller_has_next_step(monkeypatch):
+    """retry_timeout=False with no fallback: one primary call, then ModelError (no second full timeout)."""
+    monkeypatch.setattr(config, "FALLBACK", "off")
+    calls = []
+
+    def fake(base, key, model, kw, eff, to):
+        calls.append(model)
+        raise TimeoutError("slow")
+
+    monkeypatch.setattr(llm, "_create", fake)
+    s = Stream("t", echo=False)
+    msgs = [{"role": "user", "content": "x"}]
+    with pytest.raises(llm.ModelError):
+        llm.call_json(s, "picker", config.MODEL, msgs, FN, retry_timeout=False)
+    assert calls == [config.MODEL]
+    calls.clear()
+    with pytest.raises(llm.ModelError):  # the default still retries the same model once
+        llm.call_json(s, "picker", config.MODEL, msgs, FN)
+    assert calls == [config.MODEL] * llm.PRIMARY_TRIES

@@ -384,6 +384,8 @@ class Footprints:
         self.blob = "\n".join(sorted(names))
         self.cache: dict[str, tuple[set[str], str | None, str]] = {}
         self.filters: dict[str, list[str]] = {}
+        self._tok: dict[str, list[str]] = {}
+        self._buckets: dict[str, list[str]] | None = None
         self.note: dict[str, str] = {}
         self.step_maps: dict[str, dict[str, str]] = {}
         self.dir_maps: dict[Path, list[str]] = {}
@@ -500,6 +502,21 @@ class Footprints:
                 return c
         return None
 
+    def _lines(self, flt: str) -> str:
+        """The part of the blob a filter token can match: a token that starts with two literal characters only
+        matches lines whose name (or whole 'Lib:Name', since '*' also crosses the colon) starts with them, so it
+        scans that bucket in blob order instead of all ~18k lines."""
+        head = flt[:2]
+        if len(head) < 2 or any(c in head for c in "*?[") or ":" in flt:
+            return self.blob
+        if self._buckets is None:
+            b: dict[str, list[str]] = {}
+            for line in self.blob.split("\n"):
+                for key in {line[:2].lower(), line.split(":", 1)[-1][:2].lower()}:
+                    b.setdefault(key, []).append(line)
+            self._buckets = b
+        return "\n".join(self._buckets.get(head.lower(), ()))
+
     def match(self, filters: str, pins: set[str], k: int = 1) -> list[str]:
         """Footprints the symbol's ki_fp_filters allow whose numbered pads are exactly its pins (extra unnumbered
         mounting pads are fine), ones with a STEP model first, in filter order; up to k of them. When nothing fits
@@ -507,15 +524,20 @@ class Footprints:
         if not filters.strip():
             return []
         if filters not in self.filters:
+            # each filter token is a regex over the whole ~18k-footprint blob, and tokens like "R_*" or "C_*" recur
+            # across hundreds of symbols: cache per token, and keep the list already in hobby order
             found: list[str] = []
             for flt in filters.split():
-                tr = fnmatch.translate(flt)
-                rx = tr[4:-3] if tr.startswith("(?s:") else flt
-                pat = re.compile(r"^(?:[^:\n]+:)?(" + rx + r")$", re.M | re.I)
-                found += [m.group(0) for m in pat.finditer(self.blob)]
-            self.filters[filters] = list(dict.fromkeys(found))
+                hit = self._tok.get(flt)
+                if hit is None:
+                    tr = fnmatch.translate(flt)
+                    rx = tr[4:-3] if tr.startswith("(?s:") else flt
+                    pat = re.compile(r"^(?:[^:\n]+:)?(" + rx + r")$", re.M | re.I)
+                    hit = self._tok[flt] = [m.group(0) for m in pat.finditer(self._lines(flt))]
+                found += hit
+            self.filters[filters] = sorted(dict.fromkeys(found), key=_hobby_rank)
         exact, cover = [], []
-        for fid in sorted(self.filters[filters], key=_hobby_rank)[:400]:
+        for fid in self.filters[filters][:400]:
             pads, model, _ = self.info(fid)
             if pins and not pins <= pads:
                 continue
@@ -537,6 +559,7 @@ _HOBBY = (
 )
 
 
+@functools.lru_cache(maxsize=None)
 def _hobby_rank(fid: str) -> int:
     """Generic symbols keep the footprints people solder first: a 2.54 mm pin header or socket, JST PH/XH,
     a 5.08 mm screw terminal, then any other through-hole footprint, then the rest (so Conn_01x08 always has
@@ -783,6 +806,9 @@ def build() -> dict[str, Any]:
     skipped = {"no pins": 0, "no footprint": 0, "duplicate": 0}
     n_sym = 0
     kisyms: dict[str, dict[str, Any]] = {}
+    by_name: dict[str, str] = {}  # footprint name -> first library id with it (was a scan of every footprint per symbol)
+    for w in fps.where:
+        by_name.setdefault(w.split(":", 1)[1], w)
     for src in sources:
         for sf in src["symbols"]:
             lib = sf.stem
@@ -804,10 +830,7 @@ def build() -> dict[str, Any]:
                 fid = props.get("Footprint", "").strip()
                 if fid and fid not in fps.where:
                     # a vendor symbol names its own library nickname differently: try the same footprint name
-                    alt = [
-                        w for w in fps.where if w.split(":", 1)[1] == fid.split(":")[-1]
-                    ]
-                    fid = alt[0] if alt else ""
+                    fid = by_name.get(fid.split(":")[-1], "")
                 fids = [fid] if fid else []
                 if not fid or not fps.info(fid)[1]:
                     # a generic symbol (R, Conn_01x04, SW_Push, AudioJack3...) gets every exact footprint with a model

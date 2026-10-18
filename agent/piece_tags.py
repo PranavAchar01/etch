@@ -571,14 +571,16 @@ _SENSE = frozenset(
 _MEM = frozenset({"flash", "ram", "eeprom"})
 
 
-def _lib_tags(lib: str) -> list[str]:
+@functools.lru_cache(maxsize=None)
+def _lib_tags(lib: str) -> tuple[str, ...]:
+    # a few hundred libraries, ~40k pieces: cached (library load spent 1.7 s here re-scanning LIB_TAGS per piece)
     out: list[str] = []
     for base in {lib, _EXTRA_PREFIX.sub("", lib)}:
         for pre, tags in LIB_TAGS:
             if base.startswith(pre):
                 out += tags
                 break
-    return out
+    return tuple(out)
 
 
 @functools.lru_cache(maxsize=65536)
