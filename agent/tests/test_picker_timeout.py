@@ -17,7 +17,7 @@ class S:
 def test_picker_retries_on_the_quick_model(monkeypatch):
     calls = []
 
-    def fake(stream, agent, model, msgs, fn, effort=None, timeout=None, max_tokens=None):
+    def fake(stream, agent, model, msgs, fn, effort=None, timeout=None, max_tokens=None, retry_timeout=True):
         calls.append((model, max_tokens, timeout))
         if len(calls) == 1:
             raise llm.ModelError("Request timed out.")
