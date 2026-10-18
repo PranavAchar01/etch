@@ -28,6 +28,7 @@ The API is open (no access code since 2026-10-17). Per-IP rate limits and a glob
 
 from __future__ import annotations
 
+import csv
 import hmac
 import json
 import os
@@ -991,6 +992,17 @@ def _name_concepts(todo: list[tuple[str, str]]) -> None:
         CONCEPTS_BUSY.release()
 
 
+def _part_count(d: Path) -> int:
+    """How many parts the board has (BOM references): the shelf leads with the most involved boards."""
+    try:
+        bom = next(d.glob("*-bom.csv"))
+        with bom.open() as fh:
+            rows = list(csv.reader(fh))[1:]
+        return sum(len([r for r in re.split(r"[,\s]+", row[0]) if r]) for row in rows if row)
+    except (StopIteration, OSError, IndexError):
+        return 0
+
+
 def gallery() -> list[dict]:
     with GALLERY_LOCK:
         if time.time() - float(GALLERY_CACHE["t"]) < GALLERY_TTL_S:
@@ -1024,6 +1036,7 @@ def gallery() -> list[dict]:
                     "id": d.name,
                     "text": info["text"],
                     "concept": concept or "",
+                    "parts": _part_count(d),
                     "started": info["started"],
                     "seconds": info["seconds"],
                 }

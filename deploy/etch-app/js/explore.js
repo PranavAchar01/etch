@@ -489,7 +489,7 @@ mountJobPill({ job: etch.job, open: (st, done) => jobHref(st, done, page, carry)
   onReady: (st) => { const id = jobBoardId(st); if (st.design && id) mine.save({ id, title: st.title, thumb: mine.thumbFor(id, apiBase), owner: st.mock ? "" : "Etch build", prompt: st.text }); } });
 
 // ---- Built on Etch: everyone's passing builds, one per distinct prompt, newest first (backend /etch/gallery) ----
-const BUILT_FIRST = 12;
+const BUILT_FIRST = 4; // the four most involved boards (most parts) lead; "See all" adds the rest, newest first
 let built = [], builtAll = false;
 function builtCard(b, i) {
   const title = b.concept ? b.concept.replace(/^./, (c) => c.toUpperCase()) : mine.nameFrom(b.text) || "Etch build";
@@ -509,15 +509,20 @@ function builtCard(b, i) {
 function renderBuilt() {
   const g = $("builtGrid"), more = $("builtMore");
   $("built").hidden = !built.length;
-  $("builtN").textContent = built.length ? `${built.length} boards, one per prompt` : "";
+  $("builtN").textContent = built.length ? (builtAll ? `${built.length} boards, one per idea` : "the most involved boards so far") : "";
   g.textContent = "";
   (builtAll ? built : built.slice(0, BUILT_FIRST)).forEach((b, i) => g.append(builtCard(b, i)));
   more.hidden = builtAll || built.length <= BUILT_FIRST;
-  more.textContent = `Show all ${built.length}`;
+  more.textContent = `See all ${built.length}`;
 }
 $("builtMore").addEventListener("click", () => { builtAll = true; renderBuilt(); });
 function loadBuilt() {
   if (!apiBase) return;
   fetch(apiBase + "/etch/gallery", { cache: "no-store" }).then((r) => r.json())
-    .then((d) => { built = Array.isArray(d.builds) ? d.builds.filter((b) => isLive(b.id)) : []; renderBuilt(); }).catch(() => {});
+    .then((d) => {
+      const all = Array.isArray(d.builds) ? d.builds.filter((b) => isLive(b.id)) : [];
+      const top = [...all].sort((a, b) => (b.parts || 0) - (a.parts || 0) || (b.seconds || 0) - (a.seconds || 0)).slice(0, BUILT_FIRST);
+      built = [...top, ...all.filter((b) => !top.includes(b))];
+      renderBuilt();
+    }).catch(() => {});
 }

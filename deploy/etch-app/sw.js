@@ -2,7 +2,7 @@
 // answers the library (index.json), board files (meta, parts, thumb, GLB) and part renders (parts/*.webp)
 // stale-while-revalidate, the board files from the same Cache Storage that Explore's prefetch fills. Page navigations (explore, board, kit), config.json and the backend are
 // never touched.
-const SHELL = "etch-shell-v11";
+const SHELL = "etch-shell-v12";
 const BOARDS = "etch-boards-v1";
 const PARTS = "etch-parts-v1"; // the parts panel's static renders (parts/*.webp)
 const SHELL_FILES = [
