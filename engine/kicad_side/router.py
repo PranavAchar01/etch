@@ -11,6 +11,7 @@ this only has to be conservative.
 
 import heapq
 import math
+import os
 import time
 
 FREE = -1
@@ -22,6 +23,15 @@ WIDE_MAX_EXPAND = 40000
 # four identical 400 k attempts all failed it (QA 10-17).
 MAX_EXPAND = 400000
 RETRY_MAX_EXPAND = 1600000
+# A* heuristic weight (1.0 = exact shortest paths). Above 1 the search heads for the target instead of flooding the
+# board; paths stay within a few percent of the shortest. Greedier (2-3) was slower overall on the handheld console
+# job: worse early tracks wall in later nets (QA 10-17, qa/router-bench-1017.md).
+SEARCH_WEIGHT = float(os.environ.get("ETCH_ROUTE_WEIGHT", "1.4"))
+# route_net joins the base group to the NEAR_GROUPS nearest other groups only (falls back to all of them when those
+# are walled in): aiming one search at every pad of GND took 80 s on the handheld console job.
+NEAR_GROUPS = int(os.environ.get("ETCH_NEAR_GROUPS", "2"))
+# above this many target cells the heuristic measures to at most this many boxes of targets, not to each cell
+H_TARGETS = 12
 DIRS = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 
 
@@ -36,6 +46,66 @@ def _seg_dist(px, py, x1, y1, x2, y2):
     L2 = vx * vx + vy * vy
     t = 0.0 if L2 == 0 else max(0.0, min(1.0, ((px - x1) * vx + (py - y1) * vy) / L2))
     return math.hypot(px - (x1 + t * vx), py - (y1 + t * vy))
+
+
+def _turn(d, k):
+    diff = min((k - d) % 8, (d - k) % 8)
+    return 0.4 * diff if diff <= 2 else 5.0
+
+
+# turn cost from heading d to move k (index into DIRS); a source or a via has no heading yet
+_TURN = [[_turn(d, k) for k in range(8)] for d in range(8)]
+_NO_TURN = [0.0] * 8
+
+
+def _heuristic(cells, weight):
+    """h(ix, iy) for _search: weight * octile distance to the nearest target cell. With more than H_TARGETS cells
+    (a whole net's copper in an incremental edit) the targets are binned into at most H_TARGETS boxes and h measures to
+    the nearest box, which stays a lower bound and keeps each call cheap."""
+    R2 = math.sqrt(2) - 2
+    pts = list(cells)
+    if len(pts) <= H_TARGETS:
+
+        def h(ix, iy):
+            best = 1e18
+            for tx, ty in pts:
+                dx = tx - ix if tx > ix else ix - tx
+                dy = ty - iy if ty > iy else iy - ty
+                v = (dx + dy) + R2 * (dx if dx < dy else dy)
+                if v < best:
+                    best = v
+            return weight * best
+
+        return h
+    b = 4
+    while True:
+        bins = {}
+        for x, y in pts:
+            k = (x // b, y // b)
+            r = bins.get(k)
+            if r is None:
+                bins[k] = [x, y, x, y]
+            else:
+                r[0] = min(r[0], x)
+                r[1] = min(r[1], y)
+                r[2] = max(r[2], x)
+                r[3] = max(r[3], y)
+        if len(bins) <= H_TARGETS:
+            break
+        b *= 2
+    boxes = list(bins.values())
+
+    def hb(ix, iy):
+        best = 1e18
+        for x0, y0, x1, y1 in boxes:
+            dx = x0 - ix if ix < x0 else (ix - x1 if ix > x1 else 0)
+            dy = y0 - iy if iy < y0 else (iy - y1 if iy > y1 else 0)
+            v = (dx + dy) + R2 * (dx if dx < dy else dy)
+            if v < best:
+                best = v
+        return weight * best
+
+    return hb
 
 
 class _DSU:
@@ -392,77 +462,81 @@ class Router:
 
     def _search(self, net, sources, targets, max_expand=MAX_EXPAND):
         """A* from a set of (L, ix, iy) cells to any target cell. Returns the cell path, or None (self.capped is
-        True when the expansion budget ran out rather than the board having no way through)."""
+        True when the expansion budget ran out rather than the board having no way through).
+
+        A state is one cell on one layer, as the int L * nx * ny + iy * nx + ix; the heading a state was reached
+        with is kept next to it (head) for the turn cost, not made part of the state: carrying it made the search
+        ~9x larger, and ordinary nets took 2-13 s at ~30 k expansions/s (QA 10-17). The heuristic is weighted by
+        SEARCH_WEIGHT, and with more than H_TARGETS target cells it measures to boxes of targets."""
         self.capped = False
         mask = self._mask(net)
         nx, ny = self.nx, self.ny
-        tlist = list({(ix, iy) for (_, ix, iy) in targets})
-        tset = set(targets)
-
-        def h(ix, iy):
-            best = 1e18
-            for tx, ty in tlist:
-                dx, dy = abs(tx - ix), abs(ty - iy)
-                v = (dx + dy) + (math.sqrt(2) - 2) * min(dx, dy)
-                if v < best:
-                    best = v
-            return best
-
+        size = nx * ny
+        tset = {L * size + iy * nx + ix for (L, ix, iy) in targets}
+        h = _heuristic({(ix, iy) for (_, ix, iy) in targets}, SEARCH_WEIGHT)
+        S2 = math.sqrt(2)
+        steps = [(dx, dy, dy * nx + dx, S2 if (dx and dy) else 1.0) for dx, dy in DIRS]
         openh = []
         gbest = {}
         parent = {}
+        head = {}
+        push, pop = heapq.heappush, heapq.heappop
         for L, ix, iy in sources:
-            s = (L, ix, iy, -1)
+            s = L * size + iy * nx + ix
             gbest[s] = 0.0
             parent[s] = None
-            heapq.heappush(openh, (h(ix, iy), 0.0, s))
+            head[s] = -1
+            push(openh, (h(ix, iy), 0.0, s))
+        via_cost = self.via_cost
         expanded = 0
         while openh:
-            f, gc, s = heapq.heappop(openh)
-            if gc > gbest.get(s, 1e18) + 1e-9:
+            f, gc, s = pop(openh)
+            if gc > gbest[s] + 1e-9:
                 continue
-            L, ix, iy, d = s
-            if (L, ix, iy) in tset and parent[s] is not None:
+            if s in tset and parent[s] is not None:
                 path = []
                 while s is not None:
-                    path.append(s[:3])
+                    L, i = divmod(s, size)
+                    path.append((L, i % nx, i // nx))
                     s = parent[s]
                 return path[::-1]
             expanded += 1
             if expanded > max_expand:
                 self.capped = True
                 return None
+            L, i = divmod(s, size)
+            iy, ix = divmod(i, nx)
+            d = head[s]
             mL = mask[L]
-            for k, (dx, dy) in enumerate(DIRS):
+            base = L * size
+            lp = 0.15 if L == 1 else 0.0
+            tc = _TURN[d] if d >= 0 else _NO_TURN
+            for k in range(8):
+                dx, dy, di, st = steps[k]
                 jx, jy = ix + dx, iy + dy
-                if not (0 <= jx < nx and 0 <= jy < ny):
+                if jx < 0 or jy < 0 or jx >= nx or jy >= ny:
                     continue
-                if not mL[jy * nx + jx]:
+                j = i + di
+                if not mL[j]:
                     continue
-                if dx and dy:
-                    # diagonal: both orthogonal neighbours must be clear too (no corner cutting)
-                    if not (mL[iy * nx + ix + dx] and mL[(iy + dy) * nx + ix]):
-                        continue
-                step = math.sqrt(2) if (dx and dy) else 1.0
-                turn = 0.0
-                if d >= 0 and d != k:
-                    diff = min((k - d) % 8, (d - k) % 8)
-                    turn = 0.4 * diff if diff <= 2 else 5.0
-                layer_pen = 0.15 if L == 1 else 0.0
-                ng = gc + step + turn + layer_pen
-                ns = (L, jx, jy, k)
+                if dx and dy and not (mL[i + dx] and mL[i + dy * nx]):
+                    continue  # diagonal: both orthogonal neighbours must be clear too (no corner cutting)
+                ng = gc + st + lp + tc[k]
+                ns = base + j
                 if ng < gbest.get(ns, 1e18):
                     gbest[ns] = ng
                     parent[ns] = s
-                    heapq.heappush(openh, (ng + h(jx, jy), ng, ns))
+                    head[ns] = k
+                    push(openh, (ng + h(jx, jy), ng, ns))
             OL = 1 - L
-            if mask[OL][iy * nx + ix] and self.via_ok(net, ix, iy):
-                ns = (OL, ix, iy, -1)
-                ng = gc + self.via_cost
+            if mask[OL][i] and self.via_ok(net, ix, iy):
+                ns = OL * size + i
+                ng = gc + via_cost
                 if ng < gbest.get(ns, 1e18):
                     gbest[ns] = ng
                     parent[ns] = s
-                    heapq.heappush(openh, (ng + h(ix, iy), ng, ns))
+                    head[ns] = -1
+                    push(openh, (ng + h(ix, iy), ng, ns))
         return None
 
     def _commit(self, net_name, path, start_pad, end_pad, width=None):
@@ -518,25 +592,35 @@ class Router:
             groups.sort(key=lambda g: -(len(g["pads"]) + len(g["tracks"])))
             base = groups[0]
             src = self._group_cells(base)
-            targets = {}
-            for gi, grp in enumerate(groups[1:], 1):
-                for p in grp["pads"]:
-                    ix, iy = self.nearest(p["x"], p["y"])
-                    for L in p["layers"]:
-                        if L in LAYERS:
-                            targets[(LAYERS.index(L), ix, iy)] = (gi, p)
-            width = self.track
-            path = None
-            if net_name in self.power_nets and self.power_track > self.track:
-                # wide first; a connection with no room for the wide track falls back to signal width
-                self._dil = max(1, int(math.ceil((self.power_track - self.track) / 2 / self.g)))
-                # capped: a wide track that has no room is found out quickly, then signal width is tried
-                path = self._search(net, src, set(targets), max_expand=WIDE_MAX_EXPAND)
-                self._dil = 0
-                if path is not None:
-                    width = self.power_track
-            if path is None:
-                path = self._search(net, src, set(targets), max_expand=max_expand)
+            # aim at the NEAR_GROUPS nearest groups first: a search aimed at one group has a tight heuristic, one
+            # aimed at every pad of a big net floods the board (80 s for GND on the handheld console, QA 10-17).
+            # Only when those are walled in (the search ran dry, not out of budget) is every group tried.
+            near = _nearest_groups(base, groups)
+            tries = [near[:NEAR_GROUPS]]
+            if len(near) > NEAR_GROUPS:
+                tries.append(near)
+            for gis in tries:
+                targets = {}
+                for gi in gis:
+                    for p in groups[gi]["pads"]:
+                        ix, iy = self.nearest(p["x"], p["y"])
+                        for L in p["layers"]:
+                            if L in LAYERS:
+                                targets[(LAYERS.index(L), ix, iy)] = (gi, p)
+                width = self.track
+                path = None
+                if net_name in self.power_nets and self.power_track > self.track:
+                    # wide first; a connection with no room for the wide track falls back to signal width
+                    self._dil = max(1, int(math.ceil((self.power_track - self.track) / 2 / self.g)))
+                    # capped: a wide track that has no room is found out quickly, then signal width is tried
+                    path = self._search(net, src, set(targets), max_expand=WIDE_MAX_EXPAND)
+                    self._dil = 0
+                    if path is not None:
+                        width = self.power_track
+                if path is None:
+                    path = self._search(net, src, set(targets), max_expand=max_expand)
+                if path is not None or self.capped:
+                    break
             if path is None:
                 rest = [p for g in groups[1:] for p in g["pads"]]
                 return out_t, out_v, rest
@@ -556,6 +640,20 @@ class Router:
             }
             groups = [merged] + [g for k, g in enumerate(groups) if k not in (0, end_gi)]
         return out_t, out_v, []
+
+
+def _nearest_groups(base, groups):
+    """Indices 1.. of groups, nearest to base first (closest pad to any pad or track point of base). A group with no
+    pads cannot be a target and goes last."""
+    bxy = [(p["x"], p["y"]) for p in base["pads"]] + [tuple(xy) for t in base["tracks"] for xy in t["pts"]]
+
+    def gap(gi):
+        pads = groups[gi]["pads"]
+        if not pads or not bxy:
+            return 1e18 if not pads else 0.0
+        return min((p["x"] - x) ** 2 + (p["y"] - y) ** 2 for p in pads for x, y in bxy)
+
+    return sorted(range(1, len(groups)), key=gap)
 
 
 def pin_zones(pads, hv_names, pad_margin=0.25):
