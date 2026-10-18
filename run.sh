@@ -33,7 +33,7 @@ start() { # port name cmd...
 
 start 3421 stt node studio/stt/stt_server.cjs
 start 3439 backend engine/.venv/bin/python3 deploy/etch_public.py
-start 8766 page engine/.venv/bin/python3 -m http.server 8766 --bind 127.0.0.1 --directory deploy/etch-app
+start 8766 page engine/.venv/bin/python3 deploy/serve_page.py 8766
 
 for _ in $(seq 1 60); do
   curl -sf http://127.0.0.1:3439/etch/health >/dev/null && break
