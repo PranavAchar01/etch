@@ -492,7 +492,7 @@ mountJobPill({ job: etch.job, open: (st, done) => jobHref(st, done, page, carry)
 const BUILT_FIRST = 12;
 let built = [], builtAll = false;
 function builtCard(b, i) {
-  const title = mine.nameFrom(b.text) || "Etch build";
+  const title = b.concept ? b.concept.replace(/^./, (c) => c.toUpperCase()) : mine.nameFrom(b.text) || "Etch build";
   const img = h("img", { src: mine.thumbFor(b.id, apiBase), alt: "", width: "640", height: "400", loading: "lazy", decoding: "async" });
   img.addEventListener("load", () => img.classList.add("in"), { once: true });
   img.addEventListener("error", () => img.remove(), { once: true });
