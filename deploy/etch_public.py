@@ -80,7 +80,6 @@ RESUME_WINDOW_S = int(os.environ.get("ETCH_RESUME_WINDOW_S", "1200"))
 RESUME_MAX = 2
 
 
-
 # ---------------------------------------------------------------- rate limits
 class Limiter:
     def __init__(self):
@@ -117,9 +116,7 @@ class Job:
         self.ended: float | None = None
         self.state = "running"  # running | done | failed | cancelled (no queue since 2026-10-17)
         self.stage = "starting the engine"
-        self.run: str | None = (
-            None  # the engine's live-* folder, once its first event names it
-        )
+        self.run: str | None = None  # the engine's live-* folder, once its first event names it
         self.proc: subprocess.Popen | None = None
         self.cancelled = False
         self.lock = threading.Lock()
@@ -257,10 +254,28 @@ class Classifier:
     the scores as a JSON string for the build's ETCH_CLASSIFIED, or None (router off for that build)."""
 
     ARGS = [
-        "uv", "run", "--quiet", "--project", "engine",
-        "--with", "torch", "--with", "transformers", "--with", "safetensors",
-        "--with", "sentencepiece", "--with", "huggingface_hub",
-        "nice", "-n", "10", "python", "-m", "agent.task_router", "--serve",
+        "uv",
+        "run",
+        "--quiet",
+        "--project",
+        "engine",
+        "--with",
+        "torch",
+        "--with",
+        "transformers",
+        "--with",
+        "safetensors",
+        "--with",
+        "sentencepiece",
+        "--with",
+        "huggingface_hub",
+        "nice",
+        "-n",
+        "10",
+        "python",
+        "-m",
+        "agent.task_router",
+        "--serve",
     ]
 
     def __init__(self) -> None:
@@ -270,8 +285,13 @@ class Classifier:
 
     def _start(self) -> None:
         self.proc = subprocess.Popen(
-            self.ARGS, cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL, text=True, start_new_session=True,
+            self.ARGS,
+            cwd=ROOT,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            start_new_session=True,
         )
         head = json.loads(self.proc.stdout.readline() or "{}")
         self.ready = bool(head.get("ready"))
@@ -461,6 +481,7 @@ def worker(job: Job):
         job.proc = proc
         if job.cancelled:  # cancelled in the instant between the check above and the spawn
             threading.Thread(target=stop_group, args=(job,), daemon=True).start()
+
         def _timed_out():
             job.timed_out = True
             stop_group(job)
@@ -489,9 +510,15 @@ def worker(job: Job):
             pass
         elif getattr(job, "timed_out", False):  # the backend's last-resort cap, after the engine's own watchdog
             mins = round(RUN_TIMEOUT_S / 60)
-            job.emit({"agent": "lead", "type": "say", "t": 0,
-                      "text": f"I stopped this build after {mins} minutes with no result. It was stuck, not slow. "
-                              "Try again in a minute."})
+            job.emit(
+                {
+                    "agent": "lead",
+                    "type": "say",
+                    "t": 0,
+                    "text": f"I stopped this build after {mins} minutes with no result. It was stuck, not slow. "
+                    "Try again in a minute.",
+                }
+            )
             job.emit({"agent": "lead", "type": "error", "t": 0, "error": f"timeout: run stopped after {mins} min"})
             job.state, job.stage = "failed", f"stopped after {mins} minutes"
         elif rc != 0:
@@ -534,8 +561,15 @@ def save_terminal(job: Job) -> None:
     d = OUT / job.run
     if not d.is_dir():
         return
-    rec = {"state": job.state, "stage": job.stage, "job": job.id, "mode": job.mode, "lane": job.lane,
-           "rc": job.proc.returncode if job.proc else None, "ended": time.strftime("%Y-%m-%d %H:%M:%S")}
+    rec = {
+        "state": job.state,
+        "stage": job.stage,
+        "job": job.id,
+        "mode": job.mode,
+        "lane": job.lane,
+        "rc": job.proc.returncode if job.proc else None,
+        "ended": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
     tmp = d / f".terminal.{os.getpid()}.tmp"
     try:
         tmp.write_text(json.dumps(rec))
@@ -627,9 +661,7 @@ def cancel_job(job: Job) -> dict:
     res = stop_group(job)
     if job.run:
         try:  # remembered on disk so the library still says cancelled after a restart
-            (OUT / job.run / "cancelled.json").write_text(
-                json.dumps({"cancelled": time.time()})
-            )
+            (OUT / job.run / "cancelled.json").write_text(json.dumps({"cancelled": time.time()}))
         except OSError:
             pass
     return {"ok": True, "lock_released": res.get("lock_released", False)}
@@ -647,9 +679,7 @@ def thumb_path(run: str) -> Path | None:
     return p if p.is_file() and OUT.resolve() in p.parents else None
 
 
-VIEW_LOCK = (
-    threading.Lock()
-)  # one viewer/export job at a time: each is a few seconds of kicad-cli
+VIEW_LOCK = threading.Lock()  # one viewer/export job at a time: each is a few seconds of kicad-cli
 
 
 def viewer(cmd: str, run: str) -> dict | None:
@@ -695,9 +725,7 @@ def cached_view(run: str, name: str) -> Path | None:
     return p if OUT.resolve() in p.parents else None
 
 
-FILL_RE = re.compile(
-    r'\(filled_polygon\s*\(layer "([FB])\.Cu"\)(.*?)\(pts(.*?)\)\s*\)', re.S
-)
+FILL_RE = re.compile(r'\(filled_polygon\s*\(layer "([FB])\.Cu"\)(.*?)\(pts(.*?)\)\s*\)', re.S)
 XY_RE = re.compile(r"\(xy ([-\d.e]+) ([-\d.e]+)\)")
 
 
@@ -847,6 +875,176 @@ def library(limit: int = 60) -> list[dict]:
     return out
 
 
+# ---------------------------------------------------------------- gallery: every passing build, one per prompt
+# The public "Built on Etch" shelf on Explore. Built from the run folders on disk, so it survives restarts, and
+# remembered in out/_gallery.json (the shelf as last served). Two builds whose asks share the same words
+# (ignoring order, filler and plurals) count as one prompt: only the newest passing build of it is shown.
+GALLERY_FILE = OUT / "_gallery.json"
+GALLERY_TTL_S = 30.0
+GALLERY_CACHE: dict[str, object] = {"t": 0.0, "rows": []}
+GALLERY_LOCK = threading.Lock()
+FILLER = set(
+    "a an the and or with for of to in on into by from at me my i i'd id want would like need please can could "
+    "you make build design create get give us we some that this which it its using use board pcb circuit "
+    "simple small little basic new".split()
+)
+
+
+EDIT_ASK = re.compile(
+    r"^\s*(add|remove|delete|drop|move|swap|use|change|replace|rotate|shrink|make\s+(it|the|them)|turn\s+(it|the))\b",
+    re.I,
+)
+SAME_PROMPT = 0.5  # word overlap (Jaccard) at or above this: the same prompt, keep the newest build
+SPOKEN = set("um uh like so thing hey etch lets let output know little maybe".split())
+# The library's memory: what each build IS ("calculator", "fan on temperature", "night light"), one short concept
+# per run, named once by the sub-agent model and kept on disk. Builds with the same concept are one card.
+CONCEPTS_FILE = OUT / "_gallery_concepts.json"
+CONCEPTS: dict[str, str] = {}
+CONCEPTS_BUSY = threading.Lock()
+
+
+def _stem(w: str) -> str:
+    for suf in ("ing", "ed", "es", "s"):
+        if len(w) > 4 and w.endswith(suf):
+            return w[: -len(suf)]
+    return w
+
+
+def _words(text: str) -> set[str]:
+    return {
+        _stem(w)
+        for w in re.findall(r"[a-z0-9]+", text.lower())
+        if w not in FILLER and w not in SPOKEN
+    }
+
+
+def _same(a: set[str], b: set[str]) -> bool:
+    inter = len(a & b)
+    return inter / max(1, len(a | b)) >= SAME_PROMPT or (
+        min(len(a), len(b)) >= 2 and inter / min(len(a), len(b)) >= 0.8
+    )
+
+
+def _load_concepts() -> None:
+    if CONCEPTS:
+        return
+    try:
+        CONCEPTS.update(json.loads(CONCEPTS_FILE.read_text()))
+    except (OSError, ValueError):
+        pass
+
+
+def _name_concepts(todo: list[tuple[str, str]]) -> None:
+    """Background: ask the sub-agent model for a 1-4 word concept per ask, merge into the file. Never raises."""
+    if not CONCEPTS_BUSY.acquire(blocking=False):
+        return
+    try:
+        import sys as _sys
+
+        if str(ROOT) not in _sys.path:
+            _sys.path.insert(0, str(ROOT))
+        from agent.config import BASE_URL, SUB_MODEL, api_key
+
+        known = sorted(set(CONCEPTS.values()))
+        for i in range(0, len(todo), 40):
+            chunk = todo[i : i + 40]
+            ask = (
+                "Each line is a request to an AI that designs circuit boards. Give each one a short concept "
+                "label (1-4 lowercase words) naming what the device IS, so that requests for the same kind of "
+                "device get the SAME label even when worded differently or with a different colour, size or "
+                "power source (e.g. 'night light', 'calculator', 'temperature fan controller', 'robot arm', "
+                "'police flasher', 'blinking led'). Reuse one of these existing labels when it fits: "
+                + json.dumps(known[:300])
+                + '\nReply with only a JSON object {"<id>": "<label>"}.\n'
+                + "\n".join(f"{r}: {t}" for r, t in chunk)
+            )
+            body = json.dumps(
+                {
+                    "model": SUB_MODEL,
+                    "messages": [{"role": "user", "content": ask}],
+                    "max_tokens": 3000,
+                    "temperature": 0,
+                    "chat_template_kwargs": {"enable_thinking": False},
+                }
+            ).encode()
+            req = urllib.request.Request(
+                BASE_URL + "/chat/completions",
+                data=body,
+                headers={"Authorization": "Bearer " + api_key(), "Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=120) as r:
+                txt = json.loads(r.read())["choices"][0]["message"]["content"] or ""
+            m = re.search(r"\{.*\}", txt, re.S)
+            got = json.loads(m.group(0)) if m else {}
+            ids = {r for r, _ in chunk}
+            for r, lab in got.items():
+                if r in ids and isinstance(lab, str) and lab.strip():
+                    CONCEPTS[r] = re.sub(r"\s+", " ", lab.strip().lower())[:40]
+            known = sorted(set(CONCEPTS.values()))
+            tmp = CONCEPTS_FILE.with_suffix(".tmp")
+            tmp.write_text(json.dumps(CONCEPTS, indent=0, sort_keys=True))
+            tmp.replace(CONCEPTS_FILE)
+        GALLERY_CACHE["t"] = 0.0  # re-group with the new labels on the next request
+    except Exception:  # noqa: BLE001 - labels are a nicety; the word grouping still works without them
+        pass
+    finally:
+        CONCEPTS_BUSY.release()
+
+
+def gallery() -> list[dict]:
+    with GALLERY_LOCK:
+        if time.time() - float(GALLERY_CACHE["t"]) < GALLERY_TTL_S:
+            return list(GALLERY_CACHE["rows"])  # type: ignore[arg-type]
+        _load_concepts()
+        rows: list[dict] = []
+        keys: list[set[str]] = []
+        seen: set[str] = set()
+        unnamed: list[tuple[str, str]] = []
+        dirs = sorted(
+            (d for d in OUT.glob("live-*") if RUN_RE.match(d.name) and d.is_dir()),
+            key=lambda d: -int(d.name[5:]),
+        )
+        for d in dirs:  # newest first, so the first build of each prompt is the one kept
+            info = disk_info(d)
+            if not info or info["state"] != "done" or info["mode"] != "design" or not info["text"]:
+                continue
+            if EDIT_ASK.match(info["text"]) or not thumb_path(d.name):
+                continue  # a change to another board ("remove the button") is not a board of its own
+            concept = CONCEPTS.get(d.name)
+            if not concept:
+                unnamed.append((d.name, info["text"]))
+            key = _words(info["text"])
+            if not key or (concept and concept in seen) or any(_same(key, k) for k in keys):
+                continue
+            if concept:
+                seen.add(concept)
+            keys.append(key)
+            rows.append(
+                {
+                    "id": d.name,
+                    "text": info["text"],
+                    "concept": concept or "",
+                    "started": info["started"],
+                    "seconds": info["seconds"],
+                }
+            )
+        if unnamed and not CONCEPTS_BUSY.locked():
+            threading.Thread(target=_name_concepts, args=(unnamed,), daemon=True).start()
+        GALLERY_CACHE.update(t=time.time(), rows=rows)
+        try:
+            tmp = GALLERY_FILE.with_suffix(".tmp")
+            tmp.write_text(
+                json.dumps(
+                    {"saved": round(time.time(), 1), "builds": rows},
+                    separators=(",", ":"),
+                )
+            )
+            tmp.replace(GALLERY_FILE)
+        except OSError:
+            pass
+        return list(rows)
+
+
 def run_events(run: str) -> list[dict] | None:
     if not RUN_RE.match(run):
         return None
@@ -866,9 +1064,7 @@ def run_events(run: str) -> list[dict] | None:
     # a board rendered after its build (live render) logs that to render.jsonl only: replay its last finished
     # render too, so the library opens it with its picture and 3D board
     rp = OUT / run / "render.jsonl"
-    if rp.is_file() and not any(
-        e.get("agent") == "render" and e.get("type") == "done" for e in evs
-    ):
+    if rp.is_file() and not any(e.get("agent") == "render" and e.get("type") == "done" for e in evs):
         for line in reversed(rp.read_text().splitlines()):
             try:
                 ev = json.loads(line.replace(root, "").replace(HOME, "~"))
@@ -881,8 +1077,7 @@ def run_events(run: str) -> list[dict] | None:
                     (
                         i
                         for i in range(len(evs) - 1, -1, -1)
-                        if evs[i].get("agent") == "lead"
-                        and evs[i].get("type") == "done"
+                        if evs[i].get("agent") == "lead" and evs[i].get("type") == "done"
                     ),
                     len(evs),
                 )
@@ -976,9 +1171,7 @@ def restore_jobs(now: float | None = None, start=None) -> list[Job]:
 
 PIECE_RE = re.compile(r"^/etch/piece/([0-9a-f]{16})\.png$")
 PIECES = ROOT / "engine/parts/piece_renders"
-FILE_RE = re.compile(
-    r"^/engine/out/(live-\d+)/(frames/(f\d{3}\.png|frames\.json)|sim\.json)$"
-)
+FILE_RE = re.compile(r"^/engine/out/(live-\d+)/(frames/(f\d{3}\.png|frames\.json)|sim\.json)$")
 BASE_RE = re.compile(r"^/?engine/out/(live-\d+)/?$")
 
 
@@ -998,9 +1191,7 @@ class H(BaseHTTPRequestHandler):
         if o and ORIGIN_RE.match(o):
             self.send_header("Access-Control-Allow-Origin", o)
             self.send_header("Vary", "Origin")
-            self.send_header(
-                "Access-Control-Allow-Headers", "Content-Type"
-            )
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Max-Age", "600")
 
@@ -1079,6 +1270,8 @@ class H(BaseHTTPRequestHandler):
             )
         if u.path == "/etch/builds":
             return self.send_json({"builds": library(), "now": round(time.time(), 1)})
+        if u.path == "/etch/gallery":
+            return self.send_json({"builds": gallery(), "now": round(time.time(), 1)})
         if u.path == "/etch/run":
             run = urllib.parse.parse_qs(u.query).get("id", [""])[0]
             evs = run_events(run)
@@ -1107,14 +1300,10 @@ class H(BaseHTTPRequestHandler):
             # already built (a stored board copies them in, a reopened build made them before): send the file,
             # no engine process (that start-up alone was about 3 s)
             if u.path in ("/etch/glb", "/etch/parts") and RUN_RE.match(run):
-                hit = cached_view(
-                    run, "board.glb" if u.path == "/etch/glb" else "parts.json"
-                )
+                hit = cached_view(run, "board.glb" if u.path == "/etch/glb" else "parts.json")
                 if hit:
                     if u.path == "/etch/glb":
-                        return self.blob(
-                            hit.read_bytes(), "model/gltf-binary", "no-store"
-                        )
+                        return self.blob(hit.read_bytes(), "model/gltf-binary", "no-store")
                     return self.send_json({"ok": True, **json.loads(hit.read_text())})
             cmd = {"/etch/glb": "glb", "/etch/parts": "parts"}.get(u.path, "export")
             res = viewer(cmd, run)
@@ -1122,9 +1311,7 @@ class H(BaseHTTPRequestHandler):
                 return self.send_json({"error": "not found"}, 404)
             if u.path == "/etch/glb":
                 if not res.get("ok"):
-                    return self.send_json(
-                        {"error": res.get("error", "no glb")[:200]}, 500
-                    )
+                    return self.send_json({"error": res.get("error", "no glb")[:200]}, 500)
                 return self.blob(
                     (OUT / run / "view/board.glb").read_bytes(),
                     "model/gltf-binary",
@@ -1141,18 +1328,14 @@ class H(BaseHTTPRequestHandler):
             res.pop("zip", None)
             res.pop("glb", None)
             if "error" in res:
-                res["error"] = (
-                    str(res["error"]).replace(str(ROOT), "").replace(HOME, "~")
-                )
+                res["error"] = str(res["error"]).replace(str(ROOT), "").replace(HOME, "~")
             return self.send_json(res)
         if m := PIECE_RE.match(u.path):
             # library part renders: public KiCad library art, content-addressed, so cache for a long time
             p = PIECES / f"{m.group(1)}.png"
             if not p.is_file():
                 return self.send_json({"error": "not found"}, 404)
-            return self.blob(
-                p.read_bytes(), "image/png", "public, max-age=604800, immutable"
-            )
+            return self.blob(p.read_bytes(), "image/png", "public, max-age=604800, immutable")
         if u.path.startswith("/etch/files/"):
             return self.file(u.path[len("/etch/files") :])
         return self.send_json({"error": "not found"}, 404)
@@ -1203,9 +1386,7 @@ class H(BaseHTTPRequestHandler):
             if not j:
                 return self.send_json({"error": "no such run"}, 404)
             # only the browser that started a run holds its token, so viewers of the library cannot stop it
-            if not hmac.compare_digest(
-                str(body.get("token", "")).encode(), j.token.encode()
-            ):
+            if not hmac.compare_digest(str(body.get("token", "")).encode(), j.token.encode()):
                 return self.send_json(
                     {"error": "Only the person who started this build can cancel it."},
                     403,
@@ -1215,9 +1396,7 @@ class H(BaseHTTPRequestHandler):
         if self.path == "/etch/stt":
             if not LIM.allow("stt:" + ip, STT_PER_IP_10MIN, 600):
                 return self.send_json(
-                    {
-                        "error": "Too many voice requests. Wait a few minutes, or type instead."
-                    },
+                    {"error": "Too many voice requests. Wait a few minutes, or type instead."},
                     429,
                 )
             b = self.body(MAX_STT_BYTES)
@@ -1227,20 +1406,14 @@ class H(BaseHTTPRequestHandler):
                     413,
                 )
             try:
-                data = urllib.request.urlopen(
-                    urllib.request.Request(STT_URL, data=b), timeout=60
-                ).read()
+                data = urllib.request.urlopen(urllib.request.Request(STT_URL, data=b), timeout=60).read()
                 return self.send_json(data)
             except OSError:
-                return self.send_json(
-                    {"error": "Voice is offline right now. Type instead."}, 503
-                )
+                return self.send_json({"error": "Voice is offline right now. Type instead."}, 503)
         if self.path == "/etch/tts":
             if not LIM.allow("tts:" + ip, TTS_PER_IP_10MIN, 600):
                 return self.send_json(
-                    {
-                        "error": "Too many voice requests. Wait a few minutes, or type instead."
-                    },
+                    {"error": "Too many voice requests. Wait a few minutes, or type instead."},
                     429,
                 )
             try:
@@ -1253,9 +1426,7 @@ class H(BaseHTTPRequestHandler):
             try:
                 audio = tts(text)
             except OSError:
-                return self.send_json(
-                    {"error": "Voice is offline right now. Type instead."}, 503
-                )
+                return self.send_json({"error": "Voice is offline right now. Type instead."}, 503)
             self.send_response(200)
             self.cors()
             self.send_header("Content-Type", "audio/mpeg")
@@ -1273,9 +1444,7 @@ class H(BaseHTTPRequestHandler):
             mode = body.get("mode")
             text = re.sub(r"\s+", " ", str(body.get("text", ""))).strip()[:MAX_TEXT]
             if mode not in ("design", "modify", "bench") or not text:
-                return self.send_json(
-                    {"error": "Tell me what your board should do."}, 400
-                )
+                return self.send_json({"error": "Tell me what your board should do."}, 400)
             args = [
                 "uv",
                 "run",
@@ -1301,15 +1470,25 @@ class H(BaseHTTPRequestHandler):
                     )
                 if not (base / "design.json").is_file():
                     return self.send_json(
-                        {
-                            "error": "That version did not finish, so there is nothing to change yet."
-                        },
+                        {"error": "That version did not finish, so there is nothing to change yet."},
                         400,
                     )
                 if mode == "modify" and explore.edited_in_place(base):
                     # an imported board Etch edited in place cannot be re-placed from its catalog: edit it in place again
-                    args = ["uv", "run", "--quiet", "--project", "engine", "--with", "openai", "python", "-m",
-                            "agent.import_edit", text, "--events"]
+                    args = [
+                        "uv",
+                        "run",
+                        "--quiet",
+                        "--project",
+                        "engine",
+                        "--with",
+                        "openai",
+                        "python",
+                        "-m",
+                        "agent.import_edit",
+                        text,
+                        "--events",
+                    ]
                 args += ["--base", str(base)]
             return self.start_build(ip, args, mode, text)
         if self.path in EXPLORE_POST:
@@ -1325,25 +1504,27 @@ class H(BaseHTTPRequestHandler):
         lane = lane_for(mode, text, base) if mode in ("design", "modify") else "full"
         if RUNNING[lane] >= CAPS[lane]():
             return self.send_json(
-                {"error": f"{CAPS[lane]()} builds are running right now, the most this machine takes at once. "
-                          "Try again in a minute."},
+                {
+                    "error": f"{CAPS[lane]()} builds are running right now, the most this machine takes at once. "
+                    "Try again in a minute."
+                },
                 503,
             )
-        if not LIM.allow(
-            "runs:" + ip, RUNS_PER_IP_HOUR, 3600, take=False
-        ) or not LIM.allow("runs:day", RUNS_PER_DAY, 86400, take=False):
+        if not LIM.allow("runs:" + ip, RUNS_PER_IP_HOUR, 3600, take=False) or not LIM.allow(
+            "runs:day", RUNS_PER_DAY, 86400, take=False
+        ):
             return self.send_json(
-                {
-                    "error": "That is all the builds I can do for now. Try again later."
-                },
+                {"error": "That is all the builds I can do for now. Try again later."},
                 429,
             )
         if room:
             return None
         if not reserve(lane):  # lost a race for the last place since the check above
             return self.send_json(
-                {"error": f"{CAPS[lane]()} builds are running right now, the most this machine takes at once. "
-                          "Try again in a minute."},
+                {
+                    "error": f"{CAPS[lane]()} builds are running right now, the most this machine takes at once. "
+                    "Try again in a minute."
+                },
                 503,
             )
         LIM.allow("runs:" + ip, RUNS_PER_IP_HOUR, 3600)
@@ -1399,8 +1580,14 @@ class H(BaseHTTPRequestHandler):
         res = explore.ask(board, text, ref)
         msgs = [
             {"role": "user", "text": text, "at": now},
-            {"role": "assistant", "text": res["answer"], "at": int(time.time()), "mentions": res["mentions"],
-             "thoughts": res["thoughts"], "seconds": res["seconds"]},
+            {
+                "role": "assistant",
+                "text": res["answer"],
+                "at": int(time.time()),
+                "mentions": res["mentions"],
+                "thoughts": res["thoughts"],
+                "seconds": res["seconds"],
+            },
         ]
         return self.send_json({"ok": True, "comment": store.create(board.id, ref, anchor, msgs)})
 
@@ -1421,8 +1608,14 @@ class H(BaseHTTPRequestHandler):
         res = explore.ask(board, text, ref, c["messages"])
         msgs = [
             {"role": "user", "text": text, "at": now},
-            {"role": "assistant", "text": res["answer"], "at": int(time.time()), "mentions": res["mentions"],
-             "thoughts": res["thoughts"], "seconds": res["seconds"]},
+            {
+                "role": "assistant",
+                "text": res["answer"],
+                "at": int(time.time()),
+                "mentions": res["mentions"],
+                "thoughts": res["thoughts"],
+                "seconds": res["seconds"],
+            },
         ]
         updated = store.append(cid, msgs)
         if not updated:
@@ -1445,8 +1638,20 @@ class H(BaseHTTPRequestHandler):
             raise explore.ExploreError("Tell me what to change.")
         if ref:
             text = f"{ref}: {text}"[:MAX_TEXT]
-        inplace = ["uv", "run", "--quiet", "--project", "engine", "--with", "openai", "python", "-m",
-                   "agent.import_edit", text, "--events"]
+        inplace = [
+            "uv",
+            "run",
+            "--quiet",
+            "--project",
+            "engine",
+            "--with",
+            "openai",
+            "python",
+            "-m",
+            "agent.import_edit",
+            text,
+            "--events",
+        ]
         if board.kind == "live":
             base = board.run_dir
             if explore.edited_in_place(base):  # an imported board Etch edited in place: edit that copy again
@@ -1463,8 +1668,23 @@ class H(BaseHTTPRequestHandler):
             if (busy := self.start_build(ip, [], "modify", text, room=True)) is not None:
                 return busy
             base = explore.seed_run(board, design)
-        args = ["uv", "run", "--quiet", "--project", "engine", "--with", "openai", "python", "-m", "agent.live",
-                "modify", text, "--events", "--base", str(base)]
+        args = [
+            "uv",
+            "run",
+            "--quiet",
+            "--project",
+            "engine",
+            "--with",
+            "openai",
+            "python",
+            "-m",
+            "agent.live",
+            "modify",
+            text,
+            "--events",
+            "--base",
+            str(base),
+        ]
         return self.start_build(ip, args, "modify", text)
 
 
@@ -1518,11 +1738,7 @@ def tts_guard() -> None:
     except (OSError, ValueError, KeyError):
         return
     try:
-        s = sum(
-            json.loads(x).get("usd", 0.0)
-            for x in METER.read_text().splitlines()
-            if x.strip()
-        )
+        s = sum(json.loads(x).get("usd", 0.0) for x in METER.read_text().splitlines() if x.strip())
     except OSError:
         s = 0.0
     if s >= b:

@@ -428,7 +428,7 @@ try {
 // ---- My boards: what the person saved in the editor, first, in the same white cards (js/my-boards.js) ----
 const DOTS = '<svg class="ic" width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true"><circle cx="4.5" cy="9" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="13.5" cy="9" r="1.4"/></svg>';
 let apiBase = "";
-fetch("config.json", { cache: "no-store" }).then((r) => r.json()).then((c) => (c.config_url ? fetch(c.config_url, { cache: "no-store" }).then((r) => r.json()) : c)).then((c) => { apiBase = String(Q.get("api") || c.api || "").replace(/\/$/, ""); renderMine(); }).catch(() => {});
+fetch("config.json", { cache: "no-store" }).then((r) => r.json()).then((c) => (c.config_url ? fetch(c.config_url, { cache: "no-store" }).then((r) => r.json()) : c)).then((c) => { apiBase = String(Q.get("api") || c.api || "").replace(/\/$/, ""); renderMine(); loadBuilt(); }).catch(() => {});
 function closeMenus() { for (const m of document.querySelectorAll(".mine-menu")) m.remove(); }
 addEventListener("click", (e) => { if (!e.target.closest(".mine-menu, .mine-more")) closeMenus(); });
 addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenus(); });
@@ -487,3 +487,36 @@ mine.onChange(renderMine);
 // a finished design build goes into My boards, named from what was asked
 mountJobPill({ job: etch.job, open: (st, done) => jobHref(st, done, page, carry),
   onReady: (st) => { const id = jobBoardId(st); if (st.design && id) mine.save({ id, title: st.title, thumb: mine.thumbFor(id, apiBase), owner: st.mock ? "" : "Etch build", prompt: st.text }); } });
+
+// ---- Built on Etch: everyone's passing builds, one per distinct prompt, newest first (backend /etch/gallery) ----
+const BUILT_FIRST = 12;
+let built = [], builtAll = false;
+function builtCard(b, i) {
+  const title = mine.nameFrom(b.text) || "Etch build";
+  const img = h("img", { src: mine.thumbFor(b.id, apiBase), alt: "", width: "640", height: "400", loading: "lazy", decoding: "async" });
+  img.addEventListener("load", () => img.classList.add("in"), { once: true });
+  img.addEventListener("error", () => img.remove(), { once: true });
+  const c = h("article", { class: "card mine-card", "data-id": b.id, style: `--i:${Math.min(i, 12)}` },
+    h("a", { class: "card-main", href: page("board") + carry({ id: b.id }), "aria-label": `${title}, built on Etch`, title: b.text },
+      h("div", { class: "th" }, img),
+      h("div", { class: "info" },
+        h("div", { class: "l1" }, h("span", { class: "etched" }, "Etch"), h("span", { class: "who" }, ["built " + ago(b.started), b.seconds ? `in ${Math.round(b.seconds)} s` : ""].filter(Boolean).join(" "))),
+        h("div", { class: "l2" }, h("span", { class: "t" }, title)))));
+  springy(c);
+  return c;
+}
+function renderBuilt() {
+  const g = $("builtGrid"), more = $("builtMore");
+  $("built").hidden = !built.length;
+  $("builtN").textContent = built.length ? `${built.length} boards, one per prompt` : "";
+  g.textContent = "";
+  (builtAll ? built : built.slice(0, BUILT_FIRST)).forEach((b, i) => g.append(builtCard(b, i)));
+  more.hidden = builtAll || built.length <= BUILT_FIRST;
+  more.textContent = `Show all ${built.length}`;
+}
+$("builtMore").addEventListener("click", () => { builtAll = true; renderBuilt(); });
+function loadBuilt() {
+  if (!apiBase) return;
+  fetch(apiBase + "/etch/gallery", { cache: "no-store" }).then((r) => r.json())
+    .then((d) => { built = Array.isArray(d.builds) ? d.builds.filter((b) => isLive(b.id)) : []; renderBuilt(); }).catch(() => {});
+}

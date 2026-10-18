@@ -498,3 +498,8 @@ button { font: inherit; color: inherit; }
 .mine-in { flex: 1; min-width: 0; font: 600 17px var(--body); color: #141414; border: 0; border-radius: 8px; padding: 2px 6px; margin: -2px -6px; box-shadow: 0 0 0 1.5px var(--accent); outline: 0; }
 .toast { position: fixed; left: 50%; top: 84px; transform: translate(-50%, -8px); background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 10px; font: 500 13px var(--body); opacity: 0; pointer-events: none; transition: opacity .2s, transform .3s var(--liquid); z-index: 2000; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* Built on Etch: every passing build, one per prompt (GET /etch/gallery) */
+.built .built-more { display: block; margin: 16px auto 0; }
+.built .built-more[hidden] { display: none; }
+.mine-card .etched { flex: none; margin-right: 8px; padding: 1px 8px; border-radius: 999px; background: var(--plane, #eef2f5); color: var(--ink-2); font-size: 12.5px; font-weight: 600; line-height: 1.5; }
