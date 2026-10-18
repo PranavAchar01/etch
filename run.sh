@@ -1,16 +1,26 @@
 #!/bin/bash
 # Run Etch locally: speech-to-text (:3421), the backend (:3439) and the page (:8766).
-#   ./run.sh            local only; opens http://127.0.0.1:8766
-#   ./run.sh --public   also starts the Cloudflare tunnel (deploy/tunnel.sh), which points
-#                       deploy/etch-app/config.json at it and redeploys the linked Vercel project
-# Anything already listening on a port (e.g. the launchd jobs from deploy/restart.sh) is reused.
-# Ctrl-C stops what this script started.
+#   ./run.sh            local only; opens the page on this machine
+#   ./run.sh --tunnel   also opens a Cloudflare quick tunnel to the backend and prints the etch.chat link that
+#                       uses it (scripts/tunnel.sh). Use this to drive etch.chat with your own backend.
+#   ./run.sh --public   the project's own host: deploy/tunnel.sh, which also republishes the official API URL
+#                       (needs the maintainers' Vercel login; contributors want --tunnel)
+# Ports come from .env (ETCH_PUBLIC_PORT, ETCH_PAGE_PORT, ETCH_STT_PORT). Anything already listening on a port
+# is reused. Ctrl-C stops what this script started.
 set -uo pipefail
 R="$(cd "$(dirname "$0")" && pwd)"
 cd "$R"
 [ -f .etch.env ] || { echo "Run ./setup.sh first."; exit 1; }
 # shellcheck disable=SC1091
 source .etch.env
+# read one KEY=VALUE from .env without sourcing it (blank values stay unset; the backend loads .env itself)
+ENVF="$R/.env"
+envget() { [ -f "$ENVF" ] && sed -n -E "s/^[[:space:]]*(export[[:space:]]+)?$1[[:space:]]*=[[:space:]]*[\"']?([^\"'#[:space:]]*).*/\2/p" "$ENVF" | tail -1; }
+API_PORT="${ETCH_PUBLIC_PORT:-$(envget ETCH_PUBLIC_PORT)}"; API_PORT="${API_PORT:-3439}"
+PAGE_PORT="${ETCH_PAGE_PORT:-$(envget ETCH_PAGE_PORT)}"; PAGE_PORT="${PAGE_PORT:-8766}"
+STT_PORT="${ETCH_STT_PORT:-$(envget ETCH_STT_PORT)}"; STT_PORT="${STT_PORT:-3421}"
+export ETCH_PUBLIC_PORT="$API_PORT" ETCH_STT_PORT="$STT_PORT"
+export ETCH_STT_URL="${ETCH_STT_URL:-http://127.0.0.1:$STT_PORT/stt}"
 # a build needs KiCad's own libraries and the open-source ones setup.sh fetches: stop here, not mid-build
 K="${ETCH_KICAD_APP:-}"
 if [ -z "$K" ] || [ ! -x "$K/Contents/MacOS/kicad-cli" ] || [ ! -f "$K/Contents/SharedSupport/symbols/MCU_Module.kicad_sym" ]; then
@@ -31,23 +41,29 @@ start() { # port name cmd...
   echo "$name: starting on :$port (logs/$name.log)"
 }
 
-start 3421 stt node studio/stt/stt_server.cjs
-start 3439 backend engine/.venv/bin/python3 deploy/etch_public.py
-start 8766 page engine/.venv/bin/python3 deploy/serve_page.py 8766
+start "$STT_PORT" stt node studio/stt/stt_server.cjs
+start "$API_PORT" backend engine/.venv/bin/python3 deploy/etch_public.py
+start "$PAGE_PORT" page engine/.venv/bin/python3 deploy/serve_page.py "$PAGE_PORT"
 
 for _ in $(seq 1 60); do
-  curl -sf http://127.0.0.1:3439/etch/health >/dev/null && break
+  curl -sf "http://127.0.0.1:$API_PORT/etch/health" >/dev/null && break
   sleep 1
 done
-echo "backend health: $(curl -s http://127.0.0.1:3439/etch/health)"
+echo "backend health: $(curl -s --max-time 5 "http://127.0.0.1:$API_PORT/etch/health")"
 
-if [ "${1:-}" = "--public" ]; then
-  deploy/tunnel.sh &
-  PIDS+=($!)
-  echo "tunnel: starting (deploy/logs/tunnel.log); public URL lands in deploy/tunnel-url.txt"
-fi
+case "${1:-}" in
+  --tunnel)
+    scripts/tunnel.sh &
+    PIDS+=($!)
+    ;;
+  --public)
+    deploy/tunnel.sh &
+    PIDS+=($!)
+    echo "tunnel: starting (deploy/logs/tunnel.log); public URL lands in deploy/tunnel-url.txt"
+    ;;
+esac
 
-URL="http://127.0.0.1:8766/?api=http://127.0.0.1:3439"
+URL="http://127.0.0.1:$PAGE_PORT/?api=http://127.0.0.1:$API_PORT"
 echo "Etch: $URL"
-open "$URL" 2>/dev/null || true
+[ -n "${ETCH_NO_OPEN:-}" ] || open "$URL" 2>/dev/null || true
 wait

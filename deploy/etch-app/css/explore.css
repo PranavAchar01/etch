@@ -503,3 +503,22 @@ button { font: inherit; color: inherit; }
 .built .built-more { display: block; margin: 16px auto 0; }
 .built .built-more[hidden] { display: none; }
 .mine-card .etched { flex: none; margin-right: 8px; padding: 1px 8px; border-radius: 999px; background: var(--plane, #eef2f5); color: var(--ink-2); font-size: 12.5px; font-weight: 600; line-height: 1.5; }
+
+/* ---- Backend dialog (js/backend.js): point the page at your own Etch backend ---- */
+.be-btn.be-custom { box-shadow: 0 0 0 1.5px var(--accent) inset; color: var(--accent); }
+.be-dlg { width: min(460px, calc(100vw - 32px)); border: 0; border-radius: var(--r); padding: 0; background: var(--card); color: var(--ink); box-shadow: var(--shadow-up); }
+.be-dlg::backdrop { background: rgba(21, 32, 43, 0.32); }
+.be-dlg form { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 22px 22px 18px; }
+.be-dlg h2 { margin: 0; font: 700 22px/1.2 var(--head); }
+.be-lede { margin: 0; color: var(--ink-2); font-size: 14px; }
+.be-lede a { color: var(--accent); }
+.be-dlg label { margin-top: 4px; font-weight: 600; font-size: 13px; color: var(--ink-2); }
+.be-in { height: 42px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); font: 14px var(--body); color: var(--ink); background: var(--bg); min-width: 0; }
+.be-in:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.be-msg { margin: 0; min-height: 20px; font-size: 13px; color: var(--ink-3); overflow-wrap: anywhere; }
+.be-msg[data-kind="ok"] { color: var(--ok); }
+.be-msg[data-kind="bad"] { color: #b42318; }
+.be-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.be-x { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: var(--ink-3); font-size: 22px; line-height: 1; cursor: pointer; }
+.be-x:hover { background: var(--bg); color: var(--ink); }
+@media (max-width: 480px) { .top .be-btn { padding: 0 10px; } }

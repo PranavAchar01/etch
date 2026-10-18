@@ -1,0 +1,23 @@
+# Etch backend on Linux or Windows (WSL 2 / Docker Desktop). KiCad 10, ngspice and the engine run in the image.
+#   cp .env.example .env      # add your keys (see the comments in it)
+#   docker compose up --build
+#   curl http://127.0.0.1:3439/etch/health
+# Then expose it with scripts/tunnel.sh (or `cloudflared tunnel --url http://127.0.0.1:3439`) and paste the URL
+# into etch.chat -> Backend. Speech-to-text is not in the image; type instead of talking.
+services:
+  etch:
+    build: .
+    image: etch-backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ETCH_BIND: 0.0.0.0
+      ETCH_PUBLIC_PORT: "3439"
+    ports:
+      - "127.0.0.1:${ETCH_PUBLIC_PORT:-3439}:3439"
+    volumes:
+      - etch-out:/app/engine/out
+    restart: unless-stopped
+volumes:
+  etch-out: {}

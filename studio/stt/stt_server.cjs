@@ -34,4 +34,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ text, seconds: (Date.now() - t) / 1000, audio_s: samples.length / 16000 }));
   });
-}).listen(3421, "127.0.0.1");
+}).listen(Number(process.env.ETCH_STT_PORT || 3421), "127.0.0.1");

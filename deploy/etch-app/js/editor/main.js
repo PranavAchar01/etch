@@ -12,6 +12,7 @@
 import { Q, $, h, esc, LOGO, carry, page, toast, slugOf, isLive, boardFiles, cachedFetch, registerSW, keyBackdrop, WORLD } from "../common.js";
 import { createBoardViewer, MASKS, SILKS, FINISHES } from "../board-viewer.js";
 import * as etch from "../etch-api.js";
+import { resolveApi } from "../backend.js";
 import { ic } from "./icons.js";
 import { loadDock } from "./dock-loader.js";
 import { createViewCube, createCameraButtons } from "./viewcube.js";
@@ -689,8 +690,7 @@ async function main() {
   if (ID) rl.show();
   await api.init();
   if (!api.status.mock) {
-    const cfg = Q.get("api") ? {} : await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).then((c) => (c.config_url ? fetch(c.config_url, { cache: "no-store" }).then((r) => r.json()) : c)).catch(() => ({}));
-    apiBase = String(Q.get("api") || cfg.api || "").replace(/\/$/, "");
+    apiBase = (await resolveApi()).api;
   }
   createPartsPanel($("paneParts"), { apiBase, onDragStart: (p, e) => ghostDrop.start(p, e), onDragEnd: (p, e) => ghostDrop.end(p, e) });
 
