@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pcbnew  # noqa: E402
 
 from placer import place, rot_box  # noqa: E402
-from rows import place_rows  # noqa: E402
+from rows import face_pins, place_rows  # noqa: E402
 from router import Router, net_order, pin_zones, route_all  # noqa: E402
 
 MM = pcbnew.FromMM
@@ -87,6 +87,12 @@ def pad_record(ref, pad):
         "rect": [to_mm(bb.GetX()), to_mm(bb.GetY()), to_mm(bb.GetRight()), to_mm(bb.GetBottom())],
         "layers": layers,
     }
+
+
+def _oriented(fpid):
+    """Footprints whose rotation means more than their pins: a horizontal connector opens on one side."""
+    lib, _, name = fpid.partition(":")
+    return lib.startswith("Connector") and ("Horizontal" in name or lib in ("Connector_USB", "Connector_Audio"))
 
 
 def _box(bb):
@@ -184,18 +190,25 @@ def hv_net_class(pcb_path, rules, pads):
     d = json.loads(pro.read_text())
     ns = d.setdefault("net_settings", {})
     base = next(c for c in ns["classes"] if c["name"] == "Default")
-    ns["classes"] = [c for c in ns["classes"] if c["name"] != "HV"] + [{**base, "name": "HV", "clearance": hv, "priority": 0}]
+    ns["classes"] = [c for c in ns["classes"] if c["name"] != "HV"] + [
+        {**base, "name": "HV", "clearance": hv, "priority": 0}
+    ]
     ns["netclass_patterns"] = [p for p in ns.get("netclass_patterns") or [] if p.get("netclass") != "HV"] + [
         {"netclass": "HV", "pattern": n} for n in nets
     ]
     pro.write_text(json.dumps(d, indent=2) + "\n")
     lo = f"{float(rules['clearance']):g}mm"
     hv_pair = "(A.NetClass == 'HV' || B.NetClass == 'HV') && A.Type != 'Zone' && B.Type != 'Zone'"
-    out = ["(version 1)", f'(rule "HV pad to pad" (constraint clearance (min {lo}))',
-           f"  (condition \"{hv_pair} && A.Type == 'Pad' && B.Type == 'Pad'\"))"]
+    out = [
+        "(version 1)",
+        f'(rule "HV pad to pad" (constraint clearance (min {lo}))',
+        f"  (condition \"{hv_pair} && A.Type == 'Pad' && B.Type == 'Pad'\"))",
+    ]
     for ref in sorted(pin_zones(pads, nets)):
-        out += [f'(rule "HV pin pitch {ref}" (constraint clearance (min {lo}))',
-                f"  (condition \"{hv_pair} && A.intersectsCourtyard('{ref}') && B.intersectsCourtyard('{ref}')\"))"]
+        out += [
+            f'(rule "HV pin pitch {ref}" (constraint clearance (min {lo}))',
+            f"  (condition \"{hv_pair} && A.intersectsCourtyard('{ref}') && B.intersectsCourtyard('{ref}')\"))",
+        ]
     Path(pcb_path).with_suffix(".kicad_dru").write_text("\n".join(out) + "\n")
 
 
@@ -314,7 +327,11 @@ def main(job_path, result_path):
     elif lay_cfg:
         rows_res = place_rows(lay_cfg, {q["ref"]: {"box": q["box"], "rot": q["rot"]} for q in place_in})
         W, H = rows_res["w"], rows_res["h"]
-        placement = rows_res["at"]
+        fpid = {p["ref"]: p["footprint"] for p in job["parts"]}
+        placement = face_pins(
+            {q["ref"]: {**q, "fixed": bool(q["edge"]) or _oriented(fpid[q["ref"]])} for q in place_in},
+            rows_res["at"],
+        )
     else:
         placement = place(place_in, W, H, gap=job.get("place_gap", 1.0))
     for ref, (x, y, r) in placement.items():

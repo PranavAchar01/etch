@@ -22,6 +22,15 @@ WIDE_MAX_EXPAND = 40000
 # four identical 400 k attempts all failed it (QA 10-17).
 MAX_EXPAND = 400000
 RETRY_MAX_EXPAND = 1600000
+# rip-up ring (mm, times the attempt number) around a failed net's pads: other nets with copper inside it are
+# ripped and routed again, the rest of the best attempt's copper is kept (the keyboard re-routed all 80 nets on
+# every attempt before)
+RIP_MARGIN_MM = 3.0
+# a conservative A* rate for this pure Python search, used to cap one search by the budget time left
+EXPANSIONS_PER_S = 25000
+# bucket size (mm) of the via check's spatial index. The check used to scan every pad and track on the board for
+# every candidate via: 2/3 of the routing time on the 61-key keyboard (122 parts, 6 M distance calls per 5 nets)
+VBIN = 1.0
 DIRS = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 
 
@@ -97,6 +106,7 @@ class Router:
         self.tracks = []  # dicts: net, layer, width, pts
         self.vias = []  # dicts: net, x, y, d, drill
         self.items = []  # (net_id, layer_idx_set, kind, geom) for via checks
+        self._vbins = {}  # VBIN mm buckets -> items whose bounding box touches them (via_ok looks only nearby)
         self._via_cache = {}
         self._block_edges()
         for p in pads:
@@ -190,6 +200,7 @@ class Router:
         inner = self.track / 2
         layers = [LAYERS.index(L) for L in p["layers"] if L in LAYERS]
         self.items.append((net, set(layers), "rect", r))
+        self._bin(self.items[-1])
         for ix, iy in self._cells_near(r[0], r[1], r[2], r[3], reach):
             x, y = self.cell_xy(ix, iy)
             d = _rect_dist(x, y, r)
@@ -208,6 +219,7 @@ class Router:
         extra = self.track / 2 + half + self.margin
         reach = max(self._clr(net), self.hv_clr if self.hv_ids else 0) + extra
         self.items.append((net, {L}, "seg", (x1, y1, x2, y2, half)))
+        self._bin(self.items[-1])
         for ix, iy in self._cells_near(min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2), reach):
             x, y = self.cell_xy(ix, iy)
             self._claim_at((L,), self.idx(ix, iy), net, _seg_dist(x, y, x1, y1, x2, y2), extra)
@@ -216,6 +228,7 @@ class Router:
         extra = self.track / 2 + self.margin
         reach = max(self._clr(net), self.hv_clr if self.hv_ids else 0) + extra + d / 2
         self.items.append((net, {0, 1}, "via", (x, y, d / 2)))
+        self._bin(self.items[-1])
         for ix, iy in self._cells_near(x, y, x, y, reach):
             cx, cy = self.cell_xy(ix, iy)
             self._claim_at((0, 1), self.idx(ix, iy), net, math.hypot(cx - x, cy - y) - d / 2, extra)
@@ -236,6 +249,30 @@ class Router:
                         return False
         return True
 
+    def _bin(self, item):
+        """Index one copper item by its bounding box (pad rect, segment incl. half width, via disc)."""
+        _n, _layers, kind, g = item
+        if kind == "rect":
+            b = g
+        elif kind == "seg":
+            b = (min(g[0], g[2]) - g[4], min(g[1], g[3]) - g[4], max(g[0], g[2]) + g[4], max(g[1], g[3]) + g[4])
+        else:
+            b = (g[0] - g[2], g[1] - g[2], g[0] + g[2], g[1] + g[2])
+        ent = (item[0], kind, g)
+        for bx in range(int(b[0] // VBIN), int(b[2] // VBIN) + 1):
+            for by in range(int(b[1] // VBIN), int(b[3] // VBIN) + 1):
+                self._vbins.setdefault((bx, by), []).append(ent)
+
+    def _near(self, x, y, reach):
+        """Each item whose bounding box comes within reach of (x, y), once."""
+        seen = set()
+        for bx in range(int((x - reach) // VBIN), int((x + reach) // VBIN) + 1):
+            for by in range(int((y - reach) // VBIN), int((y + reach) // VBIN) + 1):
+                for ent in self._vbins.get((bx, by), ()):
+                    if id(ent) not in seen:
+                        seen.add(id(ent))
+                        yield ent
+
     def via_ok(self, net, ix, iy):
         key = (net, ix, iy)
         if key in self._via_cache:
@@ -251,7 +288,7 @@ class Router:
         if ok and self.idx(ix, iy) in self.no_via:
             ok = False
         if ok:
-            for n, _layers, kind, geom in self.items:
+            for n, kind, geom in self._near(x, y, max(self.hv_clr, self.clr, 0.3) + rv):
                 if kind == "rect":
                     # no via in or next to any pad, own net included (keeps pads solderable)
                     if _rect_dist(x, y, geom) < self._clr(n, net) + rv:
@@ -633,46 +670,92 @@ def route_all(make_router, order, attempts=4, budget_s=None, clock=time.monotoni
     the failures go first next time, with RETRY_MAX_EXPAND for them. The attempt that left the fewest nets unrouted
     is returned (QA 10-17: the old loop ripped up after the LAST failed attempt too, so one hard net turned
     19 good tracks into 0 and every net was reported unrouted). budget_s is a wall-clock limit checked between
-    nets: when it runs out the routing so far is kept and info["timed_out"] says so.
+    nets (and each search is capped to the time left): when it runs out the routing so far is kept and
+    info["timed_out"] says so. Attempts after the first keep the best attempt's copper away from the failures.
 
     Returns (router, info) with info = {attempts, timed_out, failed, capped, seconds, new_tracks, new_vias}; the new_*
     lists are the copper this call added on top of the base."""
     t0 = clock()
-    best = None  # (failed count, router, failed, capped)
+    best = None  # (failed count, router, failed, capped, base)
     retry = set()
     timed_out = False
     done = 0
-    for _ in range(attempts):
+    for attempt in range(attempts):
         router = make_router()
         base = (len(router.tracks), len(router.vias))
-        failed, capped = [], []
+        if 0 < attempt < attempts - 1 and hasattr(router, "add_existing"):
+            # keep the best attempt's copper except the nets near what failed (a wider ring each time); only
+            # those get routed again. The last attempt starts over with the failures first.
+            keep_t, keep_v = _keep_away(best, RIP_MARGIN_MM * attempt)
+            router.add_existing(keep_t, keep_v)
+        failed, capped, stuck = [], [], {}
         for n in order:
-            if budget_s is not None and clock() - t0 > budget_s:
+            left = None if budget_s is None else budget_s - (clock() - t0)
+            if left is not None and left <= 0:
                 timed_out = True
                 failed += [m for m in order if m not in failed and m not in _routed_nets(router)]
                 break
-            _, _, rest = router.route_net(n, max_expand=RETRY_MAX_EXPAND if n in retry else MAX_EXPAND)
+            cap = RETRY_MAX_EXPAND if n in retry else MAX_EXPAND
+            if left is not None:
+                # one search must not run far past the budget (the check above only runs between nets)
+                cap = max(1000, min(cap, int(left * EXPANSIONS_PER_S)))
+            _, _, rest = router.route_net(n, max_expand=cap)
             if rest:
                 failed.append(n)
+                stuck[n] = rest
                 if getattr(router, "capped", False):
                     capped.append(n)
         done += 1
         if best is None or len(failed) < best[0]:
-            best = (len(failed), router, failed, capped, base)
+            best = (len(failed), router, failed, capped, base, stuck)
         if not failed or timed_out:
             break
         retry |= set(failed)
         order = failed + [n for n in order if n not in failed]
     router, base = best[1], best[4]
     return router, {
-        "new_tracks": router.tracks[base[0]:],
-        "new_vias": router.vias[base[1]:],
+        "new_tracks": router.tracks[base[0] :],
+        "new_vias": router.vias[base[1] :],
         "attempts": done,
         "timed_out": timed_out,
         "failed": best[2],
         "capped": best[3],
         "seconds": round(clock() - t0, 3),
     }
+
+
+def _keep_away(best, margin):
+    """(tracks, vias) of the best attempt's own copper, minus the failed nets and every net with copper within
+    margin mm of the pads a failed net could not reach."""
+    _, router, failed, _, base, stuck = best
+    boxes = []
+    for n in failed:
+        # the pads the search could not reach (a timed-out net has none recorded: all of its pads)
+        ps = [p for p in (stuck.get(n) or router.pads) if p["net"] == n]
+        if ps:
+            boxes.append(
+                (
+                    min(p["rect"][0] for p in ps) - margin,
+                    min(p["rect"][1] for p in ps) - margin,
+                    max(p["rect"][2] for p in ps) + margin,
+                    max(p["rect"][3] for p in ps) + margin,
+                )
+            )
+
+    def inside(x0, y0, x1, y1):
+        return any(not (x1 < b[0] or b[2] < x0 or y1 < b[1] or b[3] < y0) for b in boxes)
+
+    tracks, vias = router.tracks[base[0] :], router.vias[base[1] :]
+    rip = set(failed)
+    for t in tracks:
+        for a, b in zip(t["pts"], t["pts"][1:]):
+            if inside(min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1])):
+                rip.add(t["net"])
+                break
+    for v in vias:
+        if inside(v["x"], v["y"], v["x"], v["y"]):
+            rip.add(v["net"])
+    return [t for t in tracks if t["net"] not in rip], [v for v in vias if v["net"] not in rip]
 
 
 def _routed_nets(router):
