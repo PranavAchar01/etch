@@ -521,7 +521,7 @@ function loadBuilt() {
   fetch(apiBase + "/etch/gallery", { cache: "no-store" }).then((r) => r.json())
     .then((d) => {
       const all = Array.isArray(d.builds) ? d.builds.filter((b) => isLive(b.id)) : [];
-      const top = [...all].sort((a, b) => (b.parts || 0) - (a.parts || 0) || (b.seconds || 0) - (a.seconds || 0)).slice(0, BUILT_FIRST);
+      const top = [...all].sort((a, b) => (b.parts || 0) - (a.parts || 0) || (b.kinds || 0) - (a.kinds || 0)).slice(0, BUILT_FIRST);
       built = [...top, ...all.filter((b) => !top.includes(b))];
       renderBuilt();
     }).catch(() => {});
