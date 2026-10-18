@@ -536,6 +536,7 @@ def _pick_call(stream: Stream, model: str, msgs: list) -> dict[str, Any]:
             effort=PICKER_EFFORT,
             timeout=PICKER_TIMEOUT,
             max_tokens=PICKER_MAX_TOKENS,
+            retry_timeout=False,  # the sub-model retry below is the next step, not a second wait on a stalled model
         )
         return _by_model(ans)
     except (llm.ModelError, ValueError) as e:
