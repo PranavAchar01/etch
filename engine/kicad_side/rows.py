@@ -18,7 +18,7 @@ whichever side is cheaper until every corner hole clears every courtyard.
 
 import math
 
-from placer import rot_box
+from placer import rot_box, rot_pt
 
 
 def _cells(block, sizes, gap):
@@ -143,3 +143,54 @@ def place_rows(layout, parts):
         ]
         tb = [round(v, 4) for v in tb]
     return {"at": at, "slots": slots, "w": W, "h": H, "holes": holes, "title_box": tb}
+
+
+def face_pins(parts, at, min_gain=1.0):
+    """Turn parts 180 degrees in their cell when that brings their pins closer to what they connect to.
+
+    The row layout keeps each part at the rotation the spec gave it, so a Pico whose GPIO column faces the board
+    edge sends every line around the module's ends: the 61-key keyboard and the Pico handheld (QA 10-17) sat in
+    the router for minutes and left the ROW/COL and button nets unrouted. A half turn keeps the courtyard box, so
+    the cell, the outline and the holes stay as they are.
+
+    parts: {ref: {"box": local courtyard bbox, "pads": [(dx, dy, net)], "fixed": bool}}
+    at: {ref: (x, y, rot)} from place_rows. Returns a new at. A part is turned only when the half-perimeter wire
+    length of its nets drops by more than min_gain mm; "fixed" parts (edge connectors) are never turned."""
+    at = dict(at)
+
+    def pts(ref, x, y, r):
+        out = []
+        for dx, dy, n in parts[ref]["pads"]:
+            rx, ry = rot_pt(dx, dy, r)
+            out.append((x + rx, y + ry, n))
+        return out
+
+    world = {ref: pts(ref, *at[ref]) for ref in at if ref in parts}
+
+    def hpwl(nets):
+        tot = 0.0
+        for n in nets:
+            xy = [(x, y) for ps in world.values() for x, y, m in ps if m == n]
+            if len(xy) > 1:
+                xs, ys = [q[0] for q in xy], [q[1] for q in xy]
+                tot += max(xs) - min(xs) + max(ys) - min(ys)
+        return tot
+
+    order = sorted((r for r in world if not parts[r].get("fixed")), key=lambda r: -len(parts[r]["pads"]))
+    for ref in order:
+        nets = {n for _x, _y, n in world[ref] if n}
+        if not nets:
+            continue
+        x, y, r = at[ref]
+        b = rot_box(parts[ref]["box"], r)
+        cx, cy = x + (b[0] + b[2]) / 2, y + (b[1] + b[3]) / 2
+        r2 = (int(r) + 180) % 360
+        b2 = rot_box(parts[ref]["box"], r2)
+        cand = (round(cx - (b2[0] + b2[2]) / 2, 4), round(cy - (b2[1] + b2[3]) / 2, 4), r2)
+        before, kept = hpwl(nets), world[ref]
+        world[ref] = pts(ref, *cand)
+        if hpwl(nets) < before - min_gain:
+            at[ref] = cand
+        else:
+            world[ref] = kept
+    return at
