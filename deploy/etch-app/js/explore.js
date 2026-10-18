@@ -501,7 +501,8 @@ function builtCard(b, i) {
       h("div", { class: "th" }, img),
       h("div", { class: "info" },
         h("div", { class: "l1" }, h("span", { class: "etched" }, "Etch"), h("span", { class: "who" }, ["built " + ago(b.started), b.seconds ? `in ${Math.round(b.seconds)} s` : ""].filter(Boolean).join(" "))),
-        h("div", { class: "l2" }, h("span", { class: "t" }, title)))));
+        h("div", { class: "l2" }, h("span", { class: "t" }, title)))),
+    h("a", { class: "src", href: page("board") + carry({ id: b.id }), target: "_blank", rel: "noopener", "aria-label": `Open ${title} in a new tab`, title: "Open in a new tab", html: `<span class="g">${ARROW}</span>` }));
   springy(c);
   return c;
 }
