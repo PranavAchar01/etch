@@ -50,6 +50,7 @@
 !/deploy/*.md
 !/deploy/etch_public.py
 !/deploy/explore.py
+!/deploy/serve_page.py
 !/deploy/tests/
 !/deploy/redeploy.sh
 !/deploy/restart.sh
