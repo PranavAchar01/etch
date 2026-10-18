@@ -51,11 +51,29 @@ def footprint_keepouts(fps):
     return out
 
 
+# pcbnew.FootprintLoad makes a fresh IO plugin per call, so every call re-reads the footprint library (a 61-key
+# keyboard read the switch library 61 times). One plugin keeps its per-library cache, and a footprint used again is a
+# Duplicate of the first load (fresh UUIDs, like a separate load). 19-part job: 2.3 s -> 0.6 s of footprint loading.
+_IO = None
+_FP_CACHE = {}
+
+
 def load_fp(fp_root, fpid):
+    global _IO
     lib, name = fpid.split(":", 1)
-    fp = pcbnew.FootprintLoad(os.path.join(fp_root, lib + ".pretty"), name)
-    if fp is None:
-        raise RuntimeError("footprint not found: " + fpid)
+    key = (fp_root, fpid)
+    master = _FP_CACHE.get(key)
+    if master is None:
+        if _IO is None:
+            _IO = pcbnew.PCB_IO_KICAD_SEXPR()
+        try:
+            master = _IO.FootprintLoad(os.path.join(fp_root, lib + ".pretty"), name)
+        except Exception:  # an unreadable library: the same error as a missing footprint
+            master = None
+        if master is None:
+            raise RuntimeError("footprint not found: " + fpid)
+        _FP_CACHE[key] = master
+    fp = master.Duplicate(False).Cast()
     fp.SetFPID(pcbnew.LIB_ID(lib, name))
     return fp
 
