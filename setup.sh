@@ -99,8 +99,8 @@ fi
 echo "model in $STT_HOME"
 
 say "Machine paths (.etch.env, no secrets)"
-LOCK="$HOME/helloworld/.heavy-lock"
-[ -d "$HOME/helloworld" ] || LOCK="$R/.heavy-lock"
+# one heavy KiCad job at a time; point ETCH_HEAVY_LOCK at a shared folder to share the lock with other tools
+LOCK="${ETCH_HEAVY_LOCK:-$R/.heavy-lock}"
 KEEP="$(grep '^export ETCH_HEAVY_SLOTS=' .etch.env 2>/dev/null || true)"
 cat > .etch.env <<EOF
 export ETCH_KICAD_APP="$KICAD_APP"
