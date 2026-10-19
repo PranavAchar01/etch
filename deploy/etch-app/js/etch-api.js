@@ -1,8 +1,9 @@
-// Client for Etch's board endpoints (deploy/EXPLORE_API.md section 2). API base: ?api= or config.json (which may point at config_url, the live backend URL that the tunnel publishes).
+// Client for Etch's board endpoints (deploy/EXPLORE_API.md section 2). API base: js/backend.js (?api=, the Backend dialog's saved URL, or config.json / config_url).
 // Falls back to mock-api.js with ?mock=1, when no API base is configured, or when an endpoint is missing (404).
 // When the configured engine can't be reached, calls throw an error marked `offline` instead of answering with demo text.
 import { Q } from "./common.js";
 import * as mock from "./mock-api.js";
+import { resolveApi } from "./backend.js";
 
 let API = "", ready = null;
 const listeners = new Set();
@@ -19,9 +20,7 @@ export function init() {
   if (ready) return ready;
   ready = (async () => {
     if (Q.get("mock") === "1") { useMock("mock mode (?mock=1)"); return; }
-    let cfg = {};
-    if (!Q.get("api")) cfg = await fetch("config.json", { cache: "no-store" }).then((r) => r.json()).then((c) => (c.config_url ? fetch(c.config_url, { cache: "no-store" }).then((r) => r.json()) : c)).catch(() => ({}));
-    API = String(Q.get("api") || cfg.api || "").replace(/\/$/, "");
+    API = (await resolveApi()).api;
     if (!API) useMock("no Etch backend configured");
   })();
   return ready;

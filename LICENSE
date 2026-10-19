@@ -1,0 +1,37 @@
+MIT License
+
+Copyright (c) 2026 Pranav Achar, Nithin and the Etch contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Third-party content in this repository keeps its own licence and is not covered
+by the MIT licence above:
+
+- deploy/etch-app/world/: open-source boards from GitHub. Each board's author,
+  repository, commit and licence (GPL, CC-BY-SA, CERN-OHL and others) are in its
+  meta.json and on its page in the app.
+- vendor/espressif-kicad-libraries/: Espressif KiCad library, CC-BY-SA 4.0 (see
+  its PROVENANCE.md).
+- engine/parts/cache/: parts fetched from LCSC/EasyEDA and GitHub. Where each one
+  came from is recorded in engine/parts/agent_index.json ("provenance").
+- agent/firmware_packs/*/: see each pack's PROVENANCE.md.
+- KiCad libraries used at run time: CC-BY-SA 4.0 with the KiCad libraries
+  exception.

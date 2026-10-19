@@ -3,6 +3,8 @@
 ETCH_BASE_URL         OpenAI-compatible base URL (default https://api.inference.crusoecloud.com/v1)
 ETCH_MODEL            lead agent model (default nvidia/NVIDIA-Nemotron-3-Super-120B-A12B)
 ETCH_SUB_MODEL        sub-agent model (default nvidia/Nemotron-3.5-Lightning-30B-A3B)
+ETCH_API_KEY          the primary endpoint's key (wins over the Keychain; not needed for a local endpoint such as
+                      Ollama, vLLM or LM Studio on localhost)
 ETCH_API_KEY_SOURCE   Keychain service that holds the key (default jarvis-vault/Crusoe)
 ETCH_PRIMARY_TIMEOUT  seconds per primary attempt (default 30); a timed-out, 429 or 5xx primary call is tried once
                       more on the primary, then the fallback takes over
@@ -20,11 +22,13 @@ ETCH_THINKING         "off" (default) or "on": Nemotron reasoning on non-OpenAI 
                       (Super 3.5 s vs 27 s on a picker-sized call) and the analog solver does the numbers.
 ETCH_FALLBACK_BASE_URL / ETCH_FALLBACK_MODEL / ETCH_FALLBACK_SUB_MODEL / ETCH_FALLBACK_KEY_SOURCE
                       the fallback endpoint (default OpenAI gpt-5-mini / gpt-5-nano, Keychain openai-api-key)
+ETCH_FALLBACK_API_KEY the fallback endpoint's key (wins over ETCH_FALLBACK_KEY_SOURCE / OPENAI_API_KEY)
 ETCH_MAX_ITERS        repair iterations per build / feature loop (default 4)
 ETCH_LEAD_MAX_STEPS   tool calls the lead may make per request (default 8)
 ETCH_REASONING_EFFORT / ETCH_SUB_REASONING_EFFORT   OpenAI reasoning effort (medium / low); ignored off OpenAI
 
-Keys are only ever read from the Keychain (or an env var of the same purpose); never from a file.
+Keys come from an env var of the same purpose or the macOS Keychain. The git-ignored .env at the repo root
+(setup.sh copies .env.example) is loaded into the environment first; real env vars win over it.
 """
 
 from __future__ import annotations
@@ -33,6 +37,11 @@ import functools
 import os
 import subprocess
 from pathlib import Path
+from urllib.parse import urlparse
+
+from . import envfile
+
+envfile.load()
 
 ROOT = Path(__file__).resolve().parent.parent  # pcb-loop/
 ENGINE = ROOT / "engine"
@@ -117,17 +126,40 @@ def key_for(source: str) -> str:
     return keychain(source)
 
 
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "0.0.0.0", "host.docker.internal"}
+
+
+def is_local(url: str) -> bool:
+    """A model server on this machine (Ollama, vLLM, LM Studio, llama.cpp): no key needed."""
+    return (urlparse(url).hostname or "") in LOCAL_HOSTS
+
+
 def api_key() -> str:
-    k = key_for(KEY_SOURCE)
+    k = os.environ.get("ETCH_API_KEY", "")
+    # the Crusoe key source applies to Crusoe, or to any endpoint when ETCH_API_KEY_SOURCE names it on purpose;
+    # it is never sent to some other endpoint by default
+    if not k and (
+        "ETCH_API_KEY_SOURCE" in os.environ or BASE_URL.rstrip("/") == CRUSOE_URL
+    ):
+        k = key_for(KEY_SOURCE)
+    if not k and BASE_URL.rstrip("/") == CRUSOE_URL:
+        k = key_for("crusoe-api-key")
+    if not k and BASE_URL.rstrip("/") == OPENAI_URL:
+        k = key_for("openai-api-key")
+    if not k and is_local(BASE_URL):
+        return "local"  # the openai client needs a non-empty string; local servers ignore it
     if not k:
         raise RuntimeError(
-            f"no API key in Keychain item '{KEY_SOURCE}' or env {KEY_ENV.get(KEY_SOURCE, '?')} (set ETCH_API_KEY_SOURCE)"
+            f"no API key: set ETCH_API_KEY in .env (or env {KEY_ENV.get(KEY_SOURCE, '?')}, or Keychain item '{KEY_SOURCE}')"
         )
     return k
 
 
 def fallback_key() -> str:
-    return key_for(FALLBACK_KEY_SOURCE)
+    k = os.environ.get("ETCH_FALLBACK_API_KEY", "")
+    if not k and ("ETCH_FALLBACK_KEY_SOURCE" in os.environ or FALLBACK_BASE_URL.rstrip("/") == OPENAI_URL):
+        k = key_for(FALLBACK_KEY_SOURCE)
+    return k or ("local" if is_local(FALLBACK_BASE_URL) else "")
 
 
 def fallback_model(model: str) -> str:

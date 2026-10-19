@@ -5,6 +5,14 @@
 !/README.md
 !/setup.sh
 !/run.sh
+!/LICENSE
+!/CONTRIBUTING.md
+!/.env.example
+!/docker-compose.yml
+!/scripts/
+# your keys and machine paths: never committed (.env.example is the template)
+/.env
+/.etch.env
 
 !/agent/
 /agent/_rend_tmp.py

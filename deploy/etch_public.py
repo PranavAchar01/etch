@@ -37,6 +37,7 @@ import secrets
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -46,9 +47,15 @@ from collections import defaultdict, deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from agent import envfile
+
+envfile.load()  # the repo's .env (setup.sh); real env vars win
+
 import explore
 
-ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "engine" / "out"
 PORT = int(os.environ.get("ETCH_PUBLIC_PORT", "3439"))
 STT_URL = os.environ.get("ETCH_STT_URL", "http://127.0.0.1:3421/stt")
@@ -1209,6 +1216,9 @@ class H(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Max-Age", "600")
+            # Chrome's Private/Local Network Access: an https page (etch.chat) calling a backend on localhost
+            if self.headers.get("Access-Control-Request-Private-Network") == "true":
+                self.send_header("Access-Control-Allow-Private-Network", "true")
 
     def send_json(self, obj, code=200):
         b = obj if isinstance(obj, bytes) else json.dumps(obj).encode()
@@ -1828,6 +1838,6 @@ if __name__ == "__main__":
             rewriter().warm()
         except Exception:  # noqa: BLE001 - optional
             pass
-    print(f"etch public backend on http://127.0.0.1:{PORT}", flush=True)
+    print(f"etch public backend on http://{os.environ.get('ETCH_BIND', '127.0.0.1')}:{PORT}", flush=True)
     # ETCH_BIND=0.0.0.0 inside a container (docs/DEPLOY.md); the Mac keeps loopback behind the tunnel
     ThreadingHTTPServer((os.environ.get("ETCH_BIND", "127.0.0.1"), PORT), H).serve_forever()

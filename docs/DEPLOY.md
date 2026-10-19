@@ -2,19 +2,22 @@
 
 Two ways to run it: the Mac setup it runs on today, and a Linux container.
 
-## Mac (current)
+## Mac
 
-`./setup.sh` installs uv, ngspice, node, cloudflared and KiCad 10. Then `./run.sh` starts the API on
-127.0.0.1:3439. On his Mac it runs under launchd (`com.etch.app.backend`) behind a Cloudflare tunnel.
-Keys are read from the Keychain at run time, never from files:
+`./setup.sh` installs uv, ngspice, node, cloudflared and KiCad 10 and creates `.env` from `.env.example`.
+Then `./run.sh` starts the API on 127.0.0.1:3439 (`./run.sh --tunnel` also opens a Cloudflare tunnel, see
+README.md). Keys are read in this order: the process environment, then `.env`, then the macOS Keychain:
 
-| what | Keychain service | env var (wins when set) |
+| what | env var / `.env` | Keychain service |
 |---|---|---|
-| Crusoe (default model provider) | `jarvis-vault/Crusoe` | `CRUSOE_API_KEY` |
-| OpenAI (fallback, TTS, Decisions classifier) | `openai-api-key` | `OPENAI_API_KEY` |
-| You.com part search (optional) | `jarvis-vault/You.com` | `YOU_API_KEY` |
+| Model endpoint (default Crusoe) | `CRUSOE_API_KEY`, or `ETCH_API_KEY` for any `ETCH_BASE_URL` | `crusoe-api-key` (or `ETCH_API_KEY_SOURCE`) |
+| OpenAI (fallback, TTS, prompt rewriter, Decisions classifier) | `OPENAI_API_KEY` | `openai-api-key` |
+| You.com part search (optional) | `YOU_API_KEY` | `you-api-key` |
 
-Restart only the backend after a code change: `launchctl kickstart -k gui/$(id -u)/com.etch.app.backend`.
+A model server on localhost (Ollama, vLLM) needs no key.
+
+The official backend runs under launchd (`com.etch.app.backend`) on the maintainers' Mac. Restart only the
+backend after a code change there: `launchctl kickstart -k gui/$(id -u)/com.etch.app.backend`.
 
 ## Linux container
 
@@ -23,15 +26,19 @@ The `Dockerfile` builds Ubuntu 24.04 with KiCad 10 from the KiCad team's PPA
 ngspice, uv and the engine environment. The API listens on port 3439.
 
 ```sh
-docker build -t etch-backend .
-docker run --rm -p 3439:3439 \
-  -e CRUSOE_API_KEY -e OPENAI_API_KEY -e YOU_API_KEY \
-  -e ETCH_ORIGINS=https://your-frontend.example \
-  etch-backend
+cp .env.example .env      # add your key
+docker compose up --build
 curl http://127.0.0.1:3439/etch/health
 ```
 
-Keys are passed only as environment variables when the container starts. None are copied into the
+or without compose:
+
+```sh
+docker build -t etch-backend .
+docker run --rm -p 127.0.0.1:3439:3439 --env-file .env -e ETCH_PUBLIC_PORT=3439 etch-backend
+```
+
+Keys reach the container only as environment variables when it starts. None are copied into the
 image (`.dockerignore` keeps out `.env*`, `.etch.env`, keys, outputs, caches and `qa/`).
 
 The image is large (KiCad 3D models are a few GB). Build outputs go to `/app/engine/out` inside the
@@ -60,4 +67,4 @@ container; mount a volume there to keep builds across restarts.
 ### Not in the container
 
 - Speech-to-text (Parakeet via node, `studio/stt/`). Voice input falls back to typing.
-- The Cloudflare tunnel. Put the container behind your own HTTPS proxy.
+- The Cloudflare tunnel. Run `cloudflared tunnel --url http://localhost:3439` on the host (or `scripts/tunnel.sh`), or put the container behind your own HTTPS proxy.
