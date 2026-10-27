@@ -1791,6 +1791,52 @@
    "lcsc": "C503591",
    "datasheet": "https://www.lcsc.com/datasheet/lcsc_datasheet_2004070932_Espressif-Systems-ESP32-WROVER-B_C503591.pdf",
    "spice_note": "B modelled as a two-pin passive"
+  },
+  {
+   "provenance": {
+    "route": "scout you.com found C3702289, LCSC C3702289, easyeda2kicad",
+    "source_url": "https://www.lcsc.com/product-detail/C3702289.html",
+    "api_url": "https://easyeda.com/api/products/C3702289/components",
+    "version": "EasyEDA library as of 2026-10-18, easyeda2kicad 1.0.1",
+    "licence": "not stated by LCSC/EasyEDA (vendor library; check terms before redistributing)",
+    "model_file": "SMB_L4.6-W3.6-LS5.3-BI.step",
+    "model_sha256": "83a7427c0050bcd371bf864b2d5e55805da92f77b7c909ba73f40e0c6a2a4b4a",
+    "search_url": "https://www.alldatasheet.com/view_marking.jsp?sField=4&Searchword=Q&list=211",
+    "search": "you.com Web Search (allowlisted distributor/manufacturer domains)",
+    "datasheet": "https://www.lcsc.com/datasheet/lcsc_datasheet_2409302331_BOURNS-SMBJ30CA-Q_C3702289.pdf"
+   },
+   "key": "smbj30ca_q_c3702289",
+   "name": "SMBJ30CA-Q_C3702289 (SMB_L4.6-W3.6-LS5.3-BI)",
+   "aliases": [
+    "c3702289",
+    "smbj30ca-q_c3702289"
+   ],
+   "lib_id": "LCSC_C3702289:SMBJ30CA-Q_C3702289",
+   "footprint": "LCSC_C3702289:SMB_L4.6-W3.6-LS5.3-BI",
+   "category": "fetched",
+   "value": "SMBJ30CA-Q_C3702289",
+   "spice": {
+    "prefix": "R",
+    "pins": [
+     "1",
+     "2"
+    ],
+    "role": "passive"
+   },
+   "why": null,
+   "model": "/Users/pranavachar/helloworld/pcb-loop/engine/parts/cache/LCSC_C3702289/LCSC_C3702289.3dshapes/SMB_L4.6-W3.6-LS5.3-BI.step",
+   "pins": [
+    "1",
+    "2"
+   ],
+   "pin_names": {
+    "1": "1",
+    "2": "2"
+   },
+   "source": "LCSC via easyeda2kicad",
+   "lcsc": "C3702289",
+   "datasheet": "https://www.lcsc.com/datasheet/lcsc_datasheet_2409302331_BOURNS-SMBJ30CA-Q_C3702289.pdf",
+   "spice_note": "Q modelled as a two-pin passive"
   }
  ]
 }
