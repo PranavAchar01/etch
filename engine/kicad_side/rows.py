@@ -9,6 +9,8 @@ layout (from the spec):
   blocks:
     - {name: power, valign: center, rows: [[J1]]}
     - {name: oscillator, pitch: 7.62, rows: [[D1, "@title", "@title", D2], [R2, R1, R3, R4], ...]}
+    - {name: keys, pitch: 19.05, row_h: [5, 11.46, 2.59], rows: ...}   row_h (optional): each row's minimum
+                              height, so a key matrix keeps the 19.05 mm key pitch down the board too
 
 A cell holds a reference, null (empty) or "@title" (the cells where the title silk goes).
 Each part's courtyard is centred in its cell. Blocks sit left to right; valign center centres a
@@ -28,9 +30,12 @@ def _cells(block, sizes, gap):
     ncol = max(len(row) for row in rows)
     bw = ncol * pitch
     out, titles, y = {}, [], 0.0
-    for row in rows:
+    row_h = block.get("row_h") or []
+    for i, row in enumerate(rows):
         refs = [r for r in row if r and not str(r).startswith("@")]
         rh = max([sizes[r][1] for r in refs] or [float(block.get("title_h", 5.0))])
+        if i < len(row_h) and row_h[i]:
+            rh = max(rh, float(row_h[i]))
         x0 = (bw - len(row) * pitch) / 2
         for j, r in enumerate(row):
             cx, cy = x0 + (j + 0.5) * pitch, y + rh / 2

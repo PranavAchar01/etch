@@ -11,6 +11,7 @@ this only has to be conservative.
 
 import heapq
 import math
+import os
 import time
 
 FREE = -1
@@ -23,6 +24,9 @@ WIDE_MAX_EXPAND = 40000
 MAX_EXPAND = 400000
 RETRY_MAX_EXPAND = 1600000
 DIRS = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
+# A* heuristic weight. Above 1 the search heads for the target instead of flooding every equal-cost cell; a path
+# costs at most H_WEIGHT times the cheapest one.
+H_WEIGHT = float(os.environ.get("ETCH_ROUTE_HW", "1.0"))
 
 
 def _rect_dist(px, py, r):
@@ -366,7 +370,7 @@ class Router:
                 v = (dx + dy) + (math.sqrt(2) - 2) * min(dx, dy)
                 if v < best:
                     best = v
-            return best
+            return best * H_WEIGHT
 
         openh = []
         gbest = {}
@@ -605,8 +609,8 @@ def route_all(make_router, order, attempts=4, budget_s=None, clock=time.monotoni
         order = failed + [n for n in order if n not in failed]
     router, base = best[1], best[4]
     return router, {
-        "new_tracks": router.tracks[base[0]:],
-        "new_vias": router.vias[base[1]:],
+        "new_tracks": router.tracks[base[0] :],
+        "new_vias": router.vias[base[1] :],
         "attempts": done,
         "timed_out": timed_out,
         "failed": best[2],

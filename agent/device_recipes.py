@@ -53,6 +53,10 @@ PICO_GPIO = [
     32,
     34,
 ]
+# the key block sits to the Pico's right, so matrix lines take the right-hand pin row first (pins 21-34) and
+# no line has to route around the module (the first 9-key build spent 331 s routing ROW0 from pin 1)
+MATRIX_GPIO = [34, 32, 31, 29, 27, 26, 25, 24, 22, 21, 20, 19, 17, 16, 15, 14, 12, 11, 10, 9, 7, 6, 5, 4, 2, 1]
+KEY_PITCH = 19.05  # MX and Choc spacing, centre to centre
 
 KEYS_RX = re.compile(
     r"\b(key ?boards?|macro ?pads?|key ?pads?|num ?pads?|number ?pads?|stream ?decks?|hot ?swap|"
@@ -113,7 +117,7 @@ def keyboard(ask: str) -> dict[str, Any] | None:
     knob = bool(re.search(r"\b(knob|encoder|volume|dial|ec11)\b", a))
     choc = bool(re.search(r"\b(choc|low ?profile|kailh)\b", a))
     sw = CHOC if choc else MX
-    free = list(PICO_GPIO)
+    free = list(MATRIX_GPIO)
     row_pin = {f"ROW{r}": free.pop(0) for r in range(rows)}
     col_pin = {f"COL{c}": free.pop(0) for c in range(cols)}
     extra: dict[str, str] = {str(p): net for net, p in {**row_pin, **col_pin}.items()}
@@ -223,7 +227,9 @@ def keyboard(ask: str) -> dict[str, Any] | None:
         keys.append([f"D{i + 1}" for i in idx])
     if knob:
         keys[0].append("ENC1")
-    blocks.append({"name": "keys", "rows": keys})
+    # each switch row plus its diode row spans one key pitch: DO-35 courtyard 2.59 mm, block gap 2.5 mm
+    sw_h = KEY_PITCH - 2.59 - 2 * 2.5
+    blocks.append({"name": "keys", "pitch": KEY_PITCH, "row_h": [0.0] + [sw_h, 0.0] * rows, "rows": keys})
     if leds:
         lr = [f"LED{i + 1}" for i in range(leds)]
         blocks.append({"name": "lights", "rows": [lr[k : k + cols] for k in range(0, leds, cols)] + [["C1"]]})
